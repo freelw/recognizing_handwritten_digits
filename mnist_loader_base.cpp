@@ -1,10 +1,11 @@
 #include "mnist_loader_base.h"
 #include <fstream>
 #include <iostream>
+#include <unistd.h>
 
-#define RESOURCE_BASE "/workspaces/recognizing_handwritten_digits/resources/"
-#define IMAGES_PATH RESOURCE_BASE"train-images-idx3-ubyte"
-#define LABELS_PATH RESOURCE_BASE"train-labels-idx1-ubyte"
+
+#define IMAGES_FILE "/resources/train-images-idx3-ubyte"
+#define LABELS_FILE "/resources/train-labels-idx1-ubyte"
 
 const std::vector<std::vector<unsigned char>> & MnistLoaderBase::getTrainImages() {
     return train_images;
@@ -29,7 +30,9 @@ void MnistLoaderBase::load() {
 }
 
 void MnistLoaderBase::load_images() {
-    std::ifstream images_ifs(IMAGES_PATH, std::ios::binary);
+    std::string images_path = get_current_dir_name();
+    images_path += IMAGES_FILE;
+    std::ifstream images_ifs(images_path, std::ios::binary);
     std::string images_data = std::string(std::istreambuf_iterator<char>(images_ifs), std::istreambuf_iterator<char>());
     unsigned char * p = (unsigned char *)(images_data.c_str());
     int magic = reverse_char(*((int *)p));
@@ -57,7 +60,9 @@ void MnistLoaderBase::load_images() {
 
 void MnistLoaderBase::load_labels() {
 
-    std::ifstream labels_ifs(LABELS_PATH, std::ios::binary);
+    std::string labels_path = get_current_dir_name();
+    labels_path += LABELS_FILE;
+    std::ifstream labels_ifs(labels_path, std::ios::binary);
     std::string labels_data = std::string(std::istreambuf_iterator<char>(labels_ifs), std::istreambuf_iterator<char>());
     unsigned char * p = (unsigned char *)(labels_data.c_str());
     int magic = reverse_char(*((int *)p));
