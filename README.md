@@ -1,1 +1,1 @@
-# recognizing_handwritten_digits
+[mnist layout](!https://yann.lecun.com/exdb/mnist/)

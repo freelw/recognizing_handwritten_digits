@@ -1,0 +1,11 @@
+{
+	"name": "recognizing_handwritten_digits",
+	"image": "python:2.7.18",
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"mhutchie.git-graph"
+			]
+		}
+	}
+}

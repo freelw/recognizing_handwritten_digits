@@ -1,0 +1,1 @@
+/Library/Developer/CommandLineTools/usr/bin/c++  -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX15.1.sdk -mmacosx-version-min=15.0 -Wl,-search_paths_first -Wl,-headerpad_max_install_names CMakeFiles/mnist_c_demo.dir/main.cpp.o CMakeFiles/mnist_c_demo.dir/mnist_loader.cpp.o CMakeFiles/mnist_c_demo.dir/network.cpp.o -o mnist_c_demo 
