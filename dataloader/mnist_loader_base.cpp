@@ -4,8 +4,8 @@
 #include <unistd.h>
 
 
-#define IMAGES_FILE "/resources/train-images-idx3-ubyte"
-#define LABELS_FILE "/resources/train-labels-idx1-ubyte"
+#define IMAGES_FILE "/../resources/train-images-idx3-ubyte"
+#define LABELS_FILE "/../resources/train-labels-idx1-ubyte"
 
 const std::vector<std::vector<unsigned char>> & MnistLoaderBase::getTrainImages() {
     return train_images;
