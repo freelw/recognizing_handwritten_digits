@@ -54,5 +54,9 @@ def run():
                 correct += (torch.argmax(output, dim=1) == batch_labels).sum().item()  # Change accuracy calculation
             print("accuracy: ", correct / len(images))
 
+    # Save the model and parameters to disk
+    torch.save(model.state_dict(), "model_parameters.pth")
+    torch.save(model, "model.pth")
+
 if __name__ == '__main__':
     run()

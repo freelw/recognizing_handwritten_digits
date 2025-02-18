@@ -1,1 +1,3 @@
 pytorch/__pycache__/
+pytorch/model_parameters.pth
+pytorch/model.pth
