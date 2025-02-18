@@ -13,7 +13,7 @@ def run():
     print(device)
     # copy all images and labels to the device
     images = torch.tensor(images, dtype=torch.float32).to(device)
-    labels = torch.tensor(labels, dtype=torch.long).to(device)  # Change dtype to long
+    labels = torch.nn.functional.one_hot(torch.tensor(labels), num_classes=10).float()
     # create DataLoader
     dataset = TensorDataset(images, labels)
     dataloader = DataLoader(dataset, batch_size=128, shuffle=True)  # Change batch size to 128
@@ -26,12 +26,13 @@ def run():
     # use gpu device
     model = nn.Sequential(
         nn.Linear(784, 30),
-        nn.ReLU(),
+        nn.Sigmoid(),
         nn.Linear(30, 10)
     ).to(device)  # Move model to the device
     model.apply(initialize_weights)  # Apply the custom weight initialization
-    loss_fn = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)  # Change learning rate to 0.001
+
+    loss_fn = nn.MSELoss()
+    optimizer = torch.optim.SGD(model.parameters(), lr=0.001)  # Change learning rate to 0.001
     print("start training")
 
     for epoch in range(100):
@@ -51,7 +52,7 @@ def run():
                 batch_images = batch_images.to(device, non_blocking=True)
                 batch_labels = batch_labels.to(device, non_blocking=True)
                 output = model(batch_images)
-                correct += (torch.argmax(output, dim=1) == batch_labels).sum().item()  # Change accuracy calculation
+                correct += (torch.argmax(output, dim=1) == torch.argmax(batch_labels, dim=1)).sum().item()  # Change accuracy calculation
             print("accuracy: ", correct / len(images))
 
 if __name__ == '__main__':
