@@ -1,8 +1,3 @@
-# torch.save(model.state_dict(), "model_parameters.pth")
-# torch.save(model, "model.pth")
-
-# load pytorch model
-
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
