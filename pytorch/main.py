@@ -20,7 +20,7 @@ if __name__ == "__main__":
 
     # create DataLoader
     dataset = TensorDataset(images, labels)
-    dataloader = DataLoader(dataset, batch_size=6400, shuffle=True)
+    dataloader = DataLoader(dataset, batch_size=128, shuffle=True)  # Change batch size to 128
 
     # custom weight initialization function
     def initialize_weights(m):
@@ -59,7 +59,7 @@ if __name__ == "__main__":
         # for each epoch, print log info
         print("epoch: ", epoch)
         # for each 10 epoch, calculate the accuracy
-        if epoch % 10 == 0:
+        if epoch % 10 == 9:
             correct = 0
             for batch_images, batch_labels in dataloader:
                 batch_images = batch_images.to(device, non_blocking=True)
