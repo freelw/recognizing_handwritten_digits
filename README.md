@@ -9,3 +9,6 @@
 ## 目录
 * v0 手动推导公式的版本
 * v1 autograd的版本
+* pytorch 版本
+* cuda 版本
+* cudnn 版本
