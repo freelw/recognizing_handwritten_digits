@@ -27,10 +27,14 @@ class Variable {
         double getGradient() { return gradient; }
         void incGradient(double _gradient) { gradient += _gradient; }
         void setGradient(double _gradient) { gradient = _gradient; }
+        void bp();
+        void incInputCount() { inputCount++; }
+        void decInputCount() { inputCount--; }
     protected:
         double value;
         double gradient;
         std::vector<VariablePtr> parents;
+        int inputCount;
 };
 
 class Parameter : public Variable {

@@ -13,5 +13,8 @@ int main() {
     std::cout << *z << std::endl;
     z = z->exp();
     std::cout << *z << std::endl;
+
+    z->setGradient(1.0);
+    z->bp();
     return 0;
 }
