@@ -3,8 +3,8 @@
 #include <iostream>
 
 int main() {
-    VariablePtr x = std::make_shared<Variable>(1.0);
-    VariablePtr y = std::make_shared<Variable>(2.0);
+    VariablePtr x = new Parameter(1.0);
+    VariablePtr y = new Parameter(2.0);
     VariablePtr z = *((*x) * y) + x;
     std::cout << *z << std::endl;
     z = z->Relu();
