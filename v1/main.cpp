@@ -16,5 +16,8 @@ int main() {
 
     z->setGradient(1.0);
     z->bp();
+
+    std::cout << *x << std::endl;
+    std::cout << *y << std::endl;
     return 0;
 }

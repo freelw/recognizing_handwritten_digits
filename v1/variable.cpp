@@ -52,7 +52,7 @@ VariablePtr Variable::exp() {
 }
 
 std::ostream & operator<<(std::ostream &output, const Variable &s) {
-    output << s.value;
+    output << s.value << " " << s.gradient;
     return output;
 }
 
