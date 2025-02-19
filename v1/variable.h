@@ -26,6 +26,7 @@ class Variable {
         double getValue() { return value; }
         double getGradient() { return gradient; }
         void incGradient(double _gradient) { gradient += _gradient; }
+        void setGradient(double _gradient) { gradient = _gradient; }
     protected:
         double value;
         double gradient;
@@ -43,6 +44,30 @@ class Parameter : public Variable {
 class AddRes : public Variable {
     public:
         AddRes(VariablePtr _x, VariablePtr _y);
+        void backward();
+};
+
+class MulRes : public Variable {
+    public:
+        MulRes(VariablePtr _x, VariablePtr _y);
+        void backward();
+};
+
+class ReluRes : public Variable {
+    public:
+        ReluRes(VariablePtr _x);
+        void backward();
+};
+
+class LogRes : public Variable {
+    public:
+        LogRes(VariablePtr _x);
+        void backward();
+};
+
+class ExpRes : public Variable {
+    public:
+        ExpRes(VariablePtr _x);
         void backward();
 };
 
