@@ -1,7 +1,7 @@
 DIR_INC = -I./
 DIR_INC += -I../dataloader
 DIR_LIB = -L./
-TARGET	= recognizing_handwritten_digits
+TARGET	= recognizing_handwritten_digits_v0
 CFLAGS = -g -Wall $(DIR_INC) $(DIR_LIB)
 LDFLAGS += -lstdc++
 SRCDIR:= ../dataloader
