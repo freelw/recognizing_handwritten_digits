@@ -20,6 +20,7 @@ class Variable {
         virtual ~Variable() {}
         VariablePtr operator+(VariablePtr p);
         VariablePtr operator*(VariablePtr p);
+        VariablePtr operator/(double d);
         VariablePtr Relu();
         VariablePtr log();
         VariablePtr exp();
@@ -64,6 +65,12 @@ class AddRes : public Variable {
 class MulRes : public Variable {
     public:
         MulRes(VariablePtr _x, VariablePtr _y);
+        void backward();
+};
+
+class DivRes : public Variable {
+    public:
+        DivRes(VariablePtr _x, VariablePtr _y);
         void backward();
 };
 

@@ -1,4 +1,6 @@
 #include "variable.h"
+#include "mnist_loader_base.h"
+#include "mlp.h"
 
 #include <iostream>
 
@@ -19,9 +21,17 @@ void test0() {
     std::cout << *y << std::endl;
 }
 
-int main() {
-    
+#define INPUT_LAYER_SIZE 784
 
+int main() {
+    MnistLoaderBase loader;
+    loader.load();
+
+    std::cout << "data loaded." << std::endl;
+    std::vector<int> sizes;
+    sizes.push_back(30);
+    sizes.push_back(10);
+    Model m(INPUT_LAYER_SIZE, sizes);
     destroyTmpVars();
     return 0;
 }

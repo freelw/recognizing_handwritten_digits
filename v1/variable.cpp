@@ -39,6 +39,11 @@ VariablePtr Variable::operator*(VariablePtr p) {
     return ret;
 }
 
+VariablePtr Variable::operator/(double d) {
+    this->value /= d;
+    return this;
+}
+
 VariablePtr Variable::Relu() {
     auto ret = new ReluRes(this);
     registerTmpVar(ret);
