@@ -104,6 +104,9 @@ void SGD(
         }
         for (auto i = 0; i < mini_batches.size(); ++ i) {
             update_mini_batch(m, mini_batches[i], eta);
+            if (i % 100 == 0) {
+                std::cout << "update_mini_batch : [" << i << "/" << mini_batches.size() << "]" << std::endl;
+            }
         }
         evaluate(m, v_test_data);
     }   
