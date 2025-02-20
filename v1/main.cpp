@@ -78,6 +78,7 @@ void evaluate(
             correct ++;
         }
     }
+    destroyTmpVars();
     std::cout << "correct: " << correct << " / " << v_test_data.size() << std::endl;
 }
 
