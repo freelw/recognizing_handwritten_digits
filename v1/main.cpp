@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-int main() {
+void test0() {
     VariablePtr x = new Parameter(1.0);
     VariablePtr y = new Parameter(2.0);
     VariablePtr z = *((*x) * y) + x;
@@ -13,11 +13,15 @@ int main() {
     std::cout << *z << std::endl;
     z = z->exp();
     std::cout << *z << std::endl;
-
     z->setGradient(1.0);
     z->bp();
-
     std::cout << *x << std::endl;
     std::cout << *y << std::endl;
+}
+
+int main() {
+    
+
+    destroyTmpVars();
     return 0;
 }

@@ -15,6 +15,12 @@ void registerTmpVar(VariablePtr var) {
     tmpVars.push_back(var);
 }
 
+VariablePtr allocTmpVar(double value) {
+    auto ret = new TmpVar(value);
+    registerTmpVar(ret);
+    return ret;
+}
+
 Variable::Variable() : value(0), gradient(0), inputCount(0) {}
 
 Variable::Variable(double _value) : value(_value), gradient(0), inputCount(0) {}
@@ -63,6 +69,15 @@ void Variable::bp() {
             parent->bp();
         }
     }
+}
+
+TmpVar::TmpVar() : Variable() {}
+
+TmpVar::TmpVar(double _value) : Variable(_value) {}
+
+TmpVar::TmpVar(double _value, double _gradient) : Variable(_value, _gradient) {}
+
+void TmpVar::backward() {
 }
 
 Parameter::Parameter() : Variable() {}

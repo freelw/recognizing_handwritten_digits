@@ -10,12 +10,14 @@ typedef Variable* VariablePtr;
 
 void destroyTmpVars();
 void registerTmpVar(VariablePtr var);
+VariablePtr allocTmpVar(double value);
 
 class Variable {
     public:
         Variable();
         Variable(double _value);
         Variable(double _value, double _gradient);
+        virtual ~Variable() {}
         VariablePtr operator+(VariablePtr p);
         VariablePtr operator*(VariablePtr p);
         VariablePtr Relu();
@@ -35,6 +37,14 @@ class Variable {
         double gradient;
         std::vector<VariablePtr> parents;
         int inputCount;
+};
+
+class TmpVar : public Variable {
+    public:
+        TmpVar();
+        TmpVar(double _value);
+        TmpVar(double _value, double _gradient);
+        void backward();
 };
 
 class Parameter : public Variable {
@@ -74,6 +84,5 @@ class ExpRes : public Variable {
         ExpRes(VariablePtr _x);
         void backward();
 };
-
 
 #endif
