@@ -25,7 +25,18 @@ void Neuron::update(double lr) {
     bias->setGradient(bias->getGradient() - lr * bias->getGradient());
 }
 
+void Neuron::zeroGrad() {
+    for (int i = 0; i < weight.size(); i++) {
+        weight[i]->zeroGrad();
+    }
+    bias->zeroGrad();
+}
+
 Layer::Layer(int _inputSize, int _outputSize) : inputSize(_inputSize), outputSize(_outputSize) {
+    
+}
+
+void Layer::zeroGrad() {
     
 }
 
@@ -47,6 +58,12 @@ std::vector<VariablePtr> LinerLayer::forward(const std::vector<VariablePtr> &inp
 void LinerLayer::update(double lr) {
     for (int i = 0; i < neurons.size(); i++) {
         neurons[i]->update(lr);
+    }
+}
+
+void LinerLayer::zeroGrad() {
+    for (int i = 0; i < neurons.size(); i++) {
+        neurons[i]->zeroGrad();
     }
 }
 
@@ -86,6 +103,12 @@ std::vector<VariablePtr> Model::forward(const std::vector<VariablePtr> &input) {
 void Model::update(double lr) {
     for (int i = 0; i < layers.size(); i++) {
         layers[i]->update(lr);
+    }
+}
+
+void Model::zeroGrad() {
+    for (int i = 0; i < layers.size(); i++) {
+        layers[i]->zeroGrad();
     }
 }
 

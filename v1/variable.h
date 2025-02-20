@@ -33,6 +33,7 @@ class Variable {
         void bp();
         void incInputCount() { inputCount++; }
         void decInputCount() { inputCount--; }
+        void zeroGrad();
     protected:
         double value;
         double gradient;

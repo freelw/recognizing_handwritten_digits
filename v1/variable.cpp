@@ -78,6 +78,10 @@ void Variable::bp() {
     }
 }
 
+void Variable::zeroGrad() {
+    gradient = 0;
+}
+
 TmpVar::TmpVar() : Variable() {}
 
 TmpVar::TmpVar(double _value) : Variable(_value) {}

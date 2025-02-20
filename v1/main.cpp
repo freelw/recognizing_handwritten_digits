@@ -53,6 +53,7 @@ void update_mini_batch(
     avg_loss->setGradient(1);
     avg_loss->bp();
     m.update(eta);
+    
     destroyTmpVars();
 }
 

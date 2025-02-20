@@ -9,6 +9,7 @@ class Neuron {
         Neuron(int _inputSize);
         VariablePtr forward(VariablePtr input);
         void update(double lr);
+        void zeroGrad();
     private:
         std::vector<VariablePtr> weight;
         VariablePtr bias;
@@ -19,6 +20,7 @@ class Layer {
         Layer(int _inputSize, int _outputSize);
         virtual std::vector<VariablePtr> forward(const std::vector<VariablePtr> &input) = 0;
         virtual void update(double lr) = 0;
+        virtual void zeroGrad();
     protected:
         int inputSize;
         int outputSize;
@@ -28,7 +30,8 @@ class LinerLayer : public Layer {
     public:
         LinerLayer(int _inputSize, int _outputSize);
         std::vector<VariablePtr> forward(const std::vector<VariablePtr> &input);
-        void update(double lr);
+        virtual void update(double lr);
+        virtual void zeroGrad();
     private:
         std::vector<Neuron*> neurons;
 };
@@ -37,7 +40,7 @@ class ReluLayer : public Layer {
     public:
         ReluLayer(int _inputSize);
         std::vector<VariablePtr> forward(const std::vector<VariablePtr> &input);
-        void update(double lr);
+        virtual void update(double lr);
 };
 
 VariablePtr CrossEntropyLoss(const std::vector<VariablePtr> &input, int target);
@@ -47,6 +50,7 @@ class Model {
         Model(int _inputSize, std::vector<int> _outputSizes);
         std::vector<VariablePtr> forward(const std::vector<VariablePtr> &input);
         void update(double lr);
+        void zeroGrad();
     private:
         std::vector<Layer*> layers;
 };
