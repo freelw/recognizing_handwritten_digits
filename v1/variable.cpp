@@ -89,6 +89,10 @@ TmpVar::TmpVar(double _value) : Variable(_value) {}
 TmpVar::TmpVar(double _value, double _gradient) : Variable(_value, _gradient) {}
 
 void TmpVar::backward() {
+    for (auto parent : parents) {
+        parent->incGradient(gradient);
+        parent->decInputCount();
+    }
 }
 
 Parameter::Parameter() : Variable() {}
@@ -98,6 +102,10 @@ Parameter::Parameter(double _value) : Variable(_value) {}
 Parameter::Parameter(double _value, double _gradient) : Variable(_value, _gradient) {}
 
 void Parameter::backward() {
+    for (auto parent : parents) {
+        parent->incGradient(gradient);
+        parent->decInputCount();
+    }
 }
 
 AddRes::AddRes(VariablePtr _x, VariablePtr _y) {

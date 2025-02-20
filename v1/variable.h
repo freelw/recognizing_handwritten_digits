@@ -30,6 +30,7 @@ class Variable {
         double getGradient() { return gradient; }
         void incGradient(double _gradient) { gradient += _gradient; }
         void setGradient(double _gradient) { gradient = _gradient; }
+        void setValue(double _value) { value = _value; }
         void bp();
         void incInputCount() { inputCount++; }
         void decInputCount() { inputCount--; }

@@ -53,6 +53,8 @@ void update_mini_batch(
     avg_loss->setGradient(1);
     avg_loss->bp();
     m.update(eta);
+
+    std::cout << m << std::endl;
     
     destroyTmpVars();
 }

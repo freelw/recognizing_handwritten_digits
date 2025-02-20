@@ -3,6 +3,7 @@
 
 #include "variable.h"
 #include <vector>
+#include <ostream>
 
 class Neuron {
     public:
@@ -10,6 +11,7 @@ class Neuron {
         VariablePtr forward(VariablePtr input);
         void update(double lr);
         void zeroGrad();
+        friend std::ostream & operator<<(std::ostream &output, const Neuron &s);
     private:
         std::vector<VariablePtr> weight;
         VariablePtr bias;
@@ -32,6 +34,7 @@ class LinerLayer : public Layer {
         std::vector<VariablePtr> forward(const std::vector<VariablePtr> &input);
         virtual void update(double lr);
         virtual void zeroGrad();
+        friend std::ostream & operator<<(std::ostream &output, const LinerLayer &s);
     private:
         std::vector<Neuron*> neurons;
 };
@@ -51,8 +54,10 @@ class Model {
         std::vector<VariablePtr> forward(const std::vector<VariablePtr> &input);
         void update(double lr);
         void zeroGrad();
+        friend std::ostream & operator<<(std::ostream &output, const Model &s);
     private:
         std::vector<Layer*> layers;
+        std::vector<LinerLayer*> linerLayers;
 };
 
 #endif

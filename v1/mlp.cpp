@@ -27,9 +27,9 @@ VariablePtr Neuron::forward(VariablePtr input) {
 
 void Neuron::update(double lr) {
     for (int i = 0; i < weight.size(); i++) {
-        weight[i]->setGradient(weight[i]->getGradient() - lr * weight[i]->getGradient());
+        weight[i]->setValue(weight[i]->getValue() - lr * weight[i]->getGradient());
     }
-    bias->setGradient(bias->getGradient() - lr * bias->getGradient());
+    bias->setValue(bias->getValue() - lr * bias->getGradient());
 }
 
 void Neuron::zeroGrad() {
@@ -37,6 +37,14 @@ void Neuron::zeroGrad() {
         weight[i]->zeroGrad();
     }
     bias->zeroGrad();
+}
+
+std::ostream & operator<<(std::ostream &output, const Neuron &s) {
+    for (int i = 0; i < s.weight.size(); i++) {
+        output << s.weight[i]->getGradient() << " ";
+    }
+    output << s.bias->getGradient();
+    return output;
 }
 
 Layer::Layer(int _inputSize, int _outputSize) : inputSize(_inputSize), outputSize(_outputSize) {
@@ -68,6 +76,13 @@ void LinerLayer::update(double lr) {
     }
 }
 
+std::ostream & operator<<(std::ostream &output, const LinerLayer &s) {
+    for (int i = 0; i < s.neurons.size(); i++) {
+        output << *(s.neurons[i]) << " " << std::endl;
+    }
+    return output;
+}
+
 void LinerLayer::zeroGrad() {
     for (int i = 0; i < neurons.size(); i++) {
         neurons[i]->zeroGrad();
@@ -95,7 +110,9 @@ Model::Model(int _inputSize, std::vector<int> _outputSizes) {
     layers.push_back(new LinerLayer(_inputSize, _outputSizes[0]));
     for (int i = 1; i < _outputSizes.size(); i++) {
         layers.push_back(new ReluLayer(_outputSizes[i - 1]));
-        layers.push_back(new LinerLayer(_outputSizes[i - 1], _outputSizes[i]));
+        LinerLayer *linerLayer = new LinerLayer(_outputSizes[i - 1], _outputSizes[i]);
+        layers.push_back(linerLayer);
+        linerLayers.push_back(linerLayer);
     }
 }
 
@@ -117,6 +134,13 @@ void Model::zeroGrad() {
     for (int i = 0; i < layers.size(); i++) {
         layers[i]->zeroGrad();
     }
+}
+
+std::ostream & operator<<(std::ostream &output, const Model &s) {
+    for (int i = 0; i < s.linerLayers.size(); i++) {
+        output << *(s.linerLayers[i]) << " " << std::endl;
+    }
+    return output;
 }
 
 VariablePtr CrossEntropyLoss(const std::vector<VariablePtr> &input, int target) {
