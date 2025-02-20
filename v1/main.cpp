@@ -3,6 +3,10 @@
 #include "mlp.h"
 
 #include <iostream>
+#include <random>
+#include <chrono>
+#include <algorithm>
+#include <math.h>
 
 void test0() {
     VariablePtr x = new Parameter(1.0);
@@ -29,6 +33,82 @@ public:
     int y;
 };
 
+void update_mini_batch(
+    Model &m,
+    std::vector<TrainingData*> &mini_batch,
+    double eta) {
+
+    VariablePtr loss_sum = allocTmpVar(0);
+    for (auto i = 0; i < mini_batch.size(); ++ i) {
+        std::vector<VariablePtr> input;
+        for (auto j = 0; j < INPUT_LAYER_SIZE; ++ j) {
+            input.emplace_back(allocTmpVar(mini_batch[i]->x[j]));
+        }
+        std::vector<VariablePtr> res = m.forward(input);
+        VariablePtr loss = CrossEntropyLoss(res, mini_batch[i]->y);
+        loss_sum = *loss_sum + loss;
+    }
+
+    VariablePtr avg_loss = *loss_sum / allocTmpVar(mini_batch.size());
+    avg_loss->setGradient(1);
+    avg_loss->bp();
+    m.update(eta);
+    destroyTmpVars();
+}
+
+void evaluate(
+    Model &m,
+    std::vector<TrainingData*> &v_test_data) {
+    int correct = 0;
+    for (auto i = 0; i < v_test_data.size(); ++ i) {
+        std::vector<VariablePtr> input;
+        for (auto j = 0; j < INPUT_LAYER_SIZE; ++ j) {
+            input.emplace_back(allocTmpVar(v_test_data[i]->x[j]));
+        }
+        std::vector<VariablePtr> res = m.forward(input);
+        int max_index = 0;
+        double max_value = res[0]->getValue();
+        for (auto j = 1; j < res.size(); ++ j) {
+            if (res[j]->getValue() > max_value) {
+                max_value = res[j]->getValue();
+                max_index = j;
+            }
+        }
+        if (max_index == v_test_data[i]->y) {
+            correct ++;
+        }
+    }
+    std::cout << "correct: " << correct << " / " << v_test_data.size() << std::endl;
+}
+
+void SGD(
+    std::vector<TrainingData*> &v_training_data,
+    std::vector<TrainingData*> &v_test_data,
+    int epochs, int mini_batch_size, double eta) {
+
+    std::vector<int> sizes;
+    sizes.push_back(30);
+    sizes.push_back(10);
+    Model m(INPUT_LAYER_SIZE, sizes);
+
+    int n = v_training_data.size();
+    for (auto e = 0; e < epochs; ++ e) {
+        auto rng = std::default_random_engine {};
+        std::shuffle(std::begin(v_training_data), std::end(v_training_data), rng);
+        std::vector<std::vector<TrainingData*>> mini_batches;
+        for (auto i = 0; i < n; i += mini_batch_size) {
+            std::vector<TrainingData*> tmp;
+            auto end = std::min(i+mini_batch_size, n);
+            tmp.assign(v_training_data.begin()+i,v_training_data.begin()+end);
+            mini_batches.emplace_back(tmp);
+        }
+        for (auto i = 0; i < mini_batches.size(); ++ i) {
+            update_mini_batch(m, mini_batches[i], eta);
+        }
+        evaluate(m, v_test_data);
+    }   
+}
+
 int main() {
     MnistLoaderBase loader;
     loader.load();
@@ -54,27 +134,7 @@ int main() {
     }
 
     std::cout << "data loaded." << std::endl;
-    std::vector<int> sizes;
-    sizes.push_back(30);
-    sizes.push_back(10);
-    Model m(INPUT_LAYER_SIZE, sizes);
-    for (auto epoch = 0; epoch < 100; ++ epoch) {
-        std::cout << "start epoch " << epoch << std::endl;
-        VariablePtr loss_sum = allocTmpVar(0);
-        for (auto i = 0; i < 10; ++ i) {
-            std::vector<VariablePtr> input;    
-            for (auto j = 0; j < INPUT_LAYER_SIZE; ++ j) {
-                input.emplace_back(allocTmpVar(loader.getTrainImages()[i][j]*1./256));
-            }
-            std::vector<VariablePtr> res = m.forward(input);
-            VariablePtr loss = CrossEntropyLoss(res, loader.getTrainLabels()[i]);
-            loss_sum = *loss_sum + loss;
-        }
-        VariablePtr avg_loss = *loss_sum / allocTmpVar(10);
-        avg_loss->setGradient(1);
-        avg_loss->bp();
-        m.update(0.1);
-        destroyTmpVars();
-    }
+    
+    SGD(v_training_data, v_test_data, 30, 10, 0.1);
     return 0;
 }
