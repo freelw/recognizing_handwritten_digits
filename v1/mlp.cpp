@@ -2,12 +2,19 @@
 
 #include <cassert>
 #include <cmath>
+#include <random>
+#include <chrono>
 
 Neuron::Neuron(int _inputSize) {
+
+    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+    std::default_random_engine generator(seed);
+    std::normal_distribution<double> distribution(0.0, 1.0);
+
     for (int i = 0; i < _inputSize; i++) {
-        weight.push_back(new Parameter(0.0));
+        weight.push_back(new Parameter(distribution(generator)));
     }
-    bias = new Parameter(0.0);
+    bias = new Parameter(distribution(generator));
 }
 
 VariablePtr Neuron::forward(VariablePtr input) {
