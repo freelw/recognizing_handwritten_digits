@@ -78,8 +78,8 @@ void evaluate(
         if (max_index == v_test_data[i]->y) {
             correct ++;
         }
+        destroyTmpVars();
     }
-    destroyTmpVars();
     std::cout << "correct: " << correct << " / " << v_test_data.size() << std::endl;
 }
 
