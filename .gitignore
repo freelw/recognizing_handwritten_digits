@@ -1,3 +1,4 @@
 pytorch/__pycache__/
 pytorch/model_parameters.pth
 pytorch/model.pth
+v1/train.log
