@@ -32,6 +32,23 @@ int main() {
     sizes.push_back(30);
     sizes.push_back(10);
     Model m(INPUT_LAYER_SIZE, sizes);
-    destroyTmpVars();
+    for (auto epoch = 0; epoch < 100; ++ epoch) {
+        std::cout << "start epoch " << epoch << std::endl;
+        VariablePtr loss_sum = allocTmpVar(0);
+        for (auto i = 0; i < 10; ++ i) {
+            std::vector<VariablePtr> input;    
+            for (auto j = 0; j < INPUT_LAYER_SIZE; ++ j) {
+                input.emplace_back(allocTmpVar(loader.getTrainImages()[i][j]*1./256));
+            }
+            std::vector<VariablePtr> res = m.forward(input);
+            VariablePtr loss = CrossEntropyLoss(res, loader.getTrainLabels()[i]);
+            loss_sum = *loss_sum + loss;
+        }
+        loss_sum->div(10);
+        loss_sum->setGradient(1);
+        loss_sum->bp();
+        m.update(0.1);
+        destroyTmpVars();
+    }
     return 0;
 }

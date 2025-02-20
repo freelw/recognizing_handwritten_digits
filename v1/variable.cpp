@@ -39,7 +39,8 @@ VariablePtr Variable::operator*(VariablePtr p) {
     return ret;
 }
 
-VariablePtr Variable::operator/(double d) {
+
+VariablePtr Variable::div(double d) {
     this->value /= d;
     return this;
 }
