@@ -40,9 +40,10 @@ VariablePtr Variable::operator*(VariablePtr p) {
 }
 
 
-VariablePtr Variable::div(double d) {
-    this->value /= d;
-    return this;
+VariablePtr Variable::operator/(VariablePtr p) {
+    auto ret = new DivRes(this, p);
+    registerTmpVar(ret);
+    return ret;
 }
 
 VariablePtr Variable::Relu() {
@@ -124,6 +125,24 @@ void MulRes::backward() {
     auto y = parents[1];
     x->incGradient(gradient * y->getValue());
     y->incGradient(gradient * x->getValue());
+    x->decInputCount();
+    y->decInputCount();
+}
+
+DivRes::DivRes(VariablePtr _x, VariablePtr _y) {
+    this->parents.push_back(_x);
+    this->parents.push_back(_y);
+    this->value = _x->getValue() / _y->getValue();
+    _x->incInputCount();
+    _y->incInputCount();
+}
+
+void DivRes::backward() {
+    assert(parents.size() == 2);
+    auto x = parents[0];
+    auto y = parents[1];
+    x->incGradient(gradient / y->getValue());
+    y->incGradient(-gradient * x->getValue() / (y->getValue() * y->getValue()));
     x->decInputCount();
     y->decInputCount();
 }

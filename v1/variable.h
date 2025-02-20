@@ -20,7 +20,7 @@ class Variable {
         virtual ~Variable() {}
         VariablePtr operator+(VariablePtr p);
         VariablePtr operator*(VariablePtr p);
-        VariablePtr div(double d);
+        VariablePtr operator/(VariablePtr p);
         VariablePtr Relu();
         VariablePtr log();
         VariablePtr exp();
