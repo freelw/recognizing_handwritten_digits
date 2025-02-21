@@ -92,7 +92,8 @@ void SGD(
         }
         for (auto i = 0; i < mini_batches.size(); ++ i) {
             double loss = update_mini_batch(e, m, mini_batches[i], eta);
-            if (i % 100 == 99) {
+            std::cout.precision(10);
+            if (i % 10 == 9) {
                 std::cout << "epoch : [" << e+1 << "/" << epochs << "] update_mini_batch : [" << i+1 << "/" << mini_batches.size() << "] loss : " << loss << std::endl;
             }
         }
