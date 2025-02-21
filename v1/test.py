@@ -61,8 +61,12 @@ def test1():
     loss_fn = nn.CrossEntropyLoss()
 
     res = model(x)
+    res.retain_grad()
     print("forward result: ", res)
-    loss_fn(res, y).backward()
+    print("result grad: ", res.grad)
+    loss = loss_fn(res, y)
+    print("loss: ", loss)
+    loss.backward()
 
     #show the gradients
     print(model[0].weight.grad)

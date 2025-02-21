@@ -21,6 +21,8 @@ void testgrad() {
     std::cout << std::endl;
     VariablePtr loss = CrossEntropyLoss(res, 1);
 
+    std::cout << "loss: " << loss->getValue() << std::endl;
+
     loss->setGradient(1);
     loss->bp();
     // m.update(0.01, 1);
