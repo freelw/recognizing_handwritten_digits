@@ -50,6 +50,12 @@ void Neuron::zeroGrad() {
 }
 
 std::ostream & operator<<(std::ostream &output, const Neuron &s) {
+    output << std::endl << "\t" << "weight : ";
+    for (int i = 0; i < s.weight.size(); i++) {
+        output << s.weight[i]->getValue() << " ";
+    }
+    output << s.bias->getValue() << std::endl;
+    output << "\t" << "grad : ";
     for (int i = 0; i < s.weight.size(); i++) {
         output << s.weight[i]->getGradient() << " ";
     }
@@ -89,7 +95,7 @@ void LinerLayer::update(double lr) {
 std::ostream & operator<<(std::ostream &output, const LinerLayer &s) {
     output << "LinerLayer begin" << std::endl;
     for (int i = 0; i < s.neurons.size(); i++) {
-        output << *(s.neurons[i]) << " " << std::endl;
+        output << "neuron[" << i << "]: " << *(s.neurons[i]) << " " << std::endl;
     }
     output << "LinerLayer end" << std::endl;
     return output;
@@ -154,7 +160,7 @@ void Model::zeroGrad() {
 std::ostream & operator<<(std::ostream &output, const Model &s) {
     output << "Model begin" << std::endl;
     for (int i = 0; i < s.linerLayers.size(); i++) {
-        output << i << " : " <<  *(s.linerLayers[i]) << " " << std::endl;
+        output << i << " : " << std::endl << *(s.linerLayers[i]);
     }
     output << "Model end" << std::endl;
     return output;
@@ -168,5 +174,4 @@ VariablePtr CrossEntropyLoss(const std::vector<VariablePtr> &input, int target) 
     }
     
     return (*(*(input[target]->exp()) / sum)->log()) * allocTmpVar(-1);
-    //return allocTmpVar(-std::log(std::exp(input[target]->getValue()) / sum));
 }
