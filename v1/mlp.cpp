@@ -16,13 +16,13 @@ Neuron::Neuron(int _inputSize, bool rand) {
         if (rand) {
             weight.push_back(new Parameter(distribution(generator)));
         } else {
-            weight.push_back(new Parameter(0));
+            weight.push_back(new Parameter(0.1));
         }
     }
     if (rand) {
         bias = new Parameter(distribution(generator));
     } else {
-        bias = new Parameter(0);
+        bias = new Parameter(0.1);
     }
 }
 

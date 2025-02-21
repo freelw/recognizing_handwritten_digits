@@ -79,7 +79,7 @@ void update_mini_batch(
     avg_loss->bp();
     m.update(eta);
 
-    std::cout << m << std::endl;
+    // std::cout << m << std::endl;
     m.zeroGrad();
     destroyTmpVars();
 }
@@ -120,8 +120,8 @@ void SGD(
     sizes.push_back(10);
     Model m(INPUT_LAYER_SIZE, sizes);
 
-    // int n = v_training_data.size();
-    int n = 1;
+    int n = v_training_data.size();
+    // int n = 1;
     for (auto e = 0; e < epochs; ++ e) {
         auto rng = std::default_random_engine {};
         std::shuffle(std::begin(v_training_data), std::end(v_training_data), rng);
@@ -138,7 +138,7 @@ void SGD(
                 std::cout << "epoch : " << e << " update_mini_batch : [" << i << "/" << mini_batches.size() << "]" << std::endl;
             }
         }
-        // evaluate(m, v_test_data);
+        evaluate(m, v_test_data);
     }   
 }
 
@@ -169,8 +169,8 @@ void train() {
 
     std::cout << "data loaded." << std::endl;
     
-    // SGD(v_training_data, v_test_data, 30, 10, 0.1);
-    SGD(v_training_data, v_test_data, 1, 1, 0.1);
+    SGD(v_training_data, v_test_data, 30, 10, 0.1);
+    // SGD(v_training_data, v_test_data, 1, 1, 0.1);
 }
 
 void testMlp() {
@@ -178,23 +178,25 @@ void testMlp() {
     std::vector<int> sizes;
     sizes.push_back(2);
     Model m(1, sizes, false);
+    
 
     std::vector<VariablePtr> input;
-    input.emplace_back(allocTmpVar(1));
+    input.emplace_back(allocTmpVar(2));
     
     std::vector<VariablePtr> res = m.forward(input);
     VariablePtr loss = CrossEntropyLoss(res, 0);
+    // VariablePtr loss = *res[0] + res[1];
+    // loss->dfs(0);
     loss->setGradient(1);
-    loss->bp();
-
     std::cout << "loss grad : " << loss->getGradient() << std::endl;
-    std::cout << "res[0] grad : " << res[0]->getGradient() << std::endl;
-    std::cout << "res[1] grad : " << res[1]->getGradient() << std::endl;
+    loss->bp();
+    std::cout << res[0] << " res[0] grad : " << res[0]->getGradient() << std::endl;
+    std::cout << res[1] << " res[1] grad : " << res[1]->getGradient() << std::endl;
     std::cout << m << std::endl;
 }
 
 int main() {
-    // train();
+    train();
 
     testMlp();
     // std::cout << "---------" << std::endl;
