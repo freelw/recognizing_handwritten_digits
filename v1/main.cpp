@@ -78,7 +78,7 @@ void update_mini_batch(
     VariablePtr avg_loss = *loss_sum / allocTmpVar(mini_batch.size());
     avg_loss->setGradient(1);
     avg_loss->bp();
-    m.update(eta, epoch);
+    m.update(eta, epoch+1);
     // m.adamUpdate(eta, 0.9, 0.999, 1e-8, epoch);
 
     // std::cout << m << std::endl;

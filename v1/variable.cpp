@@ -112,7 +112,15 @@ void Variable::adamUpdate(double lr, double beta1, double beta2, double epsilon,
     v = beta2 * v + (1 - beta2) * gradient * gradient;
     double m_hat = m / (1 - std::pow(beta1, t));
     double v_hat = v / (1 - std::pow(beta2, t));
+    // std::cout << "t before : " << t << std::endl;
+    // std::cout << "beta1 before : " << beta1 << std::endl;
+    // std::cout << "beta2 before : " << beta2 << std::endl;
+    // std::cout << "value before : " << value << std::endl;
+    // std::cout << "m_hat before : " << m_hat << std::endl;
+    // std::cout << "v_hat before : " << v_hat << std::endl;
+    // std::cout << "epsilon before : " << epsilon << std::endl;
     value -= lr * (m_hat / (std::sqrt(v_hat) + epsilon));
+    //std::cout << "value after : " << value << std::endl;
 }
 
 TmpVar::TmpVar() : Variable() {}

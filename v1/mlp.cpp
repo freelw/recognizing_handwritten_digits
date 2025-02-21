@@ -41,7 +41,7 @@ void Neuron::update(double lr, int epoch) {
     // }
     // bias->setValue(bias->getValue() - lr * bias->getGradient());
 
-    this->adamUpdate(lr, 0.9, 0.999, 1e-8, epoch);
+    this->adamUpdate(lr, 0.9, 0.95, 1e-8, epoch);
 }
 
 void Neuron::adamUpdate(double lr, double beta1, double beta2, double epsilon, int epoch) {
