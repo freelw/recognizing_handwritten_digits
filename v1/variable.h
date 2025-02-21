@@ -36,6 +36,7 @@ class Variable {
         void incInputCount() { inputCount++; }
         void decInputCount() { inputCount--; }
         void zeroGrad();
+        void adamUpdate(double lr, double beta1, double beta2, double epsilon, int t);
     protected:
         double value;
         double gradient;

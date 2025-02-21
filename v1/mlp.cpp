@@ -35,11 +35,20 @@ VariablePtr Neuron::forward(const std::vector<VariablePtr> &input) {
     return res->Relu();
 }
 
-void Neuron::update(double lr) {
+void Neuron::update(double lr, int epoch) {
+    // for (int i = 0; i < weight.size(); i++) {
+    //     weight[i]->setValue(weight[i]->getValue() - lr * weight[i]->getGradient());
+    // }
+    // bias->setValue(bias->getValue() - lr * bias->getGradient());
+
+    this->adamUpdate(lr, 0.9, 0.999, 1e-8, epoch);
+}
+
+void Neuron::adamUpdate(double lr, double beta1, double beta2, double epsilon, int epoch) {
     for (int i = 0; i < weight.size(); i++) {
-        weight[i]->setValue(weight[i]->getValue() - lr * weight[i]->getGradient());
+        weight[i]->adamUpdate(lr, beta1, beta2, epsilon, epoch);
     }
-    bias->setValue(bias->getValue() - lr * bias->getGradient());
+    bias->adamUpdate(lr, beta1, beta2, epsilon, epoch);
 }
 
 void Neuron::zeroGrad() {
@@ -86,9 +95,9 @@ std::vector<VariablePtr> LinerLayer::forward(const std::vector<VariablePtr> &inp
     return res;
 }
 
-void LinerLayer::update(double lr) {
+void LinerLayer::update(double lr, int epoch) {
     for (int i = 0; i < neurons.size(); i++) {
-        neurons[i]->update(lr);
+        neurons[i]->update(lr, epoch);
     }
 }
 
@@ -120,7 +129,7 @@ std::vector<VariablePtr> ReluLayer::forward(const std::vector<VariablePtr> &inpu
     return res;
 }
 
-void ReluLayer::update(double lr) {
+void ReluLayer::update(double lr, int epoch) {
     
 }
 
@@ -145,9 +154,9 @@ std::vector<VariablePtr> Model::forward(const std::vector<VariablePtr> &input) {
     return res;
 }
 
-void Model::update(double lr) {
+void Model::update(double lr, int epoch) {
     for (int i = 0; i < layers.size(); i++) {
-        layers[i]->update(lr);
+        layers[i]->update(lr, epoch);
     }
 }
 

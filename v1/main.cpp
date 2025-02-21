@@ -59,6 +59,7 @@ public:
 };
 
 void update_mini_batch(
+    int epoch,
     Model &m,
     std::vector<TrainingData*> &mini_batch,
     double eta) {
@@ -77,7 +78,8 @@ void update_mini_batch(
     VariablePtr avg_loss = *loss_sum / allocTmpVar(mini_batch.size());
     avg_loss->setGradient(1);
     avg_loss->bp();
-    m.update(eta);
+    m.update(eta, epoch);
+    // m.adamUpdate(eta, 0.9, 0.999, 1e-8, epoch);
 
     // std::cout << m << std::endl;
     m.zeroGrad();
@@ -133,7 +135,7 @@ void SGD(
             mini_batches.emplace_back(tmp);
         }
         for (auto i = 0; i < mini_batches.size(); ++ i) {
-            update_mini_batch(m, mini_batches[i], eta);
+            update_mini_batch(e, m, mini_batches[i], eta);
             if (i % 100 == 0) {
                 std::cout << "epoch : " << e << " update_mini_batch : [" << i << "/" << mini_batches.size() << "]" << std::endl;
             }
@@ -169,7 +171,7 @@ void train() {
 
     std::cout << "data loaded." << std::endl;
     
-    SGD(v_training_data, v_test_data, 30, 10, 3);
+    SGD(v_training_data, v_test_data, 30, 10, 0.01);
     // SGD(v_training_data, v_test_data, 1, 1, 0.1);
 }
 

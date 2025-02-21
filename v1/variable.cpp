@@ -95,6 +95,26 @@ void Variable::zeroGrad() {
     gradient = 0;
 }
 
+void Variable::adamUpdate(double lr, double beta1, double beta2, double epsilon, int t) {
+    // std::cout << "adamUpdate : " << this << " : " << gradient << std::endl;
+    
+    /*
+    p.m = self.beta1 * p.m + (1 - self.beta1) * p.grad
+    p.v = self.beta2 * p.v + (1 - self.beta2) * (p.grad ** 2)
+    m_hat = p.m / (1 - self.beta1 ** self.t)
+    v_hat = p.v / (1 - self.beta2 ** self.t)
+    p.data -= self.lr * (m_hat / (v_hat ** 0.5 + 1e-8) + self.weight_decay * p.data)
+    */
+    
+    static double m = 0;
+    static double v = 0;
+    m = beta1 * m + (1 - beta1) * gradient;
+    v = beta2 * v + (1 - beta2) * gradient * gradient;
+    double m_hat = m / (1 - std::pow(beta1, t));
+    double v_hat = v / (1 - std::pow(beta2, t));
+    value -= lr * (m_hat / (std::sqrt(v_hat) + epsilon));
+}
+
 TmpVar::TmpVar() : Variable() {}
 
 TmpVar::TmpVar(double _value) : Variable(_value) {}
