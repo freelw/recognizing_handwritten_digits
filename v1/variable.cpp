@@ -1,6 +1,7 @@
 #include "variable.h"
 #include <cassert>
 #include <cmath>
+#include <iostream>
 
 std::vector<VariablePtr> tmpVars;
 
@@ -117,6 +118,7 @@ AddRes::AddRes(VariablePtr _x, VariablePtr _y) {
 }
 
 void AddRes::backward() {
+    // std::cout << "AddRes::backward() grad : " << gradient << std::endl;
     for (auto parent : parents) {
         parent->incGradient(gradient);
         parent->decInputCount();
@@ -132,6 +134,7 @@ MulRes::MulRes(VariablePtr _x, VariablePtr _y) {
 }
 
 void MulRes::backward() {
+    // std::cout << "MulRes::backward() grad : " << gradient << std::endl;
     assert(parents.size() == 2);
     auto x = parents[0];
     auto y = parents[1];
@@ -150,6 +153,8 @@ DivRes::DivRes(VariablePtr _x, VariablePtr _y) {
 }
 
 void DivRes::backward() {
+    //std::cout << "DivRes::backward() grad : " << gradient << std::endl;
+    //std::cout << this << std::endl;
     assert(parents.size() == 2);
     auto x = parents[0];
     auto y = parents[1];
@@ -166,6 +171,7 @@ ReluRes::ReluRes(VariablePtr _x) {
 }
 
 void ReluRes::backward() {
+    // std::cout << "ReluRes::backward() grad : " << gradient << std::endl;
     assert(parents.size() == 1);
     auto x = parents[0];
     x->incGradient(gradient * (x->getValue() > 0 ? 1 : 0));
@@ -179,6 +185,7 @@ LogRes::LogRes(VariablePtr _x) {
 }
 
 void LogRes::backward() {
+    // std::cout << "LogRes::backward() grad : " << gradient << std::endl;
     assert(parents.size() == 1);
     auto x = parents[0];
     x->incGradient(gradient / x->getValue());
@@ -192,8 +199,10 @@ ExpRes::ExpRes(VariablePtr _x) {
 }
 
 void ExpRes::backward() {
+    // std::cout << "ExpRes::backward() grad : " << gradient << " value : " << value << std::endl;
     assert(parents.size() == 1);
     auto x = parents[0];
+    // std::cout << x << std::endl;
     x->incGradient(gradient * value);
     x->decInputCount();
 }

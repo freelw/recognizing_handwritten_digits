@@ -7,8 +7,8 @@
 
 class Neuron {
     public:
-        Neuron(int _inputSize);
-        VariablePtr forward(VariablePtr input);
+        Neuron(int _inputSize, bool rand);
+        VariablePtr forward(const std::vector<VariablePtr> &input);
         void update(double lr);
         void zeroGrad();
         friend std::ostream & operator<<(std::ostream &output, const Neuron &s);
@@ -30,7 +30,7 @@ class Layer {
 
 class LinerLayer : public Layer {
     public:
-        LinerLayer(int _inputSize, int _outputSize);
+        LinerLayer(int _inputSize, int _outputSize, bool rand);
         std::vector<VariablePtr> forward(const std::vector<VariablePtr> &input);
         virtual void update(double lr);
         virtual void zeroGrad();
@@ -50,7 +50,7 @@ VariablePtr CrossEntropyLoss(const std::vector<VariablePtr> &input, int target);
 
 class Model {
     public:
-        Model(int _inputSize, std::vector<int> _outputSizes);
+        Model(int _inputSize, std::vector<int> _outputSizes, bool rand = true);
         std::vector<VariablePtr> forward(const std::vector<VariablePtr> &input);
         void update(double lr);
         void zeroGrad();

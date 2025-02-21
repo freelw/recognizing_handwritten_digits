@@ -4,23 +4,33 @@
 #include <cmath>
 #include <random>
 #include <chrono>
+#include <iostream>
 
-Neuron::Neuron(int _inputSize) {
+Neuron::Neuron(int _inputSize, bool rand) {
 
     unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
     std::default_random_engine generator(seed);
     std::normal_distribution<double> distribution(0.0, 1.0);
 
     for (int i = 0; i < _inputSize; i++) {
-        weight.push_back(new Parameter(distribution(generator)));
+        if (rand) {
+            weight.push_back(new Parameter(distribution(generator)));
+        } else {
+            weight.push_back(new Parameter(0));
+        }
     }
-    bias = new Parameter(distribution(generator));
+    if (rand) {
+        bias = new Parameter(distribution(generator));
+    } else {
+        bias = new Parameter(0);
+    }
 }
 
-VariablePtr Neuron::forward(VariablePtr input) {
+VariablePtr Neuron::forward(const std::vector<VariablePtr> &input) {
+    assert(input.size() == weight.size());
     VariablePtr res = bias;
     for (int i = 0; i < weight.size(); i++) {
-        res = *res + (*(weight[i])) * input;
+        res = *res + (*(weight[i])) * input[i];
     }
     return res->Relu();
 }
@@ -55,9 +65,9 @@ void Layer::zeroGrad() {
     
 }
 
-LinerLayer::LinerLayer(int _inputSize, int _outputSize) : Layer(_inputSize, _outputSize) {
+LinerLayer::LinerLayer(int _inputSize, int _outputSize, bool rand) : Layer(_inputSize, _outputSize) {
     for (int i = 0; i < _outputSize; i++) {
-        neurons.push_back(new Neuron(_inputSize));
+        neurons.push_back(new Neuron(_inputSize, rand));
     }
 }
 
@@ -65,7 +75,7 @@ std::vector<VariablePtr> LinerLayer::forward(const std::vector<VariablePtr> &inp
     assert(input.size() == inputSize);
     std::vector<VariablePtr> res;
     for (int i = 0; i < neurons.size(); i++) {
-        res.push_back(neurons[i]->forward(input[i]));
+        res.push_back(neurons[i]->forward(input));
     }
     return res;
 }
@@ -77,9 +87,11 @@ void LinerLayer::update(double lr) {
 }
 
 std::ostream & operator<<(std::ostream &output, const LinerLayer &s) {
+    output << "LinerLayer begin" << std::endl;
     for (int i = 0; i < s.neurons.size(); i++) {
         output << *(s.neurons[i]) << " " << std::endl;
     }
+    output << "LinerLayer end" << std::endl;
     return output;
 }
 
@@ -106,14 +118,17 @@ void ReluLayer::update(double lr) {
     
 }
 
-Model::Model(int _inputSize, std::vector<int> _outputSizes) {
-    layers.push_back(new LinerLayer(_inputSize, _outputSizes[0]));
+Model::Model(int _inputSize, std::vector<int> _outputSizes, bool rand) {
+    LinerLayer *linerLayer = new LinerLayer(_inputSize, _outputSizes[0], rand);
+    layers.push_back(linerLayer);
+    linerLayers.push_back(linerLayer);
     for (int i = 1; i < _outputSizes.size(); i++) {
         layers.push_back(new ReluLayer(_outputSizes[i - 1]));
-        LinerLayer *linerLayer = new LinerLayer(_outputSizes[i - 1], _outputSizes[i]);
+        linerLayer = new LinerLayer(_outputSizes[i - 1], _outputSizes[i], rand);
         layers.push_back(linerLayer);
         linerLayers.push_back(linerLayer);
     }
+    // std::cout << "linerLayers.size() : " << linerLayers.size() << std::endl;
 }
 
 std::vector<VariablePtr> Model::forward(const std::vector<VariablePtr> &input) {
@@ -137,17 +152,21 @@ void Model::zeroGrad() {
 }
 
 std::ostream & operator<<(std::ostream &output, const Model &s) {
+    output << "Model begin" << std::endl;
     for (int i = 0; i < s.linerLayers.size(); i++) {
-        output << *(s.linerLayers[i]) << " " << std::endl;
+        output << i << " : " <<  *(s.linerLayers[i]) << " " << std::endl;
     }
+    output << "Model end" << std::endl;
     return output;
 }
 
 VariablePtr CrossEntropyLoss(const std::vector<VariablePtr> &input, int target) {
     assert(target < input.size());
-    double sum = 0;
+    auto sum = allocTmpVar(0);
     for (int i = 0; i < input.size(); i++) {
-        sum += std::exp(input[i]->getValue());
+        sum = *sum + input[i]->exp();
     }
-    return allocTmpVar(-std::log(std::exp(input[target]->getValue()) / sum));
+    
+    return (*(*(input[target]->exp()) / sum)->log()) * allocTmpVar(-1);
+    //return allocTmpVar(-std::log(std::exp(input[target]->getValue()) / sum));
 }
