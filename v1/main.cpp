@@ -169,7 +169,7 @@ void train() {
 
     std::cout << "data loaded." << std::endl;
     
-    SGD(v_training_data, v_test_data, 30, 10, 0.1);
+    SGD(v_training_data, v_test_data, 30, 10, 3);
     // SGD(v_training_data, v_test_data, 1, 1, 0.1);
 }
 
