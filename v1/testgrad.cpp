@@ -13,6 +13,12 @@ void testgrad() {
     }
 
     std::vector<VariablePtr> res = m.forward(input);
+
+    std::cout << "forward result: ";
+    for (int i = 0; i < res.size(); i++) {
+        std::cout << res[i]->getValue() << " ";
+    }
+    std::cout << std::endl;
     VariablePtr loss = CrossEntropyLoss(res, 1);
 
     loss->setGradient(1);

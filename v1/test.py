@@ -41,7 +41,7 @@ def test1():
     # input from 0 to 9
     x = [[i for i in range(4)]]
     x = torch.tensor(x, dtype=torch.float32).view(1, 4)
-    # target is 5
+    # target is 1
     y = [1]
     y = torch.tensor(y, dtype=torch.long).view(1)
     # model
@@ -60,7 +60,9 @@ def test1():
     # loss function
     loss_fn = nn.CrossEntropyLoss()
 
-    loss_fn(model(x), y).backward()
+    res = model(x)
+    print("forward result: ", res)
+    loss_fn(res, y).backward()
 
     #show the gradients
     print(model[0].weight.grad)
