@@ -93,7 +93,7 @@ void SGD(
         for (auto i = 0; i < mini_batches.size(); ++ i) {
             double loss = update_mini_batch(e, m, mini_batches[i], eta);
             std::cout.precision(10);
-            if (i % 10 == 9) {
+            if (i % 1000 == 999) {
                 std::cout << "epoch : [" << e+1 << "/" << epochs << "] update_mini_batch : [" << i+1 << "/" << mini_batches.size() << "] loss : " << loss << std::endl;
             }
         }
@@ -124,7 +124,7 @@ void train() {
         v_test_data.emplace_back(p);
     }
     std::cout << "data loaded." << std::endl;
-    SGD(v_training_data, v_test_data, 30, 10, 0.01);
+    SGD(v_training_data, v_test_data, 500, 10, 0.01);
 }
 
 int main() {
