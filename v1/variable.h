@@ -40,6 +40,7 @@ class Variable {
     protected:
         double value;
         double gradient;
+        double m, v;
         std::vector<VariablePtr> parents;
         int inputCount;
 };

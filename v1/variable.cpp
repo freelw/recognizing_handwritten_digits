@@ -22,11 +22,11 @@ VariablePtr allocTmpVar(double value) {
     return ret;
 }
 
-Variable::Variable() : value(0), gradient(0), inputCount(0) {}
+Variable::Variable() : value(0), gradient(0), inputCount(0), m(0), v(0) {}
 
-Variable::Variable(double _value) : value(_value), gradient(0), inputCount(0) {}
+Variable::Variable(double _value) : value(_value), gradient(0), inputCount(0), m(0), v(0)  {}
 
-Variable::Variable(double _value, double _gradient) : value(_value), gradient(_gradient), inputCount(0) {}
+Variable::Variable(double _value, double _gradient) : value(_value), gradient(_gradient), inputCount(0), m(0), v(0)  {}
 
 VariablePtr Variable::operator+(VariablePtr p) {
     auto ret = new AddRes(this, p);
@@ -105,9 +105,7 @@ void Variable::adamUpdate(double lr, double beta1, double beta2, double epsilon,
     v_hat = p.v / (1 - self.beta2 ** self.t)
     p.data -= self.lr * (m_hat / (v_hat ** 0.5 + 1e-8) + self.weight_decay * p.data)
     */
-    
-    static double m = 0;
-    static double v = 0;
+
     m = beta1 * m + (1 - beta1) * gradient;
     v = beta2 * v + (1 - beta2) * gradient * gradient;
     double m_hat = m / (1 - std::pow(beta1, t));

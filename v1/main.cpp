@@ -195,12 +195,14 @@ void testMlp() {
     std::cout << res[0] << " res[0] grad : " << res[0]->getGradient() << std::endl;
     std::cout << res[1] << " res[1] grad : " << res[1]->getGradient() << std::endl;
     std::cout << m << std::endl;
+    m.update(0.1, 1);
+    std::cout << m << std::endl;
 }
 
 int main() {
     train();
 
-    testMlp();
+    // testMlp();
     // std::cout << "---------" << std::endl;
     // test2();
     return 0;
