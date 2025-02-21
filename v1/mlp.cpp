@@ -36,11 +36,6 @@ VariablePtr Neuron::forward(const std::vector<VariablePtr> &input) {
 }
 
 void Neuron::update(double lr, int epoch) {
-    // for (int i = 0; i < weight.size(); i++) {
-    //     weight[i]->setValue(weight[i]->getValue() - lr * weight[i]->getGradient());
-    // }
-    // bias->setValue(bias->getValue() - lr * bias->getGradient());
-
     this->adamUpdate(lr, 0.9, 0.95, 1e-8, epoch);
 }
 
@@ -143,7 +138,6 @@ Model::Model(int _inputSize, std::vector<int> _outputSizes, bool rand) {
         layers.push_back(linerLayer);
         linerLayers.push_back(linerLayer);
     }
-    // std::cout << "linerLayers.size() : " << linerLayers.size() << std::endl;
 }
 
 std::vector<VariablePtr> Model::forward(const std::vector<VariablePtr> &input) {

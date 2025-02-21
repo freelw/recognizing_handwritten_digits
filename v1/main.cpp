@@ -8,48 +8,6 @@
 #include <algorithm>
 #include <math.h>
 
-void test0() {
-    VariablePtr x = new Parameter(1.0);
-    VariablePtr y = new Parameter(2.0);
-    VariablePtr z = *((*x) * y) + x;
-    std::cout << *z << std::endl;
-    z = z->Relu();
-    std::cout << *z << std::endl;
-    z = z->log();
-    std::cout << *z << std::endl;
-    z = z->exp();
-    std::cout << *z << std::endl;
-    z->setGradient(1.0);
-    z->bp();
-    std::cout << *x << std::endl;
-    std::cout << *y << std::endl;
-}
-
-void test1() {
-    VariablePtr x = new Parameter(1.0);
-    VariablePtr y = new Parameter(1.0);
-    auto z = *(*x * y)  + allocTmpVar(1.0);
-    auto d = z->Relu();
-    auto f = *d / allocTmpVar(2.0);
-    std::vector<VariablePtr> input;
-    input.emplace_back(f);
-    // input.emplace_back(y);
-    auto res = CrossEntropyLoss(input, 0);
-    res->setGradient(1.0);
-    res->bp();
-}
-
-void test2() {
-    VariablePtr x = new Parameter(1.0);
-    auto y = *x / allocTmpVar(2.0);
-    std::vector<VariablePtr> input;
-    input.emplace_back(y);
-    input.emplace_back(x);
-    auto res = CrossEntropyLoss(input, 0);
-    res->setGradient(1.0);
-    res->bp();
-}
-
 #define INPUT_LAYER_SIZE 784
 
 class TrainingData {
@@ -79,9 +37,6 @@ void update_mini_batch(
     avg_loss->setGradient(1);
     avg_loss->bp();
     m.update(eta, epoch+1);
-    // m.adamUpdate(eta, 0.9, 0.999, 1e-8, epoch);
-
-    // std::cout << m << std::endl;
     m.zeroGrad();
     destroyTmpVars();
 }
@@ -123,7 +78,6 @@ void SGD(
     Model m(INPUT_LAYER_SIZE, sizes);
 
     int n = v_training_data.size();
-    // int n = 1;
     for (auto e = 0; e < epochs; ++ e) {
         auto rng = std::default_random_engine {};
         std::shuffle(std::begin(v_training_data), std::end(v_training_data), rng);
@@ -145,10 +99,8 @@ void SGD(
 }
 
 void train() {
-
     MnistLoaderBase loader;
     loader.load();
-
     std::vector<TrainingData*> v_training_data;
     std::vector<TrainingData*> v_test_data;
     for (auto i = 0; i < TRAIN_IMAGES_NUM; ++ i) {
@@ -168,35 +120,8 @@ void train() {
         }
         v_test_data.emplace_back(p);
     }
-
     std::cout << "data loaded." << std::endl;
-    
     SGD(v_training_data, v_test_data, 30, 10, 0.01);
-    // SGD(v_training_data, v_test_data, 1, 1, 0.1);
-}
-
-void testMlp() {
-
-    std::vector<int> sizes;
-    sizes.push_back(2);
-    Model m(1, sizes, false);
-    
-
-    std::vector<VariablePtr> input;
-    input.emplace_back(allocTmpVar(2));
-    
-    std::vector<VariablePtr> res = m.forward(input);
-    VariablePtr loss = CrossEntropyLoss(res, 0);
-    // VariablePtr loss = *res[0] + res[1];
-    // loss->dfs(0);
-    loss->setGradient(1);
-    std::cout << "loss grad : " << loss->getGradient() << std::endl;
-    loss->bp();
-    std::cout << res[0] << " res[0] grad : " << res[0]->getGradient() << std::endl;
-    std::cout << res[1] << " res[1] grad : " << res[1]->getGradient() << std::endl;
-    std::cout << m << std::endl;
-    m.update(0.1, 1);
-    std::cout << m << std::endl;
 }
 
 int main() {
