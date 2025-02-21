@@ -39,16 +39,16 @@ def test1():
     # loss function: CrossEntropyLoss
 
     # input from 0 to 9
-    x = [[i for i in range(10)]]
-    x = torch.tensor(x, dtype=torch.float32).view(1, 10)
+    x = [[i for i in range(4)]]
+    x = torch.tensor(x, dtype=torch.float32).view(1, 4)
     # target is 5
-    y = [5]
+    y = [1]
     y = torch.tensor(y, dtype=torch.long).view(1)
     # model
     model = nn.Sequential(
-        nn.Linear(10, 20),
+        nn.Linear(4, 5),
         nn.ReLU(),
-        nn.Linear(20, 11)
+        nn.Linear(5, 3)
     )
     # initialize the weights to 0.1
     # initialize the bias to 0

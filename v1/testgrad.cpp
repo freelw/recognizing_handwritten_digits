@@ -4,16 +4,16 @@
 
 void testgrad() {
 
-    Model m(10, {20, 11}, false);
+    Model m(4, {5, 3}, false);
     m.zeroGrad();
 
     std::vector<VariablePtr> input;
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < 4; i++) {
         input.emplace_back(allocTmpVar(i));
     }
 
     std::vector<VariablePtr> res = m.forward(input);
-    VariablePtr loss = CrossEntropyLoss(res, 5);
+    VariablePtr loss = CrossEntropyLoss(res, 1);
 
     loss->setGradient(1);
     loss->bp();
