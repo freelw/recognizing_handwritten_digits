@@ -10,6 +10,8 @@
 
 #define INPUT_LAYER_SIZE 784
 
+void testgrad();
+
 class TrainingData {
 public:
     std::vector<double> x;
@@ -127,7 +129,18 @@ void train() {
     SGD(v_training_data, v_test_data, 500, 10, 0.01);
 }
 
-int main() {
-    train();
+
+int main(int argc, char *argv[]) {
+    bool test = false;
+    if (argc == 2) {
+        if (std::string(argv[1]) == "test") {
+            test = true;
+        }
+    }
+    if (test) {
+        testgrad();
+    } else {
+        train();
+    }
     return 0;
 }
