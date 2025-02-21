@@ -16,7 +16,7 @@ public:
     int y;
 };
 
-void update_mini_batch(
+double update_mini_batch(
     int epoch,
     Model &m,
     std::vector<TrainingData*> &mini_batch,
@@ -34,11 +34,13 @@ void update_mini_batch(
     }
 
     VariablePtr avg_loss = *loss_sum / allocTmpVar(mini_batch.size());
+    double ret = avg_loss->getValue();
     avg_loss->setGradient(1);
     avg_loss->bp();
     m.update(eta, epoch+1);
     m.zeroGrad();
     destroyTmpVars();
+    return ret;
 }
 
 void evaluate(
@@ -89,9 +91,9 @@ void SGD(
             mini_batches.emplace_back(tmp);
         }
         for (auto i = 0; i < mini_batches.size(); ++ i) {
-            update_mini_batch(e, m, mini_batches[i], eta);
-            if (i % 100 == 0) {
-                std::cout << "epoch : " << e << " update_mini_batch : [" << i << "/" << mini_batches.size() << "]" << std::endl;
+            double loss = update_mini_batch(e, m, mini_batches[i], eta);
+            if (i % 100 == 99) {
+                std::cout << "epoch : [" << e+1 << "/" << epochs << "] update_mini_batch : [" << i+1 << "/" << mini_batches.size() << "] loss : " << loss << std::endl;
             }
         }
         evaluate(m, v_test_data);
@@ -126,9 +128,5 @@ void train() {
 
 int main() {
     train();
-
-    // testMlp();
-    // std::cout << "---------" << std::endl;
-    // test2();
     return 0;
 }
