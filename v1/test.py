@@ -53,9 +53,9 @@ def test1():
     # initialize the weights to 0.1
     # initialize the bias to 0
     model[0].weight.data.fill_(0.1)
-    model[0].bias.data.fill_(0)
+    model[0].bias.data.fill_(0.1)
     model[2].weight.data.fill_(0.1)
-    model[2].bias.data.fill_(0)
+    model[2].bias.data.fill_(0.1)
 
     # loss function
     loss_fn = nn.CrossEntropyLoss()

@@ -17,7 +17,7 @@ void testgrad() {
 
     loss->setGradient(1);
     loss->bp();
-    m.update(0.01, 1);
+    // m.update(0.01, 1);
 
     std::cout << m << std::endl;
 }
