@@ -49,12 +49,15 @@ void evaluate(
     Model &m,
     std::vector<TrainingData*> &v_test_data) {
     int correct = 0;
+    double loss_sum = 0;
     for (auto i = 0; i < v_test_data.size(); ++ i) {
         std::vector<VariablePtr> input;
         for (auto j = 0; j < INPUT_LAYER_SIZE; ++ j) {
             input.emplace_back(allocTmpVar(v_test_data[i]->x[j]));
         }
         std::vector<VariablePtr> res = m.forward(input);
+        VariablePtr loss = CrossEntropyLoss(res, v_test_data[i]->y);
+        loss_sum += loss->getValue();
         int max_index = 0;
         double max_value = res[0]->getValue();
         for (auto j = 1; j < res.size(); ++ j) {
@@ -68,7 +71,7 @@ void evaluate(
         }
         destroyTmpVars();
     }
-    std::cout << "correct: " << correct << " / " << v_test_data.size() << std::endl;
+    std::cout << "correct: " << correct << " / " << v_test_data.size() << " loss: " << loss_sum / v_test_data.size() <<  std::endl;
 }
 
 void SGD(
