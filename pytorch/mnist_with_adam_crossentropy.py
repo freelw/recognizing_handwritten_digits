@@ -64,6 +64,7 @@ def run():
             optimizer.zero_grad()
             output = model(batch_images)
             loss = loss_fn(output, batch_labels)
+            print(loss.item())
             loss.backward()
             optimizer.step()
         print("epoch: ", epoch)

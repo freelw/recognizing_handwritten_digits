@@ -11,6 +11,7 @@
 #define INPUT_LAYER_SIZE 784
 
 void testgrad();
+void testcrossentropy();
 
 class TrainingData {
 public:
@@ -35,7 +36,9 @@ double update_mini_batch(
         loss_sum = *loss_sum + loss;
     }
 
+    std::cout << "epoch : " << epoch+1 << " loss_sum : " << loss_sum->getValue() << std::endl;
     VariablePtr avg_loss = *loss_sum / allocTmpVar(mini_batch.size());
+    std::cout << "epoch : " << epoch+1 << " avg_loss : " << avg_loss->getValue() << std::endl;
     double ret = avg_loss->getValue();
     avg_loss->setGradient(1);
     avg_loss->bp();
@@ -135,13 +138,18 @@ void train() {
 
 int main(int argc, char *argv[]) {
     bool test = false;
+    bool testce = false;
     if (argc == 2) {
         if (std::string(argv[1]) == "test") {
             test = true;
+        } else if (std::string(argv[1]) == "ce") {
+            testce = true;
         }
     }
     if (test) {
         testgrad();
+    } else if (testce) {
+        testcrossentropy();
     } else {
         train();
     }

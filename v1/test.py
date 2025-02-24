@@ -74,6 +74,24 @@ def test1():
     print(model[2].weight.grad)
     print(model[2].bias.grad)
 
+def testce():
+
+    # input from 0 to 9
+    x = [[i for i in range(4)]]
+    x = torch.tensor(x, dtype=torch.float32).view(1, 4)
+    # target is 1
+    y = [1]
+    y = torch.tensor(y, dtype=torch.long).view(1)
+    # model
+   
+    loss_fn = nn.CrossEntropyLoss()
+    loss = loss_fn(x, y)
+
+    print(loss.item())
+
+    
+
 if __name__ == '__main__':
 
     test1()
+    testce()
