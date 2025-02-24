@@ -40,7 +40,7 @@ class Variable {
         double value;
         double gradient;
         double m, v;
-        std::vector<VariablePtr> parents;
+        VariablePtr parents[2];
         int inputCount;
 };
 

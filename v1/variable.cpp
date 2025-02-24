@@ -22,11 +22,20 @@ VariablePtr allocTmpVar(double value) {
     return ret;
 }
 
-Variable::Variable() : value(0), gradient(0), inputCount(0), m(0), v(0) {}
+Variable::Variable() : value(0), gradient(0), inputCount(0), m(0), v(0) {
+    parents[0] = nullptr;
+    parents[1] = nullptr;
+}
 
-Variable::Variable(double _value) : value(_value), gradient(0), inputCount(0), m(0), v(0)  {}
+Variable::Variable(double _value) : value(_value), gradient(0), inputCount(0), m(0), v(0)  {
+    parents[0] = nullptr;
+    parents[1] = nullptr;
+}
 
-Variable::Variable(double _value, double _gradient) : value(_value), gradient(_gradient), inputCount(0), m(0), v(0)  {}
+Variable::Variable(double _value, double _gradient) : value(_value), gradient(_gradient), inputCount(0), m(0), v(0)  {
+    parents[0] = nullptr;
+    parents[1] = nullptr;
+}
 
 VariablePtr Variable::operator+(VariablePtr p) {
     auto ret = new AddRes(this, p);
@@ -72,9 +81,12 @@ std::ostream & operator<<(std::ostream &output, const Variable &s) {
 
 void Variable::bp() {
     this->backward();
-    for (auto parent : parents) {
-        if (parent->inputCount == 0) {
-            parent->bp();
+    for (auto i = 0; i < 2; ++ i) {
+        auto parent = parents[i];
+        if (parent) {
+            if (parent->inputCount == 0) {
+                parent->bp();
+            }
         }
     }
 }
@@ -105,9 +117,12 @@ TmpVar::TmpVar(double _value) : Variable(_value) {}
 TmpVar::TmpVar(double _value, double _gradient) : Variable(_value, _gradient) {}
 
 void TmpVar::backward() {
-    for (auto parent : parents) {
-        parent->incGradient(gradient);
-        parent->decInputCount();
+    for (auto i = 0; i < 2; ++ i) {
+        auto parent = parents[i];
+        if (parent) {
+            parent->incGradient(gradient);
+            parent->decInputCount();
+        }
     }
 }
 
@@ -118,15 +133,18 @@ Parameter::Parameter(double _value) : Variable(_value) {}
 Parameter::Parameter(double _value, double _gradient) : Variable(_value, _gradient) {}
 
 void Parameter::backward() {
-    for (auto parent : parents) {
-        parent->incGradient(gradient);
-        parent->decInputCount();
+    for (auto i = 0; i < 2; ++ i) {
+        auto parent = parents[i];
+        if (parent) {
+            parent->incGradient(gradient);
+            parent->decInputCount();
+        }
     }
 }
 
 AddRes::AddRes(VariablePtr _x, VariablePtr _y) {
-    this->parents.push_back(_x);
-    this->parents.push_back(_y);
+    parents[0] = _x;
+    parents[1] = _y;
     this->value = _x->getValue() + _y->getValue();
     _x->incInputCount();
     _y->incInputCount();
@@ -140,15 +158,15 @@ void AddRes::backward() {
 }
 
 MulRes::MulRes(VariablePtr _x, VariablePtr _y) {
-    this->parents.push_back(_x);
-    this->parents.push_back(_y);
+    parents[0] = _x;
+    parents[1] = _y;
     this->value = _x->getValue() * _y->getValue();
     _x->incInputCount();
     _y->incInputCount();
 }
 
 void MulRes::backward() {
-    assert(parents.size() == 2);
+    assert(parents[0] != nullptr && parents[1] != nullptr);
     auto x = parents[0];
     auto y = parents[1];
     x->incGradient(gradient * y->getValue());
@@ -158,15 +176,15 @@ void MulRes::backward() {
 }
 
 DivRes::DivRes(VariablePtr _x, VariablePtr _y) {
-    this->parents.push_back(_x);
-    this->parents.push_back(_y);
+    parents[0] = _x;
+    parents[1] = _y;
     this->value = _x->getValue() / _y->getValue();
     _x->incInputCount();
     _y->incInputCount();
 }
 
 void DivRes::backward() {
-    assert(parents.size() == 2);
+    assert(parents[0] != nullptr && parents[1] != nullptr);
     auto x = parents[0];
     auto y = parents[1];
     x->incGradient(gradient / y->getValue());
@@ -176,39 +194,39 @@ void DivRes::backward() {
 }
 
 ReluRes::ReluRes(VariablePtr _x) {
-    this->parents.push_back(_x);
+    parents[0] = _x;
     this->value = _x->getValue() > 0 ? _x->getValue() : 0;
     _x->incInputCount();
 }
 
 void ReluRes::backward() {
-    assert(parents.size() == 1);
+    assert(parents[0] != nullptr && parents[1] == nullptr);
     auto x = parents[0];
     x->incGradient(gradient * (x->getValue() > 0 ? 1 : 0));
     x->decInputCount();
 }
 
 LogRes::LogRes(VariablePtr _x) {
-    this->parents.push_back(_x);
+    parents[0] = _x;
     this->value = std::log(_x->getValue());
     _x->incInputCount();
 }
 
 void LogRes::backward() {
-    assert(parents.size() == 1);
+    assert(parents[0] != nullptr && parents[1] == nullptr);
     auto x = parents[0];
     x->incGradient(gradient / x->getValue());
     x->decInputCount();
 }
 
 ExpRes::ExpRes(VariablePtr _x) {
-    this->parents.push_back(_x);
+    parents[0] = _x;
     this->value = std::exp(_x->getValue());
     _x->incInputCount();
 }
 
 void ExpRes::backward() {
-    assert(parents.size() == 1);
+    assert(parents[0] != nullptr && parents[1] == nullptr);
     auto x = parents[0];
     x->incGradient(gradient * value);
     x->decInputCount();
