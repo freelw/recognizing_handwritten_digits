@@ -19,10 +19,12 @@ Neuron::Neuron(uint _inputSize, bool rand, double stddev) {
             weight.push_back(new Parameter(0.1));
         }
     }
+
     if (rand) {
-        bias = new Parameter(distribution(generator));
+        std::normal_distribution<double> distribution_b(0.0, 0.01);
+        bias = new Parameter(distribution_b(generator));
     } else {
-        bias = new Parameter(0.1);
+        bias = new Parameter(0);
     }
 }
 
