@@ -52,3 +52,9 @@ correct: 9415 / 10000
 ```
 
 ![alt text](1.svg)
+
+第一个版本 vector 的 push_back 的消耗没有必要，直接用数组替换
+
+![alt text](2.svg)
+
+看起来好了不少
