@@ -6,11 +6,11 @@
 #include <chrono>
 #include <iostream>
 
-Neuron::Neuron(uint _inputSize, bool rand) {
+Neuron::Neuron(uint _inputSize, bool rand, double stddev) {
 
     unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
     std::default_random_engine generator(seed);
-    std::normal_distribution<double> distribution(0.0, 1.0);
+    std::normal_distribution<double> distribution(0.0, stddev);
 
     for (uint i = 0; i < _inputSize; i++) {
         if (rand) {
@@ -76,8 +76,9 @@ void Layer::zeroGrad() {
 }
 
 LinerLayer::LinerLayer(uint _inputSize, uint _outputSize, bool rand) : Layer(_inputSize, _outputSize) {
+    double stddev = sqrt(2./(_inputSize + _outputSize));
     for (uint i = 0; i < _outputSize; i++) {
-        neurons.push_back(new Neuron(_inputSize, rand));
+        neurons.push_back(new Neuron(_inputSize, rand, stddev));
     }
 }
 

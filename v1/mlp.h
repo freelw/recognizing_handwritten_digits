@@ -7,7 +7,7 @@
 
 class Neuron {
     public:
-        Neuron(uint _inputSize, bool rand);
+        Neuron(uint _inputSize, bool rand, double stddev);
         VariablePtr forward(const std::vector<VariablePtr> &input);
         void update(double lr, int epoch);
         void adamUpdate(double lr, double beta1, double beta2, double epsilon, int epoch);
