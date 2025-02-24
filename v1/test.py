@@ -89,9 +89,43 @@ def testce():
 
     print(loss.item())
 
+def testmodule():
+    # 3 layer neural network
+    # input layer: 10 neurons
+    # hidden layer: 20 neurons
+    # output layer: 11 neurons 
+    # activation function: ReLU
+    # loss function: CrossEntropyLoss
+
+    # input from 0 to 9
+    x = [[3 for i in range(784)]]
+    x = torch.tensor(x, dtype=torch.float32).view(1, 784)
+    # target is 1
+    y = [1]
+    y = torch.tensor(y, dtype=torch.long).view(1)
+    # model
+    model = nn.Sequential(
+        nn.Linear(784, 30),
+        nn.ReLU(),
+        nn.Linear(30, 10)
+    )
+    # initialize the weights to 0.1
+    # initialize the bias to 0
+    model[0].weight.data.fill_(0.1)
+    model[0].bias.data.fill_(0.1)
+    model[2].weight.data.fill_(0.1)
+    model[2].bias.data.fill_(0.1)
+
+    # loss function
+    loss_fn = nn.CrossEntropyLoss()
+
+    res = model(x)
+    
+    print(res)
     
 
 if __name__ == '__main__':
 
-    test1()
-    testce()
+    #test1()
+    #testce()
+    testmodule()

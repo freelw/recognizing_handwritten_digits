@@ -2,29 +2,28 @@
 
 #include <cassert>
 #include <cmath>
-#include <random>
-#include <chrono>
 #include <iostream>
 
-Neuron::Neuron(uint _inputSize, bool rand, double stddev) {
-
-    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
-    std::default_random_engine generator(seed);
-    std::normal_distribution<double> distribution(0.0, stddev);
+Neuron::Neuron(
+    uint _inputSize, bool rand,
+    std::normal_distribution<double> & d_w,
+    std::normal_distribution<double> & d_b,
+    std::default_random_engine & generator_w,
+    std::default_random_engine & generator_b) {
 
     for (uint i = 0; i < _inputSize; i++) {
         if (rand) {
-            weight.push_back(new Parameter(distribution(generator)));
+            weight.push_back(new Parameter(d_w(generator_w)));
         } else {
             weight.push_back(new Parameter(0.1));
         }
     }
 
     if (rand) {
-        std::normal_distribution<double> distribution_b(0.0, 0.01);
-        bias = new Parameter(distribution_b(generator));
+        // std::normal_distribution<double> distribution_b(0.0, 0.02);
+        bias = new Parameter(d_b(generator_b));
     } else {
-        bias = new Parameter(0);
+        bias = new Parameter(0.1);
     }
 }
 
@@ -34,7 +33,7 @@ VariablePtr Neuron::forward(const std::vector<VariablePtr> &input) {
     for (uint i = 0; i < weight.size(); i++) {
         res = *res + (*(weight[i])) * input[i];
     }
-    return res->Relu();
+    return res;
 }
 
 void Neuron::update(double lr, int epoch) {
@@ -78,9 +77,15 @@ void Layer::zeroGrad() {
 }
 
 LinerLayer::LinerLayer(uint _inputSize, uint _outputSize, bool rand) : Layer(_inputSize, _outputSize) {
-    double stddev = sqrt(2./(_inputSize + _outputSize))*sqrt(2);
+    // double stddev = sqrt(2./(_inputSize + _outputSize))*sqrt(2);
+
+    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+    std::default_random_engine generator_w(seed);
+    std::default_random_engine generator_b(seed+1024);
+    std::normal_distribution<double> distribution_w(0.0, 0.02);
+    std::normal_distribution<double> distribution_b(0.0, 0.02);
     for (uint i = 0; i < _outputSize; i++) {
-        neurons.push_back(new Neuron(_inputSize, rand, stddev));
+        neurons.push_back(new Neuron(_inputSize, rand, distribution_w, distribution_b, generator_w, generator_b));
     }
 }
 
@@ -174,10 +179,16 @@ std::ostream & operator<<(std::ostream &output, const Model &s) {
 
 VariablePtr CrossEntropyLoss(const std::vector<VariablePtr> &input, uint target) {
     assert(target < input.size());
+    double max_value = input[0]->getValue();
+    for (uint i = 1; i < input.size(); i++) {
+        if (input[i]->getValue() > max_value) {
+            max_value = input[i]->getValue();
+        }
+    }
     auto sum = allocTmpVar(0);
     for (uint i = 0; i < input.size(); i++) {
-        sum = *sum + input[i]->exp();
+        sum = *sum + (*input[i]+allocTmpVar(-max_value))->exp();
     }
     
-    return (*(*(input[target]->exp()) / sum)->log()) * allocTmpVar(-1);
+    return (*(*((*input[target]+allocTmpVar(-max_value))->exp()) / sum)->log()) * allocTmpVar(-1);
 }

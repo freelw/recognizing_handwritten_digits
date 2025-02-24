@@ -15,6 +15,7 @@ def run():
     train_images = images[:boundary]
     train_labels = labels[:boundary]
 
+
     test_images = images[boundary:]
     test_labels = labels[boundary:]
 
@@ -36,7 +37,7 @@ def run():
 
     # create DataLoader
     train_dataset = TensorDataset(train_images, train_labels)
-    train_dataloader = DataLoader(train_dataset, batch_size=128, shuffle=True)  # Change batch size to 128
+    train_dataloader = DataLoader(train_dataset, batch_size=128, shuffle=False)  # Change batch size to 128
 
     test_dataset = TensorDataset(test_images, test_labels)
     test_dataloader = DataLoader(test_dataset, batch_size=128, shuffle=False)
@@ -64,12 +65,11 @@ def run():
             optimizer.zero_grad()
             output = model(batch_images)
             loss = loss_fn(output, batch_labels)
-            print(loss.item())
             loss.backward()
             optimizer.step()
         print("epoch: ", epoch)
         # for each 10 epoch, calculate the accuracy
-        if epoch % 1 == 0:
+        if epoch % 10 == 9:
             correct = 0
             for batch_images, batch_labels in test_dataloader:
                 batch_images = batch_images.to(device, non_blocking=True)

@@ -4,10 +4,16 @@
 #include "variable.h"
 #include <vector>
 #include <ostream>
+#include <random>
+#include <chrono>
 
 class Neuron {
     public:
-        Neuron(uint _inputSize, bool rand, double stddev);
+        Neuron(uint _inputSize, bool rand,
+            std::normal_distribution<double> & d_w,
+            std::normal_distribution<double> & d_b,
+            std::default_random_engine & generator_w,
+            std::default_random_engine & generator_b);
         VariablePtr forward(const std::vector<VariablePtr> &input);
         void update(double lr, int epoch);
         void adamUpdate(double lr, double beta1, double beta2, double epsilon, int epoch);
