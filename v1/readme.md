@@ -1,5 +1,9 @@
 # 自动微分版本
 
+### 遇到的两个坑
+1. 计算交叉熵过程中，指数需要减去所有input的最大值，保证不会溢出
+2. linerlayer的实现里面，返回的时候不要带relu，想要计算relu就在外面添加relu层
+
 ```
 (base) cs@cs-desktop:~/project/recognizing_handwritten_digits/v1$ time ./recognizing_handwritten_digits_v1
 images magic : 2051
