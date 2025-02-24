@@ -36,6 +36,7 @@ void MnistLoaderBase::load_images() {
     std::string images_data = std::string(std::istreambuf_iterator<char>(images_ifs), std::istreambuf_iterator<char>());
     unsigned char * p = (unsigned char *)(images_data.c_str());
     int magic = reverse_char(*((int *)p));
+    std::cout << "images magic : " << magic << std::endl;
     int images_num = reverse_char(*((int *)(p+4)));
     int rows_num = reverse_char(*((int *)(p+8)));
     int cols_num = reverse_char(*((int *)(p+12)));
@@ -68,7 +69,7 @@ void MnistLoaderBase::load_labels() {
     int magic = reverse_char(*((int *)p));
     int lables_num = reverse_char(*((int *)(p+4)));
     
-    std::cout << "magic : " << magic << std::endl;
+    std::cout << "label magic : " << magic << std::endl;
     std::cout << "lables_num : " << lables_num << std::endl;
 
     if (lables_num != EXPECTED_IMAGES_NUM) {

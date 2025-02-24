@@ -7,7 +7,7 @@
 
 class Neuron {
     public:
-        Neuron(int _inputSize, bool rand);
+        Neuron(uint _inputSize, bool rand);
         VariablePtr forward(const std::vector<VariablePtr> &input);
         void update(double lr, int epoch);
         void adamUpdate(double lr, double beta1, double beta2, double epsilon, int epoch);
@@ -20,18 +20,18 @@ class Neuron {
 
 class Layer {
     public:
-        Layer(int _inputSize, int _outputSize);
+        Layer(uint _inputSize, uint _outputSize);
         virtual std::vector<VariablePtr> forward(const std::vector<VariablePtr> &input) = 0;
         virtual void update(double lr, int epoch) = 0;
         virtual void zeroGrad();
     protected:
-        int inputSize;
-        int outputSize;
+        uint inputSize;
+        uint outputSize;
 };
 
 class LinerLayer : public Layer {
     public:
-        LinerLayer(int _inputSize, int _outputSize, bool rand);
+        LinerLayer(uint _inputSize, uint _outputSize, bool rand);
         std::vector<VariablePtr> forward(const std::vector<VariablePtr> &input);
         virtual void update(double lr, int epoch);
         virtual void zeroGrad();
@@ -42,16 +42,16 @@ class LinerLayer : public Layer {
 
 class ReluLayer : public Layer {
     public:
-        ReluLayer(int _inputSize);
+        ReluLayer(uint _inputSize);
         std::vector<VariablePtr> forward(const std::vector<VariablePtr> &input);
         virtual void update(double lr, int epoch);
 };
 
-VariablePtr CrossEntropyLoss(const std::vector<VariablePtr> &input, int target);
+VariablePtr CrossEntropyLoss(const std::vector<VariablePtr> &input, uint target);
 
 class Model {
     public:
-        Model(int _inputSize, std::vector<int> _outputSizes, bool rand = true);
+        Model(uint _inputSize, std::vector<uint> _outputSizes, bool rand = true);
         std::vector<VariablePtr> forward(const std::vector<VariablePtr> &input);
         void update(double lr, int epoch);
         void zeroGrad();

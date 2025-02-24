@@ -39,9 +39,9 @@ class Variable {
     protected:
         double value;
         double gradient;
-        double m, v;
         VariablePtr parents[2];
         int inputCount;
+        double m, v;
 };
 
 class TmpVar : public Variable {

@@ -25,9 +25,9 @@ double update_mini_batch(
     double eta) {
 
     VariablePtr loss_sum = allocTmpVar(0);
-    for (auto i = 0; i < mini_batch.size(); ++ i) {
+    for (uint i = 0; i < mini_batch.size(); ++ i) {
         std::vector<VariablePtr> input;
-        for (auto j = 0; j < INPUT_LAYER_SIZE; ++ j) {
+        for (uint j = 0; j < INPUT_LAYER_SIZE; ++ j) {
             input.emplace_back(allocTmpVar(mini_batch[i]->x[j]));
         }
         std::vector<VariablePtr> res = m.forward(input);
@@ -50,7 +50,7 @@ void evaluate(
     std::vector<TrainingData*> &v_test_data) {
     int correct = 0;
     double loss_sum = 0;
-    for (auto i = 0; i < v_test_data.size(); ++ i) {
+    for (uint i = 0; i < v_test_data.size(); ++ i) {
         std::vector<VariablePtr> input;
         for (auto j = 0; j < INPUT_LAYER_SIZE; ++ j) {
             input.emplace_back(allocTmpVar(v_test_data[i]->x[j]));
@@ -60,7 +60,7 @@ void evaluate(
         loss_sum += loss->getValue();
         int max_index = 0;
         double max_value = res[0]->getValue();
-        for (auto j = 1; j < res.size(); ++ j) {
+        for (uint j = 1; j < res.size(); ++ j) {
             if (res[j]->getValue() > max_value) {
                 max_value = res[j]->getValue();
                 max_index = j;
@@ -79,7 +79,7 @@ void SGD(
     std::vector<TrainingData*> &v_test_data,
     int epochs, int mini_batch_size, double eta) {
 
-    std::vector<int> sizes;
+    std::vector<uint> sizes;
     sizes.push_back(30);
     sizes.push_back(10);
     Model m(INPUT_LAYER_SIZE, sizes);
@@ -95,8 +95,8 @@ void SGD(
             tmp.assign(v_training_data.begin()+i,v_training_data.begin()+end);
             mini_batches.emplace_back(tmp);
         }
-        for (auto i = 0; i < mini_batches.size(); ++ i) {
-            double loss = update_mini_batch(e, m, mini_batches[i], eta);
+        for (uint i = 0; i < mini_batches.size(); ++ i) {
+            update_mini_batch(e, m, mini_batches[i], eta);
             std::cout.precision(10);
             if (i % 1000 == 999) {
                 std::cout << "epoch : [" << e+1 << "/" << epochs << "] update_mini_batch : [" << i+1 << "/" << mini_batches.size() << "]" << std::endl;
