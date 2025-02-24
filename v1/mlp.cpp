@@ -78,7 +78,7 @@ void Layer::zeroGrad() {
 }
 
 LinerLayer::LinerLayer(uint _inputSize, uint _outputSize, bool rand) : Layer(_inputSize, _outputSize) {
-    double stddev = sqrt(2./(_inputSize + _outputSize));
+    double stddev = sqrt(2./(_inputSize + _outputSize))*sqrt(2);
     for (uint i = 0; i < _outputSize; i++) {
         neurons.push_back(new Neuron(_inputSize, rand, stddev));
     }

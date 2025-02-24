@@ -7,16 +7,39 @@ def run():
     images = mnist_loader.load_mnist_images("../resources/train-images-idx3-ubyte")
     labels = mnist_loader.load_mnist_labels("../resources/train-labels-idx1-ubyte")
 
+    print(len(images))
+    print(len(labels))
+
+    boundary = 50000
+
+    train_images = images[:boundary]
+    train_labels = labels[:boundary]
+
+    test_images = images[boundary:]
+    test_labels = labels[boundary:]
+
     # use gpu if available
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    # use cpu single thread
+    device = torch.device("cpu")
+    # use 1 thread
+    torch.set_num_threads(1)
+
     # print device info
     print(device)
     # copy all images and labels to the device
-    images = torch.tensor(images, dtype=torch.float32).to(device)
-    labels = torch.tensor(labels, dtype=torch.long).to(device)  # Change dtype to long
+    train_images = torch.tensor(train_images, dtype=torch.float32).to(device)
+    train_labels = torch.tensor(train_labels, dtype=torch.long).to(device)  # Change dtype to long
+    test_images = torch.tensor(test_images, dtype=torch.float32).to(device)
+    test_labels = torch.tensor(test_labels, dtype=torch.long).to(device)  # Change dtype to long
+
     # create DataLoader
-    dataset = TensorDataset(images, labels)
-    dataloader = DataLoader(dataset, batch_size=128, shuffle=True)  # Change batch size to 128
+    train_dataset = TensorDataset(train_images, train_labels)
+    train_dataloader = DataLoader(train_dataset, batch_size=128, shuffle=True)  # Change batch size to 128
+
+    test_dataset = TensorDataset(test_images, test_labels)
+    test_dataloader = DataLoader(test_dataset, batch_size=128, shuffle=False)
     # custom weight initialization function
     def initialize_weights(m):
         if isinstance(m, nn.Linear):
@@ -35,7 +58,7 @@ def run():
     print("start training")
 
     for epoch in range(100):
-        for batch_images, batch_labels in dataloader:
+        for batch_images, batch_labels in train_dataloader:
             batch_images = batch_images.to(device, non_blocking=True)
             batch_labels = batch_labels.to(device, non_blocking=True)
             optimizer.zero_grad()
@@ -45,14 +68,14 @@ def run():
             optimizer.step()
         print("epoch: ", epoch)
         # for each 10 epoch, calculate the accuracy
-        if epoch % 10 == 9:
+        if epoch % 1 == 0:
             correct = 0
-            for batch_images, batch_labels in dataloader:
+            for batch_images, batch_labels in test_dataloader:
                 batch_images = batch_images.to(device, non_blocking=True)
                 batch_labels = batch_labels.to(device, non_blocking=True)
                 output = model(batch_images)
                 correct += (torch.argmax(output, dim=1) == batch_labels).sum().item()  # Change accuracy calculation
-            print("accuracy: ", correct / len(images))
+            print("correct: ", correct, "/" , len(images) - boundary)
 
     # Save the model and parameters to disk
     torch.save(model.state_dict(), "model_parameters.pth")
