@@ -50,3 +50,5 @@ epoch : [21/500] update_mini_batch : [4000/5000] loss : 3.189961507e-06
 epoch : [21/500] update_mini_batch : [5000/5000] loss : 0.009688687987
 correct: 9415 / 10000
 ```
+
+![alt text](1.svg)
