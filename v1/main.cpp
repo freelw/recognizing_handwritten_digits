@@ -129,7 +129,7 @@ void train() {
         v_test_data.emplace_back(p);
     }
     std::cout << "data loaded." << std::endl;
-    SGD(v_training_data, v_test_data, 500, 10, 0.01);
+    SGD(v_training_data, v_test_data, 30, 10, 0.01);
 }
 
 
