@@ -33,27 +33,12 @@ double update_mini_batch(
             input.emplace_back(allocTmpVar(mini_batch[i]->x[j]));
         }
 
-        // std::cout << "input : ";
-        // for (auto p : input) {
-        //     std::cout << p->getValue() << " ";
-        // }
-        // std::cout << std::endl;
         std::vector<VariablePtr> res = m.forward(input);
-        // std::cout.precision(10);
-        // std::cout << "output : ";
-        // for (auto p : res) {
-        //     std::cout << p->getValue() << " ";
-        // }
-        // std::cout << std::endl;
         VariablePtr loss = CrossEntropyLoss(res, mini_batch[i]->y);
-        // std::cout << "loss : " << loss->getValue() << std::endl;
         loss_sum = *loss_sum + loss;
     }
 
-    
-    // std::cout << "epoch : " << epoch+1 << " loss_sum : " << loss_sum->getValue() << std::endl;
     VariablePtr avg_loss = *loss_sum / allocTmpVar(mini_batch.size());
-    // std::cout << "epoch : " << epoch+1 << " avg_loss : " << avg_loss->getValue() << std::endl;
     m.zeroGrad();
     double ret = avg_loss->getValue();
     avg_loss->setGradient(1);
@@ -123,7 +108,6 @@ void SGD(
         }
         evaluate(m, v_test_data);
     }
-    // std::cout << m << std::endl;
 }
 
 void train() {

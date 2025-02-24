@@ -20,7 +20,6 @@ Neuron::Neuron(
     }
 
     if (rand) {
-        // std::normal_distribution<double> distribution_b(0.0, 0.02);
         bias = new Parameter(d_b(generator_b));
     } else {
         bias = new Parameter(0.1);
@@ -77,12 +76,11 @@ void Layer::zeroGrad() {
 }
 
 LinerLayer::LinerLayer(uint _inputSize, uint _outputSize, bool rand) : Layer(_inputSize, _outputSize) {
-    // double stddev = sqrt(2./(_inputSize + _outputSize))*sqrt(2);
-
+    double stddev = sqrt(2./(_inputSize + _outputSize))*sqrt(2);
     unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
     std::default_random_engine generator_w(seed);
     std::default_random_engine generator_b(seed+1024);
-    std::normal_distribution<double> distribution_w(0.0, 0.02);
+    std::normal_distribution<double> distribution_w(0.0, stddev);
     std::normal_distribution<double> distribution_b(0.0, 0.02);
     for (uint i = 0; i < _outputSize; i++) {
         neurons.push_back(new Neuron(_inputSize, rand, distribution_w, distribution_b, generator_w, generator_b));
