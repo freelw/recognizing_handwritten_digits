@@ -82,8 +82,6 @@ class ReluRes : public Variable {
     public:
         ReluRes(VariablePtr _x);
         void backward();
-        virtual void incGradient(double _gradient);
-        virtual void setGradient(double _gradient);
 };
 
 class LogRes : public Variable {
