@@ -134,6 +134,30 @@ void ReluLayer::update(double lr, int epoch) {
     
 }
 
+DropoutLayer::DropoutLayer(uint _inputSize, double _p) : Layer(_inputSize, _inputSize), p(_p) {
+    
+}
+
+std::vector<VariablePtr> DropoutLayer::forward(const std::vector<VariablePtr> &input) {
+    assert(input.size() == inputSize);
+    std::vector<VariablePtr> res;
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<> dis(0.0, 1.0);
+    for (uint i = 0; i < input.size(); i++) {
+        if (dis(gen) < p) {
+            res.push_back(allocTmpVar(0));
+        } else {
+            res.push_back(*(input[i])/allocTmpVar(1-p));
+        }
+    }
+    return res;
+}
+
+void DropoutLayer::update(double lr, int epoch) {
+    
+}
+
 Model::Model(uint _inputSize, std::vector<uint> _outputSizes, bool rand) {
     LinerLayer *linerLayer = new LinerLayer(_inputSize, _outputSizes[0], rand);
     layers.push_back(linerLayer);
@@ -146,7 +170,7 @@ Model::Model(uint _inputSize, std::vector<uint> _outputSizes, bool rand) {
     }
 }
 
-std::vector<VariablePtr> Model::forward(const std::vector<VariablePtr> &input) {
+std::vector<VariablePtr> Model::forward(const std::vector<VariablePtr> &input, bool) {
     std::vector<VariablePtr> res = input;
     for (uint i = 0; i < layers.size(); i++) {
         res = layers[i]->forward(res);
@@ -173,6 +197,45 @@ std::ostream & operator<<(std::ostream &output, const Model &s) {
     }
     output << "Model end" << std::endl;
     return output;
+}
+
+ModelWithDropout::ModelWithDropout(uint _inputSize, std::vector<uint> _outputSizes, double p, bool rand) {
+    LinerLayer *linerLayer = new LinerLayer(_inputSize, _outputSizes[0], rand);
+    DropoutLayer *dropoutLayer = new DropoutLayer(_outputSizes[0], p);
+    layers.push_back(linerLayer);
+    layers.push_back(dropoutLayer);
+    for (uint i = 1; i < _outputSizes.size(); i++) {
+        layers.push_back(new ReluLayer(_outputSizes[i - 1]));
+        linerLayer = new LinerLayer(_outputSizes[i - 1], _outputSizes[i], rand);
+        dropoutLayer = new DropoutLayer(_outputSizes[i], p);
+        layers.push_back(linerLayer);
+    }
+}
+
+std::vector<VariablePtr> ModelWithDropout::forward(const std::vector<VariablePtr> &input, bool train) {
+    std::vector<VariablePtr> res = input;
+    for (uint i = 0; i < layers.size(); i++) {
+        if (layers[i]->isDropout()) {
+            if (train) {
+                res = layers[i]->forward(res);
+            }
+        } else {
+            res = layers[i]->forward(res);
+        }
+    }
+    return res;
+}
+
+void ModelWithDropout::update(double lr, int epoch) {
+    for (uint i = 0; i < layers.size(); i++) {
+        layers[i]->update(lr, epoch);
+    }
+}
+
+void ModelWithDropout::zeroGrad() {
+    for (uint i = 0; i < layers.size(); i++) {
+        layers[i]->zeroGrad();
+    }
 }
 
 VariablePtr CrossEntropyLoss(const std::vector<VariablePtr> &input, uint target) {

@@ -30,6 +30,7 @@ class Layer {
         virtual std::vector<VariablePtr> forward(const std::vector<VariablePtr> &input) = 0;
         virtual void update(double lr, int epoch) = 0;
         virtual void zeroGrad();
+        virtual bool isDropout() { return false; }
     protected:
         uint inputSize;
         uint outputSize;
@@ -53,18 +54,46 @@ class ReluLayer : public Layer {
         virtual void update(double lr, int epoch);
 };
 
+class DropoutLayer : public Layer {
+    public:
+        DropoutLayer(uint _inputSize, double _p);
+        std::vector<VariablePtr> forward(const std::vector<VariablePtr> &input);
+        virtual void update(double lr, int epoch);
+        virtual bool isDropout() { return true; }
+    private:
+        double p;
+};
+
 VariablePtr CrossEntropyLoss(const std::vector<VariablePtr> &input, uint target);
 
-class Model {
+class ModelBase {
+    public:
+        ModelBase(){}
+        virtual ~ModelBase(){}
+        virtual std::vector<VariablePtr> forward(const std::vector<VariablePtr> &input, bool train = true) = 0;
+        virtual void update(double lr, int epoch) = 0;
+        virtual void zeroGrad() = 0;
+};
+class Model: public ModelBase {
     public:
         Model(uint _inputSize, std::vector<uint> _outputSizes, bool rand = true);
-        std::vector<VariablePtr> forward(const std::vector<VariablePtr> &input);
-        void update(double lr, int epoch);
-        void zeroGrad();
+        virtual std::vector<VariablePtr> forward(const std::vector<VariablePtr> &input, bool train = true);
+        virtual void update(double lr, int epoch);
+        virtual void zeroGrad();
         friend std::ostream & operator<<(std::ostream &output, const Model &s);
     private:
         std::vector<Layer*> layers;
         std::vector<LinerLayer*> linerLayers;
+};
+
+class ModelWithDropout: public ModelBase {
+    public:
+        ModelWithDropout(uint _inputSize, std::vector<uint> _outputSizes, double p, bool rand = true);
+        virtual std::vector<VariablePtr> forward(const std::vector<VariablePtr> &input, bool train = true);
+        virtual void update(double lr, int epoch);
+        virtual void zeroGrad();
+    private:
+        std::vector<Layer*> layers;
 };
 
 #endif

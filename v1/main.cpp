@@ -22,7 +22,7 @@ public:
 
 double update_mini_batch(
     int epoch,
-    Model &m,
+    ModelBase &m,
     std::vector<TrainingData*> &mini_batch,
     double eta) {
 
@@ -48,7 +48,7 @@ double update_mini_batch(
 }
 
 void evaluate(
-    Model &m,
+    ModelBase &m,
     std::vector<TrainingData*> &v_test_data) {
     int correct = 0;
     for (uint i = 0; i < v_test_data.size(); ++ i) {
@@ -56,7 +56,7 @@ void evaluate(
         for (auto j = 0; j < INPUT_LAYER_SIZE; ++ j) {
             input.emplace_back(allocTmpVar(v_test_data[i]->x[j]));
         }
-        std::vector<VariablePtr> res = m.forward(input);
+        std::vector<VariablePtr> res = m.forward(input, false);
         int max_index = 0;
         double max_value = res[0]->getValue();
         for (uint j = 1; j < res.size(); ++ j) {
@@ -76,12 +76,17 @@ void evaluate(
 void SGD(
     std::vector<TrainingData*> &v_training_data,
     std::vector<TrainingData*> &v_test_data,
-    int epochs, int mini_batch_size, double eta) {
+    int epochs, int mini_batch_size, double eta, bool use_dropout = false) {
 
     std::vector<uint> sizes;
     sizes.push_back(30);
     sizes.push_back(10);
-    Model m(INPUT_LAYER_SIZE, sizes);
+    ModelBase *m = nullptr;
+    if (use_dropout) {
+        m = new ModelWithDropout(INPUT_LAYER_SIZE, sizes, 0.5);
+    } else {
+        m = new Model(INPUT_LAYER_SIZE, sizes);
+    }
 
     int n = v_training_data.size();
     for (auto e = 0; e < epochs; ++ e) {
@@ -96,18 +101,18 @@ void SGD(
         }
         double loss_sum = 0;
         for (uint i = 0; i < mini_batches.size(); ++ i) {
-            loss_sum += update_mini_batch(e, m, mini_batches[i], eta);
+            loss_sum += update_mini_batch(e, *m, mini_batches[i], eta);
         }
         std::cout << "epoch : [" << e+1 << "/" << epochs << "] loss : " << loss_sum / mini_batches.size() << std::endl;
-        evaluate(m, v_test_data);
+        evaluate(*m, v_test_data);
     }
 }
 
-void train(int epochs, int batch_size) {
+void loadData(
+    std::vector<TrainingData*> &v_training_data,
+    std::vector<TrainingData*> &v_test_data) {
     MnistLoaderBase loader;
     loader.load();
-    std::vector<TrainingData*> v_training_data;
-    std::vector<TrainingData*> v_test_data;
     for (auto i = 0; i < TRAIN_IMAGES_NUM; ++ i) {
         TrainingData *p = new TrainingData();
         for (auto j = 0; j < INPUT_LAYER_SIZE; ++ j) {
@@ -125,8 +130,14 @@ void train(int epochs, int batch_size) {
         }
         v_test_data.emplace_back(p);
     }
+}
+
+void train(int epochs, int batch_size, bool use_dropout) {
+    std::vector<TrainingData*> v_training_data;
+    std::vector<TrainingData*> v_test_data;
+    loadData(v_training_data, v_test_data); 
     std::cout << "data loaded." << std::endl;
-    SGD(v_training_data, v_test_data, epochs, batch_size, 0.01);
+    SGD(v_training_data, v_test_data, epochs, batch_size, 0.01, use_dropout);
 }
 
 
@@ -150,13 +161,14 @@ int main(int argc, char *argv[]) {
     } else if (testmo) {
         testmodule();
     } else {
-        if (argc != 3) {
-            std::cout << "Usage: " << argv[0] << " <epochs> <batch_size>" << std::endl;
+        if (argc != 4) {
+            std::cout << "Usage: " << argv[0] << " <epochs> <batch_size> <use_dropout>" << std::endl;
             return 1;
         }
         int epochs = atoi(argv[1]);
         int batch_size = atoi(argv[2]);
-        train(epochs, batch_size);
+        int use_dropout = atoi(argv[3]);
+        train(epochs, batch_size, use_dropout == 1);
     }
     return 0;
 }
