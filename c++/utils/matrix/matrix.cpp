@@ -4,8 +4,8 @@
 #include <assert.h>
 
 Matrix::Matrix(const Matrix &m):
-    shape(m.shape),
     initialized(m.initialized),
+    shape(m.shape),
     data(m.data) {
 }
 
