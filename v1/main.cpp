@@ -32,14 +32,7 @@ double update_mini_batch(
         for (uint j = 0; j < INPUT_LAYER_SIZE; ++ j) {
             input.emplace_back(allocTmpVar(mini_batch[i]->x[j]));
         }
-
         std::vector<VariablePtr> res = m.forward(input);
-        // print res
-        for (uint j = 0; j < res.size(); ++ j) {
-            std::cout << res[j]->getValue() << " ";
-        }
-        std::cout << std::endl;
-
         VariablePtr loss = CrossEntropyLoss(res, mini_batch[i]->y);
         loss_sum = *loss_sum + loss;
     }
@@ -50,9 +43,6 @@ double update_mini_batch(
     avg_loss->setGradient(1);
     avg_loss->bp();
     m.update(eta, epoch+1);
-
-    std::cout << m << std::endl;
-    
     destroyTmpVars();
     return ret;
 }
@@ -61,15 +51,12 @@ void evaluate(
     Model &m,
     std::vector<TrainingData*> &v_test_data) {
     int correct = 0;
-    double loss_sum = 0;
     for (uint i = 0; i < v_test_data.size(); ++ i) {
         std::vector<VariablePtr> input;
         for (auto j = 0; j < INPUT_LAYER_SIZE; ++ j) {
             input.emplace_back(allocTmpVar(v_test_data[i]->x[j]));
         }
         std::vector<VariablePtr> res = m.forward(input);
-        VariablePtr loss = CrossEntropyLoss(res, v_test_data[i]->y);
-        loss_sum += loss->getValue();
         int max_index = 0;
         double max_value = res[0]->getValue();
         for (uint j = 1; j < res.size(); ++ j) {
@@ -83,7 +70,7 @@ void evaluate(
         }
         destroyTmpVars();
     }
-    std::cout << "correct: " << correct << " / " << v_test_data.size() << " loss: " << loss_sum / v_test_data.size() <<  std::endl;
+    std::cout << "correct: " << correct << " / " << v_test_data.size() << std::endl;
 }
 
 void SGD(
@@ -107,18 +94,20 @@ void SGD(
             tmp.assign(v_training_data.begin()+i,v_training_data.begin()+end);
             mini_batches.emplace_back(tmp);
         }
+        double loss_sum = 0;
         for (uint i = 0; i < mini_batches.size(); ++ i) {
-            update_mini_batch(e, m, mini_batches[i], eta);
+            loss_sum += update_mini_batch(e, m, mini_batches[i], eta);
             std::cout.precision(10);
             if (i % 1000 == 999) {
                 std::cout << "epoch : [" << e+1 << "/" << epochs << "] update_mini_batch : [" << i+1 << "/" << mini_batches.size() << "]" << std::endl;
             }
         }
+        std::cout << "epoch : [" << e+1 << "/" << epochs << "] loss : " << loss_sum / mini_batches.size() << std::endl;
         evaluate(m, v_test_data);
     }
 }
 
-void train() {
+void train(int epochs, int batch_size) {
     MnistLoaderBase loader;
     loader.load();
     std::vector<TrainingData*> v_training_data;
@@ -141,7 +130,7 @@ void train() {
         v_test_data.emplace_back(p);
     }
     std::cout << "data loaded." << std::endl;
-    SGD(v_training_data, v_test_data, 1, 1, 0.01);
+    SGD(v_training_data, v_test_data, epochs, batch_size, 0.01);
 }
 
 
@@ -165,7 +154,13 @@ int main(int argc, char *argv[]) {
     } else if (testmo) {
         testmodule();
     } else {
-        train();
+        if (argc != 3) {
+            std::cout << "Usage: " << argv[0] << " <epochs> <batch_size>" << std::endl;
+            return 1;
+        }
+        int epochs = atoi(argv[1]);
+        int batch_size = atoi(argv[2]);
+        train(epochs, batch_size);
     }
     return 0;
 }
