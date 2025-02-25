@@ -140,7 +140,6 @@ void train(int epochs, int batch_size, bool use_dropout) {
     SGD(v_training_data, v_test_data, epochs, batch_size, 0.01, use_dropout);
 }
 
-
 int main(int argc, char *argv[]) {
     bool test = false;
     bool testce = false;
