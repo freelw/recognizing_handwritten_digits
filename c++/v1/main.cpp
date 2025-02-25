@@ -1,5 +1,5 @@
 #include "variable.h"
-#include "mnist_loader_base.h"
+#include "dataloader/mnist_loader_base.h"
 #include "mlp.h"
 
 #include <iostream>

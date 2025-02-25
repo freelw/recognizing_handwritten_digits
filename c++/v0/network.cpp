@@ -1,5 +1,5 @@
 #include "network.h"
-#include "matrix.h"
+#include "matrix/matrix.h"
 #include <math.h>
 #include <assert.h>
 #include <iostream>

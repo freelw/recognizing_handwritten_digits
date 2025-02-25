@@ -1,10 +1,10 @@
 DIR_INC = -I./
-DIR_INC += -I../dataloader
+DIR_INC += -I../utils/
 DIR_LIB = -L./
-TARGET	= recognizing_handwritten_digits_v0
+TARGET	= recognizing_handwritten_digits_v1
 CFLAGS = -g -Wall $(DIR_INC) $(DIR_LIB)
 LDFLAGS += -lstdc++
-SRCDIR:= ../dataloader
+SRCDIR:= ../utils/dataloader
 SRCS := $(wildcard *.cpp) $(wildcard $(addsuffix /*.cpp, $(SRCDIR)))
 OBJECTS := $(patsubst %.c,%.o,$(SRCS))
 $(TARGET) : $(OBJECTS)
@@ -15,6 +15,6 @@ clean:
 	@rm -f *.o $(TARGET)
 .PHONY:clean
 prepare_data:
-	cd ../resources && \
+	cd ../../resources && \
 	gunzip -c train-labels-idx1-ubyte.gz > train-labels-idx1-ubyte && \
 	gunzip -c train-images-idx3-ubyte.gz > train-images-idx3-ubyte

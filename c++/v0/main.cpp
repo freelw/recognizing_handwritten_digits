@@ -1,6 +1,6 @@
-#include "matrix.h"
+#include "matrix/matrix.h"
 #include "network.h"
-#include "mnist_loader_base.h"
+#include "dataloader/mnist_loader_base.h"
 #include <iostream>
 #include <vector>
 #include <assert.h>
