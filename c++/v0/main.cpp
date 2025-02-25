@@ -41,10 +41,10 @@ int main(int argc, char *argv[])
     assert(v_test_data.size() == TEST_IMAGES_NUM);
     mynet.SGD(v_training_data, v_test_data, 30, 30, 3);
 
-    for (auto i = 0; i < v_training_data.size(); ++ i) {
+    for (uint i = 0; i < v_training_data.size(); ++ i) {
         delete v_training_data[i];
     }
-    for (auto i = 0; i < v_test_data.size(); ++ i) {
+    for (uint i = 0; i < v_test_data.size(); ++ i) {
         delete v_test_data[i];
     }
     return 0;

@@ -33,10 +33,10 @@ Matrix sigmoid_prime(Matrix m) {
 
 NetWork::NetWork(const std::vector<int> &_sizes)
         : sizes(_sizes), num_layers(_sizes.size()) {
-    for (auto i = 1; i < sizes.size(); ++ i) {
+    for (uint i = 1; i < sizes.size(); ++ i) {
         biases.emplace_back(Matrix(Shape(sizes[i], 1)).zero());
     }
-    for (auto i = 1; i < sizes.size(); ++ i) {
+    for (uint i = 1; i < sizes.size(); ++ i) {
         weights.emplace_back(Matrix(Shape(sizes[i], sizes[i-1])).zero());
     }
 
@@ -68,7 +68,7 @@ NetWork::NetWork(const std::vector<int> &_sizes)
 
 Matrix NetWork::feedforward(const Matrix &a) {
     Matrix res(a);
-    for (auto i = 0; i < sizes.size()-1; ++ i) {
+    for (uint i = 0; i < sizes.size()-1; ++ i) {
         res = sigmoid(weights[i].dot(res) + biases[i]);
     }
     return res;
@@ -91,7 +91,7 @@ void NetWork::SGD(
             mini_batches.emplace_back(tmp);
         }
 
-        for (auto i = 0; i < mini_batches.size(); ++ i) {
+        for (uint i = 0; i < mini_batches.size(); ++ i) {
             update_mini_batch(mini_batches[i], eta);
         }
         std::cout << "Epoch " << e << " : " << evaluate(v_test_data) << " / " << v_test_data.size() << std::endl;
@@ -105,28 +105,28 @@ void NetWork::update_mini_batch(
     std::vector<Matrix> nabla_b;
     std::vector<Matrix> nabla_w;
     const auto L = sizes.size() - 1;
-    for (auto i = 0; i < L; ++ i) {
+    for (uint i = 0; i < L; ++ i) {
         nabla_b.emplace_back(Matrix(biases[i].getShape()).zero());
     }
 
-    for (auto i = 0; i < L; ++ i) {
+    for (uint i = 0; i < L; ++ i) {
         nabla_w.emplace_back(Matrix(weights[i].getShape()).zero());
     }
 
-    for (auto i = 0; i < mini_batch.size(); ++ i) {
+    for (uint i = 0; i < mini_batch.size(); ++ i) {
         std::vector<Matrix> delta_nabla_b;
         std::vector<Matrix> delta_nabla_w;
         Matrix y(Shape(sizes[L], 1));
         y.zero();
         y[mini_batch[i]->y][0] = 1;
         backprop(mini_batch[i]->x, y, delta_nabla_b, delta_nabla_w);
-        for (auto j = 0; j < L; ++ j) {
+        for (uint j = 0; j < L; ++ j) {
             nabla_b[j] = nabla_b[j] + delta_nabla_b[j];
             nabla_w[j] = nabla_w[j] + delta_nabla_w[j];
         }
     }
 
-    for (auto i = 0; i < L; ++ i) {
+    for (uint i = 0; i < L; ++ i) {
         weights[i] = weights[i] - nabla_w[i] * eta / mini_batch.size();
         biases[i] = biases[i] - nabla_b[i] * eta / mini_batch.size();
     }
@@ -138,10 +138,10 @@ void NetWork::backprop(
     std::vector<Matrix> &delta_nabla_w) {
     
     const auto L = sizes.size() - 1;
-    for (auto i = 0; i < L; ++ i) {
+    for (uint i = 0; i < L; ++ i) {
         delta_nabla_b.emplace_back(Matrix(biases[i].getShape()));
     }
-    for (auto i = 0; i < L; ++ i) {
+    for (uint i = 0; i < L; ++ i) {
         delta_nabla_w.emplace_back(Matrix(weights[i].getShape()));
     }
 
@@ -149,7 +149,7 @@ void NetWork::backprop(
     std::vector<Matrix> activations;
     activations.emplace_back(activation);
     std::vector<Matrix> zs;
-    for (auto i = 0; i < L; ++ i) {
+    for (uint i = 0; i < L; ++ i) {
         Matrix z = weights[i].dot(activation) + biases[i];
         zs.emplace_back(z);
         activation = sigmoid(z);
@@ -169,10 +169,10 @@ void NetWork::backprop(
 
 int NetWork::evaluate(std::vector<TrainingData*> &v_test_data) {
     int sum = 0;
-    for (auto i = 0; i < v_test_data.size(); ++ i) {
+    for (uint i = 0; i < v_test_data.size(); ++ i) {
         Matrix res = feedforward(v_test_data[i]->x);
         int index = 0;
-        for (auto j = 1; j < sizes[sizes.size() - 1]; ++ j) {
+        for (int j = 1; j < sizes[sizes.size() - 1]; ++ j) {
             if (res[j][0] > res[index][0]) {
                 index = j;
             }
