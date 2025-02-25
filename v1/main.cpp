@@ -97,10 +97,6 @@ void SGD(
         double loss_sum = 0;
         for (uint i = 0; i < mini_batches.size(); ++ i) {
             loss_sum += update_mini_batch(e, m, mini_batches[i], eta);
-            std::cout.precision(10);
-            if (i % 1000 == 999) {
-                std::cout << "epoch : [" << e+1 << "/" << epochs << "] update_mini_batch : [" << i+1 << "/" << mini_batches.size() << "]" << std::endl;
-            }
         }
         std::cout << "epoch : [" << e+1 << "/" << epochs << "] loss : " << loss_sum / mini_batches.size() << std::endl;
         evaluate(m, v_test_data);
