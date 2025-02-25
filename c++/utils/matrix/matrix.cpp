@@ -177,13 +177,21 @@ Shape Matrix::getShape() const {
 Matrix Matrix::dot(Matrix &m) {
     Matrix res(Shape(shape.rowCnt, m.shape.colCnt));
     res.zero();
-    for (auto i = 0; i < m.shape.colCnt; ++ i) {
-        for (auto j = 0; j < shape.rowCnt; ++ j) {
-            double tmp = 0;
-            for (auto k = 0; k < shape.colCnt; ++ k) {
-                tmp += m[k][i] * data[j][k];
+    // for (auto i = 0; i < m.shape.colCnt; ++ i) {
+    //     for (auto j = 0; j < shape.rowCnt; ++ j) {
+    //         double tmp = 0;
+    //         for (auto k = 0; k < shape.colCnt; ++ k) {
+    //             tmp += m[k][i] * data[j][k];
+    //         }
+    //         res[j][i] = tmp;
+    //     }
+    // }
+
+    for (int i = 0; i < shape.rowCnt; ++i) {
+        for (int k = 0; k < shape.colCnt; ++k) {
+            for (int j = 0; j < m.shape.colCnt; ++j) {
+                res[i][j] += data[i][k] * m[k][j];
             }
-            res[j][i] = tmp;
         }
     }
     return res;

@@ -77,7 +77,7 @@ Matrix NetWork::feedforward(const Matrix &a) {
 void NetWork::SGD(
     std::vector<TrainingData*> &v_training_data,
     std::vector<TrainingData*> &v_test_data,
-    int epochs, int mini_batch_size, double eta) {
+    int epochs, int mini_batch_size, double eta, bool eval) {
 
     int n = v_training_data.size();
     for (auto e = 0; e < epochs; ++ e) {
@@ -94,8 +94,12 @@ void NetWork::SGD(
         for (uint i = 0; i < mini_batches.size(); ++ i) {
             update_mini_batch(mini_batches[i], eta);
         }
-        std::cout << "Epoch " << e << " : " << evaluate(v_test_data) << " / " << v_test_data.size() << std::endl;
-    }   
+
+        if (eval) {
+            std::cout << "Epoch " << e << " : " << evaluate(v_test_data) << " / " << v_test_data.size() << std::endl;
+        }
+    }
+    std::cout << "final eval : " << evaluate(v_test_data) << " / " << v_test_data.size() << std::endl;
 }
 
 void NetWork::update_mini_batch(

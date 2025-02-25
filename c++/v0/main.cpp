@@ -9,8 +9,17 @@
 using namespace std;
 int main(int argc, char *argv[])
 {
+    bool eval = false;
+
+    if (argc == 2) {
+        if (std::string(argv[1]) == "eval") {
+            eval = true;
+        }
+    }
+
+    cout << "eval : " << eval << endl;
+
     vector<int> sizes;
-    
     sizes.push_back(INPUT_LAYER_SIZE);
     sizes.push_back(30);
     sizes.push_back(10);
@@ -39,7 +48,7 @@ int main(int argc, char *argv[])
 
     assert(v_training_data.size() == TRAIN_IMAGES_NUM);
     assert(v_test_data.size() == TEST_IMAGES_NUM);
-    mynet.SGD(v_training_data, v_test_data, 30, 30, 3);
+    mynet.SGD(v_training_data, v_test_data, 30, 30, 3, eval);
 
     for (uint i = 0; i < v_training_data.size(); ++ i) {
         delete v_training_data[i];
