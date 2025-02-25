@@ -95,9 +95,11 @@ void NetWork::SGD(
             update_mini_batch(mini_batches[i], eta);
         }
 
+        std::cout << "Epoch " << e;
         if (eval) {
-            std::cout << "Epoch " << e << " : " << evaluate(v_test_data) << " / " << v_test_data.size() << std::endl;
+            std::cout << " : " << evaluate(v_test_data) << " / " << v_test_data.size();
         }
+        std::cout << std::endl;
     }
     std::cout << "final eval : " << evaluate(v_test_data) << " / " << v_test_data.size() << std::endl;
 }
