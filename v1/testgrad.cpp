@@ -4,11 +4,11 @@
 
 void testgrad() {
 
-    Model m(4, {5, 3}, false);
+    Model m(2, {3, 3}, false);
     m.zeroGrad();
 
     std::vector<VariablePtr> input;
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < 2; i++) {
         input.emplace_back(allocTmpVar(i));
     }
 

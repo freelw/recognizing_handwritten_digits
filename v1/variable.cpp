@@ -206,6 +206,14 @@ void ReluRes::backward() {
     x->decInputCount();
 }
 
+void ReluRes::incGradient(double _gradient) {
+    gradient += _gradient;
+}
+
+void ReluRes::setGradient(double _gradient) {
+    gradient = _gradient;
+}
+
 LogRes::LogRes(VariablePtr _x) {
     parents[0] = _x;
     this->value = std::log(_x->getValue());

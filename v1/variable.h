@@ -28,8 +28,8 @@ class Variable {
         virtual void backward() = 0;
         double getValue() { return value; }
         double getGradient() { return gradient; }
-        void incGradient(double _gradient) { gradient += _gradient; }
-        void setGradient(double _gradient) { gradient = _gradient; }
+        virtual void incGradient(double _gradient) { gradient += _gradient; }
+        virtual void setGradient(double _gradient) { gradient = _gradient; }
         void setValue(double _value) { value = _value; }
         void bp();
         void incInputCount() { inputCount++; }
@@ -82,6 +82,8 @@ class ReluRes : public Variable {
     public:
         ReluRes(VariablePtr _x);
         void backward();
+        virtual void incGradient(double _gradient);
+        virtual void setGradient(double _gradient);
 };
 
 class LogRes : public Variable {

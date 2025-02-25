@@ -34,6 +34,12 @@ double update_mini_batch(
         }
 
         std::vector<VariablePtr> res = m.forward(input);
+        // print res
+        for (uint j = 0; j < res.size(); ++ j) {
+            std::cout << res[j]->getValue() << " ";
+        }
+        std::cout << std::endl;
+
         VariablePtr loss = CrossEntropyLoss(res, mini_batch[i]->y);
         loss_sum = *loss_sum + loss;
     }
@@ -44,6 +50,8 @@ double update_mini_batch(
     avg_loss->setGradient(1);
     avg_loss->bp();
     m.update(eta, epoch+1);
+
+    std::cout << m << std::endl;
     
     destroyTmpVars();
     return ret;
@@ -133,7 +141,7 @@ void train() {
         v_test_data.emplace_back(p);
     }
     std::cout << "data loaded." << std::endl;
-    SGD(v_training_data, v_test_data, 30, 10, 0.01);
+    SGD(v_training_data, v_test_data, 1, 1, 0.01);
 }
 
 
