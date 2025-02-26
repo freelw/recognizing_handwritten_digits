@@ -16,6 +16,9 @@ struct Shape {
         output << "(" << s.rowCnt << ", " << s.colCnt << ")";
         return output;
     }
+    uint size() {
+        return rowCnt * colCnt;
+    }
 };
 
 class Matrix {
@@ -41,6 +44,8 @@ public:
     Shape getShape() const;
     Matrix dot(const Matrix &m);
     Matrix transpose();
+    bool valid(uint x, uint y) const;
+    void reShape(Shape shape);
 private:
     void checkShape(const Matrix &m);
 private:

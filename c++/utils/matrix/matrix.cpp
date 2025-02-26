@@ -8,7 +8,8 @@ Matrix::Matrix(Shape _shape)
         : initialized(false),
         allocated(false),
         shape(_shape) {
-    data = new double[shape.rowCnt * shape.colCnt];
+    data = new double[shape.size()];
+    // cout <<  "allocate " << shape.size() << " double" << endl;
     allocated = true;
     zero();
 }
@@ -18,9 +19,9 @@ Matrix::Matrix(const Matrix &m):
     allocated(false),
     shape(m.shape) {
     assert(initialized);
-    data = new double[shape.rowCnt * shape.colCnt];
+    data = new double[shape.size()];
+    // cout <<  "allocate " << shape.size() << " double" << endl;
     allocated = true;
-    // std::cout << shape << std::endl;
     memcpy(data, m.data, sizeof(double) * shape.rowCnt * shape.colCnt);
 }
 
@@ -32,7 +33,9 @@ Matrix::~Matrix() {
 
 Matrix& Matrix::zero() {
     assert(allocated);
-    memset(data, 0, sizeof(double) * shape.rowCnt * shape.colCnt);
+    // cout << "sizeof(double) : " << sizeof(double) << endl;
+    // cout << "shape.size() : " << shape.size() << endl;
+    memset(data, 0, sizeof(double) * shape.size());
     initialized = true;
     return *this;
 }
@@ -77,6 +80,7 @@ Matrix Matrix::operator+(const Matrix &m) {
     Matrix res(*this);
     for (uint i = 0; i < shape.rowCnt; ++i) {
         for (uint j = 0; j < shape.colCnt; ++j) {
+            // assert(res.valid(i, j) && m.valid(i, j));
             res[i][j] += m[i][j];
         }
     }
@@ -87,6 +91,7 @@ Matrix Matrix::operator+(int dt) {
     Matrix res(*this);
     for (uint i = 0; i < shape.rowCnt; ++i) {
         for (uint j = 0; j < shape.colCnt; ++j) {
+            // assert(res.valid(i, j));
             res[i][j] += dt;
         }
     }
@@ -97,6 +102,7 @@ Matrix Matrix::operator-(int dt) {
     Matrix res(*this);
     for (uint i = 0; i < shape.rowCnt; ++i) {
         for (uint j = 0; j < shape.colCnt; ++j) {
+            // assert(res.valid(i, j));
             res[i][j] -= dt;
         }
     }
@@ -107,6 +113,7 @@ Matrix Matrix::operator-() {
     Matrix res(*this);
     for (uint i = 0; i < shape.rowCnt; ++i) {
         for (uint j = 0; j < shape.colCnt; ++j) {
+            // assert(res.valid(i, j));
             res[i][j] = -res[i][j];
         }
     }
@@ -117,6 +124,7 @@ Matrix operator-(int v, const Matrix &m) {
     Matrix res(m);
     for (uint i = 0; i < m.shape.rowCnt; ++i) {
         for (uint j = 0; j < m.shape.colCnt; ++j) {
+            // assert(res.valid(i, j));
             res[i][j] = v-res[i][j];
         }
     }
@@ -128,6 +136,7 @@ Matrix Matrix::operator-(const Matrix &m) {
     Matrix res(*this);
     for (uint i = 0; i < shape.rowCnt; ++i) {
         for (uint j = 0; j < shape.colCnt; ++j) {
+            // assert(res.valid(i, j) && m.valid(i, j));
             res[i][j] -= m[i][j];
         }
     }
@@ -139,6 +148,7 @@ Matrix Matrix::operator*(const Matrix &m) {
     Matrix res(*this);
     for (uint i = 0; i < shape.rowCnt; ++i) {
         for (uint j = 0; j < shape.colCnt; ++j) {
+            // assert(res.valid(i, j) && m.valid(i, j));
             res[i][j] *= m[i][j];
         }
     }
@@ -149,6 +159,7 @@ Matrix Matrix::operator*(double v) {
     Matrix res(*this);
     for (uint i = 0; i < shape.rowCnt; ++i) {
         for (uint j = 0; j < shape.colCnt; ++j) {
+            // assert(res.valid(i, j));
             res[i][j] *= v;
         }
     }
@@ -159,6 +170,7 @@ Matrix Matrix::operator/(double v) {
     Matrix res(*this);
     for (uint i = 0; i < shape.rowCnt; ++i) {
         for (uint j = 0; j < shape.colCnt; ++j) {
+            // assert(res.valid(i, j));
             res[i][j] /= v;
         }
     }
@@ -167,10 +179,10 @@ Matrix Matrix::operator/(double v) {
 
 Matrix& Matrix::operator=(const Matrix &m) {
     assert(m.initialized);
-    shape = m.shape;
-    this->zero();
-     for (uint i = 0; i < shape.rowCnt; ++i) {
+    this->reShape(m.shape);
+    for (uint i = 0; i < shape.rowCnt; ++i) {
         for (uint j = 0; j < shape.colCnt; ++j) {
+            // assert(this->valid(i, j) && m.valid(i, j));
             (*this)[i][j] = m[i][j];
         }
     }
@@ -199,6 +211,11 @@ Matrix Matrix::dot(const Matrix &m) {
     for (uint i = 0; i < shape.rowCnt; ++i) {
         for (uint k = 0; k < shape.colCnt; ++k) {
             for (uint j = 0; j < m.shape.colCnt; ++j) {
+                // assert(res.valid(i, j) && this->valid(i, k) && m.valid(k, j));
+                // if (!(res.valid(i, j) && this->valid(i, k) && m.valid(k, j))) {
+                //     cout << res.valid(i, j) << " " <<  this->valid(i, k) << " " <<  m.valid(k, j) << endl;
+                //     cout << "bug" << endl;
+                // }
                 res[i][j] += (*this)[i][k] * m[k][j];
             }
         }
@@ -211,8 +228,21 @@ Matrix Matrix::transpose() {
     res.zero();
     for (uint i = 0; i < shape.colCnt; ++ i) {
         for (uint j = 0; j < shape.rowCnt; ++ j) {
-            res[i][j] = (*this)[j][i]; 
+            // assert(res.valid(i, j) && this->valid(j, i));
+            res[i][j] = (*this)[j][i];
         }
     }
     return res;
+}
+
+bool Matrix::valid(uint x, uint y) const {
+    return allocated && initialized && x < shape.rowCnt && y < shape.colCnt;
+}
+
+void Matrix::reShape(Shape _shape) {
+    assert(allocated && initialized);
+    delete []data;
+    shape = _shape;
+    data = new double[shape.size()];
+    zero();
 }

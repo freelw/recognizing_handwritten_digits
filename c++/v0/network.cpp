@@ -21,6 +21,7 @@ Matrix sigmoid(Matrix m) {
     Matrix res(m);
     for (uint i = 0; i < shape.rowCnt; ++i) {
         for (uint j = 0; j < shape.colCnt; ++j) {
+            // assert(res.valid(i, j));
             res[i][j] = sigmoid_double(res[i][j]);
         }
     }
@@ -49,6 +50,7 @@ NetWork::NetWork(const std::vector<int> &_sizes)
         Shape bs = biases[i].getShape();
         for (uint j = 0; j < bs.rowCnt; ++ j) {
             for (uint k = 0; k < bs.colCnt; ++ k) {
+                // assert(biases[i].valid(j, k));
                 biases[i][j][k] = distribution(generator);
             }
         }
@@ -58,6 +60,7 @@ NetWork::NetWork(const std::vector<int> &_sizes)
         Shape ws = weights[i].getShape();
         for (uint j = 0; j < ws.rowCnt; ++ j) {
             for (uint k = 0; k < ws.colCnt; ++ k) {
+                // assert(weights[i].valid(j, k));
                 weights[i][j][k] = distribution(generator);
             }
         }
@@ -179,6 +182,7 @@ int NetWork::evaluate(std::vector<TrainingData*> &v_test_data) {
         Matrix res = feedforward(v_test_data[i]->x);
         int index = 0;
         for (int j = 1; j < sizes[sizes.size() - 1]; ++ j) {
+            // assert(res.valid(j, 0) && res.valid(index, 0));
             if (res[j][0] > res[index][0]) {
                 index = j;
             }
