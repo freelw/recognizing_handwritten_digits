@@ -2,6 +2,7 @@
 #define MATRIX_H
 
 #include <ostream>
+#include <math.h>
 
 using namespace std;
 
@@ -64,5 +65,9 @@ public:
     Matrix x;
     int y;
 };
+
+Matrix sigmoid(const Matrix &m);
+
+Matrix sigmoid_prime(const Matrix &m);
 
 #endif

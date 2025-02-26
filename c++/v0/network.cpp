@@ -1,6 +1,5 @@
 #include "network.h"
 #include "matrix/matrix.h"
-#include <math.h>
 #include <assert.h>
 #include <iostream>
 #include <algorithm>
@@ -10,26 +9,6 @@
 TrainingData::TrainingData(int input_layer_size, int _y)
     : x(Shape(input_layer_size, 1)), y(_y) {
     x.zero();
-}
-
-double sigmoid_double(double z) {
-    return 1./(1.+exp(-z));
-}
-
-Matrix sigmoid(Matrix m) {
-    Shape shape = m.getShape();
-    Matrix res(m);
-    for (uint i = 0; i < shape.rowCnt; ++i) {
-        for (uint j = 0; j < shape.colCnt; ++j) {
-            // assert(res.valid(i, j));
-            res[i][j] = sigmoid_double(res[i][j]);
-        }
-    }
-    return res;
-}
-
-Matrix sigmoid_prime(Matrix m) {
-    return sigmoid(m) * (1 - sigmoid(m));
 }
 
 NetWork::NetWork(const std::vector<int> &_sizes)

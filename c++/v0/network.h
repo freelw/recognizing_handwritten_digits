@@ -8,10 +8,6 @@ using namespace std;
 
 class Matrix;
 
-Matrix sigmoid(Matrix m);
-
-Matrix sigmoid_prime(Matrix m);
-
 class TrainingData;
 
 class NetWork {

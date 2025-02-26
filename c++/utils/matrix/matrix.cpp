@@ -246,3 +246,23 @@ void Matrix::reShape(Shape _shape) {
     data = new DATATYPE[shape.size()];
     zero();
 }
+
+DATATYPE sigmoid_double(DATATYPE z) {
+    return 1./(1.+exp(-z));
+}
+
+Matrix sigmoid(const Matrix &m) {
+    Shape shape = m.getShape();
+    Matrix res(m);
+    for (uint i = 0; i < shape.rowCnt; ++i) {
+        for (uint j = 0; j < shape.colCnt; ++j) {
+            // assert(res.valid(i, j));
+            res[i][j] = sigmoid_double(res[i][j]);
+        }
+    }
+    return res;
+}
+
+Matrix sigmoid_prime(const Matrix &m) {
+    return sigmoid(m) * (1 - sigmoid(m));
+}
