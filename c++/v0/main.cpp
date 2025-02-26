@@ -7,16 +7,8 @@
 
 #define INPUT_LAYER_SIZE 784
 using namespace std;
-int main(int argc, char *argv[])
-{
-    bool eval = false;
 
-    if (argc == 2) {
-        if (std::string(argv[1]) == "eval") {
-            eval = true;
-        }
-    }
-
+void train(bool eval) {
     cout << "eval : " << eval << endl;
 
     vector<int> sizes;
@@ -56,5 +48,44 @@ int main(int argc, char *argv[])
     for (uint i = 0; i < v_test_data.size(); ++ i) {
         delete v_test_data[i];
     }
+}
+
+void test() {
+
+
+    const int x = 5;
+    const int y = 6;
+    const int z = 7;
+    Shape s0(y, x);
+    Shape s1(z, y);
+    Shape s3(z, 1);
+    Shape si(x, 1);
+
+    Matrix a(s0), b(s1), bias(s3), i(si);
+
+    cout << i << endl;
+    cout << a << endl;
+    cout << b << endl;
+    auto c = b.dot(a.dot(i));
+    cout << c << endl;
+    auto d = c + bias;
+
+    auto e = sigmoid(d);
+
+    cout << e << endl;
+}
+int main(int argc, char *argv[])
+{
+    bool eval = false;
+
+    if (argc == 2) {
+        if (std::string(argv[1]) == "eval") {
+            eval = true;
+        }
+    }
+
+    test();
+    train(eval);
+    
     return 0;
 }

@@ -19,8 +19,8 @@ double sigmoid_double(double z) {
 Matrix sigmoid(Matrix m) {
     Shape shape = m.getShape();
     Matrix res(m);
-    for (auto i = 0; i < shape.rowCnt; ++i) {
-        for (auto j = 0; j < shape.colCnt; ++j) {
+    for (uint i = 0; i < shape.rowCnt; ++i) {
+        for (uint j = 0; j < shape.colCnt; ++j) {
             res[i][j] = sigmoid_double(res[i][j]);
         }
     }
@@ -47,8 +47,8 @@ NetWork::NetWork(const std::vector<int> &_sizes)
     const int L = sizes.size() - 1;
     for (auto i = 0; i < L; ++ i) {
         Shape bs = biases[i].getShape();
-        for (auto j = 0; j < bs.rowCnt; ++ j) {
-            for (auto k = 0; k < bs.colCnt; ++ k) {
+        for (uint j = 0; j < bs.rowCnt; ++ j) {
+            for (uint k = 0; k < bs.colCnt; ++ k) {
                 biases[i][j][k] = distribution(generator);
             }
         }
@@ -56,8 +56,8 @@ NetWork::NetWork(const std::vector<int> &_sizes)
 
     for (auto i = 0; i < L; ++ i) {
         Shape ws = weights[i].getShape();
-        for (auto j = 0; j < ws.rowCnt; ++ j) {
-            for (auto k = 0; k < ws.colCnt; ++ k) {
+        for (uint j = 0; j < ws.rowCnt; ++ j) {
+            for (uint k = 0; k < ws.colCnt; ++ k) {
                 weights[i][j][k] = distribution(generator);
             }
         }
@@ -66,7 +66,7 @@ NetWork::NetWork(const std::vector<int> &_sizes)
     assert(biases.size() == weights.size());
 }
 
-Matrix NetWork::feedforward(const Matrix &a) {
+Matrix NetWork::feedforward(Matrix &a) {
     Matrix res(a);
     for (uint i = 0; i < sizes.size()-1; ++ i) {
         res = sigmoid(weights[i].dot(res) + biases[i]);
@@ -191,12 +191,12 @@ int NetWork::evaluate(std::vector<TrainingData*> &v_test_data) {
 }
 
 Matrix NetWork::cost_derivative(
-    const Matrix &output_activations,
-    const Matrix &y) {
+    Matrix &output_activations,
+    Matrix &y) {
     return output_activations - y;
 }
 
-ostream &operator<<(ostream &output, const NetWork &s) {
+ostream &operator<<(ostream &output, NetWork &s) {
     const int L = s.sizes.size() - 1;
     output << "biases : " << endl;
     for (auto i = 0; i < L; ++ i) {

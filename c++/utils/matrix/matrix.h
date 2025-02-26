@@ -2,14 +2,13 @@
 #define MATRIX_H
 
 #include <ostream>
-#include <vector>
 
 using namespace std;
 
 struct Shape {
-    int rowCnt;
-    int colCnt;
-    Shape(int r, int c): rowCnt(r), colCnt(c) {}
+    uint rowCnt;
+    uint colCnt;
+    Shape(uint r, uint c): rowCnt(r), colCnt(c) {}
     bool operator==(const Shape &s) {
         return rowCnt == s.rowCnt && colCnt == s.colCnt;
     }
@@ -22,34 +21,33 @@ struct Shape {
 class Matrix {
 
 public:
-    Matrix(Shape _shape)
-        : initialized(false),
-        shape(_shape) {}
-
+    Matrix(Shape _shape);
     Matrix(const Matrix &m);
+    ~Matrix();
     Matrix& zero();
     friend ostream &operator<<(ostream &output, const Matrix &m);
-    Matrix operator+(const Matrix &m) const;
-    Matrix operator+(int dt) const;
-    Matrix operator-(int dt) const;
-    Matrix operator-() const;
-    Matrix operator-(const Matrix &m) const;
-    Matrix operator*(const Matrix &m) const;
-    Matrix operator*(double) const;
-    Matrix operator/(double) const;
+    Matrix operator+(const Matrix &m);
+    Matrix operator+(int dt);
+    Matrix operator-(int dt);
+    Matrix operator-();
+    Matrix operator-(const Matrix &m);
+    Matrix operator*(const Matrix &m);
+    Matrix operator*(double);
+    Matrix operator/(double);
     Matrix& operator=(const Matrix &m);
     friend Matrix operator-(int, const Matrix &m);
-    std::vector<double>& operator[](unsigned int index);
-    Matrix& setAll(double v);
+    double* operator[](unsigned int index) const;
+    // Matrix& setAll(double v);
     Shape getShape() const;
-    Matrix dot(Matrix &m);
+    Matrix dot(const Matrix &m);
     Matrix transpose();
 private:
-    void checkShape(const Matrix &m) const;
+    void checkShape(const Matrix &m);
 private:
     bool initialized;
+    bool allocated;
     Shape shape;
-    std::vector<std::vector<double>> data;
+    double *data;
 };
 
 class TrainingData {
