@@ -21,6 +21,9 @@ struct Shape {
     }
 };
 
+// typedef double DATATYPE;
+typedef float DATATYPE;
+
 class Matrix {
 
 public:
@@ -39,7 +42,7 @@ public:
     Matrix operator/(double);
     Matrix& operator=(const Matrix &m);
     friend Matrix operator-(int, const Matrix &m);
-    double* operator[](unsigned int index) const;
+    DATATYPE* operator[](unsigned int index) const;
     // Matrix& setAll(double v);
     Shape getShape() const;
     Matrix dot(const Matrix &m);
@@ -52,7 +55,7 @@ private:
     bool initialized;
     bool allocated;
     Shape shape;
-    double *data;
+    DATATYPE *data;
 };
 
 class TrainingData {

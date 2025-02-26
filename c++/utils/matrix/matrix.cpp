@@ -8,7 +8,7 @@ Matrix::Matrix(Shape _shape)
         : initialized(false),
         allocated(false),
         shape(_shape) {
-    data = new double[shape.size()];
+    data = new DATATYPE[shape.size()];
     // cout <<  "allocate " << shape.size() << " double" << endl;
     allocated = true;
     zero();
@@ -19,10 +19,10 @@ Matrix::Matrix(const Matrix &m):
     allocated(false),
     shape(m.shape) {
     assert(initialized);
-    data = new double[shape.size()];
+    data = new DATATYPE[shape.size()];
     // cout <<  "allocate " << shape.size() << " double" << endl;
     allocated = true;
-    memcpy(data, m.data, sizeof(double) * shape.rowCnt * shape.colCnt);
+    memcpy(data, m.data, sizeof(DATATYPE) * shape.rowCnt * shape.colCnt);
 }
 
 Matrix::~Matrix() {
@@ -35,7 +35,7 @@ Matrix& Matrix::zero() {
     assert(allocated);
     // cout << "sizeof(double) : " << sizeof(double) << endl;
     // cout << "shape.size() : " << shape.size() << endl;
-    memset(data, 0, sizeof(double) * shape.size());
+    memset(data, 0, sizeof(DATATYPE) * shape.size());
     initialized = true;
     return *this;
 }
@@ -189,14 +189,14 @@ Matrix& Matrix::operator=(const Matrix &m) {
     return *this;
 }
 
-double *Matrix::operator[](unsigned int index) const {
+DATATYPE *Matrix::operator[](unsigned int index) const {
     assert(index < shape.rowCnt);
     // cout << "data : " << data << endl;
     // cout << "index*shape.colCnt : " << index*shape.colCnt << endl;
     // cout << "index : " << index << endl;
     // cout << "shape : " << shape << endl;
     // cout << "&(data[index*shape.colCnt]) : " << &(data[index*shape.colCnt]) << endl;
-    return (double *)&(data[index*shape.colCnt]);
+    return (DATATYPE *)&(data[index*shape.colCnt]);
 }
 
 Shape Matrix::getShape() const {
@@ -243,6 +243,6 @@ void Matrix::reShape(Shape _shape) {
     assert(allocated && initialized);
     delete []data;
     shape = _shape;
-    data = new double[shape.size()];
+    data = new DATATYPE[shape.size()];
     zero();
 }
