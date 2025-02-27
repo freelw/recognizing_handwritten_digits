@@ -37,11 +37,9 @@ NetWork::NetWork(const std::vector<int> &_sizes)
 
     for (auto i = 0; i < L; ++ i) {
         Shape ws = weights[i]->getShape();
-        cout << "ws [" << i << "] " << ws << endl;
         for (uint j = 0; j < ws.rowCnt; ++ j) {
             for (uint k = 0; k < ws.colCnt; ++ k) {
-                assert(weights[i]->valid(j, k));
-                //std::cout << j << " " << k << std::endl;
+                // assert(weights[i]->valid(j, k));
                 (*weights[i])[j][k] = distribution(generator);
             }
         }
@@ -118,9 +116,7 @@ void NetWork::update_mini_batch(
     }
 
     for (uint i = 0; i < L; ++ i) {
-        // cout << "weights 0 " << *weights[i] << endl;
         weights[i]->assign(*(weights[i]) - *(*(*nabla_w[i] * eta) / mini_batch.size()));
-        // cout << "weights 1 " << *weights[i] << endl;
         biases[i]->assign(*(biases[i]) - *(*(*nabla_b[i] * eta) / mini_batch.size()));
     }
 
@@ -153,7 +149,6 @@ void NetWork::backprop(
     }
     assert(activations.size() == L + 1);
     Matrix *delta = *cost_derivative(activations[L], y) * *sigmoid_prime(*zs[L-1]);
-    // cout << "*delta : " << *delta << endl;
     for (int l = L-1; l >= 0; -- l) {
         delta_nabla_b[l] = delta;
         auto activation_transpose = activations[l]->transpose();
@@ -185,8 +180,6 @@ int NetWork::evaluate(std::vector<TrainingData*> &v_test_data) {
 Matrix *NetWork::cost_derivative(
     Matrix *output_activations,
     Matrix *y) {
-    // cout << "output_activations : " << *output_activations << endl;
-    // cout << "y : " << *y << endl;
     return *output_activations - *y;
 }
 

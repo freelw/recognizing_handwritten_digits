@@ -180,10 +180,7 @@ Matrix& Matrix::operator=(const Matrix &m) {
 }
 
 DATATYPE *Matrix::operator[](unsigned int index) const {
-    //assert(index < shape.rowCnt);
-    if (index >= shape.rowCnt) {
-        cout << "bug" << endl;
-    }
+    assert(index < shape.rowCnt);
     return (DATATYPE *)&(data[index*shape.colCnt]);
 }
 
@@ -192,10 +189,7 @@ Shape Matrix::getShape() const {
 }
 
 Matrix *Matrix::dot(const Matrix &m) {
-    //assert(m.shape.rowCnt == shape.colCnt);
-    if (m.shape.rowCnt != shape.colCnt) {
-        cout << "bug" << endl;
-    }
+    assert(m.shape.rowCnt == shape.colCnt);
     Matrix *res = allocTmpMatrix(Shape(shape.rowCnt, m.shape.colCnt));
 
     for (uint i = 0; i < shape.rowCnt; ++i) {
@@ -253,7 +247,6 @@ Matrix *sigmoid(const Matrix &m) {
 }
 
 Matrix *sigmoid_prime(const Matrix &m) {
-    // cout << "m : " << m << endl;
     return *sigmoid(m) * *(1 - *sigmoid(m));
 }
 
