@@ -6,7 +6,6 @@
 #include <random>
 #include <chrono>
 
-
 Liner::Liner(uint i, uint o) : input_num(i), output_num(i) {
     weigt = new Parameters();
     bias = new Parameters();
