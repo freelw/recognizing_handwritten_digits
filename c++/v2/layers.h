@@ -5,7 +5,6 @@
 #include <vector>
 #include "matrix/matrix.h"
 
-
 class Context {
 
 };
