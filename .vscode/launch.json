@@ -53,6 +53,30 @@
                     "ignoreFailures": true
                 }
             ]
+        },
+        {
+            "name": "(gdb) Launch v2",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "/home/cs/project/recognizing_handwritten_digits/c++/v2/recognizing_handwritten_digits_v2",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "/home/cs/project/recognizing_handwritten_digits/c++/v2/",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Set Disassembly Flavor to Intel",
+                    "text": "-gdb-set disassembly-flavor intel",
+                    "ignoreFailures": true
+                }
+            ]
         }
     ]
 }

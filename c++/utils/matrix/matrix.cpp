@@ -274,3 +274,9 @@ void freeTmpMatrix() {
     }
     tmpMatrics.clear();
 }
+
+TrainingData::TrainingData(int input_layer_size, int _y)
+    : y(_y) {  
+    x = new Matrix(Shape(input_layer_size, 1));
+    x->zero();
+}

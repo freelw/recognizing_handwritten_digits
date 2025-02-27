@@ -1,7 +1,7 @@
 #ifndef LAYERS_H
 #define LAYERS_H
 
-
+#include <vector>
 #include "matrix/matrix.h"
 
 class Context {
@@ -18,10 +18,12 @@ class Layer {
 
 class CrossEntropyLoss: public Layer {
     public:
-        CrossEntropyLoss() {}
+        CrossEntropyLoss(const std::vector<uint> & _lalels): labels(_lalels) {}
         ~CrossEntropyLoss() {}
         virtual Matrix *forward(Context *, Matrix *input);
         virtual Matrix *backward(Context *, Matrix *grad);
+    private:
+        std::vector<uint> labels;
 };
 
 #endif

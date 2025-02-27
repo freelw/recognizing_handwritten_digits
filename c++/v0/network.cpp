@@ -5,12 +5,6 @@
 #include <random>
 #include <chrono>
 
-TrainingData::TrainingData(int input_layer_size, int _y)
-    : y(_y) {  
-    x = new Matrix(Shape(input_layer_size, 1));
-    x->zero();
-}
-
 NetWork::NetWork(const std::vector<int> &_sizes)
         : sizes(_sizes), num_layers(_sizes.size()) {
     for (uint i = 1; i < sizes.size(); ++ i) {
@@ -136,7 +130,6 @@ void NetWork::backprop(
         delta_nabla_w.emplace_back(allocTmpMatrix(weights[i]->getShape()));
     }
 
-    //Matrix activation(x);
     Matrix *activation = allocTmpMatrix(x);
     std::vector<Matrix*> activations;
     activations.emplace_back(activation);
