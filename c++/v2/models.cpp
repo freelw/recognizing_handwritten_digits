@@ -37,3 +37,16 @@ Matrix *MLP::forward(Matrix *input) {
     }
     return res;
 }
+
+void MLP::backword(Matrix *input, const std::vector<uint> &labels) {
+    CrossEntropyLoss *loss_fn = new CrossEntropyLoss(labels);
+    CrossEntropyLossContext *ctx = (CrossEntropyLossContext *)loss_fn->init();
+    loss_fn->forward(ctx, this->forward(input));
+    Matrix *grad = loss_fn->backward(ctx, nullptr);
+    for (int i = layers.size()-1; i >= 0; -- i) {
+        auto &ctx = ctxs[i];
+        grad = layers[i]->backward(ctx, grad);
+    }
+    loss_fn->release(ctx);
+    delete loss_fn;
+}

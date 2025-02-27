@@ -19,6 +19,7 @@ class MLP {
         std::vector<uint> outputs;
         std::vector<Context*> ctxs;
         Matrix *forward(Matrix *input);
+        void backword(Matrix *input, const std::vector<uint> &labels);
 };
 
 #endif
