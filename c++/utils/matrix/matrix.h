@@ -31,23 +31,22 @@ public:
     Matrix(Shape _shape);
     Matrix(const Matrix &m);
     ~Matrix();
-    Matrix& zero();
+    Matrix *zero();
     friend ostream &operator<<(ostream &output, const Matrix &m);
-    Matrix operator+(const Matrix &m);
-    Matrix operator+(int dt);
-    Matrix operator-(int dt);
-    Matrix operator-();
-    Matrix operator-(const Matrix &m);
-    Matrix operator*(const Matrix &m);
-    Matrix operator*(double);
-    Matrix operator/(double);
+    Matrix *operator+(const Matrix &m);
+    Matrix *operator+(int dt);
+    Matrix *operator-(int dt);
+    Matrix *operator-();
+    Matrix *operator-(const Matrix &m);
+    Matrix *operator*(const Matrix &m);
+    Matrix *operator*(DATATYPE);
+    Matrix *operator/(DATATYPE);
     Matrix& operator=(const Matrix &m);
-    friend Matrix operator-(int, const Matrix &m);
+    friend Matrix *operator-(int, const Matrix &m);
     DATATYPE* operator[](unsigned int index) const;
-    // Matrix& setAll(double v);
     Shape getShape() const;
-    Matrix dot(const Matrix &m);
-    Matrix transpose();
+    Matrix *dot(const Matrix &m);
+    Matrix *transpose();
     bool valid(uint x, uint y) const;
     void reShape(Shape shape);
 private:
@@ -62,12 +61,15 @@ private:
 class TrainingData {
 public:
     TrainingData(int, int);
-    Matrix x;
+    Matrix *x;
     int y;
 };
 
-Matrix sigmoid(const Matrix &m);
-
-Matrix sigmoid_prime(const Matrix &m);
+Matrix *sigmoid(const Matrix &m);
+Matrix *sigmoid_prime(const Matrix &m);
+Matrix *allocTmpMatrix(Matrix *m);
+Matrix *allocTmpMatrix(const Matrix &m);
+Matrix *allocTmpMatrix(const Shape & shape);
+void freeTmpMatrix();
 
 #endif
