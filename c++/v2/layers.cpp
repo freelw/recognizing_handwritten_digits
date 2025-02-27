@@ -3,6 +3,87 @@
 #include <cmath>
 #include <vector>
 #include <assert.h>
+#include <random>
+#include <chrono>
+
+
+Liner::Liner(uint i, uint o) : input_num(i), output_num(i) {
+    weigt = new Parameters();
+    bias = new Parameters();
+    weigt->set_weight(new Matrix(Shape(o, i)));
+    bias->set_weight(new Matrix(Shape(o, 1)));
+
+    double stddev = sqrt(2./(input_num + output_num))*sqrt(2);
+    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+    std::default_random_engine generator_w(seed);
+    std::default_random_engine generator_b(seed+1024);
+    std::normal_distribution<double> distribution_w(0.0, stddev);
+    std::normal_distribution<double> distribution_b(0.0, 0.02);
+
+    auto w = weigt->get_weight();
+    auto b = bias->get_weight();
+    for (uint i = 0; i < output_num; ++ i) {
+        for (uint j = 0; j < input_num; ++ j) {
+            (*w)[i][j] = distribution_w(generator_w);
+        }
+    }
+
+    for (uint i = 0; i < output_num; ++ i) {
+        (*b)[i][0] = distribution_b(generator_b);
+    }
+}
+
+Matrix *Liner::forward(Context *ctx, Matrix *input) {
+    assert(input->getShape().rowCnt == input_num);
+    LinerContext *ln_ctx = (LinerContext *)ctx;
+    ln_ctx->input = input;
+    auto w = weigt->get_weight();
+    auto b = bias->get_weight();
+    Matrix *res = w->dot(*input);
+    for (uint j = 0; j < input->getShape().colCnt; ++ j) {
+        for (uint i = 0; i < output_num; ++ i) {
+            (*res)[i][j] += (*b)[i][0];
+        }
+    }
+    return res;
+}
+
+Matrix *Liner::backward(Context *ctx, Matrix *grad) {
+    assert(grad->getShape().rowCnt == output_num);
+    LinerContext *ln_ctx = (LinerContext *)ctx;
+    auto w = weigt->get_weight();
+
+    Matrix *res_grad = w->transpose()->dot(*grad);
+    Matrix *bias_grad = grad->sum(2);
+    bias->set_grad(bias_grad);
+    Matrix *weight_grad = grad->dot(*(ln_ctx->input->transpose()));
+    weigt->set_grad(weight_grad);
+    bias_grad->checkShape(*(bias->get_grad()));
+    weight_grad->checkShape(*(weigt->get_grad()));
+    
+    return res_grad;
+}
+
+void Liner::zero_grad() {
+    weigt->set_grad(nullptr);
+    bias->set_grad(nullptr);
+}
+
+Context *Liner::init() {
+    return new LinerContext();
+}
+
+void Liner::release(Context *ctx) {
+    LinerContext *ln_ctx = (LinerContext *)ctx;
+    delete ln_ctx;
+}
+
+std::vector<Parameters> Liner::get_parameters() {
+    std::vector<Parameters> res;
+    res.push_back(*weigt);
+    res.push_back(*bias);
+    return res;
+}
 
 Matrix *Relu::forward(Context *ctx, Matrix *input) {
     ReluContext *rl_ctx = (ReluContext*)ctx;

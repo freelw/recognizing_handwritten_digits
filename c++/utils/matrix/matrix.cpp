@@ -231,6 +231,21 @@ Matrix *Matrix::assign(Matrix *other) {
     return this;
 }
 
+Matrix *Matrix::sum(uint dim) {
+    assert(dim == 2);
+    if (dim == 2) {
+        Matrix *res = allocTmpMatrix(Shape(shape.rowCnt, 1));
+        for (uint i = 0; i < shape.rowCnt; ++ i) {
+            for (uint j = 0; j < shape.colCnt; ++ j) {
+                (*res)[i][0] += (*this)[i][j];
+            }
+        }
+        return res;
+    }
+
+    return nullptr;
+}
+
 DATATYPE sigmoid_double(DATATYPE z) {
     return 1./(1.+exp(-z));
 }

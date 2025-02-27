@@ -51,6 +51,7 @@ public:
     void reShape(Shape shape);
     Matrix *assign(Matrix *);
     void checkShape(const Matrix &m);
+    Matrix *sum(uint dim);
 private:
     bool initialized;
     bool allocated;
