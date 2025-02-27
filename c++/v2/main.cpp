@@ -1,6 +1,9 @@
 #include "layers.h"
 #include <iostream>
 #include "dataloader/mnist_loader_base.h"
+#include <algorithm>
+#include <random>
+#include <chrono>
 
 void test_crossentropyloss() {
     Matrix *Input = allocTmpMatrix(Shape(10, 2));
@@ -27,6 +30,37 @@ void test_crossentropyloss() {
 
 #define INPUT_LAYER_SIZE 784
 using namespace std;
+
+void update_mini_batch(
+    std::vector<TrainingData*> &mini_batch,
+    DATATYPE eta) {
+
+    for (uint i = 0; i < mini_batch.size(); ++ i) {
+    }
+    freeTmpMatrix();
+}
+
+void SGD(std::vector<TrainingData*> &v_training_data,
+    std::vector<TrainingData*> &v_test_data,
+    int epochs, int mini_batch_size, DATATYPE eta, bool eval) {
+
+    int n = v_training_data.size();
+    for (auto e = 0; e < epochs; ++ e) {
+        auto rng = std::default_random_engine {};
+        std::shuffle(std::begin(v_training_data), std::end(v_training_data), rng);
+        std::vector<std::vector<TrainingData*>> mini_batches;
+        for (auto i = 0; i < n; i += mini_batch_size) {
+            std::vector<TrainingData*> tmp;
+            auto end = min(i+mini_batch_size, n);
+            tmp.assign(v_training_data.begin()+i,v_training_data.begin()+end);
+            mini_batches.emplace_back(tmp);
+        }
+
+        for (uint i = 0; i < mini_batches.size(); ++ i) {
+            update_mini_batch(mini_batches[i], eta);
+        }
+    }
+}
 
 void train(bool eval) {
     cout << "eval : " << eval << endl;
@@ -55,6 +89,8 @@ void train(bool eval) {
 
     assert(v_training_data.size() == TRAIN_IMAGES_NUM);
     assert(v_test_data.size() == TEST_IMAGES_NUM);
+
+    SGD(v_training_data, v_test_data, 30, 30, 3, eval);
     
 
     for (uint i = 0; i < v_training_data.size(); ++ i) {
