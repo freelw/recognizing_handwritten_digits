@@ -74,6 +74,7 @@ void SGD(MLP &m, std::vector<TrainingData*> &v_training_data,
         for (uint i = 0; i < mini_batches.size(); ++ i) {
             update_mini_batch(m, mini_batches[i], eta);
         }
+        cout << "epoch : [" << e+1 << "/" << epochs << "]" << endl; 
     }
 }
 
