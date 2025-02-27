@@ -18,6 +18,21 @@ class Layer {
         virtual void release(Context *) = 0;
 };
 
+class ReluContext: public Context {
+    public:
+        Matrix *input;
+};
+
+class Relu: public Layer {
+    public:
+        Relu() {}
+        virtual ~Relu() {}
+        virtual Matrix *forward(Context *, Matrix *input) = 0;
+        virtual Matrix *backward(Context *, Matrix *grad) = 0;
+        virtual Context *init() = 0;
+        virtual void release(Context *) = 0;
+};
+
 struct CrosEntropyInfo {
     DATATYPE ez, sum, max;
 };

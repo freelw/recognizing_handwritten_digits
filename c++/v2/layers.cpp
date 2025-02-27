@@ -4,6 +4,44 @@
 #include <vector>
 #include <assert.h>
 
+Matrix *Relu::forward(Context *ctx, Matrix *input) {
+    ReluContext *rl_ctx = (ReluContext*)ctx;
+    rl_ctx->input = input;
+    auto shape = input->getShape();
+    Matrix *res = allocTmpMatrix(shape);
+    for (uint i = 0; i < shape.rowCnt; ++ i) {
+        for (uint j = 0; j < shape.colCnt; ++ j) {
+            auto &value = (*input)[i][j];
+            (*res)[i][j] = value > 0 ? value : 0;
+        }
+    }
+    return res;
+}
+
+Matrix *Relu::backward(Context *ctx, Matrix *grad) {
+    ReluContext *rl_ctx = (ReluContext*)ctx;
+    auto &input = rl_ctx->input;
+    input->checkShape(*grad);
+    Matrix *res_grad = allocTmpMatrix(grad->getShape());
+    auto shape = grad->getShape();
+    for (uint i = 0; i < shape.rowCnt; ++ i) {
+        for (uint j = 0; j < shape.colCnt; ++ j) {
+            auto &value = (*input)[i][j];
+            (*res_grad)[i][j] = value > 0 ? (*grad)[i][j]*value : 0;
+        }
+    }
+    return res_grad;
+}
+
+Context *Relu::init() {
+    return new ReluContext();
+}
+
+void Relu::release(Context * ctx) {
+    ReluContext *rl_ctx = (ReluContext*)ctx;
+    delete rl_ctx;
+}
+
 Matrix *CrossEntropyLoss::forward(Context * ctx, Matrix *input) {
     CrossEntropyLossContext *ce_ctx = (CrossEntropyLossContext*)ctx;
     ce_ctx->input = input;
