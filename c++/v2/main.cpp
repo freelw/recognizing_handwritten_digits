@@ -1,4 +1,4 @@
-#include "layers.h"
+#include "models.h"
 #include <iostream>
 #include "dataloader/mnist_loader_base.h"
 #include <algorithm>
@@ -31,16 +31,32 @@ void test_crossentropyloss() {
 #define INPUT_LAYER_SIZE 784
 using namespace std;
 
+void optimize(const std::vector<Parameters> &parameters) {
+
+}
+
 void update_mini_batch(
+    MLP &m,
     std::vector<TrainingData*> &mini_batch,
     DATATYPE eta) {
-
-    for (uint i = 0; i < mini_batch.size(); ++ i) {
+    Matrix *input = allocTmpMatrix(Shape(INPUT_LAYER_SIZE, mini_batch.size()));
+    std::vector<uint> labels;
+    for (uint i = 0; i < INPUT_LAYER_SIZE; ++ i) {
+        for (uint j = 0; j < mini_batch.size(); ++ j) {
+            (*input)[i][j] = (*(mini_batch[j]->x))[i][0];
+        }
     }
+    labels.reserve(mini_batch.size());
+    for (uint j = 0; j < mini_batch.size(); ++ j) {
+        labels.emplace_back(mini_batch[j]->y);
+    }
+    m.zero_grad();
+    m.backward(input, labels);
+    optimize(m.get_parameters());
     freeTmpMatrix();
 }
 
-void SGD(std::vector<TrainingData*> &v_training_data,
+void SGD(MLP &m, std::vector<TrainingData*> &v_training_data,
     std::vector<TrainingData*> &v_test_data,
     int epochs, int mini_batch_size, DATATYPE eta, bool eval) {
 
@@ -55,9 +71,8 @@ void SGD(std::vector<TrainingData*> &v_training_data,
             tmp.assign(v_training_data.begin()+i,v_training_data.begin()+end);
             mini_batches.emplace_back(tmp);
         }
-
         for (uint i = 0; i < mini_batches.size(); ++ i) {
-            update_mini_batch(mini_batches[i], eta);
+            update_mini_batch(m, mini_batches[i], eta);
         }
     }
 }
@@ -90,7 +105,9 @@ void train(bool eval) {
     assert(v_training_data.size() == TRAIN_IMAGES_NUM);
     assert(v_test_data.size() == TEST_IMAGES_NUM);
 
-    SGD(v_training_data, v_test_data, 30, 30, 3, eval);
+    MLP m(INPUT_LAYER_SIZE, {30, 10});
+
+    SGD(m, v_training_data, v_test_data, 30, 30, 3, eval);
     
 
     for (uint i = 0; i < v_training_data.size(); ++ i) {

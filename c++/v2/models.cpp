@@ -38,10 +38,11 @@ Matrix *MLP::forward(Matrix *input) {
     return res;
 }
 
-void MLP::backward(Matrix *input, const std::vector<uint> &labels) {
+DATATYPE MLP::backward(Matrix *input, const std::vector<uint> &labels) {
     CrossEntropyLoss *loss_fn = new CrossEntropyLoss(labels);
     CrossEntropyLossContext *ctx = (CrossEntropyLossContext *)loss_fn->init();
-    loss_fn->forward(ctx, this->forward(input));
+    auto loss = loss_fn->forward(ctx, this->forward(input));
+    loss->checkShape(Shape(1, 1));
     Matrix *grad = loss_fn->backward(ctx, nullptr);
     for (int i = layers.size()-1; i >= 0; -- i) {
         auto &ctx = ctxs[i];
@@ -49,4 +50,20 @@ void MLP::backward(Matrix *input, const std::vector<uint> &labels) {
     }
     loss_fn->release(ctx);
     delete loss_fn;
+    return (*loss)[0][0];
+}
+
+std::vector<Parameters> MLP::get_parameters() {
+    std::vector<Parameters> res;
+    for (auto layer : layers) {
+        auto parameters = layer->get_parameters();
+        res.insert(res.end(), parameters.begin(), parameters.end());
+    }
+    return res;
+}
+
+void MLP::zero_grad() {
+    for (auto layer : layers) {
+        layer->zero_grad();
+    }
 }
