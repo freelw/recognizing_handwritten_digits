@@ -22,7 +22,7 @@ NetWork::NetWork(const std::vector<int> &_sizes)
 
     unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
     std::default_random_engine generator(seed);
-    std::normal_distribution<double> distribution(0.0, 1.0);
+    std::normal_distribution<DATATYPE> distribution(0.0, 1.0);
     
     const int L = sizes.size() - 1;
     for (auto i = 0; i < L; ++ i) {
@@ -37,10 +37,12 @@ NetWork::NetWork(const std::vector<int> &_sizes)
 
     for (auto i = 0; i < L; ++ i) {
         Shape ws = weights[i]->getShape();
+        cout << "ws [" << i << "] " << ws << endl;
         for (uint j = 0; j < ws.rowCnt; ++ j) {
             for (uint k = 0; k < ws.colCnt; ++ k) {
-                // assert(weights[i].valid(j, k));
-                *(weights[i])[j][k] = distribution(generator);
+                assert(weights[i]->valid(j, k));
+                //std::cout << j << " " << k << std::endl;
+                (*weights[i])[j][k] = distribution(generator);
             }
         }
     }
@@ -51,9 +53,9 @@ NetWork::NetWork(const std::vector<int> &_sizes)
 Matrix *NetWork::feedforward(Matrix *a) {
     Matrix *res = allocTmpMatrix(a);
     for (uint i = 0; i < sizes.size()-1; ++ i) {
-        res = *sigmoid(
-            *(weights[i]->dot(*res))
-        ) + *biases[i];
+        res = sigmoid(
+            *(*(weights[i]->dot(*res))+ *biases[i])
+        );
     }
     return res;
 }
@@ -61,7 +63,7 @@ Matrix *NetWork::feedforward(Matrix *a) {
 void NetWork::SGD(
     std::vector<TrainingData*> &v_training_data,
     std::vector<TrainingData*> &v_test_data,
-    int epochs, int mini_batch_size, double eta, bool eval) {
+    int epochs, int mini_batch_size, DATATYPE eta, bool eval) {
 
     int n = v_training_data.size();
     for (auto e = 0; e < epochs; ++ e) {
@@ -96,18 +98,18 @@ void NetWork::update_mini_batch(
     std::vector<Matrix*> nabla_w;
     const auto L = sizes.size() - 1;
     for (uint i = 0; i < L; ++ i) {
-        nabla_b.emplace_back((new Matrix(biases[i]->getShape()))->zero());
+        nabla_b.emplace_back(allocTmpMatrix(biases[i]->getShape()));
     }
 
     for (uint i = 0; i < L; ++ i) {
-        nabla_w.emplace_back((new Matrix(weights[i]->getShape()))->zero());
+        nabla_w.emplace_back(allocTmpMatrix(weights[i]->getShape()));
     }
 
     for (uint i = 0; i < mini_batch.size(); ++ i) {
         std::vector<Matrix*> delta_nabla_b;
         std::vector<Matrix*> delta_nabla_w;
         Matrix *y = allocTmpMatrix(Shape(sizes[L], 1));
-        *y[mini_batch[i]->y][0] = 1;
+        (*y)[mini_batch[i]->y][0] = 1;
         backprop(mini_batch[i]->x, y, delta_nabla_b, delta_nabla_w);
         for (uint j = 0; j < L; ++ j) {
             nabla_b[j] = *nabla_b[j] + *delta_nabla_b[j];
@@ -116,9 +118,13 @@ void NetWork::update_mini_batch(
     }
 
     for (uint i = 0; i < L; ++ i) {
-        weights[i] = *(weights[i]) - *(*(*nabla_w[i] * eta) / mini_batch.size());
-        biases[i] = *(biases[i]) - *(*(*nabla_b[i] * eta) / mini_batch.size());
+        // cout << "weights 0 " << *weights[i] << endl;
+        weights[i]->assign(*(weights[i]) - *(*(*nabla_w[i] * eta) / mini_batch.size()));
+        // cout << "weights 1 " << *weights[i] << endl;
+        biases[i]->assign(*(biases[i]) - *(*(*nabla_b[i] * eta) / mini_batch.size()));
     }
+
+    freeTmpMatrix();
 }
 
 void NetWork::backprop(
@@ -128,10 +134,10 @@ void NetWork::backprop(
     
     const auto L = sizes.size() - 1;
     for (uint i = 0; i < L; ++ i) {
-        delta_nabla_b.emplace_back((new Matrix(biases[i]->getShape()))->zero());
+        delta_nabla_b.emplace_back(allocTmpMatrix(biases[i]->getShape()));
     }
     for (uint i = 0; i < L; ++ i) {
-        delta_nabla_w.emplace_back((new Matrix(weights[i]->getShape()))->zero());
+        delta_nabla_w.emplace_back(allocTmpMatrix(weights[i]->getShape()));
     }
 
     //Matrix activation(x);
@@ -147,6 +153,7 @@ void NetWork::backprop(
     }
     assert(activations.size() == L + 1);
     Matrix *delta = *cost_derivative(activations[L], y) * *sigmoid_prime(*zs[L-1]);
+    // cout << "*delta : " << *delta << endl;
     for (int l = L-1; l >= 0; -- l) {
         delta_nabla_b[l] = delta;
         auto activation_transpose = activations[l]->transpose();
@@ -164,7 +171,7 @@ int NetWork::evaluate(std::vector<TrainingData*> &v_test_data) {
         int index = 0;
         for (int j = 1; j < sizes[sizes.size() - 1]; ++ j) {
             // assert(res.valid(j, 0) && res.valid(index, 0));
-            if (*res[j][0] > *res[index][0]) {
+            if ((*res)[j][0] > (*res)[index][0]) {
                 index = j;
             }
         }
@@ -178,6 +185,8 @@ int NetWork::evaluate(std::vector<TrainingData*> &v_test_data) {
 Matrix *NetWork::cost_derivative(
     Matrix *output_activations,
     Matrix *y) {
+    // cout << "output_activations : " << *output_activations << endl;
+    // cout << "y : " << *y << endl;
     return *output_activations - *y;
 }
 

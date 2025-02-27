@@ -17,7 +17,7 @@ public:
     void SGD(
         std::vector<TrainingData*> &v_training_data,
         std::vector<TrainingData*> &v_test_data, int epochs,
-        int mini_batch_size, double eta, bool eval);
+        int mini_batch_size, DATATYPE eta, bool eval);
     void update_mini_batch(std::vector<TrainingData*> &mini_batch, DATATYPE eta);
     void backprop(Matrix *x, Matrix *y, std::vector<Matrix*> &delta_nabla_b, std::vector<Matrix*> &delta_nabla_w);
     Matrix *cost_derivative(Matrix *output_activations, Matrix *y);

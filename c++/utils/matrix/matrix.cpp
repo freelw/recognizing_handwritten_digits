@@ -77,7 +77,7 @@ Matrix *Matrix::operator+(const Matrix &m) {
     Matrix *res = allocTmpMatrix(this);
     for (uint i = 0; i < shape.rowCnt; ++i) {
         for (uint j = 0; j < shape.colCnt; ++j) {
-            *res[i][j] += m[i][j];
+            (*res)[i][j] += m[i][j];
         }
     }
     return res;
@@ -88,7 +88,7 @@ Matrix *Matrix::operator+(int dt) {
     for (uint i = 0; i < shape.rowCnt; ++i) {
         for (uint j = 0; j < shape.colCnt; ++j) {
             
-            *res[i][j] += dt;
+            (*res)[i][j] += dt;
         }
     }
     return res;
@@ -98,7 +98,7 @@ Matrix *Matrix::operator-(int dt) {
     Matrix *res = allocTmpMatrix(this);
     for (uint i = 0; i < shape.rowCnt; ++i) {
         for (uint j = 0; j < shape.colCnt; ++j) {
-            *res[i][j] -= dt;
+            (*res)[i][j] -= dt;
         }
     }
     return res;
@@ -108,7 +108,7 @@ Matrix *Matrix::operator-() {
     Matrix *res = allocTmpMatrix(this);
     for (uint i = 0; i < shape.rowCnt; ++i) {
         for (uint j = 0; j < shape.colCnt; ++j) {
-            auto &r = *res[i][j];
+            auto &r = (*res)[i][j];
             r = -r;
         }
     }
@@ -119,7 +119,7 @@ Matrix *operator-(int v, const Matrix &m) {
     Matrix *res = allocTmpMatrix(m);
     for (uint i = 0; i < m.shape.rowCnt; ++i) {
         for (uint j = 0; j < m.shape.colCnt; ++j) {
-            auto &r = *res[i][j];
+            auto &r = (*res)[i][j];
             r = v-r;
         }
     }
@@ -128,10 +128,10 @@ Matrix *operator-(int v, const Matrix &m) {
 
 Matrix *Matrix::operator-(const Matrix &m) {
     checkShape(m);
-    Matrix *res = allocTmpMatrix(m);
+    Matrix *res = allocTmpMatrix(this);
     for (uint i = 0; i < shape.rowCnt; ++i) {
         for (uint j = 0; j < shape.colCnt; ++j) {
-            *res[i][j] -= m[i][j];
+            (*res)[i][j] -= m[i][j];
         }
     }
     return res;
@@ -139,10 +139,10 @@ Matrix *Matrix::operator-(const Matrix &m) {
 
 Matrix *Matrix::operator*(const Matrix &m) {
     checkShape(m);
-    Matrix *res = allocTmpMatrix(m);
+    Matrix *res = allocTmpMatrix(this);
     for (uint i = 0; i < shape.rowCnt; ++i) {
         for (uint j = 0; j < shape.colCnt; ++j) {
-            *res[i][j] *= m[i][j];
+            (*res)[i][j] *= m[i][j];
         }
     }
     return res;
@@ -152,7 +152,7 @@ Matrix *Matrix::operator*(DATATYPE v) {
     Matrix *res = allocTmpMatrix(this);
     for (uint i = 0; i < shape.rowCnt; ++i) {
         for (uint j = 0; j < shape.colCnt; ++j) {
-            *res[i][j] *= v;
+            (*res)[i][j] *= v;
         }
     }
     return res;
@@ -162,7 +162,7 @@ Matrix *Matrix::operator/(DATATYPE v) {
     Matrix *res = allocTmpMatrix(this);
     for (uint i = 0; i < shape.rowCnt; ++i) {
         for (uint j = 0; j < shape.colCnt; ++j) {
-            *res[i][j] /= v;
+            (*res)[i][j] /= v;
         }
     }
     return res;
@@ -180,7 +180,10 @@ Matrix& Matrix::operator=(const Matrix &m) {
 }
 
 DATATYPE *Matrix::operator[](unsigned int index) const {
-    assert(index < shape.rowCnt);
+    //assert(index < shape.rowCnt);
+    if (index >= shape.rowCnt) {
+        cout << "bug" << endl;
+    }
     return (DATATYPE *)&(data[index*shape.colCnt]);
 }
 
@@ -189,13 +192,16 @@ Shape Matrix::getShape() const {
 }
 
 Matrix *Matrix::dot(const Matrix &m) {
-    assert(m.shape.rowCnt == shape.colCnt);
+    //assert(m.shape.rowCnt == shape.colCnt);
+    if (m.shape.rowCnt != shape.colCnt) {
+        cout << "bug" << endl;
+    }
     Matrix *res = allocTmpMatrix(Shape(shape.rowCnt, m.shape.colCnt));
 
     for (uint i = 0; i < shape.rowCnt; ++i) {
         for (uint k = 0; k < shape.colCnt; ++k) {
             for (uint j = 0; j < m.shape.colCnt; ++j) {
-                *res[i][j] += (*this)[i][k] * m[k][j];
+                (*res)[i][j] += (*this)[i][k] * m[k][j];
             }
         }
     }
@@ -206,7 +212,7 @@ Matrix *Matrix::transpose() {
     Matrix *res = allocTmpMatrix(Shape(shape.colCnt, shape.rowCnt));
     for (uint i = 0; i < shape.colCnt; ++ i) {
         for (uint j = 0; j < shape.rowCnt; ++ j) {
-            *res[i][j] = (*this)[j][i];
+            (*res)[i][j] = (*this)[j][i];
         }
     }
     return res;
@@ -224,6 +230,13 @@ void Matrix::reShape(Shape _shape) {
     zero();
 }
 
+Matrix *Matrix::assign(Matrix *other) {
+    assert(allocated && initialized);
+    checkShape(other->getShape());
+    memcpy(data, other->data, sizeof(DATATYPE) * shape.size());
+    return this;
+}
+
 DATATYPE sigmoid_double(DATATYPE z) {
     return 1./(1.+exp(-z));
 }
@@ -233,13 +246,14 @@ Matrix *sigmoid(const Matrix &m) {
     Matrix *res = allocTmpMatrix(m);
     for (uint i = 0; i < shape.rowCnt; ++i) {
         for (uint j = 0; j < shape.colCnt; ++j) {
-            *res[i][j] = sigmoid_double(*res[i][j]);
+            (*res)[i][j] = sigmoid_double((*res)[i][j]);
         }
     }
     return res;
 }
 
 Matrix *sigmoid_prime(const Matrix &m) {
+    // cout << "m : " << m << endl;
     return *sigmoid(m) * *(1 - *sigmoid(m));
 }
 

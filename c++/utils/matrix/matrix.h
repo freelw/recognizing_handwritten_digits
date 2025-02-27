@@ -49,6 +49,7 @@ public:
     Matrix *transpose();
     bool valid(uint x, uint y) const;
     void reShape(Shape shape);
+    Matrix *assign(Matrix *);
 private:
     void checkShape(const Matrix &m);
 private:
