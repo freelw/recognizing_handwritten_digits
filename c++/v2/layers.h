@@ -1,8 +1,10 @@
 #ifndef LAYERS_H
 #define LAYERS_H
 
+#include <assert.h>
 #include <vector>
 #include "matrix/matrix.h"
+
 
 class Context {
 
@@ -10,13 +12,24 @@ class Context {
 
 class Parameters {
     public:
-        Parameters() : w(nullptr), grad(nullptr) {}
-        Parameters(const Parameters & o) : w(o.w), grad(o.grad) {}
+        Parameters() : w(nullptr), grad(nullptr), m(nullptr), v(nullptr) {}
+        Parameters(const Parameters & o) : w(o.w), grad(o.grad), m(o.m), v(o.v) {}
+        ~Parameters() {
+            delete m;
+            delete v;
+        }
         void set_weight(Matrix * _w) {
+            assert(w == nullptr);
             w = _w;
+            m = new Matrix(w->getShape());
+            v = new Matrix(w->getShape());
         }
         void set_grad(Matrix * _grad) {
+            assert(grad == nullptr);
             grad = _grad;
+        }
+        void zero_grad() {
+            grad = nullptr;
         }
         Matrix *get_weight() {
             return w;
@@ -27,7 +40,9 @@ class Parameters {
     private:
         Matrix *w;
         Matrix *grad;
-
+        // m v for adam opt
+        Matrix *m;
+        Matrix *v;
 };
 
 class Layer {
@@ -47,7 +62,6 @@ class Layer {
 class LinerContext: public Context {
     public:
         Matrix *input;
-
 };
 
 class Liner: public Layer {

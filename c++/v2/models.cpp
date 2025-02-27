@@ -38,7 +38,7 @@ Matrix *MLP::forward(Matrix *input) {
     return res;
 }
 
-void MLP::backword(Matrix *input, const std::vector<uint> &labels) {
+void MLP::backward(Matrix *input, const std::vector<uint> &labels) {
     CrossEntropyLoss *loss_fn = new CrossEntropyLoss(labels);
     CrossEntropyLossContext *ctx = (CrossEntropyLossContext *)loss_fn->init();
     loss_fn->forward(ctx, this->forward(input));

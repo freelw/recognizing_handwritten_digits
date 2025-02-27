@@ -64,8 +64,8 @@ Matrix *Liner::backward(Context *ctx, Matrix *grad) {
 }
 
 void Liner::zero_grad() {
-    weigt->set_grad(nullptr);
-    bias->set_grad(nullptr);
+    weigt->zero_grad();
+    bias->zero_grad();
 }
 
 Context *Liner::init() {
