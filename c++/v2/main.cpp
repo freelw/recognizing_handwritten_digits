@@ -19,11 +19,14 @@ void test_crossentropyloss() {
         (*Input)[9][i] = 0.05;
     }
 
-    CrossEntropyLoss loss_fn({8, 8});
-
-    auto loss = loss_fn.forward(nullptr, Input);
-
+    CrossEntropyLoss loss_fn({6, 8});
+    Context *ctx = loss_fn.init();
+    auto loss = loss_fn.forward(ctx, Input);
     std::cout << "loss : " << *loss << std::endl;
+    auto grad = loss_fn.backward(ctx, nullptr);
+    std::cout << "grad : " << *grad << std::endl;
+    loss_fn.release(ctx);
+
 }
 int main() {
 
