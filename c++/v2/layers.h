@@ -11,17 +11,23 @@ class Context {
 
 class Parameters {
     public:
-        Parameters() : w(nullptr), grad(nullptr), m(nullptr), v(nullptr), t(0) {}
+        Parameters(Shape shape) : grad(nullptr) {
+            w = new Matrix(shape);
+            m = new Matrix(shape);
+            v = new Matrix(shape);
+        }
         ~Parameters() {
+            assert(w != nullptr);
+            delete w;
             delete m;
             delete v;
         }
-        void set_weight(Matrix * _w) {
-            assert(w == nullptr);
-            w = _w;
-            m = new Matrix(w->getShape());
-            v = new Matrix(w->getShape());
-        }
+        // void set_weight(Matrix * _w) {
+        //     assert(w == nullptr);
+        //     w = _w;
+        //     m = new Matrix(w->getShape());
+        //     v = new Matrix(w->getShape());
+        // }
         void set_grad(Matrix * _grad) {
             assert(grad == nullptr);
             grad = _grad;
@@ -46,6 +52,24 @@ class Parameters {
         }
         void inc_t() {
             t++;
+        }
+        friend std::ostream & operator<<(std::ostream &output, const Parameters &p) {
+            output << std::endl << "\t" << "weight : ";
+            Shape shape = p.w->getShape();
+            for (uint i = 0; i < shape.rowCnt; ++ i) {
+                for (uint j = 0; j < shape.colCnt; ++ j) {
+                    output << (*p.w)[i][j] << " ";
+                }
+                output << endl;
+            }
+            output << std::endl << "\t" << "grad : ";
+            for (uint i = 0; i < shape.rowCnt; ++ i) {
+                for (uint j = 0; j < shape.colCnt; ++ j) {
+                    output << (*p.grad)[i][j] << " ";
+                }
+                output << endl;
+            }
+            return output;
         }
     private:
         Parameters(const Parameters&);    
@@ -80,8 +104,8 @@ class LinerContext: public Context {
 
 class Liner: public Layer {
     public:
-        Liner(uint i, uint o);
-        virtual ~Liner() {}
+        Liner(uint i, uint o, bool);
+        virtual ~Liner();
         virtual Matrix *forward(Context *, Matrix *input);
         virtual Matrix *backward(Context *, Matrix *grad);
         virtual Context *init();

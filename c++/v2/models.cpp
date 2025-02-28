@@ -1,7 +1,7 @@
 #include "models.h"
 
-MLP::MLP(uint _input, const std::vector<uint> &_outputs) 
-    : input(_input), outputs(_outputs)
+MLP::MLP(uint _input, const std::vector<uint> &_outputs, bool _rand)
+    : input(_input), outputs(_outputs), rand(_rand)
 {
 
 }
@@ -10,7 +10,7 @@ void MLP::init() {
     uint x = input;
     for (uint i = 0; i < outputs.size(); ++ i) {
         uint y = outputs[i];
-        layers.push_back(new Liner(x, y));
+        layers.push_back(new Liner(x, y, rand));
         x = y;
         if (i < outputs.size()-1) {
             layers.push_back(new Relu());

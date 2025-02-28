@@ -5,7 +5,7 @@
 
 class MLP {
     public:
-        MLP(uint _input, const std::vector<uint> &_outputs);
+        MLP(uint _input, const std::vector<uint> &_outputs, bool _rand = false);
         ~MLP() {
             destroy();
         }
@@ -20,6 +20,7 @@ class MLP {
         uint input;
         std::vector<uint> outputs;
         std::vector<Context*> ctxs;
+        bool rand;
 };
 
 #endif

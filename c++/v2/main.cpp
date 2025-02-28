@@ -31,7 +31,7 @@ void test_crossentropyloss() {
 #define INPUT_LAYER_SIZE 784
 using namespace std;
 
-void optimize(const std::vector<Parameters*> &parameters, DATATYPE lr) {
+void optimize(const std::vector<Parameters*> &parameters, DATATYPE lr, int epoch) {
 
 /*
     m = beta1 * m + (1 - beta1) * gradient;
@@ -46,8 +46,9 @@ void optimize(const std::vector<Parameters*> &parameters, DATATYPE lr) {
     const DATATYPE epsilon = 1e-8;
 
     for (auto p : parameters) {
-        p->inc_t();
-        auto t = p->get_t();
+        // p->inc_t();
+        // auto t = p->get_t();
+        auto t = epoch + 1;
         Matrix *weight = p->get_weight();
         Matrix *grad = p->get_grad();
         Matrix *mm = p->get_m();
@@ -68,7 +69,9 @@ void optimize(const std::vector<Parameters*> &parameters, DATATYPE lr) {
                 v = beta2 * v + (1 - beta2) * gradient * gradient;
                 double m_hat = m / (1 - std::pow(beta1, t));
                 double v_hat = v / (1 - std::pow(beta2, t));
+                // auto origin_value = value;
                 value -=  lr * (m_hat / (std::sqrt(v_hat) + epsilon));
+                assert(value > -30 && value < 30); // fix me
             }
         }
     }
@@ -77,12 +80,14 @@ void optimize(const std::vector<Parameters*> &parameters, DATATYPE lr) {
 double update_mini_batch(
     MLP &m,
     std::vector<TrainingData*> &mini_batch,
-    DATATYPE eta) {
+    DATATYPE eta, int epoch) {
     Matrix *input = allocTmpMatrix(Shape(INPUT_LAYER_SIZE, mini_batch.size()));
     std::vector<uint> labels;
     for (uint i = 0; i < INPUT_LAYER_SIZE; ++ i) {
         for (uint j = 0; j < mini_batch.size(); ++ j) {
+            // mini_batch[j]->x->checkShape(Shape(INPUT_LAYER_SIZE, 1));
             (*input)[i][j] = (*(mini_batch[j]->x))[i][0];
+            // assert((*input)[i][j] >=0 && (*input)[i][j] <= 1);
         }
     }
     labels.reserve(mini_batch.size());
@@ -91,7 +96,7 @@ double update_mini_batch(
     }
     m.zero_grad();
     double loss = m.backward(input, labels);
-    optimize(m.get_parameters(), eta);
+    optimize(m.get_parameters(), eta, epoch);
     freeTmpMatrix();
     return loss;
 }
@@ -113,7 +118,7 @@ void SGD(MLP &m, std::vector<TrainingData*> &v_training_data,
         }
         double loss_sum = 0;
         for (uint i = 0; i < mini_batches.size(); ++ i) {
-            loss_sum += update_mini_batch(m, mini_batches[i], eta);
+            loss_sum += update_mini_batch(m, mini_batches[i], eta, e);
         }
         cout << "epoch : [" << e+1 << "/" << epochs << "] loss : " << loss_sum / mini_batches.size() <<  endl; 
     }
@@ -150,7 +155,7 @@ void train(bool eval) {
     MLP m(INPUT_LAYER_SIZE, {30, 10});
     m.init();
 
-    SGD(m, v_training_data, v_test_data, 30, 30, 3, eval);
+    SGD(m, v_training_data, v_test_data, 30, 30, 0.01, eval);
     
 
     for (uint i = 0; i < v_training_data.size(); ++ i) {
@@ -161,11 +166,20 @@ void train(bool eval) {
     }
 }
 
-int main() {
+void testgrad();
+
+int main(int argc, char *argv[]) {
     // test_crossentropyloss();
-
-    train(true);
-
-
+    bool test = false;
+    if (argc == 2) {
+        if (std::string(argv[1]) == "test") {
+            test = true;
+        }
+    }
+    if (test) {
+        testgrad();
+    } else {
+        train(true);
+    }
     return 0;
 }

@@ -5,12 +5,13 @@
 #include <assert.h>
 #include <random>
 #include <chrono>
+#include <iostream>
 
-Liner::Liner(uint i, uint o) : input_num(i), output_num(o) {
-    weigt = new Parameters();
-    bias = new Parameters();
-    weigt->set_weight(new Matrix(Shape(o, i)));
-    bias->set_weight(new Matrix(Shape(o, 1)));
+Liner::Liner(uint i, uint o, bool rand) : input_num(i), output_num(o) {
+    weigt = new Parameters(Shape(o, i));
+    bias = new Parameters(Shape(o, 1));
+    // weigt->set_weight(new Matrix(Shape(o, i)));
+    // bias->set_weight(new Matrix(Shape(o, 1)));
 
     double stddev = sqrt(2./(input_num + output_num))*sqrt(2);
     unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
@@ -23,13 +24,18 @@ Liner::Liner(uint i, uint o) : input_num(i), output_num(o) {
     auto b = bias->get_weight();
     for (uint i = 0; i < output_num; ++ i) {
         for (uint j = 0; j < input_num; ++ j) {
-            (*w)[i][j] = distribution_w(generator_w);
+            (*w)[i][j] = rand ? distribution_w(generator_w) : 0.1;
         }
     }
 
     for (uint i = 0; i < output_num; ++ i) {
-        (*b)[i][0] = distribution_b(generator_b);
+        (*b)[i][0] = rand ? distribution_b(generator_b) : 0.1;
     }
+}
+
+Liner::~Liner() {
+    delete weigt;
+    delete bias;   
 }
 
 Matrix *Liner::forward(Context *ctx, Matrix *input) {
@@ -41,7 +47,9 @@ Matrix *Liner::forward(Context *ctx, Matrix *input) {
     Matrix *res = w->dot(*input);
     for (uint j = 0; j < input->getShape().colCnt; ++ j) {
         for (uint i = 0; i < output_num; ++ i) {
-            (*res)[i][j] += (*b)[i][0];
+            auto &tr = (*res)[i][j];
+            auto &tb = (*b)[i][0];
+            tr += tb;
         }
     }
     return res;
@@ -134,18 +142,22 @@ Matrix *CrossEntropyLoss::forward(Context * ctx, Matrix *input) {
         DATATYPE max = (*mExp)[0][j];
         for (uint i = 0; i < mExp->getShape().rowCnt; ++ i) {
             auto & e = (*mExp)[i][j];
-            if (max > e) {
+            if (max < e) {
                 max = e;
             }
+            // std::cout << e << " ";
         }
+        // std::cout << std::endl;
         DATATYPE sum = 0;
         for (uint i = 0; i < input->getShape().rowCnt; ++ i) {
             auto & e = (*mExp)[i][j];
             e = std::exp(e-max);
+            assert(e > 0 && (*mExp)[i][j] > 0);
             sum += e;
         }
         auto target = labels[j];
         auto ez = (*mExp)[target][j];
+        assert(ez > 0);
         CrosEntropyInfo p;
         p.ez = ez;
         p.sum = sum;
@@ -172,6 +184,7 @@ Matrix *CrossEntropyLoss::backward(Context *ctx, Matrix *) {
         }
         auto target = labels[i];
         (*grad)[target][i] -= std::exp((*ce_ctx->input)[target][i] - max) / ez / batch_size;
+        assert(!std::isnan((*grad)[target][i]));
     }
     return grad;
 }
