@@ -54,20 +54,20 @@ class Parameters {
             t++;
         }
         friend std::ostream & operator<<(std::ostream &output, const Parameters &p) {
-            output << std::endl << "\t" << "weight : ";
+            output << std::endl << "weight : " << endl << "\t";
             Shape shape = p.w->getShape();
             for (uint i = 0; i < shape.rowCnt; ++ i) {
                 for (uint j = 0; j < shape.colCnt; ++ j) {
                     output << (*p.w)[i][j] << " ";
                 }
-                output << endl;
+                output << endl << "\t";
             }
-            output << std::endl << "\t" << "grad : ";
+            output << std::endl << "grad : " << endl << "\t";
             for (uint i = 0; i < shape.rowCnt; ++ i) {
                 for (uint j = 0; j < shape.colCnt; ++ j) {
                     output << (*p.grad)[i][j] << " ";
                 }
-                output << endl;
+                output << endl << "\t";
             }
             return output;
         }
