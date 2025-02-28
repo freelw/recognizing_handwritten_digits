@@ -77,10 +77,10 @@ void Liner::release(Context *ctx) {
     delete ln_ctx;
 }
 
-std::vector<Parameters> Liner::get_parameters() {
-    std::vector<Parameters> res;
-    res.push_back(*weigt);
-    res.push_back(*bias);
+std::vector<Parameters*> Liner::get_parameters() {
+    std::vector<Parameters*> res;
+    res.push_back(weigt);
+    res.push_back(bias);
     return res;
 }
 

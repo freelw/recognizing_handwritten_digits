@@ -13,7 +13,7 @@ class MLP {
         void destroy();
         Matrix *forward(Matrix *input);
         DATATYPE backward(Matrix *input, const std::vector<uint> &labels);
-        std::vector<Parameters> get_parameters();
+        std::vector<Parameters*> get_parameters();
         void zero_grad();
     private:
         std::vector<Layer*> layers;

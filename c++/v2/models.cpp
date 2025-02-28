@@ -53,8 +53,8 @@ DATATYPE MLP::backward(Matrix *input, const std::vector<uint> &labels) {
     return (*loss)[0][0];
 }
 
-std::vector<Parameters> MLP::get_parameters() {
-    std::vector<Parameters> res;
+std::vector<Parameters*> MLP::get_parameters() {
+    std::vector<Parameters*> res;
     for (auto layer : layers) {
         auto parameters = layer->get_parameters();
         res.insert(res.end(), parameters.begin(), parameters.end());

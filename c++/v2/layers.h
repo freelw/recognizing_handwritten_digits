@@ -11,8 +11,7 @@ class Context {
 
 class Parameters {
     public:
-        Parameters() : w(nullptr), grad(nullptr), m(nullptr), v(nullptr) {}
-        Parameters(const Parameters & o) : w(o.w), grad(o.grad), m(o.m), v(o.v) {}
+        Parameters() : w(nullptr), grad(nullptr), m(nullptr), v(nullptr), t(0) {}
         ~Parameters() {
             delete m;
             delete v;
@@ -36,12 +35,28 @@ class Parameters {
         Matrix *get_grad() {
             return grad;
         }
+        Matrix *get_m() {
+            return m;
+        }
+        Matrix *get_v() {
+            return v;
+        }
+        int get_t() {
+            return t;
+        }
+        void inc_t() {
+            t++;
+        }
+    private:
+        Parameters(const Parameters&);    
+        Parameters& operator=(const Parameters&);
     private:
         Matrix *w;
         Matrix *grad;
         // m v for adam opt
         Matrix *m;
         Matrix *v;
+        int t;
 };
 
 class Layer {
@@ -52,7 +67,7 @@ class Layer {
         virtual Matrix *backward(Context *, Matrix *grad) = 0;
         virtual Context *init() = 0;
         virtual void release(Context *) = 0;
-        virtual std::vector<Parameters> get_parameters() {
+        virtual std::vector<Parameters*> get_parameters() {
             return {};
         }
         virtual void zero_grad() {}
@@ -71,7 +86,7 @@ class Liner: public Layer {
         virtual Matrix *backward(Context *, Matrix *grad);
         virtual Context *init();
         virtual void release(Context *);
-        virtual std::vector<Parameters> get_parameters();
+        virtual std::vector<Parameters*> get_parameters();
         virtual void zero_grad();
     private:
         uint input_num;
