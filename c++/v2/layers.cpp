@@ -155,12 +155,13 @@ Matrix *CrossEntropyLoss::forward(Context * ctx, Matrix *input) {
         for (uint i = 0; i < input->getShape().rowCnt; ++ i) {
             auto & e = (*mExp)[i][j];
             e = std::exp(e-max);
-            assert(e > 0 && (*mExp)[i][j] > 0);
+            // assert(e > 0 && (*mExp)[i][j] > 0);
             sum += e;
         }
+        assert(sum > 0);
         auto target = labels[j];
         auto ez = (*mExp)[target][j];
-        assert(ez > 0);
+        // assert(ez > 0);
         CrosEntropyInfo p;
         p.ez = ez;
         p.sum = sum;
@@ -183,11 +184,11 @@ Matrix *CrossEntropyLoss::backward(Context *ctx, Matrix *) {
         DATATYPE ez = ce_ctx->info[i].ez;
         DATATYPE sum = ce_ctx->info[i].sum;
         DATATYPE max = ce_ctx->info[i].max;
-        for (uint j = 0; j < ce_ctx->input->getShape().rowCnt; ++j) {
+        auto target = labels[i];
+        for (uint j = 0; j < ce_ctx->input->getShape().rowCnt; ++j) {   
             (*grad)[j][i] = std::exp((*ce_ctx->input)[j][i] - max) / sum / batch_size;
         }
-        auto target = labels[i];
-        (*grad)[target][i] -= std::exp((*ce_ctx->input)[target][i] - max) / ez / batch_size;
+        (*grad)[target][i] -= 1. / batch_size;
         assert(!std::isnan((*grad)[target][i]));
     }
     return grad;

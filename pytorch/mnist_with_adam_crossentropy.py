@@ -10,14 +10,14 @@ def run():
     print(len(images))
     print(len(labels))
 
-    boundary = 10
+    boundary = 1
 
     train_images = images[:boundary]
     train_labels = labels[:boundary]
 
 
-    test_images = images[boundary:20]
-    test_labels = labels[boundary:20]
+    test_images = images[boundary:2]
+    test_labels = labels[boundary:2]
 
     # use gpu if available
     # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -62,15 +62,24 @@ def run():
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)  # Change learning rate to 0.001
     print("start training")
 
-    for epoch in range(100):
+    for epoch in range(1):
         for batch_images, batch_labels in train_dataloader:
             batch_images = batch_images.to(device, non_blocking=True)
             batch_labels = batch_labels.to(device, non_blocking=True)
             optimizer.zero_grad()
             output = model(batch_images)
             loss = loss_fn(output, batch_labels)
+            print(loss.item())
             loss.backward()
             optimizer.step()
+            print(model[0].weight)
+            print(model[0].weight.grad)
+            print(model[0].bias)
+            print(model[0].bias.grad)
+            print(model[2].weight)
+            print(model[2].weight.grad)
+            print(model[2].bias)
+            print(model[2].bias.grad)
         print("epoch: ", epoch)
         # for each 10 epoch, calculate the accuracy
         if epoch % 10 == 9:

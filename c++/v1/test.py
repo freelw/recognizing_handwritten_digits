@@ -39,7 +39,7 @@ def test1():
     # loss function: CrossEntropyLoss
 
     # input from 0 to 9
-    x = [[i for i in range(2)]]
+    x = [[i+10 for i in range(2)]]
     x = torch.tensor(x, dtype=torch.float32).view(1, 2)
     # target is 1
     y = [1]
@@ -57,6 +57,13 @@ def test1():
     model[2].weight.data.fill_(0.1)
     model[2].bias.data.fill_(0.1)
 
+    model[0].weight.data[0, 0] = 0.9
+    model[0].weight.data[1, 0] = -0.9
+
+    model[2].weight.data[0, 0] = 0.9
+    model[2].weight.data[1, 0] = -0.9
+
+
     # loss function
     loss_fn = nn.CrossEntropyLoss()
 
@@ -69,6 +76,9 @@ def test1():
     loss.backward()
 
     #show the gradients
+    print(model[0].weight)
+    print(model[2].weight)
+    print('-------')
     print(model[0].weight.grad)
     print(model[0].bias.grad)
     print(model[2].weight.grad)

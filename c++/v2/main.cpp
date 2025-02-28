@@ -54,6 +54,7 @@ void optimize(const std::vector<Parameters*> &parameters, DATATYPE lr, int epoch
         Matrix *mm = p->get_m();
         Matrix *mv = p->get_v();
         Shape shape = weight->getShape();
+        // cout << "shape : " << shape << endl;
 
         grad->checkShape(shape);
         mm->checkShape(shape);
@@ -61,10 +62,13 @@ void optimize(const std::vector<Parameters*> &parameters, DATATYPE lr, int epoch
         
         for (uint i = 0; i < shape.rowCnt; ++ i) {
             for (uint j = 0; j < shape.colCnt; ++ j) {
+
+                auto &value = (*weight)[i][j];
+
                 auto &m = (*mm)[i][j];
                 auto &v = (*mv)[i][j];
                 auto &gradient = (*grad)[i][j];
-                auto &value = (*weight)[i][j];
+                
                 m = beta1 * m + (1 - beta1) * gradient;
                 v = beta2 * v + (1 - beta2) * gradient * gradient;
                 double m_hat = m / (1 - std::pow(beta1, t));
@@ -72,6 +76,8 @@ void optimize(const std::vector<Parameters*> &parameters, DATATYPE lr, int epoch
                 // auto origin_value = value;
                 value -=  lr * (m_hat / (std::sqrt(v_hat) + epsilon));
                 assert(value > -30 && value < 30); // fix me
+
+                // value -= lr * gradient;
             }
         }
     }
@@ -97,6 +103,10 @@ double update_mini_batch(
     m.zero_grad();
     double loss = m.backward(input, labels);
     optimize(m.get_parameters(), eta, epoch);
+
+    // for (auto & p : m.get_parameters()) {
+    //     cout << *p << endl;
+    // }
     freeTmpMatrix();
     return loss;
 }
@@ -125,8 +135,8 @@ void SGD(MLP &m, std::vector<TrainingData*> &v_training_data,
 
     int n = v_training_data.size();
     for (auto e = 0; e < epochs; ++ e) {
-        // auto rng = std::default_random_engine {};
-        // std::shuffle(std::begin(v_training_data), std::end(v_training_data), rng);
+        auto rng = std::default_random_engine {};
+        std::shuffle(std::begin(v_training_data), std::end(v_training_data), rng);
         std::vector<std::vector<TrainingData*>> mini_batches;
         for (auto i = 0; i < n; i += mini_batch_size) {
             std::vector<TrainingData*> tmp;
