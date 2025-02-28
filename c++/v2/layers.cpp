@@ -60,7 +60,10 @@ Matrix *Liner::backward(Context *ctx, Matrix *grad) {
     LinerContext *ln_ctx = (LinerContext *)ctx;
     auto w = weigt->get_weight();
 
+    // cout << "input : " << *(ln_ctx->input) << endl;
+    // cout << "grad : " << *grad << endl;
     Matrix *res_grad = w->transpose()->dot(*grad);
+    // cout << "res_grad : " << *res_grad << endl;
     Matrix *bias_grad = grad->sum(2);
     bias->set_grad(bias_grad);
     Matrix *weight_grad = grad->dot(*(ln_ctx->input->transpose()));
@@ -166,6 +169,7 @@ Matrix *CrossEntropyLoss::forward(Context * ctx, Matrix *input) {
         (*ce_for_eachbach)[0][j] = -log(ez/sum);
         loss_value += (*ce_for_eachbach)[0][j];
     }
+    assert(ce_ctx->info.size() == labels.size());
     (*loss)[0][0] = loss_value/labels.size();
     return loss;
 }

@@ -295,3 +295,7 @@ TrainingData::TrainingData(int input_layer_size, int _y)
     x = new Matrix(Shape(input_layer_size, 1));
     x->zero();
 }
+
+TrainingData::~TrainingData() {
+    delete x;
+}

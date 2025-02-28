@@ -20,6 +20,8 @@ void MLP::init() {
     for (auto &layer : layers) {
         ctxs.push_back(layer->init());
     }
+
+    assert(layers.size() == 3); // 2 liner 1 relu
 }
 
 void MLP::destroy() {

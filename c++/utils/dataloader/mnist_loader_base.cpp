@@ -30,7 +30,9 @@ void MnistLoaderBase::load() {
 }
 
 void MnistLoaderBase::load_images() {
-    std::string images_path = get_current_dir_name();
+    char *s = get_current_dir_name();
+    std::string images_path = s;
+    free(s);
     images_path += IMAGES_FILE;
     std::ifstream images_ifs(images_path, std::ios::binary);
     std::string images_data = std::string(std::istreambuf_iterator<char>(images_ifs), std::istreambuf_iterator<char>());
@@ -60,8 +62,9 @@ void MnistLoaderBase::load_images() {
 }
 
 void MnistLoaderBase::load_labels() {
-
-    std::string labels_path = get_current_dir_name();
+    char *s = get_current_dir_name();
+    std::string labels_path = s;
+    free(s);
     labels_path += LABELS_FILE;
     std::ifstream labels_ifs(labels_path, std::ios::binary);
     std::string labels_data = std::string(std::istreambuf_iterator<char>(labels_ifs), std::istreambuf_iterator<char>());

@@ -22,8 +22,8 @@ struct Shape {
     }
 };
 
-// typedef double DATATYPE;
-typedef float DATATYPE;
+typedef double DATATYPE;
+// typedef float DATATYPE;
 
 class Matrix {
 
@@ -62,6 +62,7 @@ private:
 class TrainingData {
 public:
     TrainingData(int, int);
+    ~TrainingData();
     Matrix *x;
     uint y;
 };

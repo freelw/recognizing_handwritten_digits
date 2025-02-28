@@ -10,14 +10,14 @@ def run():
     print(len(images))
     print(len(labels))
 
-    boundary = 50000
+    boundary = 10
 
     train_images = images[:boundary]
     train_labels = labels[:boundary]
 
 
-    test_images = images[boundary:]
-    test_labels = labels[boundary:]
+    test_images = images[boundary:20]
+    test_labels = labels[boundary:20]
 
     # use gpu if available
     # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -44,8 +44,12 @@ def run():
     # custom weight initialization function
     def initialize_weights(m):
         if isinstance(m, nn.Linear):
-            nn.init.normal_(m.weight, mean=0.0, std=0.02)
-            nn.init.normal_(m.bias, mean=0.0, std=0.02)
+            # nn.init.normal_(m.weight, mean=0.0, std=0.02)
+            # nn.init.normal_(m.bias, mean=0.0, std=0.02)
+            # 初始化权重为 0.1
+            nn.init.constant_(m.weight, 0.1)
+            # 初始化偏置为 0.1
+            nn.init.constant_(m.bias, 0.1)
 
     # use gpu device
     model = nn.Sequential(

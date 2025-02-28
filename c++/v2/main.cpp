@@ -108,7 +108,6 @@ int evaluate(MLP &m, std::vector<TrainingData*> &v_test_data) {
         res->checkShape(Shape(10, 1));
         uint index = 0;
         for (uint j = 1; j < res->getShape().rowCnt; ++ j) {
-            // assert(res.valid(j, 0) && res.valid(index, 0));
             if ((*res)[j][0] > (*res)[index][0]) {
                 index = j;
             }
@@ -126,8 +125,8 @@ void SGD(MLP &m, std::vector<TrainingData*> &v_training_data,
 
     int n = v_training_data.size();
     for (auto e = 0; e < epochs; ++ e) {
-        auto rng = std::default_random_engine {};
-        std::shuffle(std::begin(v_training_data), std::end(v_training_data), rng);
+        // auto rng = std::default_random_engine {};
+        // std::shuffle(std::begin(v_training_data), std::end(v_training_data), rng);
         std::vector<std::vector<TrainingData*>> mini_batches;
         for (auto i = 0; i < n; i += mini_batch_size) {
             std::vector<TrainingData*> tmp;
@@ -139,14 +138,12 @@ void SGD(MLP &m, std::vector<TrainingData*> &v_training_data,
         for (uint i = 0; i < mini_batches.size(); ++ i) {
             loss_sum += update_mini_batch(m, mini_batches[i], eta, e);
         }
-        cout << "epoch : [" << e+1 << "/" << epochs << "] loss : " << loss_sum / mini_batches.size() <<  endl;
-
-
-        
+        cout << "epoch : [" << e+1 << "/" << epochs << "] loss : " << loss_sum / mini_batches.size() << endl;
         if (eval) {
-            std::cout << " : " << evaluate(m, v_test_data) << " / " << v_test_data.size();
+            std::cout << evaluate(m, v_test_data) << " / " << v_test_data.size();
         }
         std::cout << std::endl;
+        freeTmpMatrix();
     }
 }
 
@@ -178,7 +175,7 @@ void train(int epochs, int batch_size, bool use_dropout, bool eval) {
     assert(v_training_data.size() == TRAIN_IMAGES_NUM);
     assert(v_test_data.size() == TEST_IMAGES_NUM);
 
-    MLP m(INPUT_LAYER_SIZE, {30, 10});
+    MLP m(INPUT_LAYER_SIZE, {30, 10}, false);
     m.init();
 
     SGD(m, v_training_data, v_test_data, epochs, batch_size, 0.01, eval);
