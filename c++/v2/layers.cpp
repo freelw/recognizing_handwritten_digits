@@ -6,7 +6,7 @@
 #include <random>
 #include <chrono>
 
-Liner::Liner(uint i, uint o) : input_num(i), output_num(i) {
+Liner::Liner(uint i, uint o) : input_num(i), output_num(o) {
     weigt = new Parameters();
     bias = new Parameters();
     weigt->set_weight(new Matrix(Shape(o, i)));

@@ -148,6 +148,7 @@ void train(bool eval) {
     assert(v_test_data.size() == TEST_IMAGES_NUM);
 
     MLP m(INPUT_LAYER_SIZE, {30, 10});
+    m.init();
 
     SGD(m, v_training_data, v_test_data, 30, 30, 3, eval);
     
