@@ -118,7 +118,7 @@ Matrix *Relu::backward(Context *ctx, Matrix *grad) {
     for (uint i = 0; i < shape.rowCnt; ++ i) {
         for (uint j = 0; j < shape.colCnt; ++ j) {
             auto &value = (*input)[i][j];
-            (*res_grad)[i][j] = value > 0 ? (*grad)[i][j]*value : 0;
+            (*res_grad)[i][j] = value > 0 ? (*grad)[i][j] : 0;
         }
     }
     return res_grad;
