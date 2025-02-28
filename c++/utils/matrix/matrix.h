@@ -63,7 +63,7 @@ class TrainingData {
 public:
     TrainingData(int, int);
     Matrix *x;
-    int y;
+    uint y;
 };
 
 Matrix *sigmoid(const Matrix &m);

@@ -101,6 +101,25 @@ double update_mini_batch(
     return loss;
 }
 
+int evaluate(MLP &m, std::vector<TrainingData*> &v_test_data) {
+    int sum = 0;
+    for (uint i = 0; i < v_test_data.size(); ++ i) {
+        Matrix *res = m.forward(v_test_data[i]->x);
+        res->checkShape(Shape(10, 1));
+        uint index = 0;
+        for (uint j = 1; j < res->getShape().rowCnt; ++ j) {
+            // assert(res.valid(j, 0) && res.valid(index, 0));
+            if ((*res)[j][0] > (*res)[index][0]) {
+                index = j;
+            }
+        }
+        if (index == v_test_data[i]->y) {
+            sum ++;
+        }
+    }
+    return sum;
+}
+
 void SGD(MLP &m, std::vector<TrainingData*> &v_training_data,
     std::vector<TrainingData*> &v_test_data,
     int epochs, int mini_batch_size, DATATYPE eta, bool eval) {
@@ -120,11 +139,18 @@ void SGD(MLP &m, std::vector<TrainingData*> &v_training_data,
         for (uint i = 0; i < mini_batches.size(); ++ i) {
             loss_sum += update_mini_batch(m, mini_batches[i], eta, e);
         }
-        cout << "epoch : [" << e+1 << "/" << epochs << "] loss : " << loss_sum / mini_batches.size() <<  endl; 
+        cout << "epoch : [" << e+1 << "/" << epochs << "] loss : " << loss_sum / mini_batches.size() <<  endl;
+
+
+        
+        if (eval) {
+            std::cout << " : " << evaluate(m, v_test_data) << " / " << v_test_data.size();
+        }
+        std::cout << std::endl;
     }
 }
 
-void train(bool eval) {
+void train(int epochs, int batch_size, bool use_dropout, bool eval) {
     cout << "eval : " << eval << endl;
 
     MnistLoaderBase loader;
@@ -155,7 +181,7 @@ void train(bool eval) {
     MLP m(INPUT_LAYER_SIZE, {30, 10});
     m.init();
 
-    SGD(m, v_training_data, v_test_data, 30, 30, 0.01, eval);
+    SGD(m, v_training_data, v_test_data, epochs, batch_size, 0.01, eval);
     
 
     for (uint i = 0; i < v_training_data.size(); ++ i) {
@@ -169,7 +195,6 @@ void train(bool eval) {
 void testgrad();
 
 int main(int argc, char *argv[]) {
-    // test_crossentropyloss();
     bool test = false;
     if (argc == 2) {
         if (std::string(argv[1]) == "test") {
@@ -179,7 +204,15 @@ int main(int argc, char *argv[]) {
     if (test) {
         testgrad();
     } else {
-        train(true);
+        if (argc != 5) {
+            std::cout << "Usage: " << argv[0] << " <epochs> <batch_size> <use_dropout> <eval>" << std::endl;
+            return 1;
+        }
+        int epochs = atoi(argv[1]);
+        int batch_size = atoi(argv[2]);
+        int use_dropout = atoi(argv[3]);
+        int eval = atoi(argv[4]);
+        train(epochs, batch_size, use_dropout == 1, eval == 1);
     }
     return 0;
 }
