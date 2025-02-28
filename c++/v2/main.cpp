@@ -74,7 +74,7 @@ void optimize(const std::vector<Parameters*> &parameters, DATATYPE lr) {
     }
 }
 
-void update_mini_batch(
+double update_mini_batch(
     MLP &m,
     std::vector<TrainingData*> &mini_batch,
     DATATYPE eta) {
@@ -90,9 +90,10 @@ void update_mini_batch(
         labels.emplace_back(mini_batch[j]->y);
     }
     m.zero_grad();
-    m.backward(input, labels);
+    double loss = m.backward(input, labels);
     optimize(m.get_parameters(), eta);
     freeTmpMatrix();
+    return loss;
 }
 
 void SGD(MLP &m, std::vector<TrainingData*> &v_training_data,
@@ -110,10 +111,11 @@ void SGD(MLP &m, std::vector<TrainingData*> &v_training_data,
             tmp.assign(v_training_data.begin()+i,v_training_data.begin()+end);
             mini_batches.emplace_back(tmp);
         }
+        double loss_sum = 0;
         for (uint i = 0; i < mini_batches.size(); ++ i) {
-            update_mini_batch(m, mini_batches[i], eta);
+            loss_sum += update_mini_batch(m, mini_batches[i], eta);
         }
-        cout << "epoch : [" << e+1 << "/" << epochs << "]" << endl; 
+        cout << "epoch : [" << e+1 << "/" << epochs << "] loss : " << loss_sum / mini_batches.size() <<  endl; 
     }
 }
 
