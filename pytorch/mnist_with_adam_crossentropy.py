@@ -10,14 +10,14 @@ def run():
     print(len(images))
     print(len(labels))
 
-    boundary = 1
+    boundary = 128
 
     train_images = images[:boundary]
     train_labels = labels[:boundary]
 
 
-    test_images = images[boundary:2]
-    test_labels = labels[boundary:2]
+    test_images = images[boundary:128]
+    test_labels = labels[boundary:128]
 
     # use gpu if available
     # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -44,12 +44,12 @@ def run():
     # custom weight initialization function
     def initialize_weights(m):
         if isinstance(m, nn.Linear):
-            # nn.init.normal_(m.weight, mean=0.0, std=0.02)
-            # nn.init.normal_(m.bias, mean=0.0, std=0.02)
-            # 初始化权重为 0.1
-            nn.init.constant_(m.weight, 0.1)
-            # 初始化偏置为 0.1
-            nn.init.constant_(m.bias, 0.1)
+            nn.init.normal_(m.weight, mean=0.0, std=0.02)
+            nn.init.normal_(m.bias, mean=0.0, std=0.02)
+            # # 初始化权重为 0.1
+            # nn.init.constant_(m.weight, 0.1)
+            # # 初始化偏置为 0.1
+            # nn.init.constant_(m.bias, 0.1)
 
     # use gpu device
     model = nn.Sequential(
@@ -62,26 +62,32 @@ def run():
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)  # Change learning rate to 0.001
     print("start training")
 
-    for epoch in range(1):
+    for epoch in range(200):
+        loss_sum = 0
+        cnt = 0
         for batch_images, batch_labels in train_dataloader:
             batch_images = batch_images.to(device, non_blocking=True)
             batch_labels = batch_labels.to(device, non_blocking=True)
             optimizer.zero_grad()
             output = model(batch_images)
             loss = loss_fn(output, batch_labels)
-            print(loss.item())
+            #print("epoch: ", epoch, loss.item())
+            loss_sum += loss.item()
+            cnt += 1
             loss.backward()
             optimizer.step()
-            print(model[0].weight)
-            print(model[0].weight.grad)
-            print(model[0].bias)
-            print(model[0].bias.grad)
-            print(model[2].weight)
-            print(model[2].weight.grad)
-            print(model[2].bias)
-            print(model[2].bias.grad)
-        print("epoch: ", epoch)
-        # for each 10 epoch, calculate the accuracy
+            # print(model[0].weight)
+            # print(model[0].weight.grad)
+            # print(model[0].bias)
+            # print(model[0].bias.grad)
+            # print(model[2].weight)
+            # print(model[2].weight.grad)
+            # print(model[2].bias)
+            # print(model[2].bias.grad)
+        
+        print("loss : ", loss_sum / cnt)
+        
+        #for each 10 epoch, calculate the accuracy
         if epoch % 10 == 9:
             correct = 0
             for batch_images, batch_labels in test_dataloader:
