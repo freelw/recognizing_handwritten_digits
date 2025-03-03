@@ -39,7 +39,7 @@ void valid_param(DATATYPE v) {
 double update_mini_batch(
     MLP &m,
     std::vector<TrainingData*> &mini_batch,
-    Adam &optimizer, int epoch) {
+    Adam &optimizer) {
     Matrix *input = allocTmpMatrix(Shape(INPUT_LAYER_SIZE, mini_batch.size()));
     std::vector<uint> labels;
     for (uint i = 0; i < INPUT_LAYER_SIZE; ++ i) {
@@ -93,7 +93,7 @@ void SGD(MLP &m, std::vector<TrainingData*> &v_training_data,
         }
         double loss_sum = 0;
         for (uint i = 0; i < mini_batches.size(); ++ i) {
-            loss_sum += update_mini_batch(m, mini_batches[i], optimizer, e);
+            loss_sum += update_mini_batch(m, mini_batches[i], optimizer);
         }
         cout << "epoch : [" << e+1 << "/" << epochs << "] loss : " << loss_sum / mini_batches.size() << endl;
         if (eval) {
