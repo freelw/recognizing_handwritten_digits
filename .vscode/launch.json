@@ -60,10 +60,10 @@
             "request": "launch",
             "program": "/home/cs/project/recognizing_handwritten_digits/c++/v2/recognizing_handwritten_digits_v2",
             "args": [
-                "30",
-                "30",
+                "200",
+                "32",
                 "0",
-                "1"
+                "0"
             ],
             "stopAtEntry": false,
             "cwd": "/home/cs/project/recognizing_handwritten_digits/c++/v2/",

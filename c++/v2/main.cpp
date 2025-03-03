@@ -31,6 +31,10 @@ void test_crossentropyloss() {
 #define INPUT_LAYER_SIZE 784
 using namespace std;
 
+void valid_param(DATATYPE v) {
+    assert(!std::isnan(v));
+}
+
 void optimize(const std::vector<Parameters*> &parameters, DATATYPE lr, int epoch) {
 
 /*
@@ -68,11 +72,19 @@ void optimize(const std::vector<Parameters*> &parameters, DATATYPE lr, int epoch
                 auto &m = (*mm)[i][j];
                 auto &v = (*mv)[i][j];
                 auto &gradient = (*grad)[i][j];
+
+                valid_param(value);
+                valid_param(m);
+                valid_param(v);
+                valid_param(gradient);
                 
                 m = beta1 * m + (1 - beta1) * gradient;
                 v = beta2 * v + (1 - beta2) * gradient * gradient;
-                double m_hat = m / (1 - std::pow(beta1, t));
-                double v_hat = v / (1 - std::pow(beta2, t));
+                DATATYPE m_hat = m / (1 - std::pow(beta1, t));
+                DATATYPE v_hat = v / (1 - std::pow(beta2, t));
+
+                valid_param(m_hat);
+                valid_param(v_hat);
                 // auto origin_value = value;
                 value -=  lr * (m_hat / (std::sqrt(v_hat) + epsilon));
                 assert(value > -30 && value < 30); // fix me
@@ -102,6 +114,7 @@ double update_mini_batch(
     }
     m.zero_grad();
     double loss = m.backward(input, labels);
+    // cout << "loss inner : " << loss << endl;
     optimize(m.get_parameters(), eta, epoch);
 
     // for (auto & p : m.get_parameters()) {
@@ -150,9 +163,8 @@ void SGD(MLP &m, std::vector<TrainingData*> &v_training_data,
         }
         cout << "epoch : [" << e+1 << "/" << epochs << "] loss : " << loss_sum / mini_batches.size() << endl;
         if (eval) {
-            std::cout << evaluate(m, v_test_data) << " / " << v_test_data.size();
+            std::cout << evaluate(m, v_test_data) << " / " << v_test_data.size() << std::endl;
         }
-        std::cout << std::endl;
         freeTmpMatrix();
     }
 }
@@ -168,7 +180,8 @@ void train(int epochs, int batch_size, bool use_dropout, bool eval) {
     for (auto i = 0; i < TRAIN_IMAGES_NUM; ++ i) {
         TrainingData *p = new TrainingData(INPUT_LAYER_SIZE, loader.getTrainLabels()[i]);
         for (auto j = 0; j < INPUT_LAYER_SIZE; ++ j) {
-            (*(p->x))[j][0] = loader.getTrainImages()[i][j]*1./256;
+            // (*(p->x))[j][0] = loader.getTrainImages()[i][j]*1./256;
+            (*(p->x))[j][0] = loader.getTrainImages()[i][j];
         }
         v_training_data.emplace_back(p);
     }
@@ -176,7 +189,8 @@ void train(int epochs, int batch_size, bool use_dropout, bool eval) {
         int index = i + TRAIN_IMAGES_NUM;
         TrainingData *p = new TrainingData(INPUT_LAYER_SIZE, loader.getTrainLabels()[index]);
         for (auto j = 0; j < INPUT_LAYER_SIZE; ++ j) {
-            (*(p->x))[j][0] = loader.getTrainImages()[index][j]*1./256;
+            //(*(p->x))[j][0] = loader.getTrainImages()[index][j]*1./256;
+            (*(p->x))[j][0] = loader.getTrainImages()[index][j];
         }
         v_test_data.emplace_back(p);
     }
@@ -185,10 +199,10 @@ void train(int epochs, int batch_size, bool use_dropout, bool eval) {
     assert(v_training_data.size() == TRAIN_IMAGES_NUM);
     assert(v_test_data.size() == TEST_IMAGES_NUM);
 
-    MLP m(INPUT_LAYER_SIZE, {30, 10}, false);
+    MLP m(INPUT_LAYER_SIZE, {30, 10});
     m.init();
 
-    SGD(m, v_training_data, v_test_data, epochs, batch_size, 0.01, eval);
+    SGD(m, v_training_data, v_test_data, epochs, batch_size, 0.001, eval);
     
 
     for (uint i = 0; i < v_training_data.size(); ++ i) {

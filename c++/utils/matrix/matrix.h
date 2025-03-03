@@ -22,8 +22,8 @@ struct Shape {
     }
 };
 
-typedef double DATATYPE;
-// typedef float DATATYPE;
+// typedef double DATATYPE;
+typedef float DATATYPE;
 
 class Matrix {
 

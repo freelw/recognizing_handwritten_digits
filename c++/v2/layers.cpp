@@ -17,7 +17,8 @@ Liner::Liner(uint i, uint o, bool rand) : input_num(i), output_num(o) {
     unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
     std::default_random_engine generator_w(seed);
     std::default_random_engine generator_b(seed+1024);
-    std::normal_distribution<double> distribution_w(0.0, stddev);
+    // std::normal_distribution<double> distribution_w(0.0, stddev);
+    std::normal_distribution<double> distribution_w(0.0, 0.02);
     std::normal_distribution<double> distribution_b(0.0, 0.02);
 
     auto w = weigt->get_weight();
@@ -45,6 +46,10 @@ Matrix *Liner::forward(Context *ctx, Matrix *input) {
     auto w = weigt->get_weight();
     auto b = bias->get_weight();
     Matrix *res = w->dot(*input);
+    // cout << "input : " << *input << endl;
+    // cout << "w : " << *w << endl;
+    // cout << "b : " << *b << endl;
+    
     for (uint j = 0; j < input->getShape().colCnt; ++ j) {
         for (uint i = 0; i < output_num; ++ i) {
             auto &tr = (*res)[i][j];
@@ -52,6 +57,7 @@ Matrix *Liner::forward(Context *ctx, Matrix *input) {
             tr += tb;
         }
     }
+    // cout << "liner res : " << *res << endl;
     return res;
 }
 
@@ -153,14 +159,17 @@ Matrix *CrossEntropyLoss::forward(Context * ctx, Matrix *input) {
         // std::cout << std::endl;
         DATATYPE sum = 0;
         for (uint i = 0; i < input->getShape().rowCnt; ++ i) {
-            auto & e = (*mExp)[i][j];
+            DATATYPE & e = (*mExp)[i][j];
+            DATATYPE origin_e = e;
+            // cout << e << " ";
             e = std::exp(e-max);
             // assert(e > 0 && (*mExp)[i][j] > 0);
             sum += e;
         }
+        // cout << endl;
         assert(sum > 0);
         auto target = labels[j];
-        auto ez = (*mExp)[target][j];
+        DATATYPE ez = (*mExp)[target][j];
         // assert(ez > 0);
         CrosEntropyInfo p;
         p.ez = ez;
@@ -172,6 +181,7 @@ Matrix *CrossEntropyLoss::forward(Context * ctx, Matrix *input) {
     }
     assert(ce_ctx->info.size() == labels.size());
     (*loss)[0][0] = loss_value/labels.size();
+    // assert(!std::isinf(loss_value));
     return loss;
 }
 
@@ -185,10 +195,22 @@ Matrix *CrossEntropyLoss::backward(Context *ctx, Matrix *) {
         DATATYPE sum = ce_ctx->info[i].sum;
         DATATYPE max = ce_ctx->info[i].max;
         auto target = labels[i];
-        for (uint j = 0; j < ce_ctx->input->getShape().rowCnt; ++j) {   
-            (*grad)[j][i] = std::exp((*ce_ctx->input)[j][i] - max) / sum / batch_size;
+        for (uint j = 0; j < ce_ctx->input->getShape().rowCnt; ++j) {
+            auto &_grad = (*grad)[j][i];
+            _grad = std::exp((*ce_ctx->input)[j][i] - max) / sum / batch_size;
+            assert(!std::isinf(_grad));
         }
-        (*grad)[target][i] -= 1. / batch_size;
+        auto &_grad_target = (*grad)[target][i];
+        _grad_target -= 1. / batch_size;
+
+        // cout << "target : " << target << " ";
+        for (uint j = 0; j < ce_ctx->input->getShape().rowCnt; ++j) {
+            auto &_grad = (*grad)[j][i];
+            // cout << _grad << " " ;
+        }
+        
+        // cout << endl;
+        assert(!std::isinf(_grad_target));
         assert(!std::isnan((*grad)[target][i]));
     }
     return grad;
