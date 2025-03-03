@@ -3,3 +3,4 @@ pytorch/model_parameters.pth
 pytorch/model.pth
 v1/train.log
 c++/v2/recognizing_handwritten_digits_v2
+c++/rnn/rnn
