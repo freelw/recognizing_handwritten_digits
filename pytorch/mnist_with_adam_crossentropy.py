@@ -10,14 +10,14 @@ def run():
     print(len(images))
     print(len(labels))
 
-    boundary = 128
+    boundary = 50000
 
     train_images = images[:boundary]
     train_labels = labels[:boundary]
 
 
-    test_images = images[boundary:128]
-    test_labels = labels[boundary:128]
+    test_images = images[boundary:]
+    test_labels = labels[boundary:]
 
     # use gpu if available
     # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
