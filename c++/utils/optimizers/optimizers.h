@@ -1,7 +1,7 @@
 #ifndef OPTIMIZERS_H
 #define OPTIMIZERS_H
 
-#include "layers.h"
+#include "layers/layers.h"
 class Adam {
     public:
         Adam(std::vector<Parameters*> _parameters, float _lr,

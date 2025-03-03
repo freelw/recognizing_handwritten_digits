@@ -1,7 +1,7 @@
 #ifndef MODELS_H
 #define MODELS_H
 
-#include "layers.h"
+#include "layers/layers.h"
 
 class MLP {
     public:

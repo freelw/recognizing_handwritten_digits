@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <random>
 #include <chrono>
-#include "optimizers.h"
+#include "optimizers/optimizers.h"
 
 void test_crossentropyloss() {
     Matrix *Input = allocTmpMatrix(Shape(10, 2));

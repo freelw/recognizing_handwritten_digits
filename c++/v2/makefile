@@ -6,6 +6,8 @@ CFLAGS = -g -Wall $(DIR_INC) $(DIR_LIB) -fsanitize=address
 LDFLAGS += -lstdc++
 SRCDIR:= ../utils/dataloader
 SRCDIR+= ../utils/matrix
+SRCDIR+= ../utils/layers
+SRCDIR+= ../utils/optimizers
 SRCS := $(wildcard *.cpp) $(wildcard $(addsuffix /*.cpp, $(SRCDIR)))
 OBJECTS := $(patsubst %.c,%.o,$(SRCS))
 $(TARGET) : $(OBJECTS)
