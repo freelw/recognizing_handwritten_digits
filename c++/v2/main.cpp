@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <random>
 #include <chrono>
+#include "optimizers.h"
 
 void test_crossentropyloss() {
     Matrix *Input = allocTmpMatrix(Shape(10, 2));
@@ -35,53 +36,10 @@ void valid_param(DATATYPE v) {
     assert(!std::isnan(v));
 }
 
-void optimize(const std::vector<Parameters*> &parameters, DATATYPE lr, int epoch) {
-
-/*
-    m = beta1 * m + (1 - beta1) * gradient;
-    v = beta2 * v + (1 - beta2) * gradient * gradient;
-    double m_hat = m / (1 - std::pow(beta1, t));
-    double v_hat = v / (1 - std::pow(beta2, t));
-    value -= lr * (m_hat / (std::sqrt(v_hat) + epsilon));
-*/
-
-    const DATATYPE beta1 = 0.9;
-    const DATATYPE beta2 = 0.95;
-    const DATATYPE epsilon = 1e-8;
-
-    for (auto p : parameters) {
-        auto t = epoch + 1;
-        Matrix *weight = p->get_weight();
-        Matrix *grad = p->get_grad();
-        Matrix *mm = p->get_m();
-        Matrix *mv = p->get_v();
-        Shape shape = weight->getShape();
-
-        grad->checkShape(shape);
-        mm->checkShape(shape);
-        mv->checkShape(shape);
-        
-        for (uint i = 0; i < shape.rowCnt; ++ i) {
-            for (uint j = 0; j < shape.colCnt; ++ j) {
-                auto &value = (*weight)[i][j];
-                auto &m = (*mm)[i][j];
-                auto &v = (*mv)[i][j];
-                auto &gradient = (*grad)[i][j];
-                
-                m = beta1 * m + (1 - beta1) * gradient;
-                v = beta2 * v + (1 - beta2) * gradient * gradient;
-                DATATYPE m_hat = m / (1 - std::pow(beta1, t));
-                DATATYPE v_hat = v / (1 - std::pow(beta2, t));
-                value -=  lr * (m_hat / (std::sqrt(v_hat) + epsilon));
-            }
-        }
-    }
-}
-
 double update_mini_batch(
     MLP &m,
     std::vector<TrainingData*> &mini_batch,
-    DATATYPE eta, int epoch) {
+    Adam &optimizer, int epoch) {
     Matrix *input = allocTmpMatrix(Shape(INPUT_LAYER_SIZE, mini_batch.size()));
     std::vector<uint> labels;
     for (uint i = 0; i < INPUT_LAYER_SIZE; ++ i) {
@@ -95,7 +53,7 @@ double update_mini_batch(
     }
     m.zero_grad();
     double loss = m.backward(input, labels);
-    optimize(m.get_parameters(), eta, epoch);
+    optimizer.step();
     freeTmpMatrix();
     return loss;
 }
@@ -120,7 +78,7 @@ int evaluate(MLP &m, std::vector<TrainingData*> &v_test_data) {
 
 void SGD(MLP &m, std::vector<TrainingData*> &v_training_data,
     std::vector<TrainingData*> &v_test_data,
-    int epochs, int mini_batch_size, DATATYPE eta, bool eval) {
+    int epochs, int mini_batch_size, Adam &optimizer, bool eval) {
 
     int n = v_training_data.size();
     for (auto e = 0; e < epochs; ++ e) {
@@ -135,7 +93,7 @@ void SGD(MLP &m, std::vector<TrainingData*> &v_training_data,
         }
         double loss_sum = 0;
         for (uint i = 0; i < mini_batches.size(); ++ i) {
-            loss_sum += update_mini_batch(m, mini_batches[i], eta, e);
+            loss_sum += update_mini_batch(m, mini_batches[i], optimizer, e);
         }
         cout << "epoch : [" << e+1 << "/" << epochs << "] loss : " << loss_sum / mini_batches.size() << endl;
         if (eval) {
@@ -174,7 +132,8 @@ void train(int epochs, int batch_size, bool use_dropout, bool eval) {
 
     MLP m(INPUT_LAYER_SIZE, {30, 10});
     m.init();
-    SGD(m, v_training_data, v_test_data, epochs, batch_size, 0.001, eval);
+    Adam adam(m.get_parameters(), 0.001);
+    SGD(m, v_training_data, v_test_data, epochs, batch_size, adam, eval);
     for (uint i = 0; i < v_training_data.size(); ++ i) {
         delete v_training_data[i];
     }

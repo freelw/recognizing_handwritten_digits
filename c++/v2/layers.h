@@ -11,7 +11,7 @@ class Context {
 
 class Parameters {
     public:
-        Parameters(Shape shape) : grad(nullptr) {
+        Parameters(Shape shape) : grad(nullptr), t(0) {
             w = new Matrix(shape);
             m = new Matrix(shape);
             v = new Matrix(shape);

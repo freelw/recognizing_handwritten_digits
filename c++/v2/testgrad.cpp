@@ -1,5 +1,6 @@
 
 #include "models.h"
+#include "optimizers.h"
 #include <iostream>
 
 void testgrad_bak() {
@@ -27,8 +28,6 @@ void testgrad_bak() {
     freeTmpMatrix();
 }
 
-void optimize(const std::vector<Parameters*> &parameters, DATATYPE lr, int epoch);
-
 void testgrad() {
 
     MLP m(7, {4, 3}, false);
@@ -53,12 +52,14 @@ void testgrad() {
         labels.push_back(1);
         labels.push_back(0);
     }
+
+    Adam adam(m.get_parameters(), 0.001);
     
     for (uint k = 0; k < 20; ++ k) {
         m.zero_grad();
         auto loss = m.backward(input, labels);
         cout << k << " loss : " << loss << endl;
-        optimize(m.get_parameters(), 0.001, k);
+        adam.step();
     }
     for (auto p : m.get_parameters()) {
         cout << *p << endl;
