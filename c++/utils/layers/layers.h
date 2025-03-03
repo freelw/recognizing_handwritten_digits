@@ -22,12 +22,6 @@ class Parameters {
             delete m;
             delete v;
         }
-        // void set_weight(Matrix * _w) {
-        //     assert(w == nullptr);
-        //     w = _w;
-        //     m = new Matrix(w->getShape());
-        //     v = new Matrix(w->getShape());
-        // }
         void set_grad(Matrix * _grad) {
             assert(grad == nullptr);
             grad = _grad;
