@@ -50,15 +50,12 @@ void optimize(const std::vector<Parameters*> &parameters, DATATYPE lr, int epoch
     const DATATYPE epsilon = 1e-8;
 
     for (auto p : parameters) {
-        // p->inc_t();
-        // auto t = p->get_t();
         auto t = epoch + 1;
         Matrix *weight = p->get_weight();
         Matrix *grad = p->get_grad();
         Matrix *mm = p->get_m();
         Matrix *mv = p->get_v();
         Shape shape = weight->getShape();
-        // cout << "shape : " << shape << endl;
 
         grad->checkShape(shape);
         mm->checkShape(shape);
@@ -66,30 +63,16 @@ void optimize(const std::vector<Parameters*> &parameters, DATATYPE lr, int epoch
         
         for (uint i = 0; i < shape.rowCnt; ++ i) {
             for (uint j = 0; j < shape.colCnt; ++ j) {
-
                 auto &value = (*weight)[i][j];
-
                 auto &m = (*mm)[i][j];
                 auto &v = (*mv)[i][j];
                 auto &gradient = (*grad)[i][j];
-
-                valid_param(value);
-                valid_param(m);
-                valid_param(v);
-                valid_param(gradient);
                 
                 m = beta1 * m + (1 - beta1) * gradient;
                 v = beta2 * v + (1 - beta2) * gradient * gradient;
                 DATATYPE m_hat = m / (1 - std::pow(beta1, t));
                 DATATYPE v_hat = v / (1 - std::pow(beta2, t));
-
-                valid_param(m_hat);
-                valid_param(v_hat);
-                // auto origin_value = value;
                 value -=  lr * (m_hat / (std::sqrt(v_hat) + epsilon));
-                assert(value > -30 && value < 30); // fix me
-
-                // value -= lr * gradient;
             }
         }
     }
@@ -103,9 +86,7 @@ double update_mini_batch(
     std::vector<uint> labels;
     for (uint i = 0; i < INPUT_LAYER_SIZE; ++ i) {
         for (uint j = 0; j < mini_batch.size(); ++ j) {
-            // mini_batch[j]->x->checkShape(Shape(INPUT_LAYER_SIZE, 1));
             (*input)[i][j] = (*(mini_batch[j]->x))[i][0];
-            // assert((*input)[i][j] >=0 && (*input)[i][j] <= 1);
         }
     }
     labels.reserve(mini_batch.size());
@@ -114,12 +95,7 @@ double update_mini_batch(
     }
     m.zero_grad();
     double loss = m.backward(input, labels);
-    // cout << "loss inner : " << loss << endl;
     optimize(m.get_parameters(), eta, epoch);
-
-    // for (auto & p : m.get_parameters()) {
-    //     cout << *p << endl;
-    // }
     freeTmpMatrix();
     return loss;
 }
@@ -171,10 +147,8 @@ void SGD(MLP &m, std::vector<TrainingData*> &v_training_data,
 
 void train(int epochs, int batch_size, bool use_dropout, bool eval) {
     cout << "eval : " << eval << endl;
-
     MnistLoaderBase loader;
     loader.load();
-    
     std::vector<TrainingData*> v_training_data;
     std::vector<TrainingData*> v_test_data;
     for (auto i = 0; i < TRAIN_IMAGES_NUM; ++ i) {
@@ -195,16 +169,12 @@ void train(int epochs, int batch_size, bool use_dropout, bool eval) {
         v_test_data.emplace_back(p);
     }
     cout << "data loaded." << endl;
-
     assert(v_training_data.size() == TRAIN_IMAGES_NUM);
     assert(v_test_data.size() == TEST_IMAGES_NUM);
 
     MLP m(INPUT_LAYER_SIZE, {30, 10});
     m.init();
-
     SGD(m, v_training_data, v_test_data, epochs, batch_size, 0.001, eval);
-    
-
     for (uint i = 0; i < v_training_data.size(); ++ i) {
         delete v_training_data[i];
     }

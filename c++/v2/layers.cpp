@@ -10,15 +10,13 @@
 Liner::Liner(uint i, uint o, bool rand) : input_num(i), output_num(o) {
     weigt = new Parameters(Shape(o, i));
     bias = new Parameters(Shape(o, 1));
-    // weigt->set_weight(new Matrix(Shape(o, i)));
-    // bias->set_weight(new Matrix(Shape(o, 1)));
 
-    double stddev = sqrt(2./(input_num + output_num))*sqrt(2);
+    // double stddev = sqrt(2./(input_num + output_num))*sqrt(2);
+    double stddev = 0.02;
     unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
     std::default_random_engine generator_w(seed);
     std::default_random_engine generator_b(seed+1024);
-    // std::normal_distribution<double> distribution_w(0.0, stddev);
-    std::normal_distribution<double> distribution_w(0.0, 0.02);
+    std::normal_distribution<double> distribution_w(0.0, stddev);
     std::normal_distribution<double> distribution_b(0.0, 0.02);
 
     auto w = weigt->get_weight();
@@ -46,18 +44,12 @@ Matrix *Liner::forward(Context *ctx, Matrix *input) {
     auto w = weigt->get_weight();
     auto b = bias->get_weight();
     Matrix *res = w->dot(*input);
-    // cout << "input : " << *input << endl;
-    // cout << "w : " << *w << endl;
-    // cout << "b : " << *b << endl;
     
     for (uint j = 0; j < input->getShape().colCnt; ++ j) {
         for (uint i = 0; i < output_num; ++ i) {
-            auto &tr = (*res)[i][j];
-            auto &tb = (*b)[i][0];
-            tr += tb;
+            (*res)[i][j] += (*b)[i][0];
         }
     }
-    // cout << "liner res : " << *res << endl;
     return res;
 }
 
@@ -65,18 +57,13 @@ Matrix *Liner::backward(Context *ctx, Matrix *grad) {
     assert(grad->getShape().rowCnt == output_num);
     LinerContext *ln_ctx = (LinerContext *)ctx;
     auto w = weigt->get_weight();
-
-    // cout << "input : " << *(ln_ctx->input) << endl;
-    // cout << "grad : " << *grad << endl;
     Matrix *res_grad = w->transpose()->dot(*grad);
-    // cout << "res_grad : " << *res_grad << endl;
     Matrix *bias_grad = grad->sum(2);
     bias->set_grad(bias_grad);
     Matrix *weight_grad = grad->dot(*(ln_ctx->input->transpose()));
     weigt->set_grad(weight_grad);
     bias_grad->checkShape(*(bias->get_grad()));
     weight_grad->checkShape(*(weigt->get_grad()));
-    
     return res_grad;
 }
 
@@ -154,34 +141,25 @@ Matrix *CrossEntropyLoss::forward(Context * ctx, Matrix *input) {
             if (max < e) {
                 max = e;
             }
-            // std::cout << e << " ";
         }
-        // std::cout << std::endl;
         DATATYPE sum = 0;
         for (uint i = 0; i < input->getShape().rowCnt; ++ i) {
             DATATYPE & e = (*mExp)[i][j];
-            DATATYPE origin_e = e;
-            // cout << e << " ";
             e = std::exp(e-max);
-            // assert(e > 0 && (*mExp)[i][j] > 0);
             sum += e;
         }
-        // cout << endl;
-        assert(sum > 0);
+        // assert(sum > 0);
         auto target = labels[j];
         DATATYPE ez = (*mExp)[target][j];
-        // assert(ez > 0);
         CrosEntropyInfo p;
-        p.ez = ez;
         p.sum = sum;
         p.max = max;
         ce_ctx->info.push_back(p);
         (*ce_for_eachbach)[0][j] = -log(ez/sum);
         loss_value += (*ce_for_eachbach)[0][j];
     }
-    assert(ce_ctx->info.size() == labels.size());
+    // assert(ce_ctx->info.size() == labels.size());
     (*loss)[0][0] = loss_value/labels.size();
-    // assert(!std::isinf(loss_value));
     return loss;
 }
 
@@ -191,27 +169,15 @@ Matrix *CrossEntropyLoss::backward(Context *ctx, Matrix *) {
     Matrix *grad = allocTmpMatrix(Shape(ce_ctx->input->getShape()));
     auto batch_size = labels.size();
     for (uint i = 0; i < batch_size; ++ i) {
-        DATATYPE ez = ce_ctx->info[i].ez;
         DATATYPE sum = ce_ctx->info[i].sum;
         DATATYPE max = ce_ctx->info[i].max;
         auto target = labels[i];
         for (uint j = 0; j < ce_ctx->input->getShape().rowCnt; ++j) {
             auto &_grad = (*grad)[j][i];
             _grad = std::exp((*ce_ctx->input)[j][i] - max) / sum / batch_size;
-            assert(!std::isinf(_grad));
         }
         auto &_grad_target = (*grad)[target][i];
         _grad_target -= 1. / batch_size;
-
-        // cout << "target : " << target << " ";
-        for (uint j = 0; j < ce_ctx->input->getShape().rowCnt; ++j) {
-            auto &_grad = (*grad)[j][i];
-            // cout << _grad << " " ;
-        }
-        
-        // cout << endl;
-        assert(!std::isinf(_grad_target));
-        assert(!std::isnan((*grad)[target][i]));
     }
     return grad;
 }
