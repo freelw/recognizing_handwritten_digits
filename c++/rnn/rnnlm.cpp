@@ -1,7 +1,7 @@
 #include "rnnlm.h"
 
-RnnLM::RnnLM(Rnn *_rnn, uint _vocab_size) : rnn(_rnn), vocab_size(_vocab_size) {
-    fc = new Liner(rnn->get_hidden_num(), vocab_size, true);
+RnnLM::RnnLM(Rnn *_rnn, uint _vocab_size, bool rand) : rnn(_rnn), vocab_size(_vocab_size) {
+    fc = new Liner(rnn->get_hidden_num(), vocab_size, rand);
 }
 
 RnnLM::~RnnLM() {
@@ -42,11 +42,10 @@ RnnLMContext *RnnLM::init() {
     return ctx;
 }
 
-void RnnLM::release(RnnContext *ctx) {
-    RnnLMContext *lm_ctx = (RnnLMContext *)ctx;
-    rnn->release(lm_ctx->rnn_ctx);
-    fc->release(lm_ctx->fc_ctx);
-    delete lm_ctx;
+void RnnLM::release(RnnLMContext *ctx) {
+    rnn->release(ctx->rnn_ctx);
+    fc->release(ctx->fc_ctx);
+    delete ctx;
 }
 
 std::vector<Parameters*> RnnLM::get_parameters() {
@@ -61,4 +60,25 @@ std::vector<Parameters*> RnnLM::get_parameters() {
 void RnnLM::zero_grad() {
     rnn->zero_grad();
     fc->zero_grad();
+}
+
+void RnnLM::clip_grad(DATATYPE grad_clip_val) {
+    std::vector<Parameters*> params = get_parameters();
+    DATATYPE norm = 0;
+    for (auto param : params) {
+        auto grad = param->get_grad();
+        Shape shape = grad->getShape();
+        for (uint i = 0; i < shape.rowCnt; ++ i) {
+            for (uint j = 0; j < shape.colCnt; ++ j) {
+                norm += (*grad)[i][j] * (*grad)[i][j];
+            }
+        }
+    }
+    norm = sqrt(norm);
+    if (norm > grad_clip_val) {
+        for (auto param : params) {
+            auto grad = param->get_grad();
+            *grad *= grad_clip_val / norm;
+        }
+    }
 }
