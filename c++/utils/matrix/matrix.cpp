@@ -43,9 +43,11 @@ void Matrix::checkShape(const Matrix &m) {
             "matrix shape missmatch." << 
             this->getShape() << " vs " << m.getShape()<< 
             std::endl;
+        assert(false);
     }
     if (!m.initialized) {
         std::cerr << "matrix not initialized..." << std::endl;
+        assert(false);
     }
 }
 
@@ -81,6 +83,16 @@ Matrix *Matrix::operator+(const Matrix &m) {
         }
     }
     return res;
+}
+
+Matrix *Matrix::operator+=(const Matrix &m) {
+    checkShape(m);
+    for (uint i = 0; i < shape.rowCnt; ++i) {
+        for (uint j = 0; j < shape.colCnt; ++j) {
+            (*this)[i][j] += m[i][j];
+        }
+    }
+    return this;
 }
 
 Matrix *Matrix::operator+(int dt) {
@@ -185,6 +197,10 @@ Matrix *Matrix::tanh() {
         }
     }
     return res;
+}
+
+Matrix *Matrix::tanh_prime() {
+    return 1 - *(*this * *this);
 }
 
 Matrix& Matrix::operator=(const Matrix &m) {

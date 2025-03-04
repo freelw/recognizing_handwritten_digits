@@ -194,7 +194,6 @@ Rnn::Rnn(uint i, uint h, uint o, DATATYPE _sigma)
     wxh = new Parameters(Shape(hidden_num, input_num));
     whh = new Parameters(Shape(hidden_num, hidden_num));
     bh = new Parameters(Shape(hidden_num, 1));
-
     
     unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
     std::default_random_engine generator_w(seed);
@@ -238,6 +237,7 @@ RnnRes Rnn::forward(RnnContext *ctx, const std::vector<Matrix *> &inputs, Matrix
         hidden = allocTmpMatrix(Shape(hidden_num, batch_size));
     }
     ctx->hidden = hidden;
+    hidden->checkShape(Shape(hidden_num, batch_size));
 
     RnnRes res;
     res.states.reserve(inputs.size());
@@ -256,8 +256,21 @@ RnnRes Rnn::forward(RnnContext *ctx, const std::vector<Matrix *> &inputs, Matrix
     return res;
 }
 
-Matrix *Rnn::backward(RnnContext *ctx, const std::vector<Matrix*> &grads) {
-    return nullptr;
+Matrix *Rnn::backward(RnnContext *ctx, Matrix* grad) {
+    grad->checkShape(Shape(hidden_num, 1));
+    for (int i = ctx->inputs.size()-1; i >= 0; -- i) {
+        auto x = ctx->inputs[i];
+        auto h = ctx->hiddens[i];
+        grad = grad->tanh_prime();
+        bh->inc_grad(grad);
+        Matrix *wxh_grad = grad->dot(*(x->transpose()));
+        wxh->inc_grad(wxh_grad);
+        Matrix *whh_grad = grad->dot(*(h->transpose()));
+        whh->inc_grad(whh_grad);
+        grad = whh->get_weight()->transpose()->dot(*grad);    
+    }
+    grad->checkShape(Shape(hidden_num, 1));
+    return grad;
 }
 
 RnnContext *Rnn::init() {

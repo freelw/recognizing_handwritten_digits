@@ -34,6 +34,7 @@ public:
     Matrix *zero();
     friend ostream &operator<<(ostream &output, const Matrix &m);
     Matrix *operator+(const Matrix &m);
+    Matrix *operator+=(const Matrix &m);
     Matrix *operator+(int dt);
     Matrix *operator-(int dt);
     Matrix *operator-();
@@ -43,6 +44,7 @@ public:
     Matrix *operator*=(DATATYPE);
     Matrix *operator/(DATATYPE);
     Matrix *tanh();
+    Matrix *tanh_prime();
     Matrix& operator=(const Matrix &m);
     friend Matrix *operator-(int, const Matrix &m);
     DATATYPE* operator[](unsigned int index) const;

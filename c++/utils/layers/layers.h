@@ -26,6 +26,14 @@ class Parameters {
             assert(grad == nullptr);
             grad = _grad;
         }
+        void inc_grad(Matrix * _grad) {
+            if (grad == nullptr) {
+                grad = _grad;
+            } else {
+                grad->checkShape(*_grad);
+                *grad += *_grad;
+            }
+        }
         void zero_grad() {
             grad = nullptr;
         }
@@ -165,7 +173,7 @@ class Rnn {
         Rnn(uint i, uint h, uint o, DATATYPE _sigma);
         virtual ~Rnn();
         virtual RnnRes forward(RnnContext *, const std::vector<Matrix*> &inputs, Matrix *hidden);
-        virtual Matrix *backward(RnnContext *, const std::vector<Matrix*> &grads);
+        virtual Matrix *backward(RnnContext *, Matrix* grad);
         virtual RnnContext *init();
         virtual void release(RnnContext *);
         virtual std::vector<Parameters*> get_parameters();
