@@ -11,7 +11,7 @@ class RnnLM {
         RnnLM(Rnn *_rnn, uint vocab_size, bool rand);
         virtual ~RnnLM();
         virtual Matrix *forward(RnnLMContext *, const std::vector<Matrix*> &inputs);
-        virtual Matrix *backward(RnnLMContext *, Matrix* grad);
+        virtual void backward(RnnLMContext *, Matrix* grad);
         virtual RnnLMContext *init();
         virtual void release(RnnLMContext *);
         virtual std::vector<Parameters*> get_parameters();

@@ -58,7 +58,7 @@ Matrix *Liner::backward(Context *ctx, Matrix *grad) {
     LinerContext *ln_ctx = (LinerContext *)ctx;
     auto w = weigt->get_weight();
     Matrix *res_grad = w->transpose()->dot(*grad);
-    Matrix *bias_grad = grad->sum(2);
+    Matrix *bias_grad = grad->sum(1);
     bias->set_grad(bias_grad);
     Matrix *weight_grad = grad->dot(*(ln_ctx->input->transpose()));
     weigt->set_grad(weight_grad);

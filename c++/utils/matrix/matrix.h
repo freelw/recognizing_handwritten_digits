@@ -3,6 +3,7 @@
 
 #include <ostream>
 #include <math.h>
+#include <vector>
 
 using namespace std;
 
@@ -56,6 +57,7 @@ public:
     Matrix *assign(Matrix *);
     void checkShape(const Matrix &m);
     Matrix *sum(uint dim);
+    std::vector<Matrix *> split(uint dim);
 private:
     bool initialized;
     bool allocated;

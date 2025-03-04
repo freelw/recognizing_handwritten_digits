@@ -27,12 +27,14 @@ Matrix *RnnLM::forward(RnnLMContext *ctx, const std::vector<Matrix *> &inputs) {
     return fc->forward(ctx->fc_ctx, hiddens);
 }
 
-Matrix *RnnLM::backward(RnnLMContext *ctx, Matrix* grad) {
-    grad->checkShape(Shape(vocab_size, 1));
+void RnnLM::backward(RnnLMContext *ctx, Matrix* grad) {
+    grad->checkShape(Shape(vocab_size, ctx->rnn_ctx->hiddens.size()));
     Matrix *grad_hiddens = fc->backward(ctx->fc_ctx, grad);
-    grad_hiddens->checkShape(Shape(rnn->get_hidden_num(), 1));
-    Matrix *res = rnn->backward(ctx->rnn_ctx, grad_hiddens);
-    return res;
+    std::vector<Matrix *> grad_hiddens_vec = grad_hiddens->split(1);
+    for (auto grad_hidden : grad_hiddens_vec) {
+        grad_hidden->checkShape(Shape(rnn->get_hidden_num(), 1));
+        rnn->backward(ctx->rnn_ctx, grad_hidden);
+    }
 }
 
 RnnLMContext *RnnLM::init() {
