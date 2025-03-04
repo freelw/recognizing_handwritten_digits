@@ -189,8 +189,8 @@ void CrossEntropyLoss::release(Context *ctx) {
     delete ce_ctx;
 }
 
-Rnn::Rnn(uint i, uint h, uint o, DATATYPE _sigma)
-    : input_num(i), hidden_num(h), output_num(o), sigma(_sigma) {
+Rnn::Rnn(uint i, uint h, DATATYPE _sigma, bool _rand)
+    : input_num(i), hidden_num(h), sigma(_sigma), rand(_rand) {
     wxh = new Parameters(Shape(hidden_num, input_num));
     whh = new Parameters(Shape(hidden_num, hidden_num));
     bh = new Parameters(Shape(hidden_num, 1));
@@ -207,17 +207,29 @@ Rnn::Rnn(uint i, uint h, uint o, DATATYPE _sigma)
     
     for (uint i = 0; i < hidden_num; ++ i) {
         for (uint j = 0; j < input_num; ++ j) {
-            (*wxhw)[i][j] = distribution_w(generator_w);
+            if (rand) {
+                (*wxhw)[i][j] = distribution_w(generator_w);
+            } else {
+                (*wxhw)[i][j] = 0.1;
+            }
         }
     }
 
     for (uint i = 0; i < hidden_num; ++ i) {
-        (*bhw)[i][0] = distribution_b(generator_b);
+        if (rand) {
+            (*bhw)[i][0] = distribution_b(generator_b);
+        } else {
+            (*bhw)[i][0] = 0.1;
+        }
     }
 
     for (uint i = 0; i < hidden_num; ++ i) {
         for (uint j= 0; j < hidden_num; ++ j) {
-            (*whhw)[i][j] = distribution_b(generator_w);
+            if (rand) {
+                (*whhw)[i][j] = distribution_w(generator_w);
+            } else {
+                (*whhw)[i][j] = 0.1;
+            }
         }
     }
 }

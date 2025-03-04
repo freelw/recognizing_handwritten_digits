@@ -170,7 +170,7 @@ struct RnnRes {
 
 class Rnn {
     public:
-        Rnn(uint i, uint h, uint o, DATATYPE _sigma);
+        Rnn(uint i, uint h, DATATYPE _sigma, bool _rand = true);
         virtual ~Rnn();
         virtual RnnRes forward(RnnContext *, const std::vector<Matrix*> &inputs, Matrix *hidden);
         virtual Matrix *backward(RnnContext *, Matrix* grad);
@@ -178,14 +178,20 @@ class Rnn {
         virtual void release(RnnContext *);
         virtual std::vector<Parameters*> get_parameters();
         virtual void zero_grad();
+        DATATYPE get_sigma() {
+            return sigma;
+        }
+        uint get_hidden_num() {
+            return hidden_num;
+        }
     private:
         uint input_num;
         uint hidden_num;
-        uint output_num;
         DATATYPE sigma;
         Parameters *wxh;
         Parameters *whh;
         Parameters *bh;
+        bool rand;
 };
 
 #endif
