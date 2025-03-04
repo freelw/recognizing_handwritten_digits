@@ -149,4 +149,35 @@ class CrossEntropyLoss: public Layer {
         std::vector<uint> labels;
 };
 
+class RnnContext {
+    public:
+        std::vector<Matrix*> inputs;
+        std::vector<Matrix*> hiddens;
+        Matrix *hidden;
+};
+
+struct RnnRes {
+    std::vector<Matrix *> states;
+};
+
+class Rnn {
+    public:
+        Rnn(uint i, uint h, uint o, DATATYPE _sigma);
+        virtual ~Rnn();
+        virtual RnnRes forward(RnnContext *, const std::vector<Matrix*> &inputs, Matrix *hidden);
+        virtual Matrix *backward(RnnContext *, const std::vector<Matrix*> &grads);
+        virtual RnnContext *init();
+        virtual void release(RnnContext *);
+        virtual std::vector<Parameters*> get_parameters();
+        virtual void zero_grad();
+    private:
+        uint input_num;
+        uint hidden_num;
+        uint output_num;
+        DATATYPE sigma;
+        Parameters *wxh;
+        Parameters *whh;
+        Parameters *bh;
+};
+
 #endif

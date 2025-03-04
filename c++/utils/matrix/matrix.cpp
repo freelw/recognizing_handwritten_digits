@@ -158,11 +158,30 @@ Matrix *Matrix::operator*(DATATYPE v) {
     return res;
 }
 
+Matrix *Matrix::operator*=(DATATYPE v) {
+    for (uint i = 0; i < shape.rowCnt; ++i) {
+        for (uint j = 0; j < shape.colCnt; ++j) {
+            (*this)[i][j] *= v;
+        }
+    }
+    return this;
+}
+
 Matrix *Matrix::operator/(DATATYPE v) {
     Matrix *res = allocTmpMatrix(this);
     for (uint i = 0; i < shape.rowCnt; ++i) {
         for (uint j = 0; j < shape.colCnt; ++j) {
             (*res)[i][j] /= v;
+        }
+    }
+    return res;
+}
+
+Matrix *Matrix::tanh() {
+    Matrix *res = allocTmpMatrix(this);
+    for (uint i = 0; i < shape.rowCnt; ++i) {
+        for (uint j = 0; j < shape.colCnt; ++j) {
+            (*res)[i][j] = std::tanh((*res)[i][j]);
         }
     }
     return res;

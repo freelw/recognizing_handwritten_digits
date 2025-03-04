@@ -40,7 +40,9 @@ public:
     Matrix *operator-(const Matrix &m);
     Matrix *operator*(const Matrix &m);
     Matrix *operator*(DATATYPE);
+    Matrix *operator*=(DATATYPE);
     Matrix *operator/(DATATYPE);
+    Matrix *tanh();
     Matrix& operator=(const Matrix &m);
     friend Matrix *operator-(int, const Matrix &m);
     DATATYPE* operator[](unsigned int index) const;
