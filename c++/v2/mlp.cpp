@@ -1,4 +1,4 @@
-#include "models.h"
+#include "mlp.h"
 
 MLP::MLP(uint _input, const std::vector<uint> &_outputs, bool _rand)
     : input(_input), outputs(_outputs), rand(_rand)
