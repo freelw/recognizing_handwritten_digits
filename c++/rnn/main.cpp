@@ -42,13 +42,16 @@ int main(int argc, char *argv[]) {
             DATATYPE loss_sum = 0;
             for (uint i = 0; i < loader.data.size() - num_steps; i++) {
                 std::vector<Matrix *> inputs;
-                for (uint j = 0; j < num_steps; j++) {
-                    inputs.push_back(loader.data[i+j]);
-                }
                 std::vector<uint> labels;
                 for (uint j = 0; j < num_steps; j++) {
+                    inputs.push_back(loader.data[i+j]);
                     labels.push_back(loader.labels[i+j+1]);
                 }
+
+                // for (uint j = 0; j < num_steps; j++) {
+                //     std::cout << *(inputs[j]) << std::endl;
+                //     std::cout << labels[j] << std::endl;
+                // }
                 
                 Matrix *res = lm.forward(ctx, inputs);
                 CrossEntropyLoss loss_fn(labels);
@@ -61,6 +64,8 @@ int main(int argc, char *argv[]) {
                 lm.backward(ctx, grad);
                 lm.clip_grad(1);
                 adam.step();
+
+                freeTmpMatrix();
             }
             std::cout << "epoch " << epoch << " loss : " << loss_sum/(loader.data.size() - num_steps) << std::endl;   
         }

@@ -88,9 +88,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "/home/cs/project/recognizing_handwritten_digits/c++/rnn/rnn",
-            "args": [
-                "testdl"
-            ],
+            "args": [],
             "stopAtEntry": false,
             "cwd": "/home/cs/project/recognizing_handwritten_digits/c++/rnn/",
             "environment": [],
