@@ -13,9 +13,11 @@ Liner::Liner(uint i, uint o, DATATYPE sigma, bool rand) : input_num(i), output_n
 
     // double stddev = sqrt(2./(input_num + output_num))*sqrt(2);
     // double stddev = sigma;
-    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
-    std::default_random_engine generator_w(seed);
-    std::default_random_engine generator_b(seed+1024);
+    unsigned seed1 = std::chrono::system_clock::now().time_since_epoch().count();
+    unsigned seed2 = std::chrono::system_clock::now().time_since_epoch().count();
+    
+    std::default_random_engine generator_w(seed1);
+    std::default_random_engine generator_b(seed2);
     std::normal_distribution<double> distribution_w(0.0, sigma);
     std::normal_distribution<double> distribution_b(0.0, sigma);
 
@@ -198,10 +200,14 @@ Rnn::Rnn(uint i, uint h, DATATYPE _sigma, bool _rand)
     whh = new Parameters(Shape(hidden_num, hidden_num));
     bh = new Parameters(Shape(hidden_num, 1));
     
-    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
-    std::default_random_engine generator_w(seed);
-    std::default_random_engine generator_b(seed+1024);
-    std::normal_distribution<DATATYPE> distribution_w(0.0, sigma);
+    unsigned seed1 = std::chrono::system_clock::now().time_since_epoch().count();
+    unsigned seed2 = std::chrono::system_clock::now().time_since_epoch().count();
+    unsigned seed3 = std::chrono::system_clock::now().time_since_epoch().count();
+    std::default_random_engine generator_w1(seed1);
+    std::default_random_engine generator_w2(seed2);
+    std::default_random_engine generator_b(seed3);
+    std::normal_distribution<DATATYPE> distribution_w1(0.0, sigma);
+    std::normal_distribution<DATATYPE> distribution_w2(0.0, sigma);
     std::normal_distribution<DATATYPE> distribution_b(0.0, sigma);
 
     auto wxhw = wxh->get_weight();
@@ -211,7 +217,7 @@ Rnn::Rnn(uint i, uint h, DATATYPE _sigma, bool _rand)
     for (uint i = 0; i < hidden_num; ++ i) {
         for (uint j = 0; j < input_num; ++ j) {
             if (rand) {
-                (*wxhw)[i][j] = distribution_w(generator_w);
+                (*wxhw)[i][j] = distribution_w1(generator_w1);
             } else {
                 (*wxhw)[i][j] = 0.1;
             }
@@ -229,7 +235,7 @@ Rnn::Rnn(uint i, uint h, DATATYPE _sigma, bool _rand)
     for (uint i = 0; i < hidden_num; ++ i) {
         for (uint j= 0; j < hidden_num; ++ j) {
             if (rand) {
-                (*whhw)[i][j] = distribution_w(generator_w);
+                (*whhw)[i][j] = distribution_w2(generator_w2);
             } else {
                 (*whhw)[i][j] = 0.1;
             }
