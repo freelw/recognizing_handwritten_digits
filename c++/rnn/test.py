@@ -189,7 +189,7 @@ def train_llm():
         print("epoch ", epoch, " started.")
         length = len(X)
         for i in range(length):
-            if i % 5000 == 0:
+            if i % 10000 == 0:
                 print("[", i, "/", length, "]")
             x, y = X[i], Y[i]
             inputs = []
