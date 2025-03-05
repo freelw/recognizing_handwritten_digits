@@ -147,7 +147,7 @@ def get_timemachine():
         return f.read()
 
 def tokenize(text):
-    return list(text)
+    return list(text)[:1000] # fix me
 
 def one_hot(x, vocab_size):
     ret = []
@@ -203,7 +203,7 @@ def train_llm():
             loss.backward()
             clip_gradients(1, rnnlm)
             optimizer.step()
-        print("epoch : ", epoch, " loss : ", loss_sum / len(x))
+        print("epoch : ", epoch, " loss : ", loss_sum / length)
 
 if __name__ == '__main__':
     #teststack()
