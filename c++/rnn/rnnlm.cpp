@@ -34,12 +34,7 @@ void RnnLM::backward(RnnLMContext *ctx, Matrix* grad) {
     Matrix *grad_hiddens = fc->backward(ctx->fc_ctx, grad);
     cout << "grad_hiddens : " << *grad_hiddens << endl;
     std::vector<Matrix *> grad_hiddens_vec = grad_hiddens->split(1);
-    int end = ctx->rnn_ctx->hiddens.size() - 2;
-    for (auto grad_hidden : grad_hiddens_vec) {
-        grad_hidden->checkShape(Shape(rnn->get_hidden_num(), 1));
-        std::cout << "grad_hidden : " << *grad_hidden << std::endl;
-        rnn->backward(ctx->rnn_ctx, grad_hidden, end--);
-    }
+    rnn->backward(ctx->rnn_ctx, grad_hiddens_vec);
 }
 
 RnnLMContext *RnnLM::init() {

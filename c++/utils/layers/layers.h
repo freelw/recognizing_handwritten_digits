@@ -179,7 +179,7 @@ class Rnn {
         Rnn(uint i, uint h, DATATYPE _sigma, bool _rand = true);
         virtual ~Rnn();
         virtual RnnRes forward(RnnContext *, const std::vector<Matrix*> &inputs, Matrix *hidden);
-        virtual Matrix *backward(RnnContext *, Matrix* grad, int end);
+        virtual Matrix *backward(RnnContext *, const std::vector<Matrix *> &grad_hiddens_vec);
         virtual RnnContext *init();
         virtual void release(RnnContext *);
         virtual std::vector<Parameters*> get_parameters();

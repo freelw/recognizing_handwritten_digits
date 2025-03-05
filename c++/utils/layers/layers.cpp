@@ -273,12 +273,13 @@ RnnRes Rnn::forward(RnnContext *ctx, const std::vector<Matrix *> &inputs, Matrix
     return res;
 }
 
-Matrix *Rnn::backward(RnnContext *ctx, Matrix* grad, int end) {
+Matrix *Rnn::backward(RnnContext *ctx, const std::vector<Matrix *> &grad_hiddens_vec) {
     assert(ctx->inputs.size() + 1 == ctx->hiddens.size());
+    Matrix *grad = grad_hiddens_vec[grad_hiddens_vec.size()-1];
     grad->checkShape(Shape(hidden_num, 1));
-    for (int i = end; i >= 0; -- i) {
+    for (int i = ctx->inputs.size() - 1; i >= 0; -- i) {
         auto x = ctx->inputs[i];
-        auto h = ctx->hiddens[i];
+        auto htminus1 = ctx->hiddens[i];
         auto state = ctx->states[i];
         // std::cout << "grad before tanh_prime : " << *grad << std::endl;
         grad = (*state->tanh_prime()) * *grad;
@@ -286,9 +287,12 @@ Matrix *Rnn::backward(RnnContext *ctx, Matrix* grad, int end) {
         bh->inc_grad(grad);
         Matrix *wxh_grad = grad->dot(*(x->transpose()));
         wxh->inc_grad(wxh_grad);
-        Matrix *whh_grad = grad->dot(*(h->transpose()));
+        Matrix *whh_grad = grad->dot(*(htminus1->transpose()));
         whh->inc_grad(whh_grad);
-        grad = whh->get_weight()->transpose()->dot(*grad);    
+        grad = whh->get_weight()->transpose()->dot(*grad);
+        if (i > 1) {
+            *grad += *(grad_hiddens_vec[i-1]);
+        }
     }
     grad->checkShape(Shape(hidden_num, 1));
     return grad;

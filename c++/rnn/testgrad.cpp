@@ -18,12 +18,12 @@ void init_weight(Parameters *p) {
 void testgrad() {
     uint vocab_size = 3;
     std::vector<Matrix *> inputs;
-    for (int i = 0; i < 1; ++ i) {
+    for (int i = 0; i < 2; ++ i) {
         inputs.push_back(new Matrix(Shape(vocab_size, 1)));
     }
 
     (*(inputs[0]))[0][0] = 1;
-    // (*(inputs[1]))[1][0] = 1;
+    (*(inputs[1]))[1][0] = 1;
     // (*(inputs[2]))[2][0] = 1;
     // (*(inputs[3]))[0][0] = 1;
 
@@ -37,7 +37,8 @@ void testgrad() {
     Matrix *res = lm.forward(ctx, inputs);
     std::cout << "res : " << *res << std::endl;
     // CrossEntropyLoss loss_fn({2, 1, 2, 0});
-    CrossEntropyLoss loss_fn({2});
+    CrossEntropyLoss loss_fn({2, 1});
+    // CrossEntropyLoss loss_fn({2});
     CrossEntropyLossContext *ce_ctx = (CrossEntropyLossContext *)loss_fn.init();
     auto loss = loss_fn.forward(ce_ctx, res);
     std::cout << "loss : " << *loss << std::endl;
@@ -55,7 +56,7 @@ void testgrad() {
     }
     
     lm.release(ctx);
-    for (int i = 0; i < 1; ++ i) {
+    for (int i = 0; i < 2; ++ i) {
         delete inputs[i];
     }
     delete rnn;
