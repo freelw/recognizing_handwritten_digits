@@ -44,15 +44,11 @@ int main(int argc, char *argv[]) {
                 std::vector<Matrix *> inputs;
                 std::vector<uint> labels;
                 for (uint j = 0; j < num_steps; j++) {
+                    assert(i+j < loader.data.size());
+                    assert(i+j+1 < loader.labels.size());
                     inputs.push_back(loader.data[i+j]);
                     labels.push_back(loader.labels[i+j+1]);
                 }
-
-                // for (uint j = 0; j < num_steps; j++) {
-                //     std::cout << *(inputs[j]) << std::endl;
-                //     std::cout << labels[j] << std::endl;
-                // }
-                
                 Matrix *res = lm.forward(ctx, inputs);
                 CrossEntropyLoss loss_fn(labels);
                 CrossEntropyLossContext *ce_ctx = (CrossEntropyLossContext *)loss_fn.init();
@@ -64,12 +60,12 @@ int main(int argc, char *argv[]) {
                 lm.backward(ctx, grad);
                 lm.clip_grad(1);
                 adam.step();
-
                 freeTmpMatrix();
             }
             std::cout << "epoch " << epoch << " loss : " << loss_sum/(loader.data.size() - num_steps) << std::endl;   
         }
         lm.release(ctx);
+        delete rnn;
     }
     return 0;
 }

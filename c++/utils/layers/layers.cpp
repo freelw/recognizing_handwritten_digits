@@ -275,6 +275,7 @@ RnnRes Rnn::forward(RnnContext *ctx, const std::vector<Matrix *> &inputs, Matrix
 
 Matrix *Rnn::backward(RnnContext *ctx, const std::vector<Matrix *> &grad_hiddens_vec) {
     assert(ctx->inputs.size() + 1 == ctx->hiddens.size());
+    assert(ctx->states.size() + 1 == ctx->hiddens.size());
     Matrix *grad = grad_hiddens_vec[grad_hiddens_vec.size()-1];
     grad->checkShape(Shape(hidden_num, 1));
     for (int i = ctx->inputs.size() - 1; i >= 0; -- i) {
