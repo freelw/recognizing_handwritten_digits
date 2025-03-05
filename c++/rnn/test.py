@@ -16,15 +16,18 @@ def teststack():
     print (torch.stack(arr, 1))
 
 class Rnn:
-    def __init__(self, num_inputs, num_hiddens, sigma=0.01):
+    def __init__(self, num_inputs, num_hiddens, sigma=0.01, rand = True):
         self.num_inputs = num_inputs
         self.num_hiddens = num_hiddens
         self.sigma = sigma
-        self.W_xh = torch.empty(num_hiddens, num_inputs).fill_(0.1)
-        
-        self.W_hh = torch.empty(num_hiddens, num_hiddens).fill_(0.1)
-        self.b_h = torch.empty(num_hiddens, 1).fill_(0.1)
-
+        if rand:
+            self.W_xh = torch.randn(num_hiddens, num_inputs) * sigma
+            self.W_hh = torch.randn(num_hiddens, num_hiddens) * sigma
+            self.b_h = torch.randn(num_hiddens, 1) * sigma
+        else :
+            self.W_xh = torch.empty(num_hiddens, num_inputs).fill_(0.1)
+            self.W_hh = torch.empty(num_hiddens, num_hiddens).fill_(0.1)
+            self.b_h = torch.empty(num_hiddens, 1).fill_(0.1)
         self.W_hh.requires_grad_()
         self.W_xh.requires_grad_()
         self.b_h.requires_grad_()
@@ -47,15 +50,16 @@ def clip_gradients(grad_clip_val, model):
         for param in params:
             param.grad[:] *= grad_clip_val / norm
 class RnnLM:
-    def __init__(self, rnn, vocab_size):
+    def __init__(self, rnn, vocab_size, rand = True):
         self.rnn = rnn
         self.vocab_size = vocab_size
-        self.W = torch.empty(vocab_size, rnn.num_hiddens)
-        tensor_1d = torch.arange(0.1, 0.1 * (vocab_size * rnn.num_hiddens+1), 0.1)
-        self.W = tensor_1d.reshape(vocab_size, rnn.num_hiddens)
-        print("W : ", self.W)
-        #torch.empty(vocab_size, rnn.num_hiddens).fill_(0.1)
-        self.B = torch.empty(vocab_size, 1).fill_(0.1)
+        if rand:
+            self.W = torch.randn(vocab_size, rnn.num_hiddens)
+            self.B = torch.randn(vocab_size, 1)
+        else:
+            tensor_1d = torch.arange(0.1, 0.1 * (vocab_size * rnn.num_hiddens+1), 0.1)
+            self.W = tensor_1d.reshape(vocab_size, rnn.num_hiddens)
+            self.B = torch.empty(vocab_size, 1).fill_(0.1)
         self.W.requires_grad_()
         self.B.requires_grad_()
     
@@ -70,7 +74,7 @@ class RnnLM:
 
 def testgrad():
     vocab_size = 3
-    rnn = Rnn(vocab_size, 4)
+    rnn = Rnn(vocab_size, 4, 0.01, False)
 
     # inputs = [torch.tensor([[1], [0], [0]], dtype=torch.float32),
     #             torch.tensor([[0], [1], [0]], dtype=torch.float32),
@@ -90,7 +94,7 @@ def testgrad():
     #                         [0]], dtype=torch.float32)]
     # labels = torch.tensor([2], dtype=torch.long)
 
-    rnnlm = RnnLM(rnn, vocab_size)
+    rnnlm = RnnLM(rnn, vocab_size, False)
     output = rnnlm.forward(inputs, None)
     print("output : ", output)
 
