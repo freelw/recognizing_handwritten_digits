@@ -50,6 +50,7 @@ def clip_gradients(grad_clip_val, model):
     norm = torch.sqrt(sum(torch.sum((p.grad ** 2)) for p in params))
     if norm > grad_clip_val:
         for param in params:
+            print ("norm : ", norm)
             param.grad[:] *= grad_clip_val / norm
 class RnnLM:
     def __init__(self, rnn, vocab_size, rand = True):
@@ -78,37 +79,40 @@ def testgrad():
     vocab_size = 3
     rnn = Rnn(vocab_size, 4, 0.01, False)
 
-    # inputs = [torch.tensor([[1], [0], [0]], dtype=torch.float32),
-    #             torch.tensor([[0], [1], [0]], dtype=torch.float32),
-    #             torch.tensor([[0], [0], [1]], dtype=torch.float32),
-    #             torch.tensor([[1], [0], [0]], dtype=torch.float32)
-    #             ]
-    # labels = torch.tensor([2, 1, 2, 0], dtype=torch.long)
-
-
     inputs = [torch.tensor([[1], [0], [0]], dtype=torch.float32),
-                torch.tensor([[0], [1], [0]], dtype=torch.float32)
+                torch.tensor([[0], [1], [0]], dtype=torch.float32),
+                torch.tensor([[0], [0], [1]], dtype=torch.float32),
+                torch.tensor([[1], [0], [0]], dtype=torch.float32)
                 ]
-    print("inputs : ", inputs)
-    labels = torch.tensor([2, 1], dtype=torch.long)
+    labels = torch.tensor([2, 1, 2, 0], dtype=torch.long)
+
+
+    # inputs = [torch.tensor([[1], [0], [0]], dtype=torch.float32),
+    #             torch.tensor([[0], [1], [0]], dtype=torch.float32)
+    #             ]
+    # print("inputs : ", inputs)
+    # labels = torch.tensor([2, 1], dtype=torch.long)
 
     # inputs = [torch.tensor([[1], 
     #                         [0], 
     #                         [0]], dtype=torch.float32)]
     # labels = torch.tensor([2], dtype=torch.long)
-
     rnnlm = RnnLM(rnn, vocab_size, False)
-    output = rnnlm.forward(inputs, None)
-    print("output : ", output)
-
-    # loss
-    loss = torch.nn.CrossEntropyLoss()
-    l = loss(output.T, labels)
-    print("loss : ", l)
-    l.backward()
-    clip_gradients(1, rnnlm)
-    for param in rnnlm.parameters():
-        print(param.grad)
+    optimizer = torch.optim.Adam(rnnlm.parameters(), lr=0.001)
+    for e in range(3):
+        output = rnnlm.forward(inputs, None)
+        # print("output : ", output)
+        # loss
+        loss = torch.nn.CrossEntropyLoss()
+        l = loss(output.T, labels)
+        print("loss : ", l)
+        optimizer.zero_grad()
+        l.backward()
+        clip_gradients(1, rnnlm)
+        optimizer.step()
+        clip_gradients(1, rnnlm)
+        for param in rnnlm.parameters():
+            print(param.grad)
 
 class Vocab:  #@save
     """Vocabulary for text."""
@@ -184,7 +188,7 @@ def train_llm():
     optimizer = torch.optim.Adam(rnnlm.parameters(), lr=0.001)  # Change learning rate to 0.001
     loss_fn = torch.nn.CrossEntropyLoss()
     
-    for epoch in range(100):
+    for epoch in range(10):
         loss_sum = 0
         print("epoch ", epoch, " started.")
         length = len(X)
@@ -207,5 +211,5 @@ def train_llm():
 
 if __name__ == '__main__':
     #teststack()
-    #testgrad()
-    train_llm()
+    testgrad()
+    #train_llm()

@@ -34,11 +34,11 @@ int main(int argc, char *argv[]) {
         uint num_steps = 32;
         uint hidden_num = 32;
 
-        Rnn *rnn = new Rnn(INPUT_NUM, hidden_num, 0.1);
-        RnnLM lm(rnn, INPUT_NUM);
+        Rnn *rnn = new Rnn(INPUT_NUM, hidden_num, 0.01, true);
+        RnnLM lm(rnn, INPUT_NUM, true);
         RnnLMContext *ctx = lm.init();
         Adam adam(lm.get_parameters(), 0.001);
-        for (uint epoch = 0; epoch < 2000; epoch++) {
+        for (uint epoch = 0; epoch < 10; epoch++) {
             DATATYPE loss_sum = 0;
             for (uint i = 0; i < loader.data.size() - num_steps; i++) {
                 std::vector<Matrix *> inputs;

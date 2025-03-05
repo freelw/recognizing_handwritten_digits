@@ -18,14 +18,14 @@ void init_weight(Parameters *p) {
 void testgrad() {
     uint vocab_size = 3;
     std::vector<Matrix *> inputs;
-    for (int i = 0; i < 2; ++ i) {
+    for (int i = 0; i < 4; ++ i) {
         inputs.push_back(new Matrix(Shape(vocab_size, 1)));
     }
 
     (*(inputs[0]))[0][0] = 1;
     (*(inputs[1]))[1][0] = 1;
-    // (*(inputs[2]))[2][0] = 1;
-    // (*(inputs[3]))[0][0] = 1;
+    (*(inputs[2]))[2][0] = 1;
+    (*(inputs[3]))[0][0] = 1;
 
     Rnn *rnn = new Rnn(vocab_size, 4, 0.1, false);
     RnnLM lm(rnn, 3, false);
@@ -34,29 +34,33 @@ void testgrad() {
     init_weight(parameters[3]);
     cout << "parameters[3] : " << *(parameters[3]->get_weight()) << endl;
     Adam adam(parameters, 0.001);
-    Matrix *res = lm.forward(ctx, inputs);
-    std::cout << "res : " << *res << std::endl;
-    // CrossEntropyLoss loss_fn({2, 1, 2, 0});
-    CrossEntropyLoss loss_fn({2, 1});
-    // CrossEntropyLoss loss_fn({2});
-    CrossEntropyLossContext *ce_ctx = (CrossEntropyLossContext *)loss_fn.init();
-    auto loss = loss_fn.forward(ce_ctx, res);
-    std::cout << "loss : " << *loss << std::endl;
-    auto grad = loss_fn.backward(ce_ctx, nullptr);
-    loss_fn.release(ce_ctx);
-    std::cout << "grad : " << *grad << std::endl;
-    lm.backward(ctx, grad);
-    lm.clip_grad(1);
-    adam.step();
+    for (auto e = 0; e < 3; ++ e) {
 
-    // print all parameters
-    
-    for (auto p : parameters) {
-        std::cout << *p << std::endl;
+        
+        Matrix *res = lm.forward(ctx, inputs);
+        std::cout << "res : " << *res << std::endl;
+        CrossEntropyLoss loss_fn({2, 1, 2, 0});
+        // CrossEntropyLoss loss_fn({2, 1});
+        // CrossEntropyLoss loss_fn({2});
+        CrossEntropyLossContext *ce_ctx = (CrossEntropyLossContext *)loss_fn.init();
+        auto loss = loss_fn.forward(ce_ctx, res);
+        std::cout << "loss : " << *loss << std::endl;
+        auto grad = loss_fn.backward(ce_ctx, nullptr);
+        loss_fn.release(ce_ctx);
+        std::cout << "grad : " << *grad << std::endl;
+        lm.zero_grad();
+        lm.backward(ctx, grad);
+        lm.clip_grad(1);
+        adam.step();
+
+        // print all parameters
+        for (auto p : parameters) {
+            std::cout << *p << std::endl;
+        }
     }
     
     lm.release(ctx);
-    for (int i = 0; i < 2; ++ i) {
+    for (int i = 0; i < 4; ++ i) {
         delete inputs[i];
     }
     delete rnn;

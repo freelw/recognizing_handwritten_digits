@@ -106,7 +106,7 @@ class LinerContext: public Context {
 
 class Liner: public Layer {
     public:
-        Liner(uint i, uint o, DATATYPE sigma = 0.02, bool rand = true);
+        Liner(uint i, uint o, DATATYPE sigma, bool rand);
         virtual ~Liner();
         virtual Matrix *forward(Context *, Matrix *input);
         virtual Matrix *backward(Context *, Matrix *grad);
@@ -175,7 +175,7 @@ struct RnnRes {
 
 class Rnn {
     public:
-        Rnn(uint i, uint h, DATATYPE _sigma, bool _rand = true);
+        Rnn(uint i, uint h, DATATYPE _sigma, bool _rand);
         virtual ~Rnn();
         virtual RnnRes forward(RnnContext *, const std::vector<Matrix*> &inputs, Matrix *hidden);
         virtual Matrix *backward(RnnContext *, const std::vector<Matrix *> &grad_hiddens_vec);

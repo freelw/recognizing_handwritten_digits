@@ -16,7 +16,7 @@ public:
         std::ifstream ifs(filename);
         std::string content((std::istreambuf_iterator<char>(ifs)),
                              (std::istreambuf_iterator<char>()));
-        content = content.substr(0, 33);
+        content = content.substr(0, 1000);
         std::cout << "content length : " << content.length() << std::endl;
         for (uint i = 0; i < content.size(); i++) {
             assert((content[i] >= 'a' && content[i] <= 'z') || content[i] == ' ');

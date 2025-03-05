@@ -8,7 +8,7 @@ class RnnLMContext {
 
 class RnnLM {
     public:
-        RnnLM(Rnn *_rnn, uint vocab_size, bool rand = true);
+        RnnLM(Rnn *_rnn, uint vocab_size, bool rand);
         virtual ~RnnLM();
         virtual Matrix *forward(RnnLMContext *, const std::vector<Matrix*> &inputs);
         virtual void backward(RnnLMContext *, Matrix* grad);
