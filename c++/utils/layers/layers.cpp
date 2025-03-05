@@ -252,8 +252,8 @@ RnnRes Rnn::forward(RnnContext *ctx, const std::vector<Matrix *> &inputs, Matrix
     if (!hidden) {
         hidden = allocTmpMatrix(Shape(hidden_num, batch_size));
     }
-    ctx->hidden = hidden;
     hidden->checkShape(Shape(hidden_num, batch_size));
+    ctx->hiddens.push_back(hidden);
 
     RnnRes res;
     res.states.reserve(inputs.size());
@@ -274,6 +274,7 @@ RnnRes Rnn::forward(RnnContext *ctx, const std::vector<Matrix *> &inputs, Matrix
 }
 
 Matrix *Rnn::backward(RnnContext *ctx, Matrix* grad, int end) {
+    assert(ctx->inputs.size() + 1 == ctx->hiddens.size());
     grad->checkShape(Shape(hidden_num, 1));
     for (int i = end; i >= 0; -- i) {
         auto x = ctx->inputs[i];

@@ -66,17 +66,17 @@ def testgrad():
     vocab_size = 3
     rnn = Rnn(vocab_size, 4)
 
-    inputs = [torch.tensor([[1], [0], [0]], dtype=torch.float32),
-                torch.tensor([[0], [1], [0]], dtype=torch.float32),
-                torch.tensor([[0], [0], [1]], dtype=torch.float32),
-                torch.tensor([[1], [0], [0]], dtype=torch.float32)
-                ]
-    labels = torch.tensor([2, 1, 2, 0], dtype=torch.long)
+    # inputs = [torch.tensor([[1], [0], [0]], dtype=torch.float32),
+    #             torch.tensor([[0], [1], [0]], dtype=torch.float32),
+    #             torch.tensor([[0], [0], [1]], dtype=torch.float32),
+    #             torch.tensor([[1], [0], [0]], dtype=torch.float32)
+    #             ]
+    # labels = torch.tensor([2, 1, 2, 0], dtype=torch.long)
 
-    # inputs = [torch.tensor([[1], 
-    #                         [0], 
-    #                         [0]], dtype=torch.float32)]
-    # labels = torch.tensor([2], dtype=torch.long)
+    inputs = [torch.tensor([[1], 
+                            [0], 
+                            [0]], dtype=torch.float32)]
+    labels = torch.tensor([2], dtype=torch.long)
 
     rnnlm = RnnLM(rnn, vocab_size)
     output = rnnlm.forward(inputs, None)
