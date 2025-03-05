@@ -38,8 +38,8 @@ int main(int argc, char *argv[]) {
         RnnLM lm(rnn, INPUT_NUM);
         RnnLMContext *ctx = lm.init();
         Adam adam(lm.get_parameters(), 0.001);
-        DATATYPE loss_sum = 0;
         for (uint epoch = 0; epoch < 100; epoch++) {
+            DATATYPE loss_sum = 0;
             for (uint i = 0; i < loader.data.size() - num_steps; i++) {
                 std::vector<Matrix *> inputs;
                 for (uint j = 0; j < num_steps; j++) {
@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
                 lm.clip_grad(1);
                 adam.step();
             }
-            std::cout << "epoch " << epoch << " loss : " << loss_sum/loader.data.size() << std::endl;   
+            std::cout << "epoch " << epoch << " loss : " << loss_sum/(loader.data.size() - num_steps) << std::endl;   
         }
         lm.release(ctx);
     }
