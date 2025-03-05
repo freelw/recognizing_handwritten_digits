@@ -26,6 +26,7 @@ Matrix * join_hiddens(const std::vector<Matrix *> &hiddens) {
 Matrix *RnnLM::forward(RnnLMContext *ctx, const std::vector<Matrix *> &inputs) {
     RnnRes res = rnn->forward(ctx->rnn_ctx, inputs, nullptr);
     Matrix *hiddens = join_hiddens(res.states);
+    std::cout << "LM forward hiddens : " << *hiddens << std::endl;
     return fc->forward(ctx->fc_ctx, hiddens);
 }
 

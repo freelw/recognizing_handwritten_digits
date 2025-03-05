@@ -57,6 +57,7 @@ Matrix *Liner::backward(Context *ctx, Matrix *grad) {
     assert(grad->getShape().rowCnt == output_num);
     LinerContext *ln_ctx = (LinerContext *)ctx;
     auto w = weigt->get_weight();
+    // std::cout << "0 liner grad : " << *grad << std::endl;
     Matrix *res_grad = w->transpose()->dot(*grad);
     Matrix *bias_grad = grad->sum(1);
     bias->set_grad(bias_grad);
@@ -281,16 +282,17 @@ Matrix *Rnn::backward(RnnContext *ctx, const std::vector<Matrix *> &grad_hiddens
         auto x = ctx->inputs[i];
         auto htminus1 = ctx->hiddens[i];
         auto state = ctx->states[i];
-        // std::cout << "grad before tanh_prime : " << *grad << std::endl;
+        std::cout << "ori grad : " << *grad << std::endl;
         grad = (*state->tanh_prime()) * *grad;
-        // std::cout << "grad after tanh_prime : " << *grad << std::endl;
         bh->inc_grad(grad);
+        std::cout << "bh grad : " << *(bh->get_grad()) << std::endl;
         Matrix *wxh_grad = grad->dot(*(x->transpose()));
         wxh->inc_grad(wxh_grad);
+        std::cout << "htminus1 : " << *htminus1 << std::endl;
         Matrix *whh_grad = grad->dot(*(htminus1->transpose()));
         whh->inc_grad(whh_grad);
         grad = whh->get_weight()->transpose()->dot(*grad);
-        if (i > 1) {
+        if (i >= 1) {
             *grad += *(grad_hiddens_vec[i-1]);
         }
     }
