@@ -1,4 +1,6 @@
 import torch
+import collections
+import torch.nn.functional as F
 
 def teststack():
     x = [[0.5, 1, ],
@@ -87,6 +89,7 @@ def testgrad():
     inputs = [torch.tensor([[1], [0], [0]], dtype=torch.float32),
                 torch.tensor([[0], [1], [0]], dtype=torch.float32)
                 ]
+    print("inputs : ", inputs)
     labels = torch.tensor([2, 1], dtype=torch.long)
 
     # inputs = [torch.tensor([[1], 
@@ -107,6 +110,102 @@ def testgrad():
     for param in rnnlm.parameters():
         print(param.grad)
 
+class Vocab:  #@save
+    """Vocabulary for text."""
+    def __init__(self, tokens=[], min_freq=0, reserved_tokens=[]):
+        # Flatten a 2D list if needed
+        if tokens and isinstance(tokens[0], list):
+            tokens = [token for line in tokens for token in line]
+        # Count token frequencies
+        counter = collections.Counter(tokens)
+        self.token_freqs = sorted(counter.items(), key=lambda x: x[1],
+                                  reverse=True)
+        # The list of unique tokens
+        self.idx_to_token = list(sorted(set(['<unk>'] + reserved_tokens + [
+            token for token, freq in self.token_freqs if freq >= min_freq])))
+        self.token_to_idx = {token: idx
+                             for idx, token in enumerate(self.idx_to_token)}
+
+    def __len__(self):
+        return len(self.idx_to_token)
+
+    def __getitem__(self, tokens):
+        if not isinstance(tokens, (list, tuple)):
+            return self.token_to_idx.get(tokens, self.unk)
+        return [self.__getitem__(token) for token in tokens]
+
+    def to_tokens(self, indices):
+        if hasattr(indices, '__len__') and len(indices) > 1:
+            return [self.idx_to_token[int(index)] for index in indices]
+        return self.idx_to_token[indices]
+
+    def unk(self):  # Index for the unknown token
+        return self.token_to_idx['<unk>']
+
+def get_timemachine():
+    with open("../../resources/timemachine_preprocessed.txt") as f:
+        return f.read()
+
+def tokenize(text):
+    return list(text)
+
+def one_hot(x, vocab_size):
+    ret = []
+    for i in range(vocab_size):
+        ret.append([0])
+    ret[x][0] = 1
+    return ret
+
+def load_data(num_steps=32):
+    text = get_timemachine()
+    tokens = tokenize(text)
+    # print(','.join(tokens[:30]))
+    vocab = Vocab(tokens)
+    corpus = [vocab[token] for token in tokens]
+    X = []
+    Y = []
+    for i in range(len(corpus) - num_steps):
+        x = []
+        y = []
+        for j in range(num_steps):
+            x.append(corpus[j])
+            y.append(corpus[j+1])
+        X.append(x)
+        Y.append(y)
+    return X, Y, vocab
+
+def train_llm():
+    num_steps = 32
+    num_hiddens = 32
+
+    X, Y, vocab = load_data(num_steps)
+    rnn = Rnn(len(vocab), num_hiddens)
+    rnnlm = RnnLM(rnn, len(vocab))
+    optimizer = torch.optim.Adam(rnnlm.parameters(), lr=0.001)  # Change learning rate to 0.001
+    loss_fn = torch.nn.CrossEntropyLoss()
+    
+    for epoch in range(100):
+        loss_sum = 0
+        print("epoch ", epoch, " started.")
+        length = len(X)
+        for i in range(length):
+            if i % 5000 == 0:
+                print("[", i, "/", length, "]")
+            x, y = X[i], Y[i]
+            inputs = []
+            for item in x:
+                inputs.append(torch.tensor(one_hot(item, len(vocab)), dtype=torch.float32))
+            labels = torch.tensor(y, dtype=torch.long)
+            output = rnnlm.forward(inputs, None)
+            loss = loss_fn(output.T, labels)
+            loss_sum += loss.item()
+            optimizer.zero_grad()
+            loss.backward()
+            clip_gradients(1, rnnlm)
+            optimizer.step()
+        print("epoch : ", epoch, " loss : ", loss_sum / len(x))
+
 if __name__ == '__main__':
     #teststack()
-    testgrad()
+    #testgrad()
+    train_llm()
