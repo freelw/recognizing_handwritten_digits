@@ -10,8 +10,8 @@ void testgrad() {
     }
 
     (*(inputs[0]))[0][0] = 1;
-    (*(inputs[1]))[1][0] = 2;
-    (*(inputs[2]))[2][0] = 3;
+    (*(inputs[1]))[1][0] = 1;
+    (*(inputs[2]))[2][0] = 1;
 
     Rnn *rnn = new Rnn(3, 4, 0.1, false);
     RnnLM lm(rnn, 3, false);
@@ -19,7 +19,7 @@ void testgrad() {
     Adam adam(lm.get_parameters(), 0.001);
     Matrix *res = lm.forward(ctx, inputs);
     std::cout << "res : " << *res << std::endl;
-    CrossEntropyLoss loss_fn({0, 1, 2});
+    CrossEntropyLoss loss_fn({2, 1, 2});
     CrossEntropyLossContext *ce_ctx = (CrossEntropyLossContext *)loss_fn.init();
     auto loss = loss_fn.forward(ce_ctx, res);
     std::cout << "loss : " << *loss << std::endl;
