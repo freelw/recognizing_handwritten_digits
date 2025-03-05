@@ -4,16 +4,17 @@
 #include <iostream>
 
 void testgrad() {
+    uint vocab_size = 3;
     std::vector<Matrix *> inputs;
     for (int i = 0; i < 3; ++ i) {
-        inputs.push_back(new Matrix(Shape(3, 1)));
+        inputs.push_back(new Matrix(Shape(vocab_size, 1)));
     }
 
     (*(inputs[0]))[0][0] = 1;
     (*(inputs[1]))[1][0] = 1;
     (*(inputs[2]))[2][0] = 1;
 
-    Rnn *rnn = new Rnn(3, 4, 0.1, false);
+    Rnn *rnn = new Rnn(vocab_size, 4, 0.1, false);
     RnnLM lm(rnn, 3, false);
     RnnLMContext *ctx = lm.init();
     Adam adam(lm.get_parameters(), 0.001);
