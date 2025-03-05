@@ -10,7 +10,7 @@ void MLP::init() {
     uint x = input;
     for (uint i = 0; i < outputs.size(); ++ i) {
         uint y = outputs[i];
-        layers.push_back(new Liner(x, y, rand));
+        layers.push_back(new Liner(x, y, 0.02, rand));
         x = y;
         if (i < outputs.size()-1) {
             layers.push_back(new Relu());

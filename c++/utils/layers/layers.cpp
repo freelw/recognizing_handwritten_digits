@@ -7,17 +7,17 @@
 #include <chrono>
 #include <iostream>
 
-Liner::Liner(uint i, uint o, bool rand) : input_num(i), output_num(o) {
+Liner::Liner(uint i, uint o, DATATYPE sigma, bool rand) : input_num(i), output_num(o) {
     weigt = new Parameters(Shape(o, i));
     bias = new Parameters(Shape(o, 1));
 
     // double stddev = sqrt(2./(input_num + output_num))*sqrt(2);
-    double stddev = 0.02;
+    // double stddev = sigma;
     unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
     std::default_random_engine generator_w(seed);
     std::default_random_engine generator_b(seed+1024);
-    std::normal_distribution<double> distribution_w(0.0, stddev);
-    std::normal_distribution<double> distribution_b(0.0, 0.02);
+    std::normal_distribution<double> distribution_w(0.0, sigma);
+    std::normal_distribution<double> distribution_b(0.0, sigma);
 
     auto w = weigt->get_weight();
     auto b = bias->get_weight();

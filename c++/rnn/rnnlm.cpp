@@ -6,7 +6,7 @@ RnnLM::RnnLM(Rnn *_rnn, uint _vocab_size, bool rand) : rnn(_rnn), vocab_size(_vo
     if (!rand) {
         std::cerr << "Warning: using fixed weight for RnnLM" << std::endl;
     }
-    fc = new Liner(rnn->get_hidden_num(), vocab_size, rand);
+    fc = new Liner(rnn->get_hidden_num(), vocab_size, 1, rand);
 }
 
 RnnLM::~RnnLM() {

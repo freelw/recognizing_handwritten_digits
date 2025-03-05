@@ -106,7 +106,7 @@ class LinerContext: public Context {
 
 class Liner: public Layer {
     public:
-        Liner(uint i, uint o, bool);
+        Liner(uint i, uint o, DATATYPE sigma = 0.02, bool rand = true);
         virtual ~Liner();
         virtual Matrix *forward(Context *, Matrix *input);
         virtual Matrix *backward(Context *, Matrix *grad);
