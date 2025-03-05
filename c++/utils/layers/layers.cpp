@@ -268,9 +268,9 @@ RnnRes Rnn::forward(RnnContext *ctx, const std::vector<Matrix *> &inputs, Matrix
     return res;
 }
 
-Matrix *Rnn::backward(RnnContext *ctx, Matrix* grad) {
+Matrix *Rnn::backward(RnnContext *ctx, Matrix* grad, int end) {
     grad->checkShape(Shape(hidden_num, 1));
-    for (int i = ctx->inputs.size()-1; i >= 0; -- i) {
+    for (int i = end; i >= 0; -- i) {
         auto x = ctx->inputs[i];
         auto h = ctx->hiddens[i];
         grad = grad->tanh_prime();
