@@ -163,6 +163,13 @@ class RnnContext {
         std::vector<Matrix*> hiddens;
         Matrix *hidden;
         std::vector<Matrix*> hidden_grads;
+        std::vector<Matrix*> states;
+        void clear() {
+            inputs.clear();
+            hiddens.clear();
+            hidden_grads.clear();
+            hidden = nullptr;
+        }
 };
 
 struct RnnRes {

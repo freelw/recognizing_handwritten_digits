@@ -95,6 +95,16 @@ Matrix *Matrix::operator+=(const Matrix &m) {
     return this;
 }
 
+Matrix *Matrix::pow2() {
+    Matrix *res = allocTmpMatrix(this);
+    for (uint i = 0; i < shape.rowCnt; ++i) {
+        for (uint j = 0; j < shape.colCnt; ++j) {
+            (*res)[i][j] = (*res)[i][j] * (*res)[i][j];
+        }
+    }
+    return res;
+}
+
 Matrix *Matrix::operator+(int dt) {
     Matrix *res = allocTmpMatrix(this);
     for (uint i = 0; i < shape.rowCnt; ++i) {
@@ -200,7 +210,7 @@ Matrix *Matrix::tanh() {
 }
 
 Matrix *Matrix::tanh_prime() {
-    return 1 - *(*this * *this);
+    return 1 - *(this->tanh()->pow2());
 }
 
 Matrix& Matrix::operator=(const Matrix &m) {

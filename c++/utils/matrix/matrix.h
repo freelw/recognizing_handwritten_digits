@@ -47,6 +47,7 @@ public:
     Matrix *tanh();
     Matrix *tanh_prime();
     Matrix& operator=(const Matrix &m);
+    Matrix *pow2();
     friend Matrix *operator-(int, const Matrix &m);
     DATATYPE* operator[](unsigned int index) const;
     Shape getShape() const;

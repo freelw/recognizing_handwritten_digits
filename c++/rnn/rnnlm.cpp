@@ -1,5 +1,7 @@
 #include "rnnlm.h"
 
+#include <iostream>
+
 RnnLM::RnnLM(Rnn *_rnn, uint _vocab_size, bool rand) : rnn(_rnn), vocab_size(_vocab_size) {
     fc = new Liner(rnn->get_hidden_num(), vocab_size, rand);
 }
@@ -30,10 +32,12 @@ Matrix *RnnLM::forward(RnnLMContext *ctx, const std::vector<Matrix *> &inputs) {
 void RnnLM::backward(RnnLMContext *ctx, Matrix* grad) {
     grad->checkShape(Shape(vocab_size, ctx->rnn_ctx->hiddens.size()));
     Matrix *grad_hiddens = fc->backward(ctx->fc_ctx, grad);
+    cout << "grad_hiddens : " << *grad_hiddens << endl;
     std::vector<Matrix *> grad_hiddens_vec = grad_hiddens->split(1);
     int end = ctx->rnn_ctx->hiddens.size() - 1;
     for (auto grad_hidden : grad_hiddens_vec) {
         grad_hidden->checkShape(Shape(rnn->get_hidden_num(), 1));
+        std::cout << "grad_hidden : " << *grad_hidden << std::endl;
         rnn->backward(ctx->rnn_ctx, grad_hidden, end--);
     }
 }

@@ -44,16 +44,18 @@ class RnnLM:
     def __init__(self, rnn, vocab_size):
         self.rnn = rnn
         self.vocab_size = vocab_size
-        self.W = torch.empty(vocab_size, rnn.num_hiddens).fill_(0.1)
+        self.W = torch.empty(vocab_size, rnn.num_hiddens)
+        tensor_1d = torch.arange(0.1, 0.1 * (vocab_size * rnn.num_hiddens+1), 0.1)
+        self.W = tensor_1d.reshape(vocab_size, rnn.num_hiddens)
+        print("W : ", self.W)
+        #torch.empty(vocab_size, rnn.num_hiddens).fill_(0.1)
         self.B = torch.empty(vocab_size, 1).fill_(0.1)
         self.W.requires_grad_()
         self.B.requires_grad_()
     
     def forward(self, inputs, state):
         h = self.rnn.forward(inputs, state)
-        print ("h : ", h)
         hh = torch.stack(h, 1).squeeze(2)
-        print ("hh : ", hh)
         output = self.W @ hh + self.B
         return output
 
@@ -64,15 +66,17 @@ def testgrad():
     vocab_size = 3
     rnn = Rnn(vocab_size, 4)
 
-    # inputs = [torch.tensor([[1], [0], [0]], dtype=torch.float32),
-    #             torch.tensor([[0], [1], [0]], dtype=torch.float32),
-    #             torch.tensor([[0], [0], [1]], dtype=torch.float32)]
-    # labels = torch.tensor([2, 1, 2], dtype=torch.long)
-    
-    inputs = [torch.tensor([[1], 
-                            [0], 
-                            [0]], dtype=torch.float32)]
-    labels = torch.tensor([2], dtype=torch.long)
+    inputs = [torch.tensor([[1], [0], [0]], dtype=torch.float32),
+                torch.tensor([[0], [1], [0]], dtype=torch.float32),
+                torch.tensor([[0], [0], [1]], dtype=torch.float32),
+                torch.tensor([[1], [0], [0]], dtype=torch.float32)
+                ]
+    labels = torch.tensor([2, 1, 2, 0], dtype=torch.long)
+
+    # inputs = [torch.tensor([[1], 
+    #                         [0], 
+    #                         [0]], dtype=torch.float32)]
+    # labels = torch.tensor([2], dtype=torch.long)
 
     rnnlm = RnnLM(rnn, vocab_size)
     output = rnnlm.forward(inputs, None)

@@ -64,6 +64,9 @@ Matrix *Liner::backward(Context *ctx, Matrix *grad) {
     weigt->set_grad(weight_grad);
     bias_grad->checkShape(*(bias->get_grad()));
     weight_grad->checkShape(*(weigt->get_grad()));
+    // std::cout << "liner grad : " << *grad << std::endl;
+    // std::cout << "w->trans : " << *(w->transpose()) << std::endl;
+    // std::cout << "res_grad : " << *res_grad << std::endl;
     return res_grad;
 }
 
@@ -241,6 +244,7 @@ Rnn::~Rnn() {
 }
 
 RnnRes Rnn::forward(RnnContext *ctx, const std::vector<Matrix *> &inputs, Matrix *hidden) {
+    ctx->clear();
     assert(inputs.size() >= 1);
     ctx->inputs = inputs;
     uint batch_size = inputs[0]->getShape().colCnt;
@@ -264,6 +268,7 @@ RnnRes Rnn::forward(RnnContext *ctx, const std::vector<Matrix *> &inputs, Matrix
         hidden = state->tanh();
         res.states.push_back(hidden);
         ctx->hiddens.push_back(hidden);
+        ctx->states.push_back(state);
     }
     return res;
 }
@@ -273,7 +278,10 @@ Matrix *Rnn::backward(RnnContext *ctx, Matrix* grad, int end) {
     for (int i = end; i >= 0; -- i) {
         auto x = ctx->inputs[i];
         auto h = ctx->hiddens[i];
-        grad = grad->tanh_prime();
+        auto state = ctx->states[i];
+        // std::cout << "grad before tanh_prime : " << *grad << std::endl;
+        grad = (*state->tanh_prime()) * *grad;
+        // std::cout << "grad after tanh_prime : " << *grad << std::endl;
         bh->inc_grad(grad);
         Matrix *wxh_grad = grad->dot(*(x->transpose()));
         wxh->inc_grad(wxh_grad);
