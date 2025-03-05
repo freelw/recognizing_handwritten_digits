@@ -191,6 +191,9 @@ void CrossEntropyLoss::release(Context *ctx) {
 
 Rnn::Rnn(uint i, uint h, DATATYPE _sigma, bool _rand)
     : input_num(i), hidden_num(h), sigma(_sigma), rand(_rand) {
+    if (!rand) {
+        std::cerr << "Warning: using fixed weight for Rnn" << std::endl;
+    }
     wxh = new Parameters(Shape(hidden_num, input_num));
     whh = new Parameters(Shape(hidden_num, hidden_num));
     bh = new Parameters(Shape(hidden_num, 1));

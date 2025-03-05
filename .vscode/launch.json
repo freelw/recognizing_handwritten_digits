@@ -89,7 +89,7 @@
             "request": "launch",
             "program": "/home/cs/project/recognizing_handwritten_digits/c++/rnn/rnn",
             "args": [
-                "test"
+                "testdl"
             ],
             "stopAtEntry": false,
             "cwd": "/home/cs/project/recognizing_handwritten_digits/c++/rnn/",

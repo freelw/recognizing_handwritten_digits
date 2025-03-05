@@ -47,7 +47,7 @@ void testgrad() {
     std::cout << "grad : " << *grad << std::endl;
     lm.backward(ctx, grad);
     lm.clip_grad(1);
-    // adam.step();
+    adam.step();
 
     // print all parameters
     
