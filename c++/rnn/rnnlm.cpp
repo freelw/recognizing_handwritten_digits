@@ -26,14 +26,12 @@ Matrix * join_hiddens(const std::vector<Matrix *> &hiddens) {
 Matrix *RnnLM::forward(RnnLMContext *ctx, const std::vector<Matrix *> &inputs) {
     RnnRes res = rnn->forward(ctx->rnn_ctx, inputs, nullptr);
     Matrix *hiddens = join_hiddens(res.states);
-    std::cout << "LM forward hiddens : " << *hiddens << std::endl;
     return fc->forward(ctx->fc_ctx, hiddens);
 }
 
 void RnnLM::backward(RnnLMContext *ctx, Matrix* grad) {
     grad->checkShape(Shape(vocab_size, ctx->rnn_ctx->hiddens.size() - 1));
     Matrix *grad_hiddens = fc->backward(ctx->fc_ctx, grad);
-    cout << "grad_hiddens : " << *grad_hiddens << endl;
     std::vector<Matrix *> grad_hiddens_vec = grad_hiddens->split(1);
     rnn->backward(ctx->rnn_ctx, grad_hiddens_vec);
 }
