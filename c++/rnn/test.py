@@ -40,6 +40,12 @@ class Rnn:
             output.append(h)
         return output
 
+def clip_gradients(grad_clip_val, model):
+    params = [p for p in model.parameters() if p.requires_grad]
+    norm = torch.sqrt(sum(torch.sum((p.grad ** 2)) for p in params))
+    if norm > grad_clip_val:
+        for param in params:
+            param.grad[:] *= grad_clip_val / norm
 class RnnLM:
     def __init__(self, rnn, vocab_size):
         self.rnn = rnn
@@ -93,6 +99,7 @@ def testgrad():
     l = loss(output.T, labels)
     print("loss : ", l)
     l.backward()
+    clip_gradients(1, rnnlm)
     for param in rnnlm.parameters():
         print(param.grad)
 
