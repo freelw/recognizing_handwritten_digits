@@ -99,20 +99,20 @@ def testgrad():
     # labels = torch.tensor([2], dtype=torch.long)
     rnnlm = RnnLM(rnn, vocab_size, False)
     optimizer = torch.optim.Adam(rnnlm.parameters(), lr=0.001)
-    for e in range(3):
+    for e in range(30):
         output = rnnlm.forward(inputs, None)
         # print("output : ", output)
         # loss
         loss = torch.nn.CrossEntropyLoss()
         l = loss(output.T, labels)
-        # print("loss : ", l)
+        print("e : ", e, "loss : ", l)
         optimizer.zero_grad()
         l.backward()
         clip_gradients(1, rnnlm)
         optimizer.step()
-    for param in rnnlm.parameters():
-        print(param)
-        print(param.grad)
+    # for param in rnnlm.parameters():
+    #     print(param)
+    #     print(param.grad)
 
 class Vocab:  #@save
     """Vocabulary for text."""
@@ -184,8 +184,8 @@ def train_llm():
     num_hiddens = 32
 
     X, Y, vocab = load_data(num_steps)
-    rnn = Rnn(len(vocab), num_hiddens)
-    rnnlm = RnnLM(rnn, len(vocab))
+    rnn = Rnn(len(vocab), num_hiddens, 0.01, False)
+    rnnlm = RnnLM(rnn, len(vocab), False)
     optimizer = torch.optim.Adam(rnnlm.parameters(), lr=0.001)  # Change learning rate to 0.001
     loss_fn = torch.nn.CrossEntropyLoss()
     
@@ -213,11 +213,11 @@ def train_llm():
             # print("bias : ", rnnlm.B)
             # print("bias grad: ", rnnlm.B.grad)
         print("epoch : ", epoch, " loss : ", loss_sum / length)
-        for param in rnnlm.parameters():
-            print(param)
-            print(param.grad)
+        # for param in rnnlm.parameters():
+        #     print(param)
+        #     print(param.grad)
 
 if __name__ == '__main__':
-    #teststack()
-    testgrad()
-    #train_llm()
+    # teststack()
+    # testgrad()
+    train_llm()

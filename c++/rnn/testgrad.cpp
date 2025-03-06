@@ -34,7 +34,7 @@ void testgrad() {
     init_weight(parameters[3]);
     cout << "parameters[3] : " << *(parameters[3]->get_weight()) << endl;
     Adam adam(parameters, 0.001);
-    for (auto e = 0; e < 3; ++ e) {
+    for (auto e = 0; e < 30; ++ e) {
 
         RnnLMContext *ctx = lm.init();
         Matrix *res = lm.forward(ctx, inputs);
@@ -44,7 +44,7 @@ void testgrad() {
         // CrossEntropyLoss loss_fn({2});
         CrossEntropyLossContext *ce_ctx = (CrossEntropyLossContext *)loss_fn.init();
         auto loss = loss_fn.forward(ce_ctx, res);
-        std::cout << "loss : " << *loss << std::endl;
+        std::cout << "e : " << e << " loss : " << *loss;
         auto grad = loss_fn.backward(ce_ctx, nullptr);
         loss_fn.release(ce_ctx);
         // std::cout << "grad : " << *grad << std::endl;
@@ -55,9 +55,9 @@ void testgrad() {
         lm.release(ctx);
     }
     // print all parameters
-    for (auto p : parameters) {
-        std::cout << *p << std::endl;
-    }
+    // for (auto p : parameters) {
+    //     std::cout << *p << std::endl;
+    // }
     
     for (int i = 0; i < 4; ++ i) {
         delete inputs[i];

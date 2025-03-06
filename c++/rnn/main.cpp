@@ -5,6 +5,7 @@
 #include "optimizers/optimizers.h"
 
 void testgrad();
+void init_weight(Parameters *p);
 
 #define RESOURCE_NAME "../../resources/timemachine_preprocessed.txt"
 
@@ -51,10 +52,13 @@ int main(int argc, char *argv[]) {
         uint num_steps = 32;
         uint hidden_num = 32;
 
-        Rnn *rnn = new Rnn(INPUT_NUM, hidden_num, 0.01, true);
-        RnnLM lm(rnn, INPUT_NUM, true);
+        Rnn *rnn = new Rnn(INPUT_NUM, hidden_num, 0.01, false);
+        RnnLM lm(rnn, INPUT_NUM, false);
+
+        auto parameters = lm.get_parameters();
+        init_weight(parameters[3]);
         
-        Adam adam(lm.get_parameters(), 0.001);
+        Adam adam(parameters, 0.001);
         for (uint epoch = 0; epoch < 2; epoch++) {
             DATATYPE loss_sum = 0;
             for (uint i = 0; i < loader.data.size() - num_steps; i++) {
@@ -90,9 +94,9 @@ int main(int argc, char *argv[]) {
                 lm.release(ctx);
                 // std::cout << "bias :" << *(lm.get_parameters()[4]) << endl;
             }
-            for (auto p : lm.get_parameters()) {
-                std::cout << "param : " << *p << std::endl;
-            }
+            // for (auto p : lm.get_parameters()) {
+            //     std::cout << "param : " << *p << std::endl;
+            // }
             std::cout << "epoch " << epoch << " loss : " << loss_sum/(loader.data.size() - num_steps) << std::endl;
             freeTmpMatrix();
         }
