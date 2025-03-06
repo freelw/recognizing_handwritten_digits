@@ -154,8 +154,8 @@ def get_timemachine():
         return f.read()
 
 def tokenize(text):
-    return list(text)[:200] # fix me
-    #return list(text)
+    #return list(text)[:200] # fix me
+    return list(text)
 
 def one_hot(x, vocab_size):
     ret = []
@@ -164,33 +164,43 @@ def one_hot(x, vocab_size):
     ret[x][0] = 1
     return ret
 
+def to_index(x):
+    if (x == ' '):
+        return 26
+    if (x >= 'a' and x <= 'z'):
+        return ord(x) - ord('a')
+    return 27
+
 def load_data(num_steps=32):
     text = get_timemachine()
     tokens = tokenize(text)
-    # print(','.join(tokens[:30]))
-    vocab = Vocab(tokens)
-    corpus = [vocab[token] for token in tokens]
     X = []
     Y = []
-    for i in range(len(corpus) - num_steps):
+    for i in range(len(tokens) - num_steps):
         x = []
         y = []
         for j in range(num_steps):
-            x.append(corpus[j])
-            y.append(corpus[j+1])
+            pos = i + j
+            index_x = to_index(tokens[pos])
+            index_y = to_index(tokens[pos + 1])
+            x.append(index_x)
+            y.append(index_y)
         X.append(x)
         Y.append(y)
-    return X, Y, vocab
+    return X, Y
 
 def train_llm():
     num_steps = 32
     num_hiddens = 32
+    vocab_size = 28
 
-    rand = False
+    rand = True
 
-    X, Y, vocab = load_data(num_steps)
-    rnn = Rnn(len(vocab), num_hiddens, 0.01, rand)
-    rnnlm = RnnLM(rnn, len(vocab), rand)
+    X, Y = load_data(num_steps)
+    # print ("X : ", X)
+    # print ("Y : ", Y)
+    rnn = Rnn(vocab_size, num_hiddens, 0.01, rand)
+    rnnlm = RnnLM(rnn, vocab_size, rand)
     optimizer = torch.optim.Adam(rnnlm.parameters(), lr=0.001)  # Change learning rate to 0.001
     loss_fn = torch.nn.CrossEntropyLoss()
     
@@ -204,7 +214,7 @@ def train_llm():
             x, y = X[i], Y[i]
             inputs = []
             for item in x:
-                inputs.append(torch.tensor(one_hot(item, len(vocab)), dtype=torch.float32))
+                inputs.append(torch.tensor(one_hot(item, vocab_size), dtype=torch.float32))
             labels = torch.tensor(y, dtype=torch.long)
             output = rnnlm.forward(inputs, None)
             # print("output : ", output)

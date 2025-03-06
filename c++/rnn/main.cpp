@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
         uint num_steps = 32;
         uint hidden_num = 32;
 
-        bool rand = false;
+        bool rand = true;
 
         Rnn *rnn = new Rnn(INPUT_NUM, hidden_num, 0.01, rand);
         RnnLM lm(rnn, INPUT_NUM, rand);
