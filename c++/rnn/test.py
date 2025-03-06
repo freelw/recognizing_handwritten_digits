@@ -1,7 +1,8 @@
 import torch
 import collections
 import torch.nn.functional as F
-
+global g_vocab_size
+g_vocab_size = 28
 def teststack():
     x = [[0.5, 1, ],
           [1, 1, ],
@@ -62,21 +63,43 @@ class RnnLM:
         else:
             tensor_1d = torch.arange(0.1, 0.1 * (vocab_size * rnn.num_hiddens+1), 0.1)
             self.W = tensor_1d.reshape(vocab_size, rnn.num_hiddens)
-            # print("vocab_size : ", vocab_size)
-            # print("self.W : ", self.W)
-            # print("self.W.shape : ", self.W.shape)
             self.B = torch.empty(vocab_size, 1).fill_(0.1)
         self.W.requires_grad_()
         self.B.requires_grad_()
     
+    def output_layer(self, h):
+        return self.W @ h + self.B
+    
     def forward(self, inputs, state):
         h = self.rnn.forward(inputs, state)
         hh = torch.stack(h, 1).squeeze(2)
-        output = self.W @ hh + self.B
-        return output
+        return self.output_layer(hh)
 
     def parameters(self):
         return [self.rnn.W_xh, self.rnn.W_hh, self.rnn.b_h, self.W, self.B]
+
+    def predict(self, prefix, num_preds):
+        preprocess_prefix = []
+        for item in list(prefix):
+            #print ("item : ", item)
+            preprocess_prefix.append(torch.tensor(one_hot(to_index(item), g_vocab_size), dtype=torch.float32))
+
+        state = self.rnn.forward(preprocess_prefix, None)
+        output_states = [state[-1]]
+        outputs = []
+        for i in range(num_preds):
+            last_state = output_states[-1]
+            #print("last_state : ", last_state)
+            output = self.output_layer(last_state)
+            # print("output : ", output)
+            predict_index = torch.argmax(output).item()
+            #print("predict_index : ", predict_index, " char : ", to_char(predict_index))
+            outputs.append(to_char(predict_index))
+            input = torch.tensor(one_hot(predict_index, g_vocab_size), dtype=torch.float32)
+            state = self.rnn.forward([input], last_state)
+            output_states.append(state[-1])
+        print("prefix : ", prefix)
+        print("predict : ", prefix, "".join(outputs))
 
 def testgrad():
     vocab_size = 3
@@ -117,45 +140,13 @@ def testgrad():
     #     print(param)
     #     print(param.grad)
 
-class Vocab:  #@save
-    """Vocabulary for text."""
-    def __init__(self, tokens=[], min_freq=0, reserved_tokens=[]):
-        # Flatten a 2D list if needed
-        if tokens and isinstance(tokens[0], list):
-            tokens = [token for line in tokens for token in line]
-        # Count token frequencies
-        counter = collections.Counter(tokens)
-        self.token_freqs = sorted(counter.items(), key=lambda x: x[1],
-                                  reverse=True)
-        # The list of unique tokens
-        self.idx_to_token = list(sorted(set(['<unk>'] + reserved_tokens + [
-            token for token, freq in self.token_freqs if freq >= min_freq])))
-        self.token_to_idx = {token: idx
-                             for idx, token in enumerate(self.idx_to_token)}
-
-    def __len__(self):
-        return len(self.idx_to_token)
-
-    def __getitem__(self, tokens):
-        if not isinstance(tokens, (list, tuple)):
-            return self.token_to_idx.get(tokens, self.unk)
-        return [self.__getitem__(token) for token in tokens]
-
-    def to_tokens(self, indices):
-        if hasattr(indices, '__len__') and len(indices) > 1:
-            return [self.idx_to_token[int(index)] for index in indices]
-        return self.idx_to_token[indices]
-
-    def unk(self):  # Index for the unknown token
-        return self.token_to_idx['<unk>']
-
 def get_timemachine():
     with open("../../resources/timemachine_preprocessed.txt") as f:
         return f.read()
 
 def tokenize(text):
-    #return list(text)[:2000] # fix me
-    return list(text)
+    return list(text)[:200] # fix me
+    #return list(text)
 
 def one_hot(x, vocab_size):
     ret = []
@@ -170,6 +161,13 @@ def to_index(x):
     if (x >= 'a' and x <= 'z'):
         return ord(x) - ord('a')
     return 27
+
+def to_char(index):
+    if (index == 26):
+        return ' '
+    if (index < 26 and index >= 0):
+        return chr(ord('a') + index)
+    return '?'
 
 def load_data(num_steps=32):
     text = get_timemachine()
@@ -192,13 +190,10 @@ def load_data(num_steps=32):
 def train_llm():
     num_steps = 32
     num_hiddens = 32
-    vocab_size = 28
+    vocab_size = g_vocab_size
 
     rand = True
-
     X, Y = load_data(num_steps)
-    # print ("X : ", X)
-    # print ("Y : ", Y)
     rnn = Rnn(vocab_size, num_hiddens, 0.01, rand)
     rnnlm = RnnLM(rnn, vocab_size, rand)
     optimizer = torch.optim.Adam(rnnlm.parameters(), lr=0.001)  # Change learning rate to 0.001
@@ -209,29 +204,20 @@ def train_llm():
         print("epoch ", epoch, " started.")
         length = len(X)
         for i in range(length):
-            # if i % 10000 == 0:
-            #     print("[", i, "/", length, "]")
             x, y = X[i], Y[i]
             inputs = []
             for item in x:
                 inputs.append(torch.tensor(one_hot(item, vocab_size), dtype=torch.float32))
             labels = torch.tensor(y, dtype=torch.long)
             output = rnnlm.forward(inputs, None)
-            # print("output : ", output)
-            # print("output.shape : ", output)
             loss = loss_fn(output.T, labels)
-            # print("loss : ", loss)
             loss_sum += loss.item()
             optimizer.zero_grad()
             loss.backward()
             clip_gradients(1, rnnlm)
             optimizer.step()
-            # print("bias : ", rnnlm.B)
-            # print("bias grad: ", rnnlm.B.grad)
         print("epoch : ", epoch, " loss : ", loss_sum / length)
-        # for param in rnnlm.parameters():
-        #     print(param)
-        #     print(param.grad)
+    rnnlm.predict("time traveller", 10)
 
 def testcrossentropy():
     x = [556.225, 1919.83, 2769.87, 2810.71, 2811.33, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34]
