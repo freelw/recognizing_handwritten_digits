@@ -62,6 +62,9 @@ class RnnLM:
         else:
             tensor_1d = torch.arange(0.1, 0.1 * (vocab_size * rnn.num_hiddens+1), 0.1)
             self.W = tensor_1d.reshape(vocab_size, rnn.num_hiddens)
+            # print("vocab_size : ", vocab_size)
+            # print("self.W : ", self.W)
+            # print("self.W.shape : ", self.W.shape)
             self.B = torch.empty(vocab_size, 1).fill_(0.1)
         self.W.requires_grad_()
         self.B.requires_grad_()
@@ -151,7 +154,7 @@ def get_timemachine():
         return f.read()
 
 def tokenize(text):
-    return list(text)[:100] # fix me
+    return list(text)[:200] # fix me
     #return list(text)
 
 def one_hot(x, vocab_size):
@@ -183,13 +186,15 @@ def train_llm():
     num_steps = 32
     num_hiddens = 32
 
+    rand = False
+
     X, Y, vocab = load_data(num_steps)
-    rnn = Rnn(len(vocab), num_hiddens, 0.01, False)
-    rnnlm = RnnLM(rnn, len(vocab), False)
+    rnn = Rnn(len(vocab), num_hiddens, 0.01, rand)
+    rnnlm = RnnLM(rnn, len(vocab), rand)
     optimizer = torch.optim.Adam(rnnlm.parameters(), lr=0.001)  # Change learning rate to 0.001
     loss_fn = torch.nn.CrossEntropyLoss()
     
-    for epoch in range(2):
+    for epoch in range(10):
         loss_sum = 0
         print("epoch ", epoch, " started.")
         length = len(X)
@@ -203,6 +208,7 @@ def train_llm():
             labels = torch.tensor(y, dtype=torch.long)
             output = rnnlm.forward(inputs, None)
             # print("output : ", output)
+            # print("output.shape : ", output)
             loss = loss_fn(output.T, labels)
             # print("loss : ", loss)
             loss_sum += loss.item()
@@ -217,7 +223,21 @@ def train_llm():
         #     print(param)
         #     print(param.grad)
 
+def testcrossentropy():
+    x = [556.225, 1919.83, 2769.87, 2810.71, 2811.33, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34]
+    x = torch.tensor(x, dtype=torch.float32).view(1, 32)
+    x.requires_grad_()
+    labels = [0]
+    labels = torch.tensor(labels, dtype=torch.long).view(1)
+    loss_fn = torch.nn.CrossEntropyLoss()
+    loss = loss_fn(x, labels)
+    print(loss.item())
+    loss.backward()
+    print(x.grad)
+
 if __name__ == '__main__':
     # teststack()
     # testgrad()
     train_llm()
+
+    # testcrossentropy()

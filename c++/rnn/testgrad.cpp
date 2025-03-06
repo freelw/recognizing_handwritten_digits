@@ -5,6 +5,7 @@
 
 
 void init_weight(Parameters *p) {
+    std::cerr << "[warning] init weight" << std::endl;
     int cnt = 1;
     auto w = p->get_weight();
     for (uint i = 0; i < w->getShape().rowCnt; ++ i) {

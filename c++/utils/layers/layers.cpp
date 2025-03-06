@@ -132,32 +132,35 @@ Matrix *CrossEntropyLoss::forward(Context * ctx, Matrix *input) {
     CrossEntropyLossContext *ce_ctx = (CrossEntropyLossContext*)ctx;
     ce_ctx->input = input;
     assert(input->getShape().colCnt == labels.size());
-    Matrix *mExp = allocTmpMatrix(input);
+    // Matrix *mExp = allocTmpMatrix(input);
     Matrix *loss = allocTmpMatrix(Shape(1,1));
     DATATYPE loss_value = 0;
     for (uint j = 0; j < input->getShape().colCnt; ++ j) {
-        DATATYPE max = (*mExp)[0][j];
-        for (uint i = 0; i < mExp->getShape().rowCnt; ++ i) {
-            auto & e = (*mExp)[i][j];
+        DATATYPE max = (*input)[0][j];
+        for (uint i = 0; i < input->getShape().rowCnt; ++ i) {
+            auto e = (*input)[i][j];
             if (max < e) {
                 max = e;
             }
         }
         DATATYPE sum = 0;
+        auto target = labels[j];
+        DATATYPE zt = (*input)[target][j];
         for (uint i = 0; i < input->getShape().rowCnt; ++ i) {
-            DATATYPE & e = (*mExp)[i][j];
+            DATATYPE e = (*input)[i][j];
             e = std::exp(e-max);
             sum += e;
         }
-        // assert(sum > 0);
-        auto target = labels[j];
-        DATATYPE ez = (*mExp)[target][j];
         CrosEntropyInfo p;
         p.sum = sum;
         p.max = max;
+        p.zt = zt;
         ce_ctx->info.push_back(p);
-        loss_value += -log(ez/sum);
+        // std::cout << "[" << ez << "/" << sum << "] ";
+        //loss_value += -log(ez/sum);
+        loss_value += -(zt - max - log(sum));
     }
+    // std::cout << std::endl;
     // assert(ce_ctx->info.size() == labels.size());
     (*loss)[0][0] = loss_value/labels.size();
     return loss;
@@ -173,11 +176,13 @@ Matrix *CrossEntropyLoss::backward(Context *ctx, Matrix *) {
         DATATYPE max = ce_ctx->info[i].max;
         auto target = labels[i];
         for (uint j = 0; j < ce_ctx->input->getShape().rowCnt; ++j) {
+            if (j == target) {
+                continue;
+            }
             auto &_grad = (*grad)[j][i];
             _grad = std::exp((*ce_ctx->input)[j][i] - max) / sum / batch_size;
         }
-        auto &_grad_target = (*grad)[target][i];
-        _grad_target -= 1. / batch_size;
+        (*grad)[target][i] = (std::exp((*ce_ctx->input)[target][i] - max) / sum - 1) / batch_size;
     }
     return grad;
 }

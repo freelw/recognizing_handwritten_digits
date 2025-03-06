@@ -5,6 +5,7 @@
 #include "optimizers/optimizers.h"
 
 void testgrad();
+void testcrossentropy();
 void init_weight(Parameters *p);
 
 #define RESOURCE_NAME "../../resources/timemachine_preprocessed.txt"
@@ -33,11 +34,14 @@ void print_input(const std::vector<Matrix *> &inputs,
 int main(int argc, char *argv[]) {
     bool test = false;
     bool testdl = false;
+    bool testce = false;
     if (argc == 2) {
         if (std::string(argv[1]) == "test") {
             test = true;
         } else if (std::string(argv[1]) == "testdl") {
             testdl = true;
+        } else if (std::string(argv[1]) == "testce") {
+            testce = true;
         }
     }
 
@@ -45,6 +49,8 @@ int main(int argc, char *argv[]) {
         testgrad();
     } else if (testdl) {
         load_data();
+    } else if (testce) {
+        testcrossentropy();
     } else {
         DataLoader loader(RESOURCE_NAME);
 
@@ -52,14 +58,18 @@ int main(int argc, char *argv[]) {
         uint num_steps = 32;
         uint hidden_num = 32;
 
-        Rnn *rnn = new Rnn(INPUT_NUM, hidden_num, 0.01, false);
-        RnnLM lm(rnn, INPUT_NUM, false);
+        bool rand = false;
+
+        Rnn *rnn = new Rnn(INPUT_NUM, hidden_num, 0.01, rand);
+        RnnLM lm(rnn, INPUT_NUM, rand);
 
         auto parameters = lm.get_parameters();
-        init_weight(parameters[3]);
+        if (!rand) {
+            init_weight(parameters[3]);
+        }
         
         Adam adam(parameters, 0.001);
-        for (uint epoch = 0; epoch < 2; epoch++) {
+        for (uint epoch = 0; epoch < 10; epoch++) {
             DATATYPE loss_sum = 0;
             for (uint i = 0; i < loader.data.size() - num_steps; i++) {
                 std::vector<Matrix *> inputs;
@@ -92,13 +102,14 @@ int main(int argc, char *argv[]) {
                 lm.clip_grad(1);
                 adam.step();
                 lm.release(ctx);
+                freeTmpMatrix();
                 // std::cout << "bias :" << *(lm.get_parameters()[4]) << endl;
             }
             // for (auto p : lm.get_parameters()) {
             //     std::cout << "param : " << *p << std::endl;
             // }
             std::cout << "epoch " << epoch << " loss : " << loss_sum/(loader.data.size() - num_steps) << std::endl;
-            freeTmpMatrix();
+            
         }
         delete rnn;
     }
