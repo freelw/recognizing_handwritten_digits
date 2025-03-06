@@ -99,7 +99,8 @@ Matrix *Matrix::pow2() {
     Matrix *res = allocTmpMatrix(this);
     for (uint i = 0; i < shape.rowCnt; ++i) {
         for (uint j = 0; j < shape.colCnt; ++j) {
-            (*res)[i][j] = (*res)[i][j] * (*res)[i][j];
+            auto &r = (*res)[i][j];
+            r = std::pow(r, 2);
         }
     }
     return res;
@@ -109,7 +110,6 @@ Matrix *Matrix::operator+(DATATYPE dt) {
     Matrix *res = allocTmpMatrix(this);
     for (uint i = 0; i < shape.rowCnt; ++i) {
         for (uint j = 0; j < shape.colCnt; ++j) {
-            
             (*res)[i][j] += dt;
         }
     }

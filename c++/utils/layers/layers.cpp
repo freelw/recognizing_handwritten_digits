@@ -132,7 +132,6 @@ Matrix *CrossEntropyLoss::forward(Context * ctx, Matrix *input) {
     CrossEntropyLossContext *ce_ctx = (CrossEntropyLossContext*)ctx;
     ce_ctx->input = input;
     assert(input->getShape().colCnt == labels.size());
-    // Matrix *mExp = allocTmpMatrix(input);
     Matrix *loss = allocTmpMatrix(Shape(1,1));
     DATATYPE loss_value = 0;
     for (uint j = 0; j < input->getShape().colCnt; ++ j) {
@@ -156,12 +155,8 @@ Matrix *CrossEntropyLoss::forward(Context * ctx, Matrix *input) {
         p.max = max;
         p.zt = zt;
         ce_ctx->info.push_back(p);
-        // std::cout << "[" << ez << "/" << sum << "] ";
-        //loss_value += -log(ez/sum);
         loss_value += -(zt - max - log(sum));
     }
-    // std::cout << std::endl;
-    // assert(ce_ctx->info.size() == labels.size());
     (*loss)[0][0] = loss_value/labels.size();
     return loss;
 }
