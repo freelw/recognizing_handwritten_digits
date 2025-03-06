@@ -16,7 +16,6 @@ void load_data() {
 
 void print_input(const std::vector<Matrix *> &inputs,
                 std::vector<uint> &labels, std::string &content) {
-
     for (uint i = 0; i < inputs.size(); i++) {
         int hot_cnt = 0;
         assert(inputs[i]->getShape().rowCnt == INPUT_NUM);
@@ -53,16 +52,12 @@ int main(int argc, char *argv[]) {
         testcrossentropy();
     } else {
         DataLoader loader(RESOURCE_NAME);
-
         std::cout << "Data loaded" << std::endl;
         uint num_steps = 32;
         uint hidden_num = 32;
-
         bool rand = true;
-
         Rnn *rnn = new Rnn(INPUT_NUM, hidden_num, 0.01, rand);
         RnnLM lm(rnn, INPUT_NUM, rand);
-
         auto parameters = lm.get_parameters();
         if (!rand) {
             init_weight(parameters[3]);
@@ -80,20 +75,14 @@ int main(int argc, char *argv[]) {
                     inputs.push_back(loader.data[i+j]);
                     labels.push_back(loader.labels[i+j+1]);
                 }
-                
                 assert(inputs.size() == num_steps);
-                // std::string sub_content = loader.content.substr(i, num_steps);
-                // std::cout << "data index : " << i << std::endl;
-                // print_input(inputs, labels, sub_content);
                 RnnLMContext *ctx = lm.init();
                 Matrix *res = lm.forward(ctx, inputs);
                 res->checkShape(Shape(INPUT_NUM, num_steps));
-                // std::cout << "res : " << *res << std::endl;
                 CrossEntropyLoss loss_fn(labels);
                 CrossEntropyLossContext *ce_ctx = (CrossEntropyLossContext *)loss_fn.init();
                 auto loss = loss_fn.forward(ce_ctx, res);
                 loss->checkShape(Shape(1, 1));
-                // std::cout << "loss : " << *loss << std::endl;
                 loss_sum += (*loss)[0][0];
                 auto grad = loss_fn.backward(ce_ctx, nullptr);
                 loss_fn.release(ce_ctx);
@@ -103,13 +92,8 @@ int main(int argc, char *argv[]) {
                 adam.step();
                 lm.release(ctx);
                 freeTmpMatrix();
-                // std::cout << "bias :" << *(lm.get_parameters()[4]) << endl;
             }
-            // for (auto p : lm.get_parameters()) {
-            //     std::cout << "param : " << *p << std::endl;
-            // }
             std::cout << "epoch " << epoch << " loss : " << loss_sum/(loader.data.size() - num_steps) << std::endl;
-            
         }
         delete rnn;
     }

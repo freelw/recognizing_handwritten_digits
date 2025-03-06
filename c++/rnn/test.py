@@ -154,8 +154,8 @@ def get_timemachine():
         return f.read()
 
 def tokenize(text):
-    return list(text)[:2000] # fix me
-    #return list(text)
+    #return list(text)[:2000] # fix me
+    return list(text)
 
 def one_hot(x, vocab_size):
     ret = []
