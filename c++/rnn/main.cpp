@@ -12,6 +12,23 @@ void load_data() {
     DataLoader loader(RESOURCE_NAME);
 }
 
+void print_input(const std::vector<Matrix *> &inputs,
+                std::vector<uint> &labels, std::string &content) {
+
+    for (uint i = 0; i < inputs.size(); i++) {
+        int hot_cnt = 0;
+        assert(inputs[i]->getShape().rowCnt == INPUT_NUM);
+        assert(inputs[i]->getShape().colCnt == 1);
+        for (uint j = 0; j < inputs[i]->getShape().rowCnt; j++) {
+            if ((*inputs[i])[j][0] == 1) {
+                hot_cnt++;
+                std::cout << "hot : " << j << " ch : " << content[i] << " label : " << labels[i] << std::endl;
+            }
+        }
+        assert(hot_cnt == 1);
+    }
+}
+
 int main(int argc, char *argv[]) {
     bool test = false;
     bool testdl = false;
@@ -36,9 +53,9 @@ int main(int argc, char *argv[]) {
 
         Rnn *rnn = new Rnn(INPUT_NUM, hidden_num, 0.01, true);
         RnnLM lm(rnn, INPUT_NUM, true);
-        RnnLMContext *ctx = lm.init();
+        
         Adam adam(lm.get_parameters(), 0.001);
-        for (uint epoch = 0; epoch < 100; epoch++) {
+        for (uint epoch = 0; epoch < 2; epoch++) {
             DATATYPE loss_sum = 0;
             for (uint i = 0; i < loader.data.size() - num_steps; i++) {
                 std::vector<Matrix *> inputs;
@@ -49,10 +66,20 @@ int main(int argc, char *argv[]) {
                     inputs.push_back(loader.data[i+j]);
                     labels.push_back(loader.labels[i+j+1]);
                 }
+                
+                assert(inputs.size() == num_steps);
+                // std::string sub_content = loader.content.substr(i, num_steps);
+                // std::cout << "data index : " << i << std::endl;
+                // print_input(inputs, labels, sub_content);
+                RnnLMContext *ctx = lm.init();
                 Matrix *res = lm.forward(ctx, inputs);
+                res->checkShape(Shape(INPUT_NUM, num_steps));
+                std::cout << "res : " << *res << std::endl;
                 CrossEntropyLoss loss_fn(labels);
                 CrossEntropyLossContext *ce_ctx = (CrossEntropyLossContext *)loss_fn.init();
                 auto loss = loss_fn.forward(ce_ctx, res);
+                loss->checkShape(Shape(1, 1));
+                // std::cout << "loss : " << *loss << std::endl;
                 loss_sum += (*loss)[0][0];
                 auto grad = loss_fn.backward(ce_ctx, nullptr);
                 loss_fn.release(ce_ctx);
@@ -60,11 +87,13 @@ int main(int argc, char *argv[]) {
                 lm.backward(ctx, grad);
                 lm.clip_grad(1);
                 adam.step();
+                lm.release(ctx);
+                // std::cout << "bias :" << *(lm.get_parameters()[4]) << endl;
                 freeTmpMatrix();
             }
-            std::cout << "epoch " << epoch << " loss : " << loss_sum/(loader.data.size() - num_steps) << std::endl;   
+            std::cout << "epoch " << epoch << " loss : " << loss_sum/(loader.data.size() - num_steps) << std::endl;
+            
         }
-        lm.release(ctx);
         delete rnn;
     }
     return 0;

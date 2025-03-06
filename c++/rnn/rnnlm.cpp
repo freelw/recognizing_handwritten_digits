@@ -68,7 +68,7 @@ void RnnLM::zero_grad() {
 
 void RnnLM::clip_grad(DATATYPE grad_clip_val) {
     std::vector<Parameters*> params = get_parameters();
-    DATATYPE norm = 0;
+    double norm = 0;
     for (auto param : params) {
         auto grad = param->get_grad();
         Shape shape = grad->getShape();

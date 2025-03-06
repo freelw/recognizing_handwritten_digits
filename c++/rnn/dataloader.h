@@ -14,10 +14,10 @@ class DataLoader {
 public:
     DataLoader(const std::string &filename) {
         std::ifstream ifs(filename);
-        std::string content((std::istreambuf_iterator<char>(ifs)),
+        std::string _content((std::istreambuf_iterator<char>(ifs)),
                              (std::istreambuf_iterator<char>()));
-        // content = content.substr(0, 200);
-        std::cout << "content length : " << content.length() << std::endl;
+        content = _content.substr(0, 100);
+        // std::cout << "content length : " << content.length() << std::endl;
         for (uint i = 0; i < content.size(); i++) {
             assert((content[i] >= 'a' && content[i] <= 'z') || content[i] == ' ');
             Matrix *m = new Matrix(Shape(INPUT_NUM, 1));
@@ -45,6 +45,7 @@ public:
 public:
     std::vector<Matrix *> data;
     std::vector<uint> labels;
+    std::string content;
 
 };
 #endif

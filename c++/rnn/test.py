@@ -50,7 +50,7 @@ def clip_gradients(grad_clip_val, model):
     norm = torch.sqrt(sum(torch.sum((p.grad ** 2)) for p in params))
     if norm > grad_clip_val:
         for param in params:
-            print ("norm : ", norm)
+            # print ("norm : ", norm)
             param.grad[:] *= grad_clip_val / norm
 class RnnLM:
     def __init__(self, rnn, vocab_size, rand = True):
@@ -110,7 +110,6 @@ def testgrad():
         l.backward()
         clip_gradients(1, rnnlm)
         optimizer.step()
-        clip_gradients(1, rnnlm)
     for param in rnnlm.parameters():
         print(param)
         print(param.grad)
@@ -152,7 +151,8 @@ def get_timemachine():
         return f.read()
 
 def tokenize(text):
-    return list(text)[:1000] # fix me
+    return list(text)[:100] # fix me
+    #return list(text)
 
 def one_hot(x, vocab_size):
     ret = []
@@ -189,25 +189,29 @@ def train_llm():
     optimizer = torch.optim.Adam(rnnlm.parameters(), lr=0.001)  # Change learning rate to 0.001
     loss_fn = torch.nn.CrossEntropyLoss()
     
-    for epoch in range(100):
+    for epoch in range(2):
         loss_sum = 0
         print("epoch ", epoch, " started.")
         length = len(X)
         for i in range(length):
-            if i % 10000 == 0:
-                print("[", i, "/", length, "]")
+            # if i % 10000 == 0:
+            #     print("[", i, "/", length, "]")
             x, y = X[i], Y[i]
             inputs = []
             for item in x:
                 inputs.append(torch.tensor(one_hot(item, len(vocab)), dtype=torch.float32))
             labels = torch.tensor(y, dtype=torch.long)
             output = rnnlm.forward(inputs, None)
+            print("output : ", output)
             loss = loss_fn(output.T, labels)
+            # print("loss : ", loss)
             loss_sum += loss.item()
             optimizer.zero_grad()
             loss.backward()
             clip_gradients(1, rnnlm)
             optimizer.step()
+            # print("bias : ", rnnlm.B)
+            # print("bias grad: ", rnnlm.B.grad)
         print("epoch : ", epoch, " loss : ", loss_sum / length)
 
 if __name__ == '__main__':
