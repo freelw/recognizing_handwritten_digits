@@ -16,7 +16,7 @@ public:
         std::ifstream ifs(filename);
         std::string _content((std::istreambuf_iterator<char>(ifs)),
                              (std::istreambuf_iterator<char>()));
-        content = _content.substr(0, 100);
+        content = _content.substr(0, 2000);
         // content = _content;
         // std::cout << "content length : " << content.length() << std::endl;
         for (uint i = 0; i < content.size(); i++) {

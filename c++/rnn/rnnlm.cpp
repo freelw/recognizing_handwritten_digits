@@ -75,7 +75,7 @@ void RnnLM::clip_grad(DATATYPE grad_clip_val) {
         Shape shape = grad->getShape();
         for (uint i = 0; i < shape.rowCnt; ++ i) {
             for (uint j = 0; j < shape.colCnt; ++ j) {
-                norm += (*grad)[i][j] * (*grad)[i][j];
+                norm += std::pow((*grad)[i][j], 2);
             }
         }
     }
