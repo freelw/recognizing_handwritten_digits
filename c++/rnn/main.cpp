@@ -95,6 +95,16 @@ int main(int argc, char *argv[]) {
             }
             std::cout << "epoch " << epoch << " loss : " << loss_sum/(loader.data.size() - num_steps) << std::endl;
         }
+        std::vector<std::string> prefixs = {
+            "time traveller",
+            "the time machine",
+        };
+        for (auto prefix : prefixs) {
+            std::string predicted = lm.predict(prefix, 10);
+            std::cout << "prefix : " << prefix << std::endl;
+            std::cout << "predicted : " << predicted << std::endl;
+        }
+        freeTmpMatrix();
         delete rnn;
     }
     return 0;

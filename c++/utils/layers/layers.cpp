@@ -257,7 +257,7 @@ RnnRes Rnn::forward(RnnContext *ctx, const std::vector<Matrix *> &inputs, Matrix
     uint batch_size = inputs[0]->getShape().colCnt;
     assert(batch_size == 1);
 
-    assert(!hidden);
+    // assert(!hidden);
     if (!hidden) {
         hidden = allocTmpMatrix(Shape(hidden_num, batch_size));
     }

@@ -1,4 +1,5 @@
 #include "rnnlm.h"
+#include "common.h"
 
 #include <iostream>
 
@@ -87,4 +88,40 @@ void RnnLM::clip_grad(DATATYPE grad_clip_val) {
             *grad *= grad_clip_val / norm;
         }
     }
+}
+
+std::string RnnLM::predict(const std::string &prefix, uint num_preds) {
+    std::vector<Matrix *> inputs;
+    for (uint i = 0; i < prefix.size(); i++) {
+        Matrix *m = allocTmpMatrix(Shape(vocab_size, 1));
+        (*m)[to_index(prefix[i])][0] = 1;
+        inputs.push_back(m);
+    }
+    RnnLMContext *ctx = init();
+    RnnRes res = rnn->forward(ctx->rnn_ctx, inputs, nullptr);
+    Matrix *last_hidden = res.states[res.states.size()-1];
+    std::string ret = "";
+    for (uint i = 0; i < num_preds; ++ i) {
+        Matrix *output = fc->forward(ctx->fc_ctx, last_hidden);
+        release(ctx);
+        // std::cout << "output : " << *output << std::endl;
+        uint max_index = 0;
+        for (uint j = 0; j < vocab_size; ++ j) {
+            if ((*output)[j][0] > (*output)[max_index][0]) {
+                max_index = j;
+            }
+        }
+        // std::cout << "max_index : " << max_index << std::endl;
+        // std::cout << "to_char(max_index) : " << to_char(max_index) << std::endl;
+        ret += to_char(max_index);
+        Matrix *m = allocTmpMatrix(Shape(vocab_size, 1));
+        (*m)[max_index][0] = 1;
+        std::vector<Matrix *> new_inputs;
+        new_inputs.push_back(m);
+        ctx = init();
+        res = rnn->forward(ctx->rnn_ctx, new_inputs, last_hidden);
+        last_hidden = res.states[res.states.size()-1];
+    }
+    release(ctx);
+    return ret;
 }
