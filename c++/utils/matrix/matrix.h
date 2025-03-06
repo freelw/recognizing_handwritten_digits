@@ -36,8 +36,8 @@ public:
     friend ostream &operator<<(ostream &output, const Matrix &m);
     Matrix *operator+(const Matrix &m);
     Matrix *operator+=(const Matrix &m);
-    Matrix *operator+(int dt);
-    Matrix *operator-(int dt);
+    Matrix *operator+(DATATYPE dt);
+    Matrix *operator-(DATATYPE dt);
     Matrix *operator-();
     Matrix *operator-(const Matrix &m);
     Matrix *operator*(const Matrix &m);
@@ -48,7 +48,7 @@ public:
     Matrix *tanh_prime();
     Matrix& operator=(const Matrix &m);
     Matrix *pow2();
-    friend Matrix *operator-(int, const Matrix &m);
+    friend Matrix *operator-(DATATYPE, const Matrix &m);
     DATATYPE* operator[](unsigned int index) const;
     Shape getShape() const;
     Matrix *dot(const Matrix &m);

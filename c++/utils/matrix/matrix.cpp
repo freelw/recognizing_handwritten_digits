@@ -105,7 +105,7 @@ Matrix *Matrix::pow2() {
     return res;
 }
 
-Matrix *Matrix::operator+(int dt) {
+Matrix *Matrix::operator+(DATATYPE dt) {
     Matrix *res = allocTmpMatrix(this);
     for (uint i = 0; i < shape.rowCnt; ++i) {
         for (uint j = 0; j < shape.colCnt; ++j) {
@@ -116,7 +116,7 @@ Matrix *Matrix::operator+(int dt) {
     return res;
 }
 
-Matrix *Matrix::operator-(int dt) {
+Matrix *Matrix::operator-(DATATYPE dt) {
     Matrix *res = allocTmpMatrix(this);
     for (uint i = 0; i < shape.rowCnt; ++i) {
         for (uint j = 0; j < shape.colCnt; ++j) {
@@ -137,7 +137,7 @@ Matrix *Matrix::operator-() {
     return res;
 }
 
-Matrix *operator-(int v, const Matrix &m) {
+Matrix *operator-(DATATYPE v, const Matrix &m) {
     Matrix *res = allocTmpMatrix(m);
     for (uint i = 0; i < m.shape.rowCnt; ++i) {
         for (uint j = 0; j < m.shape.colCnt; ++j) {

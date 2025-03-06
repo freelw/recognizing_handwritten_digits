@@ -27,16 +27,16 @@ void testgrad() {
     (*(inputs[2]))[2][0] = 1;
     (*(inputs[3]))[0][0] = 1;
 
-    Rnn *rnn = new Rnn(vocab_size, 4, 0.01, true);
-    RnnLM lm(rnn, 3, true);
-    RnnLMContext *ctx = lm.init();
+    Rnn *rnn = new Rnn(vocab_size, 4, 0.01, false);
+    RnnLM lm(rnn, 3, false);
+    
     auto parameters = lm.get_parameters();
-    // init_weight(parameters[3]);
+    init_weight(parameters[3]);
     cout << "parameters[3] : " << *(parameters[3]->get_weight()) << endl;
     Adam adam(parameters, 0.001);
     for (auto e = 0; e < 3; ++ e) {
 
-        
+        RnnLMContext *ctx = lm.init();
         Matrix *res = lm.forward(ctx, inputs);
         // std::cout << "res : " << *res << std::endl;
         CrossEntropyLoss loss_fn({2, 1, 2, 0});
@@ -52,15 +52,13 @@ void testgrad() {
         lm.backward(ctx, grad);
         lm.clip_grad(1);
         adam.step();
-
-        
+        lm.release(ctx);
     }
     // print all parameters
     for (auto p : parameters) {
         std::cout << *p << std::endl;
     }
     
-    lm.release(ctx);
     for (int i = 0; i < 4; ++ i) {
         delete inputs[i];
     }

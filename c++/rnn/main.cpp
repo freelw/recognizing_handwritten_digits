@@ -74,7 +74,7 @@ int main(int argc, char *argv[]) {
                 RnnLMContext *ctx = lm.init();
                 Matrix *res = lm.forward(ctx, inputs);
                 res->checkShape(Shape(INPUT_NUM, num_steps));
-                std::cout << "res : " << *res << std::endl;
+                // std::cout << "res : " << *res << std::endl;
                 CrossEntropyLoss loss_fn(labels);
                 CrossEntropyLossContext *ce_ctx = (CrossEntropyLossContext *)loss_fn.init();
                 auto loss = loss_fn.forward(ce_ctx, res);
@@ -89,10 +89,12 @@ int main(int argc, char *argv[]) {
                 adam.step();
                 lm.release(ctx);
                 // std::cout << "bias :" << *(lm.get_parameters()[4]) << endl;
-                freeTmpMatrix();
+            }
+            for (auto p : lm.get_parameters()) {
+                std::cout << "param : " << *p << std::endl;
             }
             std::cout << "epoch " << epoch << " loss : " << loss_sum/(loader.data.size() - num_steps) << std::endl;
-            
+            freeTmpMatrix();
         }
         delete rnn;
     }

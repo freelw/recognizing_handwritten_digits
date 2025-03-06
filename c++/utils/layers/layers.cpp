@@ -250,11 +250,15 @@ Rnn::~Rnn() {
 }
 
 RnnRes Rnn::forward(RnnContext *ctx, const std::vector<Matrix *> &inputs, Matrix *hidden) {
-    ctx->clear();
+    assert(ctx->inputs.size() == 0);
+    assert(ctx->hiddens.size() == 0);
+    assert(ctx->states.size() == 0);
     assert(inputs.size() >= 1);
     ctx->inputs = inputs;
     uint batch_size = inputs[0]->getShape().colCnt;
+    assert(batch_size == 1);
 
+    assert(!hidden);
     if (!hidden) {
         hidden = allocTmpMatrix(Shape(hidden_num, batch_size));
     }
@@ -266,12 +270,14 @@ RnnRes Rnn::forward(RnnContext *ctx, const std::vector<Matrix *> &inputs, Matrix
     for (auto x : inputs) {
         Matrix *state = *(wxh->get_weight()->dot(*x)) + *(whh->get_weight()->dot(*hidden));
         Shape shape = state->getShape();
+        state->checkShape(Shape(hidden_num, batch_size));
         for (uint i = 0; i < shape.rowCnt; ++ i) {
             for (uint j = 0; j < shape.colCnt; ++ j) {
                 (*state)[i][j] += (*bh->get_weight())[i][0];
             }
         }
         hidden = state->tanh();
+        hidden->checkShape(Shape(hidden_num, batch_size));
         res.states.push_back(hidden);
         ctx->hiddens.push_back(hidden);
         ctx->states.push_back(state);
