@@ -153,7 +153,6 @@ Matrix *CrossEntropyLoss::forward(Context * ctx, Matrix *input) {
         CrosEntropyInfo p;
         p.sum = sum;
         p.max = max;
-        p.zt = zt;
         ce_ctx->info.push_back(p);
         loss_value += -(zt - max - log(sum));
     }

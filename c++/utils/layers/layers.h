@@ -137,7 +137,7 @@ class Relu: public Layer {
 };
 
 struct CrosEntropyInfo {
-    DATATYPE sum, max, zt;
+    DATATYPE sum, max;
 };
 class CrossEntropyLossContext: public Context {
     public:
