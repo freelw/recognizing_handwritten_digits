@@ -145,7 +145,7 @@ def get_timemachine():
         return f.read()
 
 def tokenize(text):
-    return list(text)[:200] # fix me
+    return list(text)[:2000] # fix me
     #return list(text)
 
 def one_hot(x, vocab_size):
@@ -199,7 +199,7 @@ def train_llm():
     optimizer = torch.optim.Adam(rnnlm.parameters(), lr=0.001)  # Change learning rate to 0.001
     loss_fn = torch.nn.CrossEntropyLoss()
     
-    for epoch in range(10):
+    for epoch in range(30):
         loss_sum = 0
         print("epoch ", epoch, " started.")
         length = len(X)
