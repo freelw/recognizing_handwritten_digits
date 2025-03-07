@@ -7,6 +7,7 @@
 #include "rnnlm.h"
 #include "optimizers/optimizers.h"
 #include "getopt.h"
+#include <unistd.h>
 
 // #pragma message("warning: shutdown is true")
 // bool shutdown = true; // fixme
@@ -83,6 +84,20 @@ void loadfrom_checkpoint(RnnLM &lm, std::string filename) {
     }
 }
 
+void print_progress(uint i, uint tot) {
+    std::cout << "\r[" << i << "/" << tot << "]" << std::flush;
+}
+
+void test_print_progress() {
+    for (uint i = 0; i < 100; i++) {
+        print_progress(i+1, 100);
+        sleep(1);
+        if (shutdown) {
+            break;
+        }
+    }
+}
+
 void train(const std::string &corpus, const std::string &checkpoint, uint epochs) {
     std::cout << "train by " << corpus << std::endl;
     std::cout << "epochs : " << epochs << std::endl;
@@ -135,6 +150,7 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
                 save_checkpoint(lm);
                 exit(0);
             }
+            print_progress(i+1, loader.data.size() - num_steps);
         }
         std::cout << "epoch " << epoch << " loss : " << loss_sum/(loader.data.size() - num_steps) << std::endl;
     }
@@ -189,10 +205,16 @@ int main(int argc, char *argv[]) {
     if (!testcase.empty()) {
         if (testcase == "test") {
             testgrad();
+            return 0;
         } else if (testcase == "testdl") {
             load_data();
+            return 0;
         } else if (testcase == "testce") {
             testcrossentropy();
+            return 0;
+        } else if (testcase == "testprog") {
+            test_print_progress();
+            return 0;
         } else {
             std::cerr << "not supported testcase" << std::endl;
             return 1;
