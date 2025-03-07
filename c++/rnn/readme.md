@@ -20,7 +20,7 @@ prefix :  time traveller
 predict :  time traveller  fire fole
 ```
 
-## c++ 输出(训练整片timemachine_preprocessed.txt 30 轮)
+## c++ 输出(训练整篇timemachine_preprocessed.txt 30 轮)
 
 ```
 (d2l) cs@cs-desktop:~/project/recognizing_handwritten_digits/c++/rnn$ ./rnn 
