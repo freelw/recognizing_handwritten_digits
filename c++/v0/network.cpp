@@ -163,9 +163,12 @@ int NetWork::evaluate(std::vector<TrainingData*> &v_test_data) {
                 index = j;
             }
         }
+        #pragma GCC diagnostic push
+        #pragma GCC diagnostic ignored "-Wsign-compare"    
         if (index == v_test_data[i]->y) {
             sum ++;
         }
+        #pragma GCC diagnostic pop
     }
     return sum;
 }
