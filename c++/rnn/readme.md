@@ -67,3 +67,7 @@ real    727m26.765s
 user    727m5.501s
 sys     0m3.839s
 ```
+
+### perf
+
+![alt text](p_1364762.svg)
