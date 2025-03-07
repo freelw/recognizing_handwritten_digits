@@ -7,6 +7,8 @@
 #include "rnnlm.h"
 #include "optimizers/optimizers.h"
 
+// #pragma message("warning: shutdown is true")
+// bool shutdown = true; // fixme
 bool shutdown = false;
 
 void testgrad();
@@ -50,11 +52,11 @@ std::string generateDateTimeSuffix() {
 void save_checkpoint(RnnLM &lm, std::string filename) {
     auto parameters = lm.get_parameters();
     std::ofstream out(filename, std::ios::out | std::ios::binary);
-    auto num_params = parameters.size();
+    int num_params = parameters.size();
     out.write((char *)&num_params, sizeof(num_params));
     for (auto p : parameters) {
         std::string serialized = p->serialize();
-        auto size = serialized.size();
+        int size = serialized.size();
         out.write((char *)&size, sizeof(size));
         out.write(serialized.c_str(), serialized.size());
     }
