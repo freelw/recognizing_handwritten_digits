@@ -20,42 +20,50 @@ prefix :  time traveller
 predict :  time traveller  fire fole
 ```
 
-## c++ 输出
+## c++ 输出(训练整片timemachine_preprocessed.txt 30 轮)
 
 ```
 (d2l) cs@cs-desktop:~/project/recognizing_handwritten_digits/c++/rnn$ ./rnn 
 Data loaded
 ...
-epoch 72 loss : 1.24034
-epoch 73 loss : 1.23723
-epoch 74 loss : 1.23774
-epoch 75 loss : 1.24489
-epoch 76 loss : 1.23621
-epoch 77 loss : 1.24271
-epoch 78 loss : 1.2323
-epoch 79 loss : 1.22673
-epoch 80 loss : 1.22402
-epoch 81 loss : 1.23094
-epoch 82 loss : 1.22879
-epoch 83 loss : 1.22603
-epoch 84 loss : 1.22558
-epoch 85 loss : 1.22415
-epoch 86 loss : 1.22525
-epoch 87 loss : 1.22706
-epoch 88 loss : 1.22089
-epoch 89 loss : 1.22229
-epoch 90 loss : 1.22718
-epoch 91 loss : 1.22483
-epoch 92 loss : 1.22193
-epoch 93 loss : 1.21572
-epoch 94 loss : 1.20685
-epoch 95 loss : 1.20439
-epoch 96 loss : 1.1995
-epoch 97 loss : 1.20624
-epoch 98 loss : 1.20275
-epoch 99 loss : 1.20292
+(d2l) cs@cs-desktop:~/project/recognizing_handwritten_digits/c++/rnn$ time ./rnn
+Data loaded
+epoch 0 loss : 2.00441
+epoch 1 loss : 1.95185
+epoch 2 loss : 1.93983
+epoch 3 loss : 1.92649
+epoch 4 loss : 1.92271
+epoch 5 loss : 1.92469
+epoch 6 loss : 1.92331
+epoch 7 loss : 1.92202
+epoch 8 loss : 1.91706
+epoch 9 loss : 1.91839
+epoch 10 loss : 1.92729
+epoch 11 loss : 1.92573
+epoch 12 loss : 1.9278
+epoch 13 loss : 1.93146
+epoch 14 loss : 1.92839
+epoch 15 loss : 1.93168
+epoch 16 loss : 1.93364
+epoch 17 loss : 1.92566
+epoch 18 loss : 1.92461
+epoch 19 loss : 1.92189
+epoch 20 loss : 1.9244
+epoch 21 loss : 1.92619
+epoch 22 loss : 1.93024
+epoch 23 loss : 1.92531
+epoch 24 loss : 1.92266
+epoch 25 loss : 1.9212
+epoch 26 loss : 1.92264
+epoch 27 loss : 1.91994
+epoch 28 loss : 1.92253
+epoch 29 loss : 1.92234
 prefix : time traveller
-predicted :  and thich
+predicted :  and and a
 prefix : the time machine
-predicted :  that is f
+predicted :  the the m
+
+real    727m26.765s
+user    727m5.501s
+sys     0m3.839s
 ```

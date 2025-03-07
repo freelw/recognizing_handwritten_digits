@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
         }
         
         Adam adam(parameters, 0.001);
-        for (uint epoch = 0; epoch < 100; epoch++) {
+        for (uint epoch = 0; epoch < 30; epoch++) {
             DATATYPE loss_sum = 0;
             for (uint i = 0; i < loader.data.size() - num_steps; i++) {
                 std::vector<Matrix *> inputs;
