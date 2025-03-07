@@ -16,6 +16,8 @@ class Parameters {
         Matrix *get_v();
         int get_t();
         void inc_t();
+        std::string serialize();
+        void deserialize(char *buffer);
         friend std::ostream & operator<<(std::ostream &output, const Parameters &p);
     private:
         Parameters(const Parameters&);    

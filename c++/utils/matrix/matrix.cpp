@@ -306,6 +306,10 @@ std::vector<Matrix *> Matrix::split(uint dim) {
     return {};
 }
 
+DATATYPE *Matrix::getData() {
+    return data;
+}
+
 DATATYPE sigmoid_double(DATATYPE z) {
     return 1./(1.+exp(-z));
 }
