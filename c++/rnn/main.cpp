@@ -61,6 +61,21 @@ void save_checkpoint(RnnLM &lm, std::string filename) {
     out.close();
 }
 
+void loadfrom_checkpoint(RnnLM &lm, std::string filename) {
+    std::ifstream in(filename
+        , std::ios::in | std::ios::binary);
+    int num_params;
+    in.read((char *)&num_params, sizeof(num_params));
+    for (int i = 0; i < num_params; i++) {
+        int size;
+        in.read((char *)&size, sizeof(size));
+        char *buffer = new char[size];
+        in.read(buffer, size);
+        lm.get_parameters()[i]->deserialize(buffer);
+        delete [] buffer;
+    }
+}
+
 int main(int argc, char *argv[]) {
     // register signal SIGINT and signal handler
     signal(SIGINT, signal_callback_handler);
@@ -68,6 +83,7 @@ int main(int argc, char *argv[]) {
     bool test = false;
     bool testdl = false;
     bool testce = false;
+    bool use_checkpoint = false;
     if (argc == 2) {
         if (std::string(argv[1]) == "test") {
             test = true;
@@ -75,6 +91,12 @@ int main(int argc, char *argv[]) {
             testdl = true;
         } else if (std::string(argv[1]) == "testce") {
             testce = true;
+        }
+    }
+
+    if (argc == 3) {
+        if (std::string(argv[1]) == "load") {
+            use_checkpoint = true; 
         }
     }
 
@@ -92,6 +114,12 @@ int main(int argc, char *argv[]) {
         bool rand = true;
         Rnn *rnn = new Rnn(INPUT_NUM, hidden_num, 0.01, rand);
         RnnLM lm(rnn, INPUT_NUM, rand);
+        if (use_checkpoint) {
+            std::string filename = std::string(argv[2]);
+            cout << "loading from checkpoint : " << filename << endl;
+            loadfrom_checkpoint(lm, filename);
+            cout << "loaded from checkpoint" << endl;
+        }
         auto parameters = lm.get_parameters();
         if (!rand) {
             init_weight(parameters[3]);
