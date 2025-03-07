@@ -88,10 +88,9 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "/home/cs/project/recognizing_handwritten_digits/c++/rnn/rnn",
-            "args1": [],
             "args": [
-                "load",
-                "./checkpoints/checkpoint_20250307_130117.bin"
+                "-e",
+                "1"
             ],
             "stopAtEntry": false,
             "cwd": "/home/cs/project/recognizing_handwritten_digits/c++/rnn/",
