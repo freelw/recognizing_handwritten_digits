@@ -1,5 +1,8 @@
 #include <iostream>
 #include <signal.h>
+#include <chrono>
+#include <sstream>
+#include <iomanip>
 #include "dataloader.h"
 #include "rnnlm.h"
 #include "optimizers/optimizers.h"
@@ -33,6 +36,30 @@ void print_input(const std::vector<Matrix *> &inputs,
 }
 
 void signal_callback_handler(int signum);
+
+
+std::string generateDateTimeSuffix() {    
+    auto now = std::chrono::system_clock::now();
+    std::time_t currentTime = std::chrono::system_clock::to_time_t(now);
+    struct std::tm* localTime = std::localtime(&currentTime);
+    std::ostringstream oss;
+    oss << std::put_time(localTime, "_%Y%m%d_%H%M%S");
+    return oss.str();
+}
+
+void save_checkpoint(RnnLM &lm, std::string filename) {
+    auto parameters = lm.get_parameters();
+    std::ofstream out(filename, std::ios::out | std::ios::binary);
+    auto num_params = parameters.size();
+    out.write((char *)&num_params, sizeof(num_params));
+    for (auto p : parameters) {
+        std::string serialized = p->serialize();
+        auto size = serialized.size();
+        out.write((char *)&size, sizeof(size));
+        out.write(serialized.c_str(), serialized.size());
+    }
+    out.close();
+}
 
 int main(int argc, char *argv[]) {
     // register signal SIGINT and signal handler
@@ -102,6 +129,9 @@ int main(int argc, char *argv[]) {
                 if (shutdown) {
                     // exit
                     std::cout << "shutting down" << std::endl;
+                    std::string checkpoint_name = "checkpoint" + generateDateTimeSuffix() + ".bin";
+                    std::string path = "./checkpoints/" + checkpoint_name;
+                    save_checkpoint(lm, path);
                     exit(0);
                 }
             }
