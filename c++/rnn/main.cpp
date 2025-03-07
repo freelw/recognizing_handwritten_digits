@@ -1,8 +1,10 @@
 #include <iostream>
-
+#include <signal.h>
 #include "dataloader.h"
 #include "rnnlm.h"
 #include "optimizers/optimizers.h"
+
+bool shutdown = false;
 
 void testgrad();
 void testcrossentropy();
@@ -30,7 +32,12 @@ void print_input(const std::vector<Matrix *> &inputs,
     }
 }
 
+void signal_callback_handler(int signum);
+
 int main(int argc, char *argv[]) {
+    // register signal SIGINT and signal handler
+    signal(SIGINT, signal_callback_handler);
+
     bool test = false;
     bool testdl = false;
     bool testce = false;
@@ -92,6 +99,11 @@ int main(int argc, char *argv[]) {
                 adam.step();
                 lm.release(ctx);
                 freeTmpMatrix();
+                if (shutdown) {
+                    // exit
+                    std::cout << "shutting down" << std::endl;
+                    exit(0);
+                }
             }
             std::cout << "epoch " << epoch << " loss : " << loss_sum/(loader.data.size() - num_steps) << std::endl;
         }
