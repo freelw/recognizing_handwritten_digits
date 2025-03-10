@@ -137,6 +137,7 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
             loss_fn.release(ce_ctx);
             lm.zero_grad();
             lm.backward(ctx, grad);
+            lm.clip_grad(1);
             adam.step();
             lm.release(ctx);
             freeTmpMatrix();
