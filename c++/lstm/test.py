@@ -1,4 +1,5 @@
 import torch
+import torch.nn as nn
 global g_vocab_size
 g_vocab_size = 28
 
@@ -7,86 +8,82 @@ class LSTM:
         self.num_inputs = num_inputs
         self.num_hiddens = num_hiddens
         self.sigma = sigma
-        if rand:
-            self.W_xh = torch.randn(num_hiddens, num_inputs) * sigma
-            self.W_hh = torch.randn(num_hiddens, num_hiddens) * sigma
-            self.b_h = torch.randn(num_hiddens, 1) * sigma
-        else :
-            self.W_xh = torch.empty(num_hiddens, num_inputs).fill_(0.1)
-            self.W_hh = torch.empty(num_hiddens, num_hiddens).fill_(0.1)
-            self.b_h = torch.empty(num_hiddens, 1).fill_(0.1)
-        self.W_hh.requires_grad_()
-        self.W_xh.requires_grad_()
-        self.b_h.requires_grad_()
+        init_weight = lambda *shape: nn.Parameter(torch.randn(*shape) * sigma)
+        triple = lambda: (init_weight(num_hiddens, num_inputs),
+                          init_weight(num_hiddens, num_hiddens),
+                          init_weight(num_hiddens, 1))
+        self.W_xi, self.W_hi, self.b_i = triple()
+        self.W_xf, self.W_hf, self.b_f = triple()
+        self.W_xo, self.W_ho, self.b_o = triple()
+        self.W_xc, self.W_hc, self.b_c = triple()
 
-    def forward(self, X, h):
+    def forward(self, X, c, h):
         assert len(X) > 0 
         assert X[0].shape[0] == self.num_inputs
         if h is None:
             h = torch.zeros(self.num_hiddens, 1)
+        if c is None:
+            c = torch.zeros(self.num_hiddens, 1)
         output = []
         for x in X:
-            h = torch.tanh(self.W_xh @ x + self.W_hh @ h + self.b_h)
-            output.append(h)
+            i = torch.sigmoid(self.W_xi @ x + self.W_hi @ h + self.b_i)
+            f = torch.sigmoid(self.W_xf @ x + self.W_hf @ h + self.b_f)
+            o = torch.sigmoid(self.W_xo @ x + self.W_ho @ h + self.b_o)
+            c_tilda = torch.tanh(self.W_xc @ x + self.W_hc @ h + self.b_c)
+            c = f * c + i * c_tilda
+            h = o * torch.tanh(c)
+            output.append((h, c))
         return output
 
-def clip_gradients(grad_clip_val, model):
-    params = [p for p in model.parameters() if p.requires_grad]
-    norm = torch.sqrt(sum(torch.sum((p.grad ** 2)) for p in params))
-    if norm > grad_clip_val:
-        for param in params:
-            # print ("norm : ", norm)
-            param.grad[:] *= grad_clip_val / norm
 class RnnLM:
-    def __init__(self, rnn, vocab_size, rand = True):
+    def __init__(self, rnn, vocab_size):
         self.rnn = rnn
         self.vocab_size = vocab_size
-        if rand:
-            self.W = torch.randn(vocab_size, rnn.num_hiddens)
-            self.B = torch.randn(vocab_size, 1)
-        else:
-            tensor_1d = torch.arange(0.1, 0.1 * (vocab_size * rnn.num_hiddens+1), 0.1)
-            self.W = tensor_1d.reshape(vocab_size, rnn.num_hiddens)
-            self.B = torch.empty(vocab_size, 1).fill_(0.1)
+        tensor_1d = torch.arange(0.1, 0.1 * (vocab_size * rnn.num_hiddens+1), 0.1)
+        self.W = tensor_1d.reshape(vocab_size, rnn.num_hiddens)
+        self.B = torch.empty(vocab_size, 1).fill_(0.1)
         self.W.requires_grad_()
         self.B.requires_grad_()
     
     def output_layer(self, h):
         return self.W @ h + self.B
     
-    def forward(self, inputs, state):
-        h = self.rnn.forward(inputs, state)
+    def forward(self, inputs, state_c, state_h):
+        h = [x for (x, _) in self.rnn.forward(inputs, state_c, state_h)]
+        # print("h : ", h)
         hh = torch.stack(h, 1).squeeze(2)
         return self.output_layer(hh)
 
     def parameters(self):
-        return [self.rnn.W_xh, self.rnn.W_hh, self.rnn.b_h, self.W, self.B]
+        return [
+            self.rnn.W_xi, self.rnn.W_hi, self.rnn.b_i,
+            self.rnn.W_xf, self.rnn.W_hf, self.rnn.b_f,
+            self.rnn.W_xo, self.rnn.W_ho, self.rnn.b_o,
+            self.rnn.W_xc, self.rnn.W_hc, self.rnn.b_c,
+            self.W, self.B
+        ]
 
     def predict(self, prefix, num_preds):
         preprocess_prefix = []
         for item in list(prefix):
-            #print ("item : ", item)
             preprocess_prefix.append(torch.tensor(one_hot(to_index(item), g_vocab_size), dtype=torch.float32))
 
-        state = self.rnn.forward(preprocess_prefix, None)
+        state = self.rnn.forward(preprocess_prefix, None, None)
         output_states = [state[-1]]
         outputs = []
         for i in range(num_preds):
-            last_state = output_states[-1]
-            #print("last_state : ", last_state)
-            output = self.output_layer(last_state)
-            # print("output : ", output)
+            last_state_c, last_state_h = output_states[-1]
+            output = self.output_layer(last_state_h)
             predict_index = torch.argmax(output).item()
-            #print("predict_index : ", predict_index, " char : ", to_char(predict_index))
             outputs.append(to_char(predict_index))
             input = torch.tensor(one_hot(predict_index, g_vocab_size), dtype=torch.float32)
-            state = self.rnn.forward([input], last_state)
+            state = self.rnn.forward([input], last_state_h, last_state_c)
             output_states.append(state[-1])
         print("prefix : ", prefix)
         print("predict : ", prefix, "".join(outputs))
 
 def get_timemachine():
-    with open("../../resources/timemachine_preprocessed.txt") as f:
+    with open("../../resources/timemachine_small.txt") as f:
         return f.read()
 
 def tokenize(text):
@@ -137,10 +134,9 @@ def train_llm():
     num_hiddens = 32
     vocab_size = g_vocab_size
 
-    rand = True
     X, Y = load_data(num_steps)
-    rnn = Rnn(vocab_size, num_hiddens, 0.01, rand)
-    rnnlm = RnnLM(rnn, vocab_size, rand)
+    rnn = LSTM(vocab_size, num_hiddens, 0.01)
+    rnnlm = RnnLM(rnn, vocab_size)
     optimizer = torch.optim.Adam(rnnlm.parameters(), lr=0.001)  # Change learning rate to 0.001
     loss_fn = torch.nn.CrossEntropyLoss()
     
@@ -154,12 +150,11 @@ def train_llm():
             for item in x:
                 inputs.append(torch.tensor(one_hot(item, vocab_size), dtype=torch.float32))
             labels = torch.tensor(y, dtype=torch.long)
-            output = rnnlm.forward(inputs, None)
+            output = rnnlm.forward(inputs, None, None)
             loss = loss_fn(output.T, labels)
             loss_sum += loss.item()
             optimizer.zero_grad()
             loss.backward()
-            clip_gradients(1, rnnlm)
             optimizer.step()
         print("epoch : ", epoch, " loss : ", loss_sum / length)
     rnnlm.predict("time traveller", 10)
