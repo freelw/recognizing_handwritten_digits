@@ -106,7 +106,7 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
     std::cout << "Data loaded" << std::endl;
     uint num_steps = 32;
     uint hidden_num = 32;
-    bool rand = true;
+    bool rand = false;
     Rnn *rnn = new Rnn(INPUT_NUM, hidden_num, 0.01, rand);
     RnnLM lm(rnn, INPUT_NUM, rand);
     if (!checkpoint.empty()) {
@@ -115,6 +115,7 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
         cout << "loaded from checkpoint" << endl;
     }
     auto parameters = lm.get_parameters();
+    assert(parameters.size() == 5);
     if (!rand) {
         init_weight(parameters[3]);
     }
@@ -144,7 +145,7 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
             loss_fn.release(ce_ctx);
             lm.zero_grad();
             lm.backward(ctx, grad);
-            lm.clip_grad(1);
+            lm.clip_grad(0.98);
             adam.step();
             lm.release(ctx);
             freeTmpMatrix();
@@ -155,6 +156,7 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
             print_progress(i+1, loader.data.size() - num_steps);
         }
         save_checkpoint(checkpoint_prefix, epoch, lm);
+        std::cout.precision(14);
         std::cout << "epoch " << epoch << " loss : " << loss_sum/(loader.data.size() - num_steps) << std::endl;
     }
     if (epochs > 0) {

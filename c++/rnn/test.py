@@ -141,8 +141,8 @@ def testgrad():
     #     print(param.grad)
 
 def get_timemachine():
-    with open("../../resources/timemachine_preprocessed.txt") as f:
-    #with open("../../resources/timemachine_small.txt") as f:
+    #with open("../../resources/timemachine_preprocessed.txt") as f:
+    with open("../../resources/timemachine_small.txt") as f:
         return f.read()
 
 def tokenize(text):
@@ -193,14 +193,14 @@ def train_llm():
     num_hiddens = 32
     vocab_size = g_vocab_size
 
-    rand = True
+    rand = False
     X, Y = load_data(num_steps)
     rnn = Rnn(vocab_size, num_hiddens, 0.01, rand)
     rnnlm = RnnLM(rnn, vocab_size, rand)
     optimizer = torch.optim.Adam(rnnlm.parameters(), lr=0.001)  # Change learning rate to 0.001
     loss_fn = torch.nn.CrossEntropyLoss()
     
-    for epoch in range(100):
+    for epoch in range(10):
         loss_sum = 0
         print("epoch ", epoch, " started.")
         length = len(X)
