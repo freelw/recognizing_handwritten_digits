@@ -2,8 +2,8 @@ DIR_INC = -I./
 DIR_INC += -I../utils/
 DIR_LIB = -L./
 TARGET	= rnn
-CFLAGS = -g -Wall $(DIR_INC) $(DIR_LIB) -fsanitize=address
-LDFLAGS += -lstdc++
+CFLAGS = -g -Wall $(DIR_INC) $(DIR_LIB) -fsanitize=address -fopenmp
+LDFLAGS += -lstdc++ -fopenmp
 SRCDIR:= ../utils/dataloader
 SRCDIR+= ../utils/matrix
 SRCDIR+= ../utils/layers

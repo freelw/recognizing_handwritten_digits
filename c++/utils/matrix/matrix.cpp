@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <string.h>
 #include <vector>
+#include <omp.h> // Include OpenMP header
 
 Matrix::Matrix(Shape _shape)
         : initialized(false),
@@ -249,19 +250,12 @@ Matrix *Matrix::dot(const Matrix &m) {
     DATATYPE *m_data = m.getData();
     DATATYPE *this_data = this->getData();
 
-    const uint blockSize = 16; // Block size for cache optimization
-    for (uint i = 0; i < shape.rowCnt; i += blockSize) {
-        for (uint j = 0; j < m.shape.colCnt; j += blockSize) {
-            for (uint k = 0; k < shape.colCnt; k += blockSize) {
-                for (uint ii = i; ii < std::min(i + blockSize, shape.rowCnt); ++ii) {
-                    for (uint jj = j; jj < std::min(j + blockSize, m.shape.colCnt); ++jj) {
-                        DATATYPE sum = 0;
-                        for (uint kk = k; kk < std::min(k + blockSize, shape.colCnt); ++kk) {
-                            sum += this_data[ii * shape.colCnt + kk] * m_data[kk * m.shape.colCnt + jj];
-                        }
-                        data[ii * m.shape.colCnt + jj] += sum;
-                    }
-                }
+    // use openmp for parallelization
+    #pragma omp parallel for num_threads(4)
+    for (uint i = 0; i < shape.rowCnt; ++i) {
+        for (uint j = 0; j < m.shape.colCnt; ++j) {
+            for (uint k = 0; k < shape.colCnt; ++k) {
+                data[i * m.shape.colCnt + j] += this_data[i * shape.colCnt + k] * m_data[k * m.shape.colCnt + j];
             }
         }
     }
