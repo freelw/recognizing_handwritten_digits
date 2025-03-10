@@ -3,6 +3,8 @@
 
 #include <iostream>
 
+int emit_clip = 0;
+
 RnnLM::RnnLM(Rnn *_rnn, uint _vocab_size, bool rand) : rnn(_rnn), vocab_size(_vocab_size) {
     if (!rand) {
         std::cerr << "Warning: using fixed weight for RnnLM" << std::endl;
@@ -82,6 +84,7 @@ void RnnLM::clip_grad(DATATYPE grad_clip_val) {
     }
     norm = sqrt(norm);
     if (norm > grad_clip_val) {
+        emit_clip++;
         for (auto param : params) {
             // std::cout << "norm : " << norm << endl;
             auto grad = param->get_grad();

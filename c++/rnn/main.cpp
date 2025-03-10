@@ -17,6 +17,8 @@ void testgrad();
 void testcrossentropy();
 void init_weight(Parameters *p);
 
+extern int emit_clip;
+
 #define RESOURCE_NAME "../../resources/timemachine_preprocessed.txt"
 
 void load_data() {
@@ -106,7 +108,7 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
     std::cout << "Data loaded" << std::endl;
     uint num_steps = 32;
     uint hidden_num = 32;
-    bool rand = false;
+    bool rand = true;
     Rnn *rnn = new Rnn(INPUT_NUM, hidden_num, 0.01, rand);
     RnnLM lm(rnn, INPUT_NUM, rand);
     if (!checkpoint.empty()) {
@@ -123,6 +125,7 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
     std::string checkpoint_prefix = "checkpoint" + generateDateTimeSuffix();
     for (uint epoch = 0; epoch < epochs; epoch++) {
         DATATYPE loss_sum = 0;
+        emit_clip = 0;
         for (uint i = 0; i < loader.data.size() - num_steps; i++) {
             std::vector<Matrix *> inputs;
             std::vector<uint> labels;
@@ -145,7 +148,7 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
             loss_fn.release(ce_ctx);
             lm.zero_grad();
             lm.backward(ctx, grad);
-            lm.clip_grad(0.98);
+            lm.clip_grad(1);
             adam.step();
             lm.release(ctx);
             freeTmpMatrix();
@@ -157,7 +160,7 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
         }
         save_checkpoint(checkpoint_prefix, epoch, lm);
         std::cout.precision(14);
-        std::cout << "epoch " << epoch << " loss : " << loss_sum/(loader.data.size() - num_steps) << std::endl;
+        std::cout << "epoch " << epoch << " loss : " << loss_sum/(loader.data.size() - num_steps) << " emit_clip : " << emit_clip << std::endl;
     }
     if (epochs > 0) {
         // pass

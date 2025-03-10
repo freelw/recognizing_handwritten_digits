@@ -46,10 +46,14 @@ class Rnn:
             output.append(h)
         return output
 
+emit_clip = 0
+
 def clip_gradients(grad_clip_val, model):
+    global emit_clip
     params = [p for p in model.parameters() if p.requires_grad]
     norm = torch.sqrt(sum(torch.sum((p.grad ** 2)) for p in params))
     if norm > grad_clip_val:
+        emit_clip += 1
         for param in params:
             # print ("norm : ", norm)
             param.grad[:] *= grad_clip_val / norm
@@ -99,7 +103,7 @@ class RnnLM:
             state = self.rnn.forward([input], last_state)
             output_states.append(state[-1])
         print("prefix : ", prefix)
-        print("predict : ", prefix, "".join(outputs))
+        print("predict : ", "".join(outputs))
 
 def testgrad():
     vocab_size = 3
@@ -142,7 +146,7 @@ def testgrad():
 
 def get_timemachine():
     #with open("../../resources/timemachine_preprocessed.txt") as f:
-    with open("../../resources/timemachine_small.txt") as f:
+    with open("../../resources/timemachine_middle.txt") as f:
         return f.read()
 
 def tokenize(text):
@@ -193,17 +197,19 @@ def train_llm():
     num_hiddens = 32
     vocab_size = g_vocab_size
 
-    rand = False
+    rand = True
     X, Y = load_data(num_steps)
     rnn = Rnn(vocab_size, num_hiddens, 0.01, rand)
     rnnlm = RnnLM(rnn, vocab_size, rand)
     optimizer = torch.optim.Adam(rnnlm.parameters(), lr=0.001)  # Change learning rate to 0.001
     loss_fn = torch.nn.CrossEntropyLoss()
     
-    for epoch in range(10):
+    global emit_clip
+    for epoch in range(100):
         loss_sum = 0
         print("epoch ", epoch, " started.")
         length = len(X)
+        emit_clip = 0
         for i in range(length):
             x, y = X[i], Y[i]
             inputs = []
@@ -217,8 +223,22 @@ def train_llm():
             loss.backward()
             clip_gradients(1, rnnlm)
             optimizer.step()
-        print("epoch : ", epoch, " loss : ", loss_sum / length)
-    rnnlm.predict("time traveller", 10)
+        print("epoch : ", epoch, " loss : ", loss_sum / length, " emit_clip : ", emit_clip)
+    
+    prefixs = [
+        "time traveller",
+        "the time machine",
+        "expounding a recondite",
+        " traveller for so",
+        "it has",
+        "so most people",
+        "is simply ",
+        " we cannot move about",
+        "and the still",
+    ]
+
+    for prefix in prefixs:
+        rnnlm.predict(prefix, 20)
 
 def testcrossentropy():
     x = [556.225, 1919.83, 2769.87, 2810.71, 2811.33, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34]
