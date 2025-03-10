@@ -89,9 +89,7 @@ class RnnContext: public Context {
         std::vector<Matrix*> hiddens;
         std::vector<Matrix*> states;
         void clear() {
-            inputs.clear();
-            hiddens.clear();
-            states.clear();
+            assert(false);
         }
 };
 
@@ -106,8 +104,7 @@ class RnnBase {
         virtual RnnRes forward(Context *, const std::vector<Matrix*> &inputs, Matrix *hidden, Matrix *cell) = 0;
         virtual Matrix *backward(
             Context *,
-            const std::vector<Matrix *> &grad_hiddens_vec,
-            const std::vector<Matrix *> &grad_cells_vec) = 0;
+            const std::vector<Matrix *> &grad_hiddens_vec) = 0;
         virtual Context *init() = 0;
         virtual void release(Context *) = 0;
         virtual std::vector<Parameters*> get_parameters() = 0;
@@ -122,8 +119,7 @@ class Rnn: public RnnBase {
         virtual RnnRes forward(Context *, const std::vector<Matrix*> &inputs, Matrix *hidden, Matrix *cell);
         virtual Matrix *backward(
             Context *, 
-            const std::vector<Matrix *> &grad_hiddens_vec,
-            const std::vector<Matrix *> &grad_cells_vec);
+            const std::vector<Matrix *> &grad_hiddens_vec);
         virtual Context *init();
         virtual void release(Context *);
         virtual std::vector<Parameters*> get_parameters();
@@ -148,15 +144,18 @@ class LSTMContext: public Context {
     public:
         std::vector<Matrix*> inputs;
         std::vector<Matrix*> hiddens;
-        std::vector<Matrix*> hiddens_stats;
+        std::vector<Matrix*> cells_tanh;
         std::vector<Matrix*> cells;
-        std::vector<Matrix*> cells_stats;
+        std::vector<Matrix*> o;
+        std::vector<Matrix*> o_sigmoid;
+        std::vector<Matrix*> i;
+        std::vector<Matrix*> i_sigmoid;
+        std::vector<Matrix*> f;
+        std::vector<Matrix*> f_sigmoid;
+        std::vector<Matrix*> c;
+        std::vector<Matrix*> c_tanh;
         void clear() {
-            inputs.clear();
-            hiddens.clear();
-            hiddens_stats.clear();
-            cells.clear();
-            cells_stats.clear();
+            assert(false);
         }
 };
 
@@ -169,8 +168,7 @@ class LSTM: public RnnBase {
             Matrix *hidden, Matrix *cell);
         virtual Matrix *backward(
             Context *,
-            const std::vector<Matrix *> &grad_hiddens_vec,
-            const std::vector<Matrix *> &grad_cells_vec);
+            const std::vector<Matrix *> &grad_hiddens_vec);
         virtual Context *init();
         virtual void release(Context *);
         virtual std::vector<Parameters*> get_parameters();

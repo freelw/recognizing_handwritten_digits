@@ -40,7 +40,7 @@ void RnnLM::backward(RnnLMContext *ctx, Matrix* grad) {
     Matrix *grad_hiddens = fc->backward(ctx->fc_ctx, grad);
     std::vector<Matrix *> grad_hiddens_vec = grad_hiddens->split(1);
     assert(grad_hiddens_vec.size() == ctx->rnn_ctx->hiddens.size() - 1);
-    rnn->backward(ctx->rnn_ctx, grad_hiddens_vec, {});
+    rnn->backward(ctx->rnn_ctx, grad_hiddens_vec);
 }
 
 RnnLMContext *RnnLM::init() {

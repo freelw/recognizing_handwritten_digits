@@ -287,8 +287,7 @@ RnnRes Rnn::forward(Context *_ctx, const std::vector<Matrix *> &inputs, Matrix *
 
 Matrix *Rnn::backward(
     Context *_ctx,
-    const std::vector<Matrix *> &grad_hiddens_vec,
-    const std::vector<Matrix *> &grad_cells_vec) {
+    const std::vector<Matrix *> &grad_hiddens_vec) {
     RnnContext *ctx = (RnnContext *)_ctx;
     assert(ctx->inputs.size() + 1 == ctx->hiddens.size());
     assert(ctx->states.size() + 1 == ctx->hiddens.size());
@@ -400,9 +399,8 @@ RnnRes LSTM::forward(Context *ctx, const std::vector<Matrix*> &inputs, Matrix *h
     LSTMContext *lstm_ctx = (LSTMContext *)ctx;
     assert(lstm_ctx->inputs.size() == 0);
     assert(lstm_ctx->hiddens.size() == 0);
-    assert(lstm_ctx->hiddens_stats.size() == 0);
     assert(lstm_ctx->cells.size() == 0);
-    assert(lstm_ctx->cells_stats.size() == 0);
+    assert(lstm_ctx->cells_tanh.size() == 0);
     assert(inputs.size() >= 1);
     lstm_ctx->inputs = inputs;
     uint batch_size = inputs[0]->getShape().colCnt;
@@ -423,10 +421,15 @@ RnnRes LSTM::forward(Context *ctx, const std::vector<Matrix*> &inputs, Matrix *h
     RnnRes res;
     res.states.reserve(inputs.size());
     for (auto x : inputs) {
+        lstm_ctx->inputs.push_back(x);
         Matrix *i = (*(wxi->get_weight()->at(*x)) + *(whi->get_weight()->at(*hidden)))->expand_add(*(bi->get_weight()));
         Matrix *f = (*(wxf->get_weight()->at(*x)) + *(whf->get_weight()->at(*hidden)))->expand_add(*(bf->get_weight()));
         Matrix *o = (*(wxo->get_weight()->at(*x)) + *(who->get_weight()->at(*hidden)))->expand_add(*(bo->get_weight()));
         Matrix *c = (*(wxc->get_weight()->at(*x)) + *(whc->get_weight()->at(*hidden)))->expand_add(*(bc->get_weight()));
+        lstm_ctx->i.push_back(i);
+        lstm_ctx->f.push_back(f);
+        lstm_ctx->o.push_back(o);
+        lstm_ctx->c.push_back(c);
         i->checkShape(Shape(hidden_num, batch_size));
         f->checkShape(Shape(hidden_num, batch_size));
         o->checkShape(Shape(hidden_num, batch_size));
@@ -435,6 +438,10 @@ RnnRes LSTM::forward(Context *ctx, const std::vector<Matrix*> &inputs, Matrix *h
         Matrix *i_sigmoid = sigmoid(*i);
         Matrix *o_sigmoid = sigmoid(*o);
         Matrix *c_tanh = c->tanh();
+        lstm_ctx->f_sigmoid.push_back(f_sigmoid);
+        lstm_ctx->i_sigmoid.push_back(i_sigmoid);
+        lstm_ctx->o_sigmoid.push_back(o_sigmoid);
+        lstm_ctx->c_tanh.push_back(c_tanh);
         f_sigmoid->checkShape(Shape(hidden_num, batch_size));
         i_sigmoid->checkShape(Shape(hidden_num, batch_size));
         o_sigmoid->checkShape(Shape(hidden_num, batch_size));
@@ -442,7 +449,9 @@ RnnRes LSTM::forward(Context *ctx, const std::vector<Matrix*> &inputs, Matrix *h
         cell = *(*f_sigmoid * *cell) + *(*i_sigmoid * *c_tanh);
         cell->checkShape(Shape(hidden_num, batch_size));
         lstm_ctx->cells.push_back(cell);
-        hidden = *o_sigmoid * *cell->tanh();
+        auto cell_tanh = cell->tanh();
+        lstm_ctx->cells_tanh.push_back(cell_tanh);
+        hidden = *o_sigmoid * *cell_tanh;
         hidden->checkShape(Shape(hidden_num, batch_size));
         lstm_ctx->hiddens.push_back(hidden);
         res.states.push_back(hidden);
@@ -452,10 +461,82 @@ RnnRes LSTM::forward(Context *ctx, const std::vector<Matrix*> &inputs, Matrix *h
 
 Matrix *LSTM::backward(
     Context *ctx,
-    const std::vector<Matrix *> &grad_hiddens_vec,
-    const std::vector<Matrix *> &grad_cells_vec) {
-    assert(false);
-    return nullptr;
+    const std::vector<Matrix *> &grad_hiddens_vec) {
+    
+    
+    LSTMContext *lstm_ctx = (LSTMContext *)ctx;
+    assert(grad_hiddens_vec.size() == lstm_ctx->inputs.size());
+    assert(lstm_ctx->inputs.size() + 1 == lstm_ctx->hiddens.size());
+    assert(lstm_ctx->inputs.size() + 1 == lstm_ctx->cells.size());
+    assert(lstm_ctx->inputs.size() + 1 == lstm_ctx->cells_tanh.size());
+    assert(lstm_ctx->inputs.size() == lstm_ctx->o.size());
+    assert(lstm_ctx->inputs.size() == lstm_ctx->o_sigmoid.size());
+    assert(lstm_ctx->inputs.size() == lstm_ctx->i.size());
+    assert(lstm_ctx->inputs.size() == lstm_ctx->i_sigmoid.size());
+    assert(lstm_ctx->inputs.size() == lstm_ctx->f.size());
+    assert(lstm_ctx->inputs.size() == lstm_ctx->f_sigmoid.size());
+    assert(lstm_ctx->inputs.size() == lstm_ctx->c.size());
+    assert(lstm_ctx->inputs.size() == lstm_ctx->c_tanh.size());
+
+    auto grad_hidden = grad_hiddens_vec[grad_hiddens_vec.size()-1];
+    Matrix *grad_cell = allocTmpMatrix(Shape(hidden_num, 1));
+    
+    for (int ii = lstm_ctx->inputs.size() - 1; ii >= 0; -- ii) {
+        auto x = lstm_ctx->inputs[ii];
+        auto hminus1 = lstm_ctx->hiddens[ii];
+        auto cminus1 = lstm_ctx->cells[ii];
+        auto cell = lstm_ctx->cells[ii];
+        auto cell_tanh = lstm_ctx->cells_tanh[ii];
+        auto o_sigmoid = lstm_ctx->o_sigmoid[ii];
+        auto o = lstm_ctx->o[ii];
+        auto grad_o_sigmoid = *grad_hidden * *cell_tanh;
+        auto grad_cell_tanh = *grad_hidden * *o_sigmoid;
+        auto _grad_cell = *grad_cell_tanh * *cell->tanh_prime();
+        auto grad_o = *grad_o_sigmoid * *sigmoid_prime(*o);
+        *grad_cell += *_grad_cell;
+        auto f = lstm_ctx->f[ii];
+        auto f_sigmoid = lstm_ctx->f_sigmoid[ii];
+        auto i = lstm_ctx->i[ii];
+        auto i_sigmoid = lstm_ctx->i_sigmoid[ii];
+        auto c = lstm_ctx->c[ii];
+        auto c_tanh = lstm_ctx->c_tanh[ii];
+        auto grad_f_sigmoid = *grad_cell * *cminus1;
+        auto grad_i_sigmoid = *grad_cell * *c_tanh;
+        auto grad_c_tanh = *grad_cell * *i_sigmoid;
+        auto grad_f = *grad_f_sigmoid * *sigmoid_prime(*f);
+        auto grad_i = *grad_i_sigmoid * *sigmoid_prime(*i);
+        auto grad_c = *grad_c_tanh * *c->tanh_prime();
+        grad_cell = *grad_cell * *f_sigmoid;
+        bi->inc_grad(grad_i);
+        bf->inc_grad(grad_f);
+        bo->inc_grad(grad_o);
+        bc->inc_grad(grad_c);
+        Matrix *wxi_grad = grad_i->at(*(x->transpose()));
+        wxi->inc_grad(wxi_grad);
+        Matrix *whi_grad = grad_i->at(*(hminus1->transpose()));
+        whi->inc_grad(whi_grad);
+
+        Matrix *wxf_grad = grad_f->at(*(x->transpose()));
+        wxf->inc_grad(wxf_grad);
+        Matrix *whf_grad = grad_f->at(*(hminus1->transpose()));
+        whf->inc_grad(whf_grad);
+
+        Matrix *wxo_grad = grad_o->at(*(x->transpose()));
+        wxo->inc_grad(wxo_grad);
+        Matrix *who_grad = grad_o->at(*(hminus1->transpose()));
+        who->inc_grad(who_grad);
+
+        Matrix *wxc_grad = grad_c->at(*(x->transpose()));
+        wxc->inc_grad(wxc_grad);
+        Matrix *whc_grad = grad_c->at(*(hminus1->transpose()));
+        whc->inc_grad(whc_grad);
+
+        grad_hidden = whi->get_weight()->transpose()->at(*grad_i);
+        *grad_hidden += *(whf->get_weight()->transpose()->at(*grad_f));
+        *grad_hidden += *(who->get_weight()->transpose()->at(*grad_o));
+        *grad_hidden += *(whc->get_weight()->transpose()->at(*grad_c));
+    }
+    return grad_hidden;
 }
 
 Context *LSTM::init() {
