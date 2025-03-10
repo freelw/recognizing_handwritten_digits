@@ -99,12 +99,14 @@ struct RnnRes {
 };
 
 class RnnBase {
-
     public:
         RnnBase() {};
         virtual ~RnnBase() {};
         virtual RnnRes forward(RnnContext *, const std::vector<Matrix*> &inputs, Matrix *hidden, Matrix *cell) = 0;
-        virtual Matrix *backward(RnnContext *, const std::vector<Matrix *> &grad_hiddens_vec) = 0;
+        virtual Matrix *backward(
+            RnnContext *,
+            const std::vector<Matrix *> &grad_hiddens_vec,
+            const std::vector<Matrix *> &grad_cells_vec) = 0;
         virtual RnnContext *init() = 0;
         virtual void release(RnnContext *) = 0;
         virtual std::vector<Parameters*> get_parameters() = 0;
@@ -117,7 +119,10 @@ class Rnn: public RnnBase {
         Rnn(uint i, uint h, DATATYPE _sigma, bool _rand);
         virtual ~Rnn();
         virtual RnnRes forward(RnnContext *, const std::vector<Matrix*> &inputs, Matrix *hidden, Matrix *cell);
-        virtual Matrix *backward(RnnContext *, const std::vector<Matrix *> &grad_hiddens_vec);
+        virtual Matrix *backward(
+            RnnContext *, 
+            const std::vector<Matrix *> &grad_hiddens_vec,
+            const std::vector<Matrix *> &grad_cells_vec);
         virtual RnnContext *init();
         virtual void release(RnnContext *);
         virtual std::vector<Parameters*> get_parameters();
@@ -142,8 +147,13 @@ class LSTM: public RnnBase {
     public:
         LSTM(uint i, uint h, DATATYPE _sigma, bool _rand);
         virtual ~LSTM();
-        virtual RnnRes forward(RnnContext *, const std::vector<Matrix*> &inputs, Matrix *hidden, Matrix *cell);
-        virtual Matrix *backward(RnnContext *, const std::vector<Matrix *> &grad_hiddens_vec);
+        virtual RnnRes forward(
+            RnnContext *, const std::vector<Matrix*> &inputs,
+            Matrix *hidden, Matrix *cell);
+        virtual Matrix *backward(
+            RnnContext *,
+            const std::vector<Matrix *> &grad_hiddens_vec,
+            const std::vector<Matrix *> &grad_cells_vec);
         virtual RnnContext *init();
         virtual void release(RnnContext *);
         virtual std::vector<Parameters*> get_parameters();
