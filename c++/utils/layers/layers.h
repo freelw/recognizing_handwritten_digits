@@ -95,6 +95,7 @@ class RnnContext: public Context {
 
 struct RnnRes {
     std::vector<Matrix *> states;
+    std::vector<Matrix *> cell_states;
 };
 
 class RnnBase {

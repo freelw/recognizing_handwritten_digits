@@ -103,6 +103,7 @@ std::string RnnLM::predict(const std::string &prefix, uint num_preds) {
     RnnLMContext *ctx = init();
     RnnRes res = rnn->forward(ctx->rnn_ctx, inputs, nullptr, nullptr);
     Matrix *last_hidden = res.states[res.states.size()-1];
+    Matrix *last_cell = res.cell_states[res.cell_states.size()-1];
     std::string ret = "";
     for (uint i = 0; i < num_preds; ++ i) {
         Matrix *output = fc->forward(ctx->fc_ctx, last_hidden);
@@ -122,7 +123,7 @@ std::string RnnLM::predict(const std::string &prefix, uint num_preds) {
         std::vector<Matrix *> new_inputs;
         new_inputs.push_back(m);
         ctx = init();
-        res = rnn->forward(ctx->rnn_ctx, new_inputs, last_hidden, nullptr);
+        res = rnn->forward(ctx->rnn_ctx, new_inputs, last_hidden, last_cell);
         last_hidden = res.states[res.states.size()-1];
     }
     release(ctx);

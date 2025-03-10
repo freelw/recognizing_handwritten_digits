@@ -281,6 +281,7 @@ RnnRes Rnn::forward(Context *_ctx, const std::vector<Matrix *> &inputs, Matrix *
         res.states.push_back(hidden);
         ctx->hiddens.push_back(hidden);
         ctx->states.push_back(state);
+        res.cell_states.push_back(nullptr);
     }
     return res;
 }
@@ -456,6 +457,7 @@ RnnRes LSTM::forward(Context *ctx, const std::vector<Matrix*> &inputs, Matrix *h
         hidden->checkShape(Shape(hidden_num, batch_size));
         lstm_ctx->hiddens.push_back(hidden);
         res.states.push_back(hidden);
+        res.cell_states.push_back(cell);
     }
     return res;
 }

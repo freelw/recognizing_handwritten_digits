@@ -85,8 +85,8 @@ class RnnLM:
         print("predict : ", prefix, "".join(outputs))
 
 def get_timemachine():
-    with open("../../resources/timemachine_preprocessed.txt") as f:
-    #with open("../../resources/timemachine_middle.txt") as f:
+    #with open("../../resources/timemachine_preprocessed.txt") as f:
+    with open("../../resources/timemachine_middle.txt") as f:
     #with open("../../resources/timemachine_small.txt") as f:
         return f.read()
 
