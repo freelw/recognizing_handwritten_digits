@@ -145,13 +145,12 @@ def testgrad():
     #     print(param.grad)
 
 def get_timemachine():
-    #with open("../../resources/timemachine_preprocessed.txt") as f:
-    with open("../../resources/timemachine_middle.txt") as f:
+    with open("../../resources/timemachine_preprocessed.txt") as f:
+    #with open("../../resources/timemachine_middle.txt") as f:
         return f.read()
 
 def tokenize(text):
-    return list(text)[:2000] # fix me
-    #return list(text)
+    return list(text)
 
 def one_hot(x, vocab_size):
     ret = []
@@ -199,6 +198,7 @@ def train_llm():
 
     rand = True
     X, Y = load_data(num_steps)
+    print("data size : ", len(X))
     rnn = Rnn(vocab_size, num_hiddens, 0.01, rand)
     rnnlm = RnnLM(rnn, vocab_size, rand)
     optimizer = torch.optim.Adam(rnnlm.parameters(), lr=0.001)  # Change learning rate to 0.001
@@ -225,20 +225,20 @@ def train_llm():
             optimizer.step()
         print("epoch : ", epoch, " loss : ", loss_sum / length, " emit_clip : ", emit_clip)
     
-    prefixs = [
-        "time traveller",
-        "the time machine",
-        "expounding a recondite",
-        " traveller for so",
-        "it has",
-        "so most people",
-        "is simply ",
-        " we cannot move about",
-        "and the still",
-    ]
+        prefixs = [
+            "time traveller",
+            "the time machine",
+            "expounding a recondite",
+            " traveller for so",
+            "it has",
+            "so most people",
+            "is simply ",
+            " we cannot move about",
+            "and the still",
+        ]
 
-    for prefix in prefixs:
-        rnnlm.predict(prefix, 20)
+        for prefix in prefixs:
+            rnnlm.predict(prefix, 20)
 
 def testcrossentropy():
     x = [556.225, 1919.83, 2769.87, 2810.71, 2811.33, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34, 2811.34]
