@@ -98,11 +98,25 @@ struct RnnRes {
     std::vector<Matrix *> states;
 };
 
-class Rnn {
+class RnnBase {
+
+    public:
+        RnnBase() {};
+        virtual ~RnnBase() {};
+        virtual RnnRes forward(RnnContext *, const std::vector<Matrix*> &inputs, Matrix *hidden, Matrix *cell) = 0;
+        virtual Matrix *backward(RnnContext *, const std::vector<Matrix *> &grad_hiddens_vec) = 0;
+        virtual RnnContext *init() = 0;
+        virtual void release(RnnContext *) = 0;
+        virtual std::vector<Parameters*> get_parameters() = 0;
+        virtual void zero_grad() = 0;
+        virtual uint get_hidden_num() = 0;
+};
+
+class Rnn: public RnnBase {
     public:
         Rnn(uint i, uint h, DATATYPE _sigma, bool _rand);
         virtual ~Rnn();
-        virtual RnnRes forward(RnnContext *, const std::vector<Matrix*> &inputs, Matrix *hidden);
+        virtual RnnRes forward(RnnContext *, const std::vector<Matrix*> &inputs, Matrix *hidden, Matrix *cell);
         virtual Matrix *backward(RnnContext *, const std::vector<Matrix *> &grad_hiddens_vec);
         virtual RnnContext *init();
         virtual void release(RnnContext *);
@@ -111,7 +125,7 @@ class Rnn {
         DATATYPE get_sigma() {
             return sigma;
         }
-        uint get_hidden_num() {
+        virtual uint get_hidden_num() {
             return hidden_num;
         }
     private:
@@ -121,6 +135,41 @@ class Rnn {
         Parameters *wxh;
         Parameters *whh;
         Parameters *bh;
+        bool rand;
+};
+
+class LSTM: public RnnBase {
+    public:
+        LSTM(uint i, uint h, DATATYPE _sigma, bool _rand);
+        virtual ~LSTM();
+        virtual RnnRes forward(RnnContext *, const std::vector<Matrix*> &inputs, Matrix *hidden, Matrix *cell);
+        virtual Matrix *backward(RnnContext *, const std::vector<Matrix *> &grad_hiddens_vec);
+        virtual RnnContext *init();
+        virtual void release(RnnContext *);
+        virtual std::vector<Parameters*> get_parameters();
+        virtual void zero_grad();
+        virtual uint get_hidden_num() {
+            return hidden_num;
+        }
+    private:
+        uint input_num;
+        uint hidden_num;
+        DATATYPE sigma;
+        Parameters *wxh;
+        Parameters *whh;
+        Parameters *bh;
+        Parameters *wxi;
+        Parameters *whi;
+        Parameters *bi;
+        Parameters *wxf;
+        Parameters *whf;
+        Parameters *bf;
+        Parameters *wxo;
+        Parameters *who;
+        Parameters *bo;
+        Parameters *wxc;
+        Parameters *whc;
+        Parameters *bc;
         bool rand;
 };
 

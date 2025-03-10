@@ -5,7 +5,7 @@
 
 int emit_clip = 0;
 
-RnnLM::RnnLM(Rnn *_rnn, uint _vocab_size, bool rand) : rnn(_rnn), vocab_size(_vocab_size) {
+RnnLM::RnnLM(RnnBase *_rnn, uint _vocab_size, bool rand) : rnn(_rnn), vocab_size(_vocab_size) {
     if (!rand) {
         std::cerr << "Warning: using fixed weight for RnnLM" << std::endl;
     }
@@ -30,7 +30,7 @@ Matrix * join_hiddens(const std::vector<Matrix *> &hiddens) {
 }
 
 Matrix *RnnLM::forward(RnnLMContext *ctx, const std::vector<Matrix *> &inputs) {
-    RnnRes res = rnn->forward(ctx->rnn_ctx, inputs, nullptr);
+    RnnRes res = rnn->forward(ctx->rnn_ctx, inputs, nullptr, nullptr);
     Matrix *hiddens = join_hiddens(res.states);
     return fc->forward(ctx->fc_ctx, hiddens);
 }
@@ -101,7 +101,7 @@ std::string RnnLM::predict(const std::string &prefix, uint num_preds) {
         inputs.push_back(m);
     }
     RnnLMContext *ctx = init();
-    RnnRes res = rnn->forward(ctx->rnn_ctx, inputs, nullptr);
+    RnnRes res = rnn->forward(ctx->rnn_ctx, inputs, nullptr, nullptr);
     Matrix *last_hidden = res.states[res.states.size()-1];
     std::string ret = "";
     for (uint i = 0; i < num_preds; ++ i) {
@@ -122,7 +122,7 @@ std::string RnnLM::predict(const std::string &prefix, uint num_preds) {
         std::vector<Matrix *> new_inputs;
         new_inputs.push_back(m);
         ctx = init();
-        res = rnn->forward(ctx->rnn_ctx, new_inputs, last_hidden);
+        res = rnn->forward(ctx->rnn_ctx, new_inputs, last_hidden, nullptr);
         last_hidden = res.states[res.states.size()-1];
     }
     release(ctx);

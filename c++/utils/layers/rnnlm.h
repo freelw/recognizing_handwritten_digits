@@ -8,7 +8,7 @@ class RnnLMContext {
 
 class RnnLM {
     public:
-        RnnLM(Rnn *_rnn, uint vocab_size, bool rand);
+        RnnLM(RnnBase *_rnn, uint vocab_size, bool rand);
         virtual ~RnnLM();
         virtual Matrix *forward(RnnLMContext *, const std::vector<Matrix*> &inputs);
         virtual void backward(RnnLMContext *, Matrix* grad);
@@ -19,7 +19,7 @@ class RnnLM {
         void clip_grad(DATATYPE grad_clip_val);
         std::string predict(const std::string &prefix, uint num_preds);
     private:
-        Rnn *rnn;
+        RnnBase *rnn;
         uint vocab_size;
         Liner *fc;
 };

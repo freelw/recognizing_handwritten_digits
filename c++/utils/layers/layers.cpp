@@ -248,7 +248,7 @@ Rnn::~Rnn() {
     delete bh;
 }
 
-RnnRes Rnn::forward(RnnContext *ctx, const std::vector<Matrix *> &inputs, Matrix *hidden) {
+RnnRes Rnn::forward(RnnContext *ctx, const std::vector<Matrix *> &inputs, Matrix *hidden, Matrix *) {
     assert(ctx->inputs.size() == 0);
     assert(ctx->hiddens.size() == 0);
     assert(ctx->states.size() == 0);
@@ -329,3 +329,91 @@ void Rnn::zero_grad() {
     whh->zero_grad();
     bh->zero_grad();
 }
+
+void init_weight(Matrix *weight, DATATYPE sigma) {
+    unsigned seed1 = std::chrono::system_clock::now().time_since_epoch().count();
+    std::default_random_engine generator_w(seed1);
+    std::normal_distribution<DATATYPE> distribution_w(0.0, sigma);
+    for (uint i = 0; i < weight->getShape().rowCnt; ++ i) {
+        for (uint j = 0; j < weight->getShape().colCnt; ++ j) {
+            (*weight)[i][j] = distribution_w(generator_w);
+        }
+    }
+}
+
+LSTM::LSTM(uint i, uint h, DATATYPE _sigma, bool _rand) {
+    input_num = i;
+    hidden_num = h;
+    sigma = _sigma;
+    rand = _rand;
+    if (!rand) {
+        std::cerr << "Warning: using fixed weight for LSTM" << std::endl;
+    }
+    wxi = new Parameters(Shape(hidden_num, input_num));
+    whi = new Parameters(Shape(hidden_num, hidden_num));
+    wxf = new Parameters(Shape(hidden_num, input_num));
+    whf = new Parameters(Shape(hidden_num, hidden_num));
+    wxo = new Parameters(Shape(hidden_num, input_num));
+    who = new Parameters(Shape(hidden_num, hidden_num));
+    wxc = new Parameters(Shape(hidden_num, input_num));
+    whc = new Parameters(Shape(hidden_num, hidden_num));
+    bi = new Parameters(Shape(hidden_num, 1));
+    bf = new Parameters(Shape(hidden_num, 1));
+    bo = new Parameters(Shape(hidden_num, 1));
+    bc = new Parameters(Shape(hidden_num, 1));
+    init_weight(wxi->get_weight(), sigma);
+    init_weight(whi->get_weight(), sigma);
+    init_weight(wxf->get_weight(), sigma);
+    init_weight(whf->get_weight(), sigma);
+    init_weight(wxo->get_weight(), sigma);
+    init_weight(who->get_weight(), sigma);
+    init_weight(wxc->get_weight(), sigma);
+    init_weight(whc->get_weight(), sigma);
+    init_weight(bi->get_weight(), sigma);
+    init_weight(bf->get_weight(), sigma);
+    init_weight(bo->get_weight(), sigma);
+    init_weight(bc->get_weight(), sigma);
+}
+
+LSTM::~LSTM() {
+    delete wxi;
+    delete whi;
+    delete wxf;
+    delete whf;
+    delete wxo;
+    delete who;
+    delete wxc;
+    delete whc;
+    delete bi;
+    delete bf;
+    delete bo;
+    delete bc;
+}
+
+RnnRes LSTM::forward(RnnContext *ctx, const std::vector<Matrix*> &inputs, Matrix *hidden, Matrix *cell) {
+    assert(false);
+}
+
+Matrix *LSTM::backward(RnnContext *ctx, const std::vector<Matrix *> &grad_hiddens_vec) {
+    assert(false);
+    return nullptr;
+}
+
+RnnContext *LSTM::init() {
+    assert(false);
+    return nullptr;
+
+}
+
+void LSTM::release(RnnContext *ctx) {
+    assert(false);
+}
+
+std::vector<Parameters*> LSTM::get_parameters() {
+    assert(false);
+}
+
+void LSTM::zero_grad() {
+    assert(false);
+}
+
