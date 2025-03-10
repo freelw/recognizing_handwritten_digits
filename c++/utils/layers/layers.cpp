@@ -423,7 +423,6 @@ RnnRes LSTM::forward(Context *ctx, const std::vector<Matrix*> &inputs, Matrix *h
     RnnRes res;
     res.states.reserve(inputs.size());
     for (auto x : inputs) {
-        lstm_ctx->inputs.push_back(x);
         Matrix *i = (*(wxi->get_weight()->at(*x)) + *(whi->get_weight()->at(*hidden)))->expand_add(*(bi->get_weight()));
         Matrix *f = (*(wxf->get_weight()->at(*x)) + *(whf->get_weight()->at(*hidden)))->expand_add(*(bf->get_weight()));
         Matrix *o = (*(wxo->get_weight()->at(*x)) + *(who->get_weight()->at(*hidden)))->expand_add(*(bo->get_weight()));
