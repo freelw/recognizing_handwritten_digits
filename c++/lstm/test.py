@@ -156,6 +156,7 @@ def train_llm():
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+            print("\r[", i, "/", length, "]", end="", flush=True)
         print("epoch : ", epoch, " loss : ", loss_sum / length)
         prefixs = [
             "time traveller",

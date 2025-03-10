@@ -223,6 +223,7 @@ def train_llm():
             loss.backward()
             clip_gradients(1, rnnlm)
             optimizer.step()
+            print("\r[", i, "/", length, "]", end="", flush=True)
         print("epoch : ", epoch, " loss : ", loss_sum / length, " emit_clip : ", emit_clip)
     
         prefixs = [
