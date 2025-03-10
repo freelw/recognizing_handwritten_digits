@@ -11,10 +11,6 @@
 
 bool shutdown = false;
 
-void testgrad();
-void testcrossentropy();
-void init_weight(Parameters *p);
-
 extern int emit_clip;
 
 #define RESOURCE_NAME "../../resources/timemachine_preprocessed.txt"
@@ -105,9 +101,8 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
     std::cout << "Data loaded" << std::endl;
     uint num_steps = 32;
     uint hidden_num = 32;
-    bool rand = true;
-    LSTM *rnn = new LSTM(INPUT_NUM, hidden_num, 0.01, rand);
-    RnnLM lm(rnn, INPUT_NUM, rand);
+    LSTM *rnn = new LSTM(INPUT_NUM, hidden_num, 0.01, true);
+    RnnLM lm(rnn, INPUT_NUM, true);
     if (!checkpoint.empty()) {
         cout << "loading from checkpoint : " << checkpoint << endl;
         loadfrom_checkpoint(lm, checkpoint);
@@ -115,9 +110,6 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
     }
     auto parameters = lm.get_parameters();
     assert(parameters.size() == 5);
-    if (!rand) {
-        init_weight(parameters[3]);
-    }
     Adam adam(parameters, 0.001);
     std::string checkpoint_prefix = "checkpoint" + generateDateTimeSuffix();
     for (uint epoch = 0; epoch < epochs; epoch++) {
@@ -184,24 +176,17 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
 }
 
 int main(int argc, char *argv[]) {
-    // register signal SIGINT and signal handler
-    signal(SIGINT, signal_callback_handler);
-
     std::string corpus;
     std::string checkpoint;
-    std::string testcase;
     int opt;
     uint epochs = 30;
-    while ((opt = getopt(argc, argv, "f:c:t:e:")) != -1) {
+    while ((opt = getopt(argc, argv, "f:c:e:")) != -1) {
         switch (opt) {
             case 'f':
                 corpus = optarg;
                 break;
             case 'c':
                 checkpoint = optarg;
-                break;
-            case 't':
-                testcase = optarg;
                 break;
             case 'e':
                 std::cout << "epochs : " << optarg << std::endl;
@@ -210,25 +195,6 @@ int main(int argc, char *argv[]) {
             default:
                 std::cerr << "Usage: " << argv[0] << " -f <corpus> -c <checpoint> -t <testcase> -e <epochs>" << std::endl;
                 return 1;
-        }
-    }
-
-    if (!testcase.empty()) {
-        if (testcase == "test") {
-            testgrad();
-            return 0;
-        } else if (testcase == "testdl") {
-            load_data();
-            return 0;
-        } else if (testcase == "testce") {
-            testcrossentropy();
-            return 0;
-        } else if (testcase == "testprog") {
-            test_print_progress();
-            return 0;
-        } else {
-            std::cerr << "not supported testcase" << std::endl;
-            return 1;
         }
     }
 
