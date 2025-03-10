@@ -87,9 +87,17 @@ Matrix *Matrix::operator+(const Matrix &m) {
 
 Matrix *Matrix::operator+=(const Matrix &m) {
     checkShape(m);
-    for (uint i = 0; i < shape.rowCnt; ++i) {
-        for (uint j = 0; j < shape.colCnt; ++j) {
-            (*this)[i][j] += m[i][j];
+    DATATYPE *m_data = m.getData();
+    DATATYPE *this_data = this->getData();
+
+    const uint blockSize = 16; // Block size for cache optimization
+    for (uint i = 0; i < shape.rowCnt; i += blockSize) {
+        for (uint j = 0; j < shape.colCnt; j += blockSize) {
+            for (uint ii = i; ii < std::min(i + blockSize, shape.rowCnt); ++ii) {
+                for (uint jj = j; jj < std::min(j + blockSize, shape.colCnt); ++jj) {
+                    this_data[ii * shape.colCnt + jj] += m_data[ii * shape.colCnt + jj];
+                }
+            }
         }
     }
     return this;
@@ -237,13 +245,27 @@ Matrix *Matrix::dot(const Matrix &m) {
     assert(m.shape.rowCnt == shape.colCnt);
     Matrix *res = allocTmpMatrix(Shape(shape.rowCnt, m.shape.colCnt));
 
-    for (uint i = 0; i < shape.rowCnt; ++i) {
-        for (uint k = 0; k < shape.colCnt; ++k) {
-            for (uint j = 0; j < m.shape.colCnt; ++j) {
-                (*res)[i][j] += (*this)[i][k] * m[k][j];
+    DATATYPE *data = res->getData();
+    DATATYPE *m_data = m.getData();
+    DATATYPE *this_data = this->getData();
+
+    const uint blockSize = 16; // Block size for cache optimization
+    for (uint i = 0; i < shape.rowCnt; i += blockSize) {
+        for (uint j = 0; j < m.shape.colCnt; j += blockSize) {
+            for (uint k = 0; k < shape.colCnt; k += blockSize) {
+                for (uint ii = i; ii < std::min(i + blockSize, shape.rowCnt); ++ii) {
+                    for (uint jj = j; jj < std::min(j + blockSize, m.shape.colCnt); ++jj) {
+                        DATATYPE sum = 0;
+                        for (uint kk = k; kk < std::min(k + blockSize, shape.colCnt); ++kk) {
+                            sum += this_data[ii * shape.colCnt + kk] * m_data[kk * m.shape.colCnt + jj];
+                        }
+                        data[ii * m.shape.colCnt + jj] += sum;
+                    }
+                }
             }
         }
     }
+
     return res;
 }
 
@@ -306,7 +328,7 @@ std::vector<Matrix *> Matrix::split(uint dim) {
     return {};
 }
 
-DATATYPE *Matrix::getData() {
+DATATYPE *Matrix::getData() const {
     return data;
 }
 

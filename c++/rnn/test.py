@@ -199,7 +199,7 @@ def train_llm():
     optimizer = torch.optim.Adam(rnnlm.parameters(), lr=0.001)  # Change learning rate to 0.001
     loss_fn = torch.nn.CrossEntropyLoss()
     
-    for epoch in range(30):
+    for epoch in range(100):
         loss_sum = 0
         print("epoch ", epoch, " started.")
         length = len(X)

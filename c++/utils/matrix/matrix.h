@@ -59,7 +59,7 @@ public:
     void checkShape(const Matrix &m);
     Matrix *sum(uint dim);
     std::vector<Matrix *> split(uint dim);
-    DATATYPE *getData();
+    DATATYPE *getData() const;
 private:
     bool initialized;
     bool allocated;

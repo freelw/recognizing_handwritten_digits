@@ -1,0 +1,2006 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" width="1200" height="902" onload="init(evt)" viewBox="0 0 1200 902" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<!-- Flame graph stack visualization. See https://github.com/brendangregg/FlameGraph for latest version, and http://www.brendangregg.com/flamegraphs.html for examples. -->
+<!-- NOTES:  -->
+<defs>
+	<linearGradient id="background" y1="0" y2="1" x1="0" x2="0" >
+		<stop stop-color="#eeeeee" offset="5%" />
+		<stop stop-color="#eeeeb0" offset="95%" />
+	</linearGradient>
+</defs>
+<style type="text/css">
+	text { font-family:Verdana; font-size:12px; fill:rgb(0,0,0); }
+	#search, #ignorecase { opacity:0.1; cursor:pointer; }
+	#search:hover, #search.show, #ignorecase:hover, #ignorecase.show { opacity:1; }
+	#subtitle { text-anchor:middle; font-color:rgb(160,160,160); }
+	#title { text-anchor:middle; font-size:17px}
+	#unzoom { cursor:pointer; }
+	#frames > *:hover { stroke:black; stroke-width:0.5; cursor:pointer; }
+	.hide { display:none; }
+	.parent { opacity:0.5; }
+</style>
+<script type="text/ecmascript">
+<![CDATA[
+	"use strict";
+	var details, searchbtn, unzoombtn, matchedtxt, svg, searching, currentSearchTerm, ignorecase, ignorecaseBtn;
+	function init(evt) {
+		details = document.getElementById("details").firstChild;
+		searchbtn = document.getElementById("search");
+		ignorecaseBtn = document.getElementById("ignorecase");
+		unzoombtn = document.getElementById("unzoom");
+		matchedtxt = document.getElementById("matched");
+		svg = document.getElementsByTagName("svg")[0];
+		searching = 0;
+		currentSearchTerm = null;
+
+		// use GET parameters to restore a flamegraphs state.
+		var params = get_params();
+		if (params.x && params.y)
+			zoom(find_group(document.querySelector('[x="' + params.x + '"][y="' + params.y + '"]')));
+                if (params.s) search(params.s);
+	}
+
+	// event listeners
+	window.addEventListener("click", function(e) {
+		var target = find_group(e.target);
+		if (target) {
+			if (target.nodeName == "a") {
+				if (e.ctrlKey === false) return;
+				e.preventDefault();
+			}
+			if (target.classList.contains("parent")) unzoom(true);
+			zoom(target);
+			if (!document.querySelector('.parent')) {
+				// we have basically done a clearzoom so clear the url
+				var params = get_params();
+				if (params.x) delete params.x;
+				if (params.y) delete params.y;
+				history.replaceState(null, null, parse_params(params));
+				unzoombtn.classList.add("hide");
+				return;
+			}
+
+			// set parameters for zoom state
+			var el = target.querySelector("rect");
+			if (el && el.attributes && el.attributes.y && el.attributes._orig_x) {
+				var params = get_params()
+				params.x = el.attributes._orig_x.value;
+				params.y = el.attributes.y.value;
+				history.replaceState(null, null, parse_params(params));
+			}
+		}
+		else if (e.target.id == "unzoom") clearzoom();
+		else if (e.target.id == "search") search_prompt();
+		else if (e.target.id == "ignorecase") toggle_ignorecase();
+	}, false)
+
+	// mouse-over for info
+	// show
+	window.addEventListener("mouseover", function(e) {
+		var target = find_group(e.target);
+		if (target) details.nodeValue = "Function: " + g_to_text(target);
+	}, false)
+
+	// clear
+	window.addEventListener("mouseout", function(e) {
+		var target = find_group(e.target);
+		if (target) details.nodeValue = ' ';
+	}, false)
+
+	// ctrl-F for search
+	// ctrl-I to toggle case-sensitive search
+	window.addEventListener("keydown",function (e) {
+		if (e.keyCode === 114 || (e.ctrlKey && e.keyCode === 70)) {
+			e.preventDefault();
+			search_prompt();
+		}
+		else if (e.ctrlKey && e.keyCode === 73) {
+			e.preventDefault();
+			toggle_ignorecase();
+		}
+	}, false)
+
+	// functions
+	function get_params() {
+		var params = {};
+		var paramsarr = window.location.search.substr(1).split('&');
+		for (var i = 0; i < paramsarr.length; ++i) {
+			var tmp = paramsarr[i].split("=");
+			if (!tmp[0] || !tmp[1]) continue;
+			params[tmp[0]]  = decodeURIComponent(tmp[1]);
+		}
+		return params;
+	}
+	function parse_params(params) {
+		var uri = "?";
+		for (var key in params) {
+			uri += key + '=' + encodeURIComponent(params[key]) + '&';
+		}
+		if (uri.slice(-1) == "&")
+			uri = uri.substring(0, uri.length - 1);
+		if (uri == '?')
+			uri = window.location.href.split('?')[0];
+		return uri;
+	}
+	function find_child(node, selector) {
+		var children = node.querySelectorAll(selector);
+		if (children.length) return children[0];
+	}
+	function find_group(node) {
+		var parent = node.parentElement;
+		if (!parent) return;
+		if (parent.id == "frames") return node;
+		return find_group(parent);
+	}
+	function orig_save(e, attr, val) {
+		if (e.attributes["_orig_" + attr] != undefined) return;
+		if (e.attributes[attr] == undefined) return;
+		if (val == undefined) val = e.attributes[attr].value;
+		e.setAttribute("_orig_" + attr, val);
+	}
+	function orig_load(e, attr) {
+		if (e.attributes["_orig_"+attr] == undefined) return;
+		e.attributes[attr].value = e.attributes["_orig_" + attr].value;
+		e.removeAttribute("_orig_"+attr);
+	}
+	function g_to_text(e) {
+		var text = find_child(e, "title").firstChild.nodeValue;
+		return (text)
+	}
+	function g_to_func(e) {
+		var func = g_to_text(e);
+		// if there's any manipulation we want to do to the function
+		// name before it's searched, do it here before returning.
+		return (func);
+	}
+	function update_text(e) {
+		var r = find_child(e, "rect");
+		var t = find_child(e, "text");
+		var w = parseFloat(r.attributes.width.value) -3;
+		var txt = find_child(e, "title").textContent.replace(/\([^(]*\)$/,"");
+		t.attributes.x.value = parseFloat(r.attributes.x.value) + 3;
+
+		// Smaller than this size won't fit anything
+		if (w < 2 * 12 * 0.59) {
+			t.textContent = "";
+			return;
+		}
+
+		t.textContent = txt;
+		var sl = t.getSubStringLength(0, txt.length);
+		// check if only whitespace or if we can fit the entire string into width w
+		if (/^ *$/.test(txt) || sl < w)
+			return;
+
+		// this isn't perfect, but gives a good starting point
+		// and avoids calling getSubStringLength too often
+		var start = Math.floor((w/sl) * txt.length);
+		for (var x = start; x > 0; x = x-2) {
+			if (t.getSubStringLength(0, x + 2) <= w) {
+				t.textContent = txt.substring(0, x) + "..";
+				return;
+			}
+		}
+		t.textContent = "";
+	}
+
+	// zoom
+	function zoom_reset(e) {
+		if (e.attributes != undefined) {
+			orig_load(e, "x");
+			orig_load(e, "width");
+		}
+		if (e.childNodes == undefined) return;
+		for (var i = 0, c = e.childNodes; i < c.length; i++) {
+			zoom_reset(c[i]);
+		}
+	}
+	function zoom_child(e, x, ratio) {
+		if (e.attributes != undefined) {
+			if (e.attributes.x != undefined) {
+				orig_save(e, "x");
+				e.attributes.x.value = (parseFloat(e.attributes.x.value) - x - 10) * ratio + 10;
+				if (e.tagName == "text")
+					e.attributes.x.value = find_child(e.parentNode, "rect[x]").attributes.x.value + 3;
+			}
+			if (e.attributes.width != undefined) {
+				orig_save(e, "width");
+				e.attributes.width.value = parseFloat(e.attributes.width.value) * ratio;
+			}
+		}
+
+		if (e.childNodes == undefined) return;
+		for (var i = 0, c = e.childNodes; i < c.length; i++) {
+			zoom_child(c[i], x - 10, ratio);
+		}
+	}
+	function zoom_parent(e) {
+		if (e.attributes) {
+			if (e.attributes.x != undefined) {
+				orig_save(e, "x");
+				e.attributes.x.value = 10;
+			}
+			if (e.attributes.width != undefined) {
+				orig_save(e, "width");
+				e.attributes.width.value = parseInt(svg.width.baseVal.value) - (10 * 2);
+			}
+		}
+		if (e.childNodes == undefined) return;
+		for (var i = 0, c = e.childNodes; i < c.length; i++) {
+			zoom_parent(c[i]);
+		}
+	}
+	function zoom(node) {
+		var attr = find_child(node, "rect").attributes;
+		var width = parseFloat(attr.width.value);
+		var xmin = parseFloat(attr.x.value);
+		var xmax = parseFloat(xmin + width);
+		var ymin = parseFloat(attr.y.value);
+		var ratio = (svg.width.baseVal.value - 2 * 10) / width;
+
+		// XXX: Workaround for JavaScript float issues (fix me)
+		var fudge = 0.0001;
+
+		unzoombtn.classList.remove("hide");
+
+		var el = document.getElementById("frames").children;
+		for (var i = 0; i < el.length; i++) {
+			var e = el[i];
+			var a = find_child(e, "rect").attributes;
+			var ex = parseFloat(a.x.value);
+			var ew = parseFloat(a.width.value);
+			var upstack;
+			// Is it an ancestor
+			if (0 == 0) {
+				upstack = parseFloat(a.y.value) > ymin;
+			} else {
+				upstack = parseFloat(a.y.value) < ymin;
+			}
+			if (upstack) {
+				// Direct ancestor
+				if (ex <= xmin && (ex+ew+fudge) >= xmax) {
+					e.classList.add("parent");
+					zoom_parent(e);
+					update_text(e);
+				}
+				// not in current path
+				else
+					e.classList.add("hide");
+			}
+			// Children maybe
+			else {
+				// no common path
+				if (ex < xmin || ex + fudge >= xmax) {
+					e.classList.add("hide");
+				}
+				else {
+					zoom_child(e, xmin, ratio);
+					update_text(e);
+				}
+			}
+		}
+		search();
+	}
+	function unzoom(dont_update_text) {
+		unzoombtn.classList.add("hide");
+		var el = document.getElementById("frames").children;
+		for(var i = 0; i < el.length; i++) {
+			el[i].classList.remove("parent");
+			el[i].classList.remove("hide");
+			zoom_reset(el[i]);
+			if(!dont_update_text) update_text(el[i]);
+		}
+		search();
+	}
+	function clearzoom() {
+		unzoom();
+
+		// remove zoom state
+		var params = get_params();
+		if (params.x) delete params.x;
+		if (params.y) delete params.y;
+		history.replaceState(null, null, parse_params(params));
+	}
+
+	// search
+	function toggle_ignorecase() {
+		ignorecase = !ignorecase;
+		if (ignorecase) {
+			ignorecaseBtn.classList.add("show");
+		} else {
+			ignorecaseBtn.classList.remove("show");
+		}
+		reset_search();
+		search();
+	}
+	function reset_search() {
+		var el = document.querySelectorAll("#frames rect");
+		for (var i = 0; i < el.length; i++) {
+			orig_load(el[i], "fill")
+		}
+		var params = get_params();
+		delete params.s;
+		history.replaceState(null, null, parse_params(params));
+	}
+	function search_prompt() {
+		if (!searching) {
+			var term = prompt("Enter a search term (regexp " +
+			    "allowed, eg: ^ext4_)"
+			    + (ignorecase ? ", ignoring case" : "")
+			    + "\nPress Ctrl-i to toggle case sensitivity", "");
+			if (term != null) search(term);
+		} else {
+			reset_search();
+			searching = 0;
+			currentSearchTerm = null;
+			searchbtn.classList.remove("show");
+			searchbtn.firstChild.nodeValue = "Search"
+			matchedtxt.classList.add("hide");
+			matchedtxt.firstChild.nodeValue = ""
+		}
+	}
+	function search(term) {
+		if (term) currentSearchTerm = term;
+		if (currentSearchTerm === null) return;
+
+		var re = new RegExp(currentSearchTerm, ignorecase ? 'i' : '');
+		var el = document.getElementById("frames").children;
+		var matches = new Object();
+		var maxwidth = 0;
+		for (var i = 0; i < el.length; i++) {
+			var e = el[i];
+			var func = g_to_func(e);
+			var rect = find_child(e, "rect");
+			if (func == null || rect == null)
+				continue;
+
+			// Save max width. Only works as we have a root frame
+			var w = parseFloat(rect.attributes.width.value);
+			if (w > maxwidth)
+				maxwidth = w;
+
+			if (func.match(re)) {
+				// highlight
+				var x = parseFloat(rect.attributes.x.value);
+				orig_save(rect, "fill");
+				rect.attributes.fill.value = "rgb(230,0,230)";
+
+				// remember matches
+				if (matches[x] == undefined) {
+					matches[x] = w;
+				} else {
+					if (w > matches[x]) {
+						// overwrite with parent
+						matches[x] = w;
+					}
+				}
+				searching = 1;
+			}
+		}
+		if (!searching)
+			return;
+		var params = get_params();
+		params.s = currentSearchTerm;
+		history.replaceState(null, null, parse_params(params));
+
+		searchbtn.classList.add("show");
+		searchbtn.firstChild.nodeValue = "Reset Search";
+
+		// calculate percent matched, excluding vertical overlap
+		var count = 0;
+		var lastx = -1;
+		var lastw = 0;
+		var keys = Array();
+		for (k in matches) {
+			if (matches.hasOwnProperty(k))
+				keys.push(k);
+		}
+		// sort the matched frames by their x location
+		// ascending, then width descending
+		keys.sort(function(a, b){
+			return a - b;
+		});
+		// Step through frames saving only the biggest bottom-up frames
+		// thanks to the sort order. This relies on the tree property
+		// where children are always smaller than their parents.
+		var fudge = 0.0001;	// JavaScript floating point
+		for (var k in keys) {
+			var x = parseFloat(keys[k]);
+			var w = matches[keys[k]];
+			if (x >= lastx + lastw - fudge) {
+				count += w;
+				lastx = x;
+				lastw = w;
+			}
+		}
+		// display matched percent
+		matchedtxt.classList.remove("hide");
+		var pct = 100 * count / maxwidth;
+		if (pct != 100) pct = pct.toFixed(1)
+		matchedtxt.firstChild.nodeValue = "Matched: " + pct + "%";
+	}
+]]>
+</script>
+<rect x="0.0" y="0" width="1200.0" height="902.0" fill="url(#background)"  />
+<text id="title" x="600.00" y="24" >Flame Graph</text>
+<text id="details" x="10.00" y="885" > </text>
+<text id="unzoom" x="10.00" y="24" class="hide">Reset Zoom</text>
+<text id="search" x="1090.00" y="24" >Search</text>
+<text id="ignorecase" x="1174.00" y="24" >ic</text>
+<text id="matched" x="1090.00" y="885" > </text>
+<g id="frames">
+<g >
+<title>[unknown] (33,626,396 samples, 0.03%)</title><rect x="10.0" y="85" width="0.4" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="13.00" y="95.5" ></text>
+</g>
+<g >
+<title>__pthread_getspecific (34,170,009 samples, 0.03%)</title><rect x="1180.3" y="821" width="0.4" height="15.0" fill="rgb(235,141,33)" rx="2" ry="2" />
+<text  x="1183.33" y="831.5" ></text>
+</g>
+<g >
+<title>[unknown] (100,598,560 samples, 0.10%)</title><rect x="10.0" y="325" width="1.2" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="13.00" y="335.5" ></text>
+</g>
+<g >
+<title>__asan_region_is_poisoned (66,735,164 samples, 0.07%)</title><rect x="496.2" y="693" width="0.8" height="15.0" fill="rgb(219,65,15)" rx="2" ry="2" />
+<text  x="499.23" y="703.5" ></text>
+</g>
+<g >
+<title>__memset_avx2_erms (235,101,328 samples, 0.23%)</title><rect x="490.7" y="677" width="2.8" height="15.0" fill="rgb(230,117,28)" rx="2" ry="2" />
+<text  x="493.72" y="687.5" ></text>
+</g>
+<g >
+<title>[unknown] (33,626,396 samples, 0.03%)</title><rect x="10.0" y="149" width="0.4" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="13.00" y="159.5" ></text>
+</g>
+<g >
+<title>Matrix::operator[] (167,603,159 samples, 0.17%)</title><rect x="1172.1" y="741" width="1.9" height="15.0" fill="rgb(253,222,53)" rx="2" ry="2" />
+<text  x="1175.06" y="751.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;Matrix*, std::allocator&lt;Matrix*&gt; &gt;::end (33,530,900 samples, 0.03%)</title><rect x="214.3" y="725" width="0.4" height="15.0" fill="rgb(221,78,18)" rx="2" ry="2" />
+<text  x="217.35" y="735.5" ></text>
+</g>
+<g >
+<title>allocTmpMatrix (67,076,193 samples, 0.07%)</title><rect x="660.3" y="709" width="0.8" height="15.0" fill="rgb(251,213,51)" rx="2" ry="2" />
+<text  x="663.28" y="719.5" ></text>
+</g>
+<g >
+<title>Matrix::getShape (33,612,956 samples, 0.03%)</title><rect x="86.3" y="757" width="0.4" height="15.0" fill="rgb(223,83,20)" rx="2" ry="2" />
+<text  x="89.27" y="767.5" ></text>
+</g>
+<g >
+<title>allocTmpMatrix (67,220,622 samples, 0.07%)</title><rect x="652.8" y="693" width="0.8" height="15.0" fill="rgb(251,213,51)" rx="2" ry="2" />
+<text  x="655.81" y="703.5" ></text>
+</g>
+<g >
+<title>[unknown] (301,869,081 samples, 0.30%)</title><rect x="10.0" y="693" width="3.5" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="13.00" y="703.5" ></text>
+</g>
+<g >
+<title>[unknown] (234,792,466 samples, 0.23%)</title><rect x="10.0" y="501" width="2.8" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="13.00" y="511.5" ></text>
+</g>
+<g >
+<title>operator new (33,519,641 samples, 0.03%)</title><rect x="1146.7" y="709" width="0.4" height="15.0" fill="rgb(216,51,12)" rx="2" ry="2" />
+<text  x="1149.73" y="719.5" ></text>
+</g>
+<g >
+<title>tick_sched_handle.isra.0 (33,754,993 samples, 0.03%)</title><rect x="81.2" y="645" width="0.4" height="15.0" fill="rgb(231,121,29)" rx="2" ry="2" />
+<text  x="84.16" y="655.5" ></text>
+</g>
+<g >
+<title>__asan::asan_delete (134,214,634 samples, 0.13%)</title><rect x="52.0" y="821" width="1.6" height="15.0" fill="rgb(209,20,4)" rx="2" ry="2" />
+<text  x="55.05" y="831.5" ></text>
+</g>
+<g >
+<title>__sysvec_apic_timer_interrupt (33,754,993 samples, 0.03%)</title><rect x="81.2" y="709" width="0.4" height="15.0" fill="rgb(242,173,41)" rx="2" ry="2" />
+<text  x="84.16" y="719.5" ></text>
+</g>
+<g >
+<title>__asan::QuarantineCallback::Recycle (33,626,390 samples, 0.03%)</title><rect x="12.4" y="421" width="0.4" height="15.0" fill="rgb(222,81,19)" rx="2" ry="2" />
+<text  x="15.36" y="431.5" ></text>
+</g>
+<g >
+<title>pow@@GLIBC_2.29 (100,552,988 samples, 0.10%)</title><rect x="922.2" y="757" width="1.1" height="15.0" fill="rgb(222,78,18)" rx="2" ry="2" />
+<text  x="925.17" y="767.5" ></text>
+</g>
+<g >
+<title>Matrix::~Matrix (33,611,469 samples, 0.03%)</title><rect x="1155.8" y="741" width="0.4" height="15.0" fill="rgb(223,86,20)" rx="2" ry="2" />
+<text  x="1158.77" y="751.5" ></text>
+</g>
+<g >
+<title>Matrix::zero (67,214,542 samples, 0.07%)</title><rect x="985.0" y="725" width="0.7" height="15.0" fill="rgb(206,8,2)" rx="2" ry="2" />
+<text  x="987.96" y="735.5" ></text>
+</g>
+<g >
+<title>std::forward&lt;Matrix* const&amp;&gt; (33,753,279 samples, 0.03%)</title><rect x="498.6" y="693" width="0.4" height="15.0" fill="rgb(251,214,51)" rx="2" ry="2" />
+<text  x="501.58" y="703.5" ></text>
+</g>
+<g >
+<title>sched_clock_cpu (33,754,993 samples, 0.03%)</title><rect x="81.2" y="565" width="0.4" height="15.0" fill="rgb(229,113,27)" rx="2" ry="2" />
+<text  x="84.16" y="575.5" ></text>
+</g>
+<g >
+<title>__memset_avx2_erms (33,246,863 samples, 0.03%)</title><rect x="497.0" y="693" width="0.4" height="15.0" fill="rgb(230,117,28)" rx="2" ry="2" />
+<text  x="500.01" y="703.5" ></text>
+</g>
+<g >
+<title>Matrix::operator[] (66,989,787 samples, 0.07%)</title><rect x="641.0" y="709" width="0.8" height="15.0" fill="rgb(253,222,53)" rx="2" ry="2" />
+<text  x="644.02" y="719.5" ></text>
+</g>
+<g >
+<title>tick_sched_timer (33,483,253 samples, 0.03%)</title><rect x="836.7" y="629" width="0.4" height="15.0" fill="rgb(254,227,54)" rx="2" ry="2" />
+<text  x="839.67" y="639.5" ></text>
+</g>
+<g >
+<title>[rnn] (33,556,681 samples, 0.03%)</title><rect x="73.3" y="757" width="0.4" height="15.0" fill="rgb(217,56,13)" rx="2" ry="2" />
+<text  x="76.29" y="767.5" ></text>
+</g>
+<g >
+<title>Matrix::Matrix (537,300,990 samples, 0.53%)</title><rect x="489.9" y="709" width="6.3" height="15.0" fill="rgb(237,150,35)" rx="2" ry="2" />
+<text  x="492.93" y="719.5" ></text>
+</g>
+<g >
+<title>std::allocator_traits&lt;std::allocator&lt;unsigned int&gt; &gt;::allocate (33,711,530 samples, 0.03%)</title><rect x="85.5" y="693" width="0.4" height="15.0" fill="rgb(229,114,27)" rx="2" ry="2" />
+<text  x="88.48" y="703.5" ></text>
+</g>
+<g >
+<title>__sysvec_apic_timer_interrupt (33,483,253 samples, 0.03%)</title><rect x="836.7" y="677" width="0.4" height="15.0" fill="rgb(242,173,41)" rx="2" ry="2" />
+<text  x="839.67" y="687.5" ></text>
+</g>
+<g >
+<title>[unknown] (33,626,396 samples, 0.03%)</title><rect x="10.0" y="69" width="0.4" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="13.00" y="79.5" ></text>
+</g>
+<g >
+<title>[unknown] (167,646,581 samples, 0.17%)</title><rect x="10.0" y="373" width="2.0" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="13.00" y="383.5" ></text>
+</g>
+<g >
+<title>Shape::size (67,239,885 samples, 0.07%)</title><rect x="729.0" y="677" width="0.8" height="15.0" fill="rgb(241,169,40)" rx="2" ry="2" />
+<text  x="731.99" y="687.5" ></text>
+</g>
+<g >
+<title>Matrix::operator[] (133,817,310 samples, 0.13%)</title><rect x="651.2" y="709" width="1.6" height="15.0" fill="rgb(253,222,53)" rx="2" ry="2" />
+<text  x="654.24" y="719.5" ></text>
+</g>
+<g >
+<title>irqentry_exit_to_user_mode (33,532,363 samples, 0.03%)</title><rect x="165.2" y="677" width="0.4" height="15.0" fill="rgb(254,229,54)" rx="2" ry="2" />
+<text  x="168.24" y="687.5" ></text>
+</g>
+<g >
+<title>Matrix::checkShape (33,565,046 samples, 0.03%)</title><rect x="1170.9" y="741" width="0.4" height="15.0" fill="rgb(245,187,44)" rx="2" ry="2" />
+<text  x="1173.88" y="751.5" ></text>
+</g>
+<g >
+<title>__tanh (134,039,478 samples, 0.13%)</title><rect x="655.6" y="725" width="1.5" height="15.0" fill="rgb(227,104,25)" rx="2" ry="2" />
+<text  x="658.56" y="735.5" ></text>
+</g>
+<g >
+<title>std::copy&lt;__gnu_cxx::__normal_iterator&lt;Matrix* const*, std::vector&lt;Matrix*, std::allocator&lt;Matrix*&gt; &gt; &gt;, Matrix**&gt; (18,588,063 samples, 0.02%)</title><rect x="1169.1" y="661" width="0.2" height="15.0" fill="rgb(246,192,45)" rx="2" ry="2" />
+<text  x="1172.10" y="671.5" ></text>
+</g>
+<g >
+<title>__sanitizer::Quarantine&lt;__asan::QuarantineCallback, __asan::AsanChunk&gt;::DoRecycle (33,551,981 samples, 0.03%)</title><rect x="13.1" y="549" width="0.4" height="15.0" fill="rgb(231,124,29)" rx="2" ry="2" />
+<text  x="16.14" y="559.5" ></text>
+</g>
+<g >
+<title>[unknown] (33,626,396 samples, 0.03%)</title><rect x="10.0" y="117" width="0.4" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="13.00" y="127.5" ></text>
+</g>
+<g >
+<title>Shape::size (33,681,557 samples, 0.03%)</title><rect x="1098.3" y="693" width="0.4" height="15.0" fill="rgb(241,169,40)" rx="2" ry="2" />
+<text  x="1101.31" y="703.5" ></text>
+</g>
+<g >
+<title>__expm1 (368,310,112 samples, 0.37%)</title><rect x="1156.6" y="741" width="4.3" height="15.0" fill="rgb(214,43,10)" rx="2" ry="2" />
+<text  x="1159.55" y="751.5" ></text>
+</g>
+<g >
+<title>native_apic_mem_write (39,260,699 samples, 0.04%)</title><rect x="164.8" y="693" width="0.4" height="15.0" fill="rgb(229,110,26)" rx="2" ry="2" />
+<text  x="167.78" y="703.5" ></text>
+</g>
+<g >
+<title>Matrix::Matrix (67,545,940 samples, 0.07%)</title><rect x="1155.0" y="693" width="0.8" height="15.0" fill="rgb(237,150,35)" rx="2" ry="2" />
+<text  x="1157.98" y="703.5" ></text>
+</g>
+<g >
+<title>Matrix::transpose (6,230,879,094 samples, 6.19%)</title><rect x="661.1" y="741" width="73.0" height="15.0" fill="rgb(249,203,48)" rx="2" ry="2" />
+<text  x="664.07" y="751.5" >Matrix::..</text>
+</g>
+<g >
+<title>std::vector&lt;CrosEntropyInfo, std::allocator&lt;CrosEntropyInfo&gt; &gt;::push_back (34,036,551 samples, 0.03%)</title><rect x="91.4" y="757" width="0.4" height="15.0" fill="rgb(248,201,48)" rx="2" ry="2" />
+<text  x="94.38" y="767.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;Parameters*, std::allocator&lt;Parameters*&gt; &gt;::insert&lt;__gnu_cxx::__normal_iterator&lt;Parameters**, std::vector&lt;Parameters*, std::allocator&lt;Parameters*&gt; &gt; &gt;, void&gt; (33,561,768 samples, 0.03%)</title><rect x="914.7" y="741" width="0.4" height="15.0" fill="rgb(207,12,2)" rx="2" ry="2" />
+<text  x="917.71" y="751.5" ></text>
+</g>
+<g >
+<title>__sanitizer::mem_is_zero (33,607,366 samples, 0.03%)</title><rect x="732.9" y="693" width="0.4" height="15.0" fill="rgb(220,71,17)" rx="2" ry="2" />
+<text  x="735.91" y="703.5" ></text>
+</g>
+<g >
+<title>__asan::AsanThread::stack_top (33,684,945 samples, 0.03%)</title><rect x="495.4" y="693" width="0.4" height="15.0" fill="rgb(251,214,51)" rx="2" ry="2" />
+<text  x="498.44" y="703.5" ></text>
+</g>
+<g >
+<title>Matrix::zero (33,617,718 samples, 0.03%)</title><rect x="65.4" y="741" width="0.4" height="15.0" fill="rgb(206,8,2)" rx="2" ry="2" />
+<text  x="68.42" y="751.5" ></text>
+</g>
+<g >
+<title>irqentry_exit_to_user_mode (33,520,850 samples, 0.03%)</title><rect x="837.1" y="661" width="0.4" height="15.0" fill="rgb(254,229,54)" rx="2" ry="2" />
+<text  x="840.07" y="671.5" ></text>
+</g>
+<g >
+<title>[unknown] (301,869,081 samples, 0.30%)</title><rect x="10.0" y="629" width="3.5" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="13.00" y="639.5" ></text>
+</g>
+<g >
+<title>__sqrt (67,293,374 samples, 0.07%)</title><rect x="1174.0" y="773" width="0.8" height="15.0" fill="rgb(227,103,24)" rx="2" ry="2" />
+<text  x="1177.03" y="783.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;unsigned int, std::allocator&lt;unsigned int&gt; &gt;::vector (33,711,530 samples, 0.03%)</title><rect x="85.5" y="757" width="0.4" height="15.0" fill="rgb(229,111,26)" rx="2" ry="2" />
+<text  x="88.48" y="767.5" ></text>
+</g>
+<g >
+<title>__sanitizer::BufferedStackTrace::Unwind (32,540,028 samples, 0.03%)</title><rect x="732.1" y="693" width="0.4" height="15.0" fill="rgb(233,130,31)" rx="2" ry="2" />
+<text  x="735.14" y="703.5" ></text>
+</g>
+<g >
+<title>[unknown] (301,869,081 samples, 0.30%)</title><rect x="10.0" y="565" width="3.5" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="13.00" y="575.5" ></text>
+</g>
+<g >
+<title>__asan_region_is_poisoned (33,747,121 samples, 0.03%)</title><rect x="1155.4" y="677" width="0.4" height="15.0" fill="rgb(219,65,15)" rx="2" ry="2" />
+<text  x="1158.37" y="687.5" ></text>
+</g>
+<g >
+<title>Matrix::operator[] (302,132,874 samples, 0.30%)</title><rect x="628.1" y="725" width="3.5" height="15.0" fill="rgb(253,222,53)" rx="2" ry="2" />
+<text  x="631.06" y="735.5" ></text>
+</g>
+<g >
+<title>__sanitizer::BufferedStackTrace::Unwind (33,688,105 samples, 0.03%)</title><rect x="1178.0" y="741" width="0.4" height="15.0" fill="rgb(233,130,31)" rx="2" ry="2" />
+<text  x="1180.96" y="751.5" ></text>
+</g>
+<g >
+<title>Matrix::pow2 (670,979,247 samples, 0.67%)</title><rect x="639.4" y="725" width="7.9" height="15.0" fill="rgb(218,62,15)" rx="2" ry="2" />
+<text  x="642.45" y="735.5" ></text>
+</g>
+<g >
+<title>Matrix::zero (33,516,266 samples, 0.03%)</title><rect x="212.8" y="709" width="0.4" height="15.0" fill="rgb(206,8,2)" rx="2" ry="2" />
+<text  x="215.77" y="719.5" ></text>
+</g>
+<g >
+<title>Liner::forward (5,156,180,976 samples, 5.12%)</title><rect x="923.3" y="757" width="60.5" height="15.0" fill="rgb(205,1,0)" rx="2" ry="2" />
+<text  x="926.35" y="767.5" >Liner:..</text>
+</g>
+<g >
+<title>__asan::QuarantineCallback::Recycle (33,519,495 samples, 0.03%)</title><rect x="12.0" y="389" width="0.4" height="15.0" fill="rgb(222,81,19)" rx="2" ry="2" />
+<text  x="14.96" y="399.5" ></text>
+</g>
+<g >
+<title>Shape::Shape (33,546,137 samples, 0.03%)</title><rect x="1156.2" y="741" width="0.4" height="15.0" fill="rgb(243,175,41)" rx="2" ry="2" />
+<text  x="1159.16" y="751.5" ></text>
+</g>
+<g >
+<title>[unknown] (67,136,626 samples, 0.07%)</title><rect x="10.0" y="197" width="0.8" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="13.00" y="207.5" ></text>
+</g>
+<g >
+<title>asm_sysvec_irq_work (33,532,363 samples, 0.03%)</title><rect x="165.2" y="725" width="0.4" height="15.0" fill="rgb(219,64,15)" rx="2" ry="2" />
+<text  x="168.24" y="735.5" ></text>
+</g>
+<g >
+<title>__asan::PoisonShadow (201,088,485 samples, 0.20%)</title><rect x="20.2" y="805" width="2.4" height="15.0" fill="rgb(231,120,28)" rx="2" ry="2" />
+<text  x="23.23" y="815.5" ></text>
+</g>
+<g >
+<title>__asan::QuarantineCallback::Recycle (100,639,637 samples, 0.10%)</title><rect x="50.1" y="821" width="1.2" height="15.0" fill="rgb(222,81,19)" rx="2" ry="2" />
+<text  x="53.08" y="831.5" ></text>
+</g>
+<g >
+<title>[unknown] (301,869,081 samples, 0.30%)</title><rect x="10.0" y="789" width="3.5" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="13.00" y="799.5" ></text>
+</g>
+<g >
+<title>__expm1 (167,273,417 samples, 0.17%)</title><rect x="653.6" y="725" width="2.0" height="15.0" fill="rgb(214,43,10)" rx="2" ry="2" />
+<text  x="656.60" y="735.5" ></text>
+</g>
+<g >
+<title>task_tick_fair (33,754,993 samples, 0.03%)</title><rect x="81.2" y="597" width="0.4" height="15.0" fill="rgb(217,57,13)" rx="2" ry="2" />
+<text  x="84.16" y="607.5" ></text>
+</g>
+<g >
+<title>allocTmpMatrix (168,160,233 samples, 0.17%)</title><rect x="1097.1" y="725" width="2.0" height="15.0" fill="rgb(251,213,51)" rx="2" ry="2" />
+<text  x="1100.13" y="735.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;Matrix*, std::allocator&lt;Matrix*&gt; &gt;::push_back (33,530,900 samples, 0.03%)</title><rect x="214.3" y="741" width="0.4" height="15.0" fill="rgb(232,128,30)" rx="2" ry="2" />
+<text  x="217.35" y="751.5" ></text>
+</g>
+<g >
+<title>__gnu_cxx::new_allocator&lt;unsigned int&gt;::allocate (33,711,530 samples, 0.03%)</title><rect x="85.5" y="677" width="0.4" height="15.0" fill="rgb(246,192,45)" rx="2" ry="2" />
+<text  x="88.48" y="687.5" ></text>
+</g>
+<g >
+<title>exit_to_user_mode_prepare (33,532,363 samples, 0.03%)</title><rect x="165.2" y="661" width="0.4" height="15.0" fill="rgb(228,108,25)" rx="2" ry="2" />
+<text  x="168.24" y="671.5" ></text>
+</g>
+<g >
+<title>freeTmpMatrix (201,804,286 samples, 0.20%)</title><rect x="1176.8" y="773" width="2.3" height="15.0" fill="rgb(229,113,27)" rx="2" ry="2" />
+<text  x="1179.78" y="783.5" ></text>
+</g>
+<g >
+<title>[unknown] (301,869,081 samples, 0.30%)</title><rect x="10.0" y="677" width="3.5" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="13.00" y="687.5" ></text>
+</g>
+<g >
+<title>irq_work_run (33,492,066 samples, 0.03%)</title><rect x="499.0" y="677" width="0.4" height="15.0" fill="rgb(225,93,22)" rx="2" ry="2" />
+<text  x="501.97" y="687.5" ></text>
+</g>
+<g >
+<title>Shape::size (33,604,694 samples, 0.03%)</title><rect x="213.2" y="709" width="0.4" height="15.0" fill="rgb(241,169,40)" rx="2" ry="2" />
+<text  x="216.17" y="719.5" ></text>
+</g>
+<g >
+<title>__sanitizer::CombinedAllocator&lt;__sanitizer::SizeClassAllocator64&lt;__asan::AP64&gt;, __sanitizer::SizeClassAllocatorLocalCache&lt;__sanitizer::SizeClassAllocator64&lt;__asan::AP64&gt; &gt;, __sanitizer::LargeMmapAllocator&lt;__asan::AsanMapUnmapCallback, __sanitizer::LargeMmapAllocatorPtrArrayDynamic&gt; &gt;::Allocate (67,193,340 samples, 0.07%)</title><rect x="1185.4" y="821" width="0.8" height="15.0" fill="rgb(228,109,26)" rx="2" ry="2" />
+<text  x="1188.43" y="831.5" ></text>
+</g>
+<g >
+<title>allocTmpMatrix (67,055,270 samples, 0.07%)</title><rect x="631.6" y="709" width="0.8" height="15.0" fill="rgb(251,213,51)" rx="2" ry="2" />
+<text  x="634.60" y="719.5" ></text>
+</g>
+<g >
+<title>irq_work_run_list (33,492,066 samples, 0.03%)</title><rect x="499.0" y="661" width="0.4" height="15.0" fill="rgb(243,176,42)" rx="2" ry="2" />
+<text  x="501.97" y="671.5" ></text>
+</g>
+<g >
+<title>update_load_avg (33,483,253 samples, 0.03%)</title><rect x="836.7" y="549" width="0.4" height="15.0" fill="rgb(240,165,39)" rx="2" ry="2" />
+<text  x="839.67" y="559.5" ></text>
+</g>
+<g >
+<title>__sanitizer::Quarantine&lt;__asan::QuarantineCallback, __asan::AsanChunk&gt;::DoRecycle (33,510,230 samples, 0.03%)</title><rect x="10.4" y="165" width="0.4" height="15.0" fill="rgb(231,124,29)" rx="2" ry="2" />
+<text  x="13.39" y="175.5" ></text>
+</g>
+<g >
+<title>[unknown] (100,598,560 samples, 0.10%)</title><rect x="10.0" y="293" width="1.2" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="13.00" y="303.5" ></text>
+</g>
+<g >
+<title>[unknown] (301,869,081 samples, 0.30%)</title><rect x="10.0" y="597" width="3.5" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="13.00" y="607.5" ></text>
+</g>
+<g >
+<title>__asan::QuarantineCallback::Recycle (100,439,076 samples, 0.10%)</title><rect x="22.6" y="805" width="1.2" height="15.0" fill="rgb(222,81,19)" rx="2" ry="2" />
+<text  x="25.58" y="815.5" ></text>
+</g>
+<g >
+<title>__sched_text_start (33,520,850 samples, 0.03%)</title><rect x="837.1" y="613" width="0.4" height="15.0" fill="rgb(225,92,22)" rx="2" ry="2" />
+<text  x="840.07" y="623.5" ></text>
+</g>
+<g >
+<title>Matrix::operator+ (414,619,278 samples, 0.41%)</title><rect x="1142.3" y="741" width="4.8" height="15.0" fill="rgb(214,42,10)" rx="2" ry="2" />
+<text  x="1145.27" y="751.5" ></text>
+</g>
+<g >
+<title>Matrix::operator[] (301,244,140 samples, 0.30%)</title><rect x="911.2" y="757" width="3.5" height="15.0" fill="rgb(253,222,53)" rx="2" ry="2" />
+<text  x="914.18" y="767.5" ></text>
+</g>
+<g >
+<title>__math_check_uflow (33,639,482 samples, 0.03%)</title><rect x="81.6" y="757" width="0.3" height="15.0" fill="rgb(214,42,10)" rx="2" ry="2" />
+<text  x="84.56" y="767.5" ></text>
+</g>
+<g >
+<title>allocTmpMatrix (33,663,650 samples, 0.03%)</title><rect x="882.1" y="741" width="0.4" height="15.0" fill="rgb(251,213,51)" rx="2" ry="2" />
+<text  x="885.08" y="751.5" ></text>
+</g>
+<g >
+<title>allocTmpMatrix (67,424,871 samples, 0.07%)</title><rect x="645.7" y="709" width="0.8" height="15.0" fill="rgb(251,213,51)" rx="2" ry="2" />
+<text  x="648.73" y="719.5" ></text>
+</g>
+<g >
+<title>Matrix::dot (13,321,053,608 samples, 13.23%)</title><rect x="986.1" y="741" width="156.2" height="15.0" fill="rgb(238,154,36)" rx="2" ry="2" />
+<text  x="989.14" y="751.5" >Matrix::dot</text>
+</g>
+<g >
+<title>std::vector&lt;Matrix*, std::allocator&lt;Matrix*&gt; &gt;::max_size (33,612,218 samples, 0.03%)</title><rect x="1179.5" y="725" width="0.4" height="15.0" fill="rgb(249,205,49)" rx="2" ry="2" />
+<text  x="1182.54" y="735.5" ></text>
+</g>
+<g >
+<title>__sanitizer::Quarantine&lt;__asan::QuarantineCallback, __asan::AsanChunk&gt;::DoRecycle (33,626,396 samples, 0.03%)</title><rect x="10.0" y="37" width="0.4" height="15.0" fill="rgb(231,124,29)" rx="2" ry="2" />
+<text  x="13.00" y="47.5" ></text>
+</g>
+<g >
+<title>pow@@GLIBC_2.29 (33,573,958 samples, 0.03%)</title><rect x="646.5" y="709" width="0.4" height="15.0" fill="rgb(222,78,18)" rx="2" ry="2" />
+<text  x="649.52" y="719.5" ></text>
+</g>
+<g >
+<title>rnn (100,680,994,715 samples, 100.00%)</title><rect x="10.0" y="837" width="1180.0" height="15.0" fill="rgb(205,4,1)" rx="2" ry="2" />
+<text  x="13.00" y="847.5" >rnn</text>
+</g>
+<g >
+<title>sysvec_irq_work (33,492,066 samples, 0.03%)</title><rect x="499.0" y="709" width="0.4" height="15.0" fill="rgb(206,6,1)" rx="2" ry="2" />
+<text  x="501.97" y="719.5" ></text>
+</g>
+<g >
+<title>__sanitizer::BufferedStackTrace::FastUnwindStack (33,549,051 samples, 0.03%)</title><rect x="1177.6" y="741" width="0.4" height="15.0" fill="rgb(219,66,15)" rx="2" ry="2" />
+<text  x="1180.57" y="751.5" ></text>
+</g>
+<g >
+<title>join_hiddens (335,414,641 samples, 0.33%)</title><rect x="1170.1" y="757" width="3.9" height="15.0" fill="rgb(211,28,6)" rx="2" ry="2" />
+<text  x="1173.10" y="767.5" ></text>
+</g>
+<g >
+<title>__asan::RZSize2Log (67,235,702 samples, 0.07%)</title><rect x="51.3" y="821" width="0.7" height="15.0" fill="rgb(217,58,13)" rx="2" ry="2" />
+<text  x="54.26" y="831.5" ></text>
+</g>
+<g >
+<title>Shape::operator== (33,565,046 samples, 0.03%)</title><rect x="1170.9" y="725" width="0.4" height="15.0" fill="rgb(206,7,1)" rx="2" ry="2" />
+<text  x="1173.88" y="735.5" ></text>
+</g>
+<g >
+<title>asm_sysvec_apic_timer_interrupt (33,461,873 samples, 0.03%)</title><rect x="881.7" y="709" width="0.4" height="15.0" fill="rgb(232,127,30)" rx="2" ry="2" />
+<text  x="884.69" y="719.5" ></text>
+</g>
+<g >
+<title>Matrix::operator[] (3,651,183,165 samples, 3.63%)</title><rect x="683.1" y="725" width="42.8" height="15.0" fill="rgb(253,222,53)" rx="2" ry="2" />
+<text  x="686.07" y="735.5" >Matr..</text>
+</g>
+<g >
+<title>__asan::GetMallocContextSize (33,619,052 samples, 0.03%)</title><rect x="214.0" y="725" width="0.3" height="15.0" fill="rgb(251,216,51)" rx="2" ry="2" />
+<text  x="216.95" y="735.5" ></text>
+</g>
+<g >
+<title>Matrix::zero (469,996,789 samples, 0.47%)</title><rect x="489.9" y="693" width="5.5" height="15.0" fill="rgb(206,8,2)" rx="2" ry="2" />
+<text  x="492.93" y="703.5" ></text>
+</g>
+<g >
+<title>Matrix::operator[] (67,088,740 samples, 0.07%)</title><rect x="203.7" y="725" width="0.8" height="15.0" fill="rgb(253,222,53)" rx="2" ry="2" />
+<text  x="206.74" y="735.5" ></text>
+</g>
+<g >
+<title>__asan_region_is_poisoned (33,623,727 samples, 0.03%)</title><rect x="985.0" y="709" width="0.4" height="15.0" fill="rgb(219,65,15)" rx="2" ry="2" />
+<text  x="987.96" y="719.5" ></text>
+</g>
+<g >
+<title>RnnLM::clip_grad (1,407,246,592 samples, 1.40%)</title><rect x="906.9" y="773" width="16.4" height="15.0" fill="rgb(247,197,47)" rx="2" ry="2" />
+<text  x="909.85" y="783.5" ></text>
+</g>
+<g >
+<title>[unknown] (301,869,081 samples, 0.30%)</title><rect x="10.0" y="581" width="3.5" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="13.00" y="591.5" ></text>
+</g>
+<g >
+<title>hrtimer_interrupt (33,461,873 samples, 0.03%)</title><rect x="881.7" y="661" width="0.4" height="15.0" fill="rgb(228,109,26)" rx="2" ry="2" />
+<text  x="884.69" y="671.5" ></text>
+</g>
+<g >
+<title>std::pow&lt;float, int&gt; (33,644,873 samples, 0.03%)</title><rect x="1179.1" y="773" width="0.4" height="15.0" fill="rgb(249,206,49)" rx="2" ry="2" />
+<text  x="1182.14" y="783.5" ></text>
+</g>
+<g >
+<title>Matrix::checkShape (33,580,520 samples, 0.03%)</title><rect x="65.8" y="757" width="0.4" height="15.0" fill="rgb(245,187,44)" rx="2" ry="2" />
+<text  x="68.81" y="767.5" ></text>
+</g>
+<g >
+<title>[unknown] (301,869,081 samples, 0.30%)</title><rect x="10.0" y="757" width="3.5" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="13.00" y="767.5" ></text>
+</g>
+<g >
+<title>[unknown] (33,626,396 samples, 0.03%)</title><rect x="10.0" y="53" width="0.4" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="13.00" y="63.5" ></text>
+</g>
+<g >
+<title>hrtimer_interrupt (33,483,253 samples, 0.03%)</title><rect x="836.7" y="661" width="0.4" height="15.0" fill="rgb(228,109,26)" rx="2" ry="2" />
+<text  x="839.67" y="671.5" ></text>
+</g>
+<g >
+<title>__asan::AsanThread::stack_bottom (33,626,726 samples, 0.03%)</title><rect x="653.2" y="677" width="0.4" height="15.0" fill="rgb(221,76,18)" rx="2" ry="2" />
+<text  x="656.20" y="687.5" ></text>
+</g>
+<g >
+<title>__memset_avx2_unaligned_erms (201,097,294 samples, 0.20%)</title><rect x="27.3" y="805" width="2.4" height="15.0" fill="rgb(223,84,20)" rx="2" ry="2" />
+<text  x="30.30" y="815.5" ></text>
+</g>
+<g >
+<title>operator delete[] (33,611,469 samples, 0.03%)</title><rect x="1155.8" y="725" width="0.4" height="15.0" fill="rgb(208,18,4)" rx="2" ry="2" />
+<text  x="1158.77" y="735.5" ></text>
+</g>
+<g >
+<title>allocTmpMatrix (67,545,940 samples, 0.07%)</title><rect x="1155.0" y="709" width="0.8" height="15.0" fill="rgb(251,213,51)" rx="2" ry="2" />
+<text  x="1157.98" y="719.5" ></text>
+</g>
+<g >
+<title>scheduler_tick (33,483,253 samples, 0.03%)</title><rect x="836.7" y="581" width="0.4" height="15.0" fill="rgb(246,190,45)" rx="2" ry="2" />
+<text  x="839.67" y="591.5" ></text>
+</g>
+<g >
+<title>__memset_avx2_erms (33,549,890 samples, 0.03%)</title><rect x="732.5" y="693" width="0.4" height="15.0" fill="rgb(230,117,28)" rx="2" ry="2" />
+<text  x="735.52" y="703.5" ></text>
+</g>
+<g >
+<title>sysvec_irq_work (33,520,850 samples, 0.03%)</title><rect x="837.1" y="693" width="0.4" height="15.0" fill="rgb(206,6,1)" rx="2" ry="2" />
+<text  x="840.07" y="703.5" ></text>
+</g>
+<g >
+<title>std::_Vector_base&lt;Matrix*, std::allocator&lt;Matrix*&gt; &gt;::_M_deallocate (33,648,350 samples, 0.03%)</title><rect x="1179.9" y="741" width="0.4" height="15.0" fill="rgb(225,92,22)" rx="2" ry="2" />
+<text  x="1182.93" y="751.5" ></text>
+</g>
+<g >
+<title>std::min&lt;unsigned int&gt; (267,454,560 samples, 0.27%)</title><rect x="980.6" y="741" width="3.2" height="15.0" fill="rgb(237,151,36)" rx="2" ry="2" />
+<text  x="983.64" y="751.5" ></text>
+</g>
+<g >
+<title>__tanh (67,050,903 samples, 0.07%)</title><rect x="1160.9" y="741" width="0.8" height="15.0" fill="rgb(227,104,25)" rx="2" ry="2" />
+<text  x="1163.87" y="751.5" ></text>
+</g>
+<g >
+<title>operator new[] (33,724,986 samples, 0.03%)</title><rect x="645.7" y="661" width="0.4" height="15.0" fill="rgb(227,103,24)" rx="2" ry="2" />
+<text  x="648.73" y="671.5" ></text>
+</g>
+<g >
+<title>__queue_work (33,492,066 samples, 0.03%)</title><rect x="499.0" y="597" width="0.4" height="15.0" fill="rgb(212,34,8)" rx="2" ry="2" />
+<text  x="501.97" y="607.5" ></text>
+</g>
+<g >
+<title>irqentry_exit (33,532,363 samples, 0.03%)</title><rect x="165.2" y="693" width="0.4" height="15.0" fill="rgb(219,66,15)" rx="2" ry="2" />
+<text  x="168.24" y="703.5" ></text>
+</g>
+<g >
+<title>schedule (33,532,363 samples, 0.03%)</title><rect x="165.2" y="645" width="0.4" height="15.0" fill="rgb(254,229,54)" rx="2" ry="2" />
+<text  x="168.24" y="655.5" ></text>
+</g>
+<g >
+<title>[unknown] (234,792,466 samples, 0.23%)</title><rect x="10.0" y="453" width="2.8" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="13.00" y="463.5" ></text>
+</g>
+<g >
+<title>update_load_avg (33,754,993 samples, 0.03%)</title><rect x="81.2" y="581" width="0.4" height="15.0" fill="rgb(240,165,39)" rx="2" ry="2" />
+<text  x="84.16" y="591.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;Matrix*, std::allocator&lt;Matrix*&gt; &gt;::_S_max_size (33,612,218 samples, 0.03%)</title><rect x="1179.5" y="709" width="0.4" height="15.0" fill="rgb(236,143,34)" rx="2" ry="2" />
+<text  x="1182.54" y="719.5" ></text>
+</g>
+<g >
+<title>psi_task_switch (33,520,850 samples, 0.03%)</title><rect x="837.1" y="597" width="0.4" height="15.0" fill="rgb(230,118,28)" rx="2" ry="2" />
+<text  x="840.07" y="607.5" ></text>
+</g>
+<g >
+<title>operator new[] (33,619,256 samples, 0.03%)</title><rect x="495.8" y="693" width="0.4" height="15.0" fill="rgb(227,103,24)" rx="2" ry="2" />
+<text  x="498.83" y="703.5" ></text>
+</g>
+<g >
+<title>task_tick_fair (33,483,253 samples, 0.03%)</title><rect x="836.7" y="565" width="0.4" height="15.0" fill="rgb(217,57,13)" rx="2" ry="2" />
+<text  x="839.67" y="575.5" ></text>
+</g>
+<g >
+<title>std::allocator_traits&lt;std::allocator&lt;Matrix*&gt; &gt;::deallocate (33,648,350 samples, 0.03%)</title><rect x="1179.9" y="725" width="0.4" height="15.0" fill="rgb(253,224,53)" rx="2" ry="2" />
+<text  x="1182.93" y="735.5" ></text>
+</g>
+<g >
+<title>[unknown] (301,869,081 samples, 0.30%)</title><rect x="10.0" y="709" width="3.5" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="13.00" y="719.5" ></text>
+</g>
+<g >
+<title>Matrix::Matrix (100,562,130 samples, 0.10%)</title><rect x="1145.6" y="693" width="1.1" height="15.0" fill="rgb(237,150,35)" rx="2" ry="2" />
+<text  x="1148.56" y="703.5" ></text>
+</g>
+<g >
+<title>Matrix::operator[] (100,499,770 samples, 0.10%)</title><rect x="92.6" y="773" width="1.1" height="15.0" fill="rgb(253,222,53)" rx="2" ry="2" />
+<text  x="95.56" y="783.5" ></text>
+</g>
+<g >
+<title>allocTmpMatrix (100,562,130 samples, 0.10%)</title><rect x="1145.6" y="709" width="1.1" height="15.0" fill="rgb(251,213,51)" rx="2" ry="2" />
+<text  x="1148.56" y="719.5" ></text>
+</g>
+<g >
+<title>__memset_avx2_erms (33,617,718 samples, 0.03%)</title><rect x="65.4" y="725" width="0.4" height="15.0" fill="rgb(230,117,28)" rx="2" ry="2" />
+<text  x="68.42" y="735.5" ></text>
+</g>
+<g >
+<title>__hrtimer_run_queues (33,483,253 samples, 0.03%)</title><rect x="836.7" y="645" width="0.4" height="15.0" fill="rgb(237,150,35)" rx="2" ry="2" />
+<text  x="839.67" y="655.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;unsigned int, std::allocator&lt;unsigned int&gt; &gt;::operator[] (66,880,947 samples, 0.07%)</title><rect x="91.8" y="757" width="0.8" height="15.0" fill="rgb(238,155,37)" rx="2" ry="2" />
+<text  x="94.78" y="767.5" ></text>
+</g>
+<g >
+<title>sysvec_apic_timer_interrupt (33,461,873 samples, 0.03%)</title><rect x="881.7" y="693" width="0.4" height="15.0" fill="rgb(220,69,16)" rx="2" ry="2" />
+<text  x="884.69" y="703.5" ></text>
+</g>
+<g >
+<title>[unknown] (301,869,081 samples, 0.30%)</title><rect x="10.0" y="773" width="3.5" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="13.00" y="783.5" ></text>
+</g>
+<g >
+<title>Liner::backward (9,887,893,725 samples, 9.82%)</title><rect x="93.7" y="757" width="115.9" height="15.0" fill="rgb(227,102,24)" rx="2" ry="2" />
+<text  x="96.74" y="767.5" >Liner::backward</text>
+</g>
+<g >
+<title>__ieee754_pow_fma (334,935,176 samples, 0.33%)</title><rect x="641.8" y="709" width="3.9" height="15.0" fill="rgb(240,163,39)" rx="2" ry="2" />
+<text  x="644.80" y="719.5" ></text>
+</g>
+<g >
+<title>Matrix::operator+= (201,003,491 samples, 0.20%)</title><rect x="632.4" y="741" width="2.3" height="15.0" fill="rgb(220,70,16)" rx="2" ry="2" />
+<text  x="635.39" y="751.5" ></text>
+</g>
+<g >
+<title>Matrix::dot (9,185,741,358 samples, 9.12%)</title><rect x="93.7" y="741" width="107.7" height="15.0" fill="rgb(238,154,36)" rx="2" ry="2" />
+<text  x="96.74" y="751.5" >Matrix::dot</text>
+</g>
+<g >
+<title>wake_up_process (33,492,066 samples, 0.03%)</title><rect x="499.0" y="565" width="0.4" height="15.0" fill="rgb(213,37,8)" rx="2" ry="2" />
+<text  x="501.97" y="575.5" ></text>
+</g>
+<g >
+<title>Matrix::checkShape (33,499,994 samples, 0.03%)</title><rect x="215.9" y="741" width="0.4" height="15.0" fill="rgb(245,187,44)" rx="2" ry="2" />
+<text  x="218.92" y="751.5" ></text>
+</g>
+<g >
+<title>asm_sysvec_irq_work (33,492,066 samples, 0.03%)</title><rect x="499.0" y="725" width="0.4" height="15.0" fill="rgb(219,64,15)" rx="2" ry="2" />
+<text  x="501.97" y="735.5" ></text>
+</g>
+<g >
+<title>__pthread_getspecific (134,834,377 samples, 0.13%)</title><rect x="29.7" y="805" width="1.5" height="15.0" fill="rgb(235,141,33)" rx="2" ry="2" />
+<text  x="32.66" y="815.5" ></text>
+</g>
+<g >
+<title>__asan::QuarantineCallback::Recycle (33,571,825 samples, 0.03%)</title><rect x="11.6" y="357" width="0.4" height="15.0" fill="rgb(222,81,19)" rx="2" ry="2" />
+<text  x="14.57" y="367.5" ></text>
+</g>
+<g >
+<title>Matrix::zero (33,629,207 samples, 0.03%)</title><rect x="1170.5" y="725" width="0.4" height="15.0" fill="rgb(206,8,2)" rx="2" ry="2" />
+<text  x="1173.49" y="735.5" ></text>
+</g>
+<g >
+<title>asm_sysvec_apic_timer_interrupt (33,754,993 samples, 0.03%)</title><rect x="81.2" y="741" width="0.4" height="15.0" fill="rgb(232,127,30)" rx="2" ry="2" />
+<text  x="84.16" y="751.5" ></text>
+</g>
+<g >
+<title>[unknown] (100,598,560 samples, 0.10%)</title><rect x="10.0" y="213" width="1.2" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="13.00" y="223.5" ></text>
+</g>
+<g >
+<title>__sanitizer::BufferedStackTrace::FastUnwindStack (33,557,816 samples, 0.03%)</title><rect x="1097.9" y="693" width="0.4" height="15.0" fill="rgb(219,66,15)" rx="2" ry="2" />
+<text  x="1100.91" y="703.5" ></text>
+</g>
+<g >
+<title>Matrix::getShape (33,525,042 samples, 0.03%)</title><rect x="1143.6" y="725" width="0.4" height="15.0" fill="rgb(223,83,20)" rx="2" ry="2" />
+<text  x="1146.59" y="735.5" ></text>
+</g>
+<g >
+<title>irq_work_single (33,492,066 samples, 0.03%)</title><rect x="499.0" y="645" width="0.4" height="15.0" fill="rgb(230,118,28)" rx="2" ry="2" />
+<text  x="501.97" y="655.5" ></text>
+</g>
+<g >
+<title>[unknown] (301,869,081 samples, 0.30%)</title><rect x="10.0" y="725" width="3.5" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="13.00" y="735.5" ></text>
+</g>
+<g >
+<title>irqentry_exit (33,500,711 samples, 0.03%)</title><rect x="1099.1" y="709" width="0.4" height="15.0" fill="rgb(219,66,15)" rx="2" ry="2" />
+<text  x="1102.10" y="719.5" ></text>
+</g>
+<g >
+<title>[unknown] (134,074,756 samples, 0.13%)</title><rect x="10.0" y="341" width="1.6" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="13.00" y="351.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;Matrix*, std::allocator&lt;Matrix*&gt; &gt;::_M_check_len (33,612,218 samples, 0.03%)</title><rect x="1179.5" y="741" width="0.4" height="15.0" fill="rgb(237,148,35)" rx="2" ry="2" />
+<text  x="1182.54" y="751.5" ></text>
+</g>
+<g >
+<title>Matrix::operator[] (571,133,063 samples, 0.57%)</title><rect x="66.2" y="757" width="6.7" height="15.0" fill="rgb(253,222,53)" rx="2" ry="2" />
+<text  x="69.20" y="767.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;Matrix*, std::allocator&lt;Matrix*&gt; &gt;::push_back (33,699,885 samples, 0.03%)</title><rect x="646.1" y="677" width="0.4" height="15.0" fill="rgb(232,128,30)" rx="2" ry="2" />
+<text  x="649.13" y="687.5" ></text>
+</g>
+<g >
+<title>__sanitizer::mem_is_zero (67,068,081 samples, 0.07%)</title><rect x="497.4" y="693" width="0.8" height="15.0" fill="rgb(220,71,17)" rx="2" ry="2" />
+<text  x="500.40" y="703.5" ></text>
+</g>
+<g >
+<title>pthread_getspecific@plt (33,451,929 samples, 0.03%)</title><rect x="36.7" y="805" width="0.4" height="15.0" fill="rgb(229,111,26)" rx="2" ry="2" />
+<text  x="39.74" y="815.5" ></text>
+</g>
+<g >
+<title>__gnu_cxx::new_allocator&lt;Matrix*&gt;::deallocate (33,648,350 samples, 0.03%)</title><rect x="1179.9" y="709" width="0.4" height="15.0" fill="rgb(220,72,17)" rx="2" ry="2" />
+<text  x="1182.93" y="719.5" ></text>
+</g>
+<g >
+<title>Matrix::getShape (33,499,994 samples, 0.03%)</title><rect x="215.9" y="725" width="0.4" height="15.0" fill="rgb(223,83,20)" rx="2" ry="2" />
+<text  x="218.92" y="735.5" ></text>
+</g>
+<g >
+<title>asm_sysvec_apic_timer_interrupt (33,483,253 samples, 0.03%)</title><rect x="836.7" y="709" width="0.4" height="15.0" fill="rgb(232,127,30)" rx="2" ry="2" />
+<text  x="839.67" y="719.5" ></text>
+</g>
+<g >
+<title>Matrix::getData (33,552,144 samples, 0.03%)</title><rect x="836.3" y="709" width="0.4" height="15.0" fill="rgb(241,169,40)" rx="2" ry="2" />
+<text  x="839.28" y="719.5" ></text>
+</g>
+<g >
+<title>std::distance&lt;__gnu_cxx::__normal_iterator&lt;Parameters**, std::vector&lt;Parameters*, std::allocator&lt;Parameters*&gt; &gt; &gt; &gt; (33,561,768 samples, 0.03%)</title><rect x="914.7" y="693" width="0.4" height="15.0" fill="rgb(226,98,23)" rx="2" ry="2" />
+<text  x="917.71" y="703.5" ></text>
+</g>
+<g >
+<title>__asan::AsanThread::stack_bottom (33,572,809 samples, 0.03%)</title><rect x="1178.7" y="757" width="0.4" height="15.0" fill="rgb(221,76,18)" rx="2" ry="2" />
+<text  x="1181.75" y="767.5" ></text>
+</g>
+<g >
+<title>std::__uninitialized_copy_a&lt;__gnu_cxx::__normal_iterator&lt;Matrix* const*, std::vector&lt;Matrix*, std::allocator&lt;Matrix*&gt; &gt; &gt;, Matrix**, Matrix*&gt; (18,588,063 samples, 0.02%)</title><rect x="1169.1" y="709" width="0.2" height="15.0" fill="rgb(239,159,38)" rx="2" ry="2" />
+<text  x="1172.10" y="719.5" ></text>
+</g>
+<g >
+<title>[unknown] (33,626,396 samples, 0.03%)</title><rect x="10.0" y="101" width="0.4" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="13.00" y="111.5" ></text>
+</g>
+<g >
+<title>__asan::GetCurrentThread (33,680,909 samples, 0.03%)</title><rect x="1098.7" y="709" width="0.4" height="15.0" fill="rgb(219,68,16)" rx="2" ry="2" />
+<text  x="1101.70" y="719.5" ></text>
+</g>
+<g >
+<title>[unknown] (234,792,466 samples, 0.23%)</title><rect x="10.0" y="485" width="2.8" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="13.00" y="495.5" ></text>
+</g>
+<g >
+<title>update_process_times (33,483,253 samples, 0.03%)</title><rect x="836.7" y="597" width="0.4" height="15.0" fill="rgb(250,209,50)" rx="2" ry="2" />
+<text  x="839.67" y="607.5" ></text>
+</g>
+<g >
+<title>__asan::asan_memalign (33,598,485 samples, 0.03%)</title><rect x="53.6" y="821" width="0.4" height="15.0" fill="rgb(220,71,17)" rx="2" ry="2" />
+<text  x="56.62" y="831.5" ></text>
+</g>
+<g >
+<title>Matrix::sum (66,510,526 samples, 0.07%)</title><rect x="202.2" y="741" width="0.8" height="15.0" fill="rgb(248,198,47)" rx="2" ry="2" />
+<text  x="205.18" y="751.5" ></text>
+</g>
+<g >
+<title>all (100,680,994,715 samples, 100%)</title><rect x="10.0" y="853" width="1180.0" height="15.0" fill="rgb(213,39,9)" rx="2" ry="2" />
+<text  x="13.00" y="863.5" ></text>
+</g>
+<g >
+<title>RnnLM::get_parameters (33,561,768 samples, 0.03%)</title><rect x="914.7" y="757" width="0.4" height="15.0" fill="rgb(243,175,42)" rx="2" ry="2" />
+<text  x="917.71" y="767.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;Matrix*, std::allocator&lt;Matrix*&gt; &gt;::_M_realloc_insert&lt;Matrix* const&amp;&gt; (33,671,808 samples, 0.03%)</title><rect x="1179.5" y="757" width="0.4" height="15.0" fill="rgb(220,72,17)" rx="2" ry="2" />
+<text  x="1182.54" y="767.5" ></text>
+</g>
+<g >
+<title>Matrix::zero (167,050,108 samples, 0.17%)</title><rect x="496.2" y="709" width="2.0" height="15.0" fill="rgb(206,8,2)" rx="2" ry="2" />
+<text  x="499.23" y="719.5" ></text>
+</g>
+<g >
+<title>try_to_wake_up (33,492,066 samples, 0.03%)</title><rect x="499.0" y="549" width="0.4" height="15.0" fill="rgb(220,70,16)" rx="2" ry="2" />
+<text  x="501.97" y="559.5" ></text>
+</g>
+<g >
+<title>psi_task_switch (33,532,363 samples, 0.03%)</title><rect x="165.2" y="613" width="0.4" height="15.0" fill="rgb(230,118,28)" rx="2" ry="2" />
+<text  x="168.24" y="623.5" ></text>
+</g>
+<g >
+<title>__asan_region_is_poisoned (33,356,599 samples, 0.03%)</title><rect x="729.8" y="677" width="0.4" height="15.0" fill="rgb(219,65,15)" rx="2" ry="2" />
+<text  x="732.78" y="687.5" ></text>
+</g>
+<g >
+<title>std::min&lt;unsigned int&gt; (3,650,001,730 samples, 3.63%)</title><rect x="1099.5" y="725" width="42.8" height="15.0" fill="rgb(237,151,36)" rx="2" ry="2" />
+<text  x="1102.49" y="735.5" >std:..</text>
+</g>
+<g >
+<title>sysvec_apic_timer_interrupt (33,754,993 samples, 0.03%)</title><rect x="81.2" y="725" width="0.4" height="15.0" fill="rgb(220,69,16)" rx="2" ry="2" />
+<text  x="84.16" y="735.5" ></text>
+</g>
+<g >
+<title>Matrix::Matrix (33,593,896 samples, 0.03%)</title><rect x="652.8" y="677" width="0.4" height="15.0" fill="rgb(237,150,35)" rx="2" ry="2" />
+<text  x="655.81" y="687.5" ></text>
+</g>
+<g >
+<title>queue_work_on (33,492,066 samples, 0.03%)</title><rect x="499.0" y="613" width="0.4" height="15.0" fill="rgb(248,200,48)" rx="2" ry="2" />
+<text  x="501.97" y="623.5" ></text>
+</g>
+<g >
+<title>operator delete (33,648,350 samples, 0.03%)</title><rect x="1179.9" y="693" width="0.4" height="15.0" fill="rgb(247,196,46)" rx="2" ry="2" />
+<text  x="1182.93" y="703.5" ></text>
+</g>
+<g >
+<title>Matrix::transpose (33,481,604 samples, 0.03%)</title><rect x="214.7" y="757" width="0.4" height="15.0" fill="rgb(249,203,48)" rx="2" ry="2" />
+<text  x="217.74" y="767.5" ></text>
+</g>
+<g >
+<title>__asan::Allocator::Allocate (336,080,847 samples, 0.33%)</title><rect x="13.9" y="805" width="4.0" height="15.0" fill="rgb(229,111,26)" rx="2" ry="2" />
+<text  x="16.93" y="815.5" ></text>
+</g>
+<g >
+<title>Adam::step (2,685,076,887 samples, 2.67%)</title><rect x="54.0" y="773" width="31.5" height="15.0" fill="rgb(249,204,48)" rx="2" ry="2" />
+<text  x="57.01" y="783.5" >Ad..</text>
+</g>
+<g >
+<title>__sanitizer::StackTrace::GetCurrentPc (33,711,530 samples, 0.03%)</title><rect x="85.5" y="661" width="0.4" height="15.0" fill="rgb(243,176,42)" rx="2" ry="2" />
+<text  x="88.48" y="671.5" ></text>
+</g>
+<g >
+<title>Matrix::checkShape (33,671,715 samples, 0.03%)</title><rect x="985.7" y="741" width="0.4" height="15.0" fill="rgb(245,187,44)" rx="2" ry="2" />
+<text  x="988.75" y="751.5" ></text>
+</g>
+<g >
+<title>Matrix::dot (4,855,256,074 samples, 4.82%)</title><rect x="923.3" y="741" width="57.0" height="15.0" fill="rgb(238,154,36)" rx="2" ry="2" />
+<text  x="926.35" y="751.5" >Matrix..</text>
+</g>
+<g >
+<title>Matrix::operator[] (66,509,564 samples, 0.07%)</title><rect x="201.4" y="741" width="0.8" height="15.0" fill="rgb(253,222,53)" rx="2" ry="2" />
+<text  x="204.40" y="751.5" ></text>
+</g>
+<g >
+<title>Matrix::operator[] (67,085,936 samples, 0.07%)</title><rect x="1154.2" y="725" width="0.8" height="15.0" fill="rgb(253,222,53)" rx="2" ry="2" />
+<text  x="1157.19" y="735.5" ></text>
+</g>
+<g >
+<title>Matrix::operator[] (267,894,503 samples, 0.27%)</title><rect x="1147.1" y="741" width="3.2" height="15.0" fill="rgb(253,222,53)" rx="2" ry="2" />
+<text  x="1150.13" y="751.5" ></text>
+</g>
+<g >
+<title>Matrix::Matrix (401,601,169 samples, 0.40%)</title><rect x="727.8" y="709" width="4.7" height="15.0" fill="rgb(237,150,35)" rx="2" ry="2" />
+<text  x="730.81" y="719.5" ></text>
+</g>
+<g >
+<title>asm_sysvec_apic_timer_interrupt (39,260,699 samples, 0.04%)</title><rect x="164.8" y="725" width="0.4" height="15.0" fill="rgb(232,127,30)" rx="2" ry="2" />
+<text  x="167.78" y="735.5" ></text>
+</g>
+<g >
+<title>Shape::operator== (33,570,937 samples, 0.03%)</title><rect x="627.7" y="709" width="0.4" height="15.0" fill="rgb(206,7,1)" rx="2" ry="2" />
+<text  x="630.66" y="719.5" ></text>
+</g>
+<g >
+<title>update_process_times (33,754,993 samples, 0.03%)</title><rect x="81.2" y="629" width="0.4" height="15.0" fill="rgb(250,209,50)" rx="2" ry="2" />
+<text  x="84.16" y="639.5" ></text>
+</g>
+<g >
+<title>Matrix::~Matrix (134,604,730 samples, 0.13%)</title><rect x="1177.2" y="757" width="1.5" height="15.0" fill="rgb(223,86,20)" rx="2" ry="2" />
+<text  x="1180.17" y="767.5" ></text>
+</g>
+<g >
+<title>Matrix::operator[] (100,643,229 samples, 0.10%)</title><rect x="211.6" y="741" width="1.2" height="15.0" fill="rgb(253,222,53)" rx="2" ry="2" />
+<text  x="214.59" y="751.5" ></text>
+</g>
+<g >
+<title>Shape::Shape (33,477,754 samples, 0.03%)</title><rect x="489.5" y="725" width="0.4" height="15.0" fill="rgb(243,175,41)" rx="2" ry="2" />
+<text  x="492.54" y="735.5" ></text>
+</g>
+<g >
+<title>main (96,100,139,957 samples, 95.45%)</title><rect x="54.0" y="805" width="1126.3" height="15.0" fill="rgb(243,179,42)" rx="2" ry="2" />
+<text  x="57.01" y="815.5" >main</text>
+</g>
+<g >
+<title>std::vector&lt;Matrix*, std::allocator&lt;Matrix*&gt; &gt;::push_back (33,671,808 samples, 0.03%)</title><rect x="1179.5" y="773" width="0.4" height="15.0" fill="rgb(232,128,30)" rx="2" ry="2" />
+<text  x="1182.54" y="783.5" ></text>
+</g>
+<g >
+<title>Matrix::operator[] (201,403,136 samples, 0.20%)</title><rect x="908.8" y="741" width="2.4" height="15.0" fill="rgb(253,222,53)" rx="2" ry="2" />
+<text  x="911.82" y="751.5" ></text>
+</g>
+<g >
+<title>std::_Vector_base&lt;unsigned int, std::allocator&lt;unsigned int&gt; &gt;::_M_create_storage (33,711,530 samples, 0.03%)</title><rect x="85.5" y="725" width="0.4" height="15.0" fill="rgb(225,93,22)" rx="2" ry="2" />
+<text  x="88.48" y="735.5" ></text>
+</g>
+<g >
+<title>Matrix::operator[] (368,827,926 samples, 0.37%)</title><rect x="634.7" y="741" width="4.4" height="15.0" fill="rgb(253,222,53)" rx="2" ry="2" />
+<text  x="637.74" y="751.5" ></text>
+</g>
+<g >
+<title>__asan_region_is_poisoned (33,593,896 samples, 0.03%)</title><rect x="652.8" y="661" width="0.4" height="15.0" fill="rgb(219,65,15)" rx="2" ry="2" />
+<text  x="655.81" y="671.5" ></text>
+</g>
+<g >
+<title>ktime_get_update_offsets_now (33,461,873 samples, 0.03%)</title><rect x="881.7" y="645" width="0.4" height="15.0" fill="rgb(243,178,42)" rx="2" ry="2" />
+<text  x="884.69" y="655.5" ></text>
+</g>
+<g >
+<title>allocTmpMatrix (67,545,940 samples, 0.07%)</title><rect x="1155.0" y="725" width="0.8" height="15.0" fill="rgb(251,213,51)" rx="2" ry="2" />
+<text  x="1157.98" y="735.5" ></text>
+</g>
+<g >
+<title>__ieee754_pow_fma (671,508,238 samples, 0.67%)</title><rect x="73.7" y="757" width="7.9" height="15.0" fill="rgb(240,163,39)" rx="2" ry="2" />
+<text  x="76.69" y="767.5" ></text>
+</g>
+<g >
+<title>operator new[] (33,516,477 samples, 0.03%)</title><rect x="213.6" y="709" width="0.4" height="15.0" fill="rgb(227,103,24)" rx="2" ry="2" />
+<text  x="216.56" y="719.5" ></text>
+</g>
+<g >
+<title>Matrix::tanh_prime (1,877,259,655 samples, 1.86%)</title><rect x="639.1" y="741" width="22.0" height="15.0" fill="rgb(234,133,31)" rx="2" ry="2" />
+<text  x="642.06" y="751.5" >M..</text>
+</g>
+<g >
+<title>std::min&lt;unsigned int&gt; (435,618,902 samples, 0.43%)</title><rect x="204.5" y="741" width="5.1" height="15.0" fill="rgb(237,151,36)" rx="2" ry="2" />
+<text  x="207.52" y="751.5" ></text>
+</g>
+<g >
+<title>Shape::Shape (67,116,953 samples, 0.07%)</title><rect x="725.9" y="725" width="0.7" height="15.0" fill="rgb(243,175,41)" rx="2" ry="2" />
+<text  x="728.86" y="735.5" ></text>
+</g>
+<g >
+<title>std::min&lt;unsigned int&gt; (2,918,733,010 samples, 2.90%)</title><rect x="837.5" y="709" width="34.2" height="15.0" fill="rgb(237,151,36)" rx="2" ry="2" />
+<text  x="840.46" y="719.5" >st..</text>
+</g>
+<g >
+<title>pow@@GLIBC_2.29 (267,906,290 samples, 0.27%)</title><rect x="81.9" y="757" width="3.2" height="15.0" fill="rgb(222,78,18)" rx="2" ry="2" />
+<text  x="84.95" y="767.5" ></text>
+</g>
+<g >
+<title>__sched_text_start (33,532,363 samples, 0.03%)</title><rect x="165.2" y="629" width="0.4" height="15.0" fill="rgb(225,92,22)" rx="2" ry="2" />
+<text  x="168.24" y="639.5" ></text>
+</g>
+<g >
+<title>exp@@GLIBC_2.29 (133,772,173 samples, 0.13%)</title><rect x="1175.2" y="773" width="1.6" height="15.0" fill="rgb(230,115,27)" rx="2" ry="2" />
+<text  x="1178.21" y="783.5" ></text>
+</g>
+<g >
+<title>Matrix::operator[] (167,366,282 samples, 0.17%)</title><rect x="86.7" y="757" width="1.9" height="15.0" fill="rgb(253,222,53)" rx="2" ry="2" />
+<text  x="89.67" y="767.5" ></text>
+</g>
+<g >
+<title>operator delete[] (33,660,410 samples, 0.03%)</title><rect x="72.9" y="741" width="0.4" height="15.0" fill="rgb(208,18,4)" rx="2" ry="2" />
+<text  x="75.90" y="751.5" ></text>
+</g>
+<g >
+<title>[unknown] (100,598,560 samples, 0.10%)</title><rect x="10.0" y="245" width="1.2" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="13.00" y="255.5" ></text>
+</g>
+<g >
+<title>__memmove_sse2_unaligned_erms (67,076,193 samples, 0.07%)</title><rect x="660.3" y="677" width="0.8" height="15.0" fill="rgb(208,14,3)" rx="2" ry="2" />
+<text  x="663.28" y="687.5" ></text>
+</g>
+<g >
+<title>operator delete[] (33,696,821 samples, 0.03%)</title><rect x="1178.4" y="741" width="0.3" height="15.0" fill="rgb(208,18,4)" rx="2" ry="2" />
+<text  x="1181.35" y="751.5" ></text>
+</g>
+<g >
+<title>[unknown] (33,626,396 samples, 0.03%)</title><rect x="10.0" y="165" width="0.4" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="13.00" y="175.5" ></text>
+</g>
+<g >
+<title>Matrix::zero (67,239,951 samples, 0.07%)</title><rect x="1097.1" y="693" width="0.8" height="15.0" fill="rgb(206,8,2)" rx="2" ry="2" />
+<text  x="1100.13" y="703.5" ></text>
+</g>
+<g >
+<title>[unknown] (100,598,560 samples, 0.10%)</title><rect x="10.0" y="309" width="1.2" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="13.00" y="319.5" ></text>
+</g>
+<g >
+<title>allocTmpMatrix (134,081,771 samples, 0.13%)</title><rect x="1145.6" y="725" width="1.5" height="15.0" fill="rgb(251,213,51)" rx="2" ry="2" />
+<text  x="1148.56" y="735.5" ></text>
+</g>
+<g >
+<title>__ieee754_pow_fma (602,699,623 samples, 0.60%)</title><rect x="915.1" y="757" width="7.1" height="15.0" fill="rgb(240,163,39)" rx="2" ry="2" />
+<text  x="918.10" y="767.5" ></text>
+</g>
+<g >
+<title>operator new (33,475,292 samples, 0.03%)</title><rect x="499.4" y="725" width="0.4" height="15.0" fill="rgb(216,51,12)" rx="2" ry="2" />
+<text  x="502.37" y="735.5" ></text>
+</g>
+<g >
+<title>std::_Vector_base&lt;unsigned int, std::allocator&lt;unsigned int&gt; &gt;::_M_allocate (33,711,530 samples, 0.03%)</title><rect x="85.5" y="709" width="0.4" height="15.0" fill="rgb(228,110,26)" rx="2" ry="2" />
+<text  x="88.48" y="719.5" ></text>
+</g>
+<g >
+<title>__sanitizer::SizeClassAllocator64&lt;__asan::AP64&gt;::GetFromAllocator (66,957,825 samples, 0.07%)</title><rect x="31.2" y="805" width="0.8" height="15.0" fill="rgb(226,97,23)" rx="2" ry="2" />
+<text  x="34.24" y="815.5" ></text>
+</g>
+<g >
+<title>std::uninitialized_copy&lt;__gnu_cxx::__normal_iterator&lt;Matrix* const*, std::vector&lt;Matrix*, std::allocator&lt;Matrix*&gt; &gt; &gt;, Matrix**&gt; (18,588,063 samples, 0.02%)</title><rect x="1169.1" y="693" width="0.2" height="15.0" fill="rgb(232,127,30)" rx="2" ry="2" />
+<text  x="1172.10" y="703.5" ></text>
+</g>
+<g >
+<title>Rnn::backward (58,986,211,880 samples, 58.59%)</title><rect x="215.5" y="757" width="691.4" height="15.0" fill="rgb(245,184,44)" rx="2" ry="2" />
+<text  x="218.52" y="767.5" >Rnn::backward</text>
+</g>
+<g >
+<title>__hrtimer_run_queues (33,754,993 samples, 0.03%)</title><rect x="81.2" y="677" width="0.4" height="15.0" fill="rgb(237,150,35)" rx="2" ry="2" />
+<text  x="84.16" y="687.5" ></text>
+</g>
+<g >
+<title>__memset_avx2_erms (134,376,037 samples, 0.13%)</title><rect x="730.2" y="677" width="1.5" height="15.0" fill="rgb(230,117,28)" rx="2" ry="2" />
+<text  x="733.17" y="687.5" ></text>
+</g>
+<g >
+<title>[unknown] (100,598,560 samples, 0.10%)</title><rect x="10.0" y="277" width="1.2" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="13.00" y="287.5" ></text>
+</g>
+<g >
+<title>Matrix::Matrix (33,629,207 samples, 0.03%)</title><rect x="1170.5" y="741" width="0.4" height="15.0" fill="rgb(237,150,35)" rx="2" ry="2" />
+<text  x="1173.49" y="751.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;Parameters*, std::allocator&lt;Parameters*&gt; &gt;::_M_range_insert&lt;__gnu_cxx::__normal_iterator&lt;Parameters**, std::vector&lt;Parameters*, std::allocator&lt;Parameters*&gt; &gt; &gt; &gt; (33,561,768 samples, 0.03%)</title><rect x="914.7" y="709" width="0.4" height="15.0" fill="rgb(215,48,11)" rx="2" ry="2" />
+<text  x="917.71" y="719.5" ></text>
+</g>
+<g >
+<title>Matrix::operator*= (302,232,407 samples, 0.30%)</title><rect x="907.6" y="757" width="3.6" height="15.0" fill="rgb(226,99,23)" rx="2" ry="2" />
+<text  x="910.64" y="767.5" ></text>
+</g>
+<g >
+<title>std::pow&lt;double, int&gt; (33,789,121 samples, 0.03%)</title><rect x="646.9" y="709" width="0.4" height="15.0" fill="rgb(247,194,46)" rx="2" ry="2" />
+<text  x="649.91" y="719.5" ></text>
+</g>
+<g >
+<title>Matrix::Matrix (67,055,270 samples, 0.07%)</title><rect x="631.6" y="693" width="0.8" height="15.0" fill="rgb(237,150,35)" rx="2" ry="2" />
+<text  x="634.60" y="703.5" ></text>
+</g>
+<g >
+<title>[unknown] (100,598,560 samples, 0.10%)</title><rect x="10.0" y="229" width="1.2" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="13.00" y="239.5" ></text>
+</g>
+<g >
+<title>__asan::GetCurrentThread (33,352,609 samples, 0.03%)</title><rect x="215.1" y="741" width="0.4" height="15.0" fill="rgb(219,68,16)" rx="2" ry="2" />
+<text  x="218.13" y="751.5" ></text>
+</g>
+<g >
+<title>sysvec_irq_work (33,532,363 samples, 0.03%)</title><rect x="165.2" y="709" width="0.4" height="15.0" fill="rgb(206,6,1)" rx="2" ry="2" />
+<text  x="168.24" y="719.5" ></text>
+</g>
+<g >
+<title>__asan::QuarantineCallback::Recycle (33,476,196 samples, 0.03%)</title><rect x="11.2" y="325" width="0.4" height="15.0" fill="rgb(222,81,19)" rx="2" ry="2" />
+<text  x="14.18" y="335.5" ></text>
+</g>
+<g >
+<title>train (96,100,139,957 samples, 95.45%)</title><rect x="54.0" y="789" width="1126.3" height="15.0" fill="rgb(212,33,8)" rx="2" ry="2" />
+<text  x="57.01" y="799.5" >train</text>
+</g>
+<g >
+<title>__sysvec_apic_timer_interrupt (33,461,873 samples, 0.03%)</title><rect x="881.7" y="677" width="0.4" height="15.0" fill="rgb(242,173,41)" rx="2" ry="2" />
+<text  x="884.69" y="687.5" ></text>
+</g>
+<g >
+<title>__memset_avx2_unaligned_erms (33,590,815 samples, 0.03%)</title><rect x="985.4" y="709" width="0.3" height="15.0" fill="rgb(223,84,20)" rx="2" ry="2" />
+<text  x="988.35" y="719.5" ></text>
+</g>
+<g >
+<title>Matrix::~Matrix (33,352,609 samples, 0.03%)</title><rect x="215.1" y="757" width="0.4" height="15.0" fill="rgb(223,86,20)" rx="2" ry="2" />
+<text  x="218.13" y="767.5" ></text>
+</g>
+<g >
+<title>std::allocator_traits&lt;std::allocator&lt;Matrix*&gt; &gt;::construct&lt;Matrix*, Matrix* const&amp;&gt; (33,699,885 samples, 0.03%)</title><rect x="646.1" y="661" width="0.4" height="15.0" fill="rgb(208,17,4)" rx="2" ry="2" />
+<text  x="649.13" y="671.5" ></text>
+</g>
+<g >
+<title>Matrix::operator* (604,128,996 samples, 0.60%)</title><rect x="625.3" y="741" width="7.1" height="15.0" fill="rgb(220,72,17)" rx="2" ry="2" />
+<text  x="628.30" y="751.5" ></text>
+</g>
+<g >
+<title>[unknown] (301,869,081 samples, 0.30%)</title><rect x="10.0" y="613" width="3.5" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="13.00" y="623.5" ></text>
+</g>
+<g >
+<title>[unknown] (134,074,756 samples, 0.13%)</title><rect x="10.0" y="357" width="1.6" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="13.00" y="367.5" ></text>
+</g>
+<g >
+<title>allocTmpMatrix (771,622,875 samples, 0.77%)</title><rect x="489.9" y="725" width="9.1" height="15.0" fill="rgb(251,213,51)" rx="2" ry="2" />
+<text  x="492.93" y="735.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;Matrix*, std::allocator&lt;Matrix*&gt; &gt;::push_back (66,777,380 samples, 0.07%)</title><rect x="1169.3" y="741" width="0.8" height="15.0" fill="rgb(232,128,30)" rx="2" ry="2" />
+<text  x="1172.31" y="751.5" ></text>
+</g>
+<g >
+<title>std::min&lt;unsigned int&gt; (100,369,730 samples, 0.10%)</title><rect x="633.6" y="725" width="1.1" height="15.0" fill="rgb(237,151,36)" rx="2" ry="2" />
+<text  x="636.56" y="735.5" ></text>
+</g>
+<g >
+<title>Matrix::tanh (469,322,296 samples, 0.47%)</title><rect x="1150.3" y="741" width="5.5" height="15.0" fill="rgb(242,172,41)" rx="2" ry="2" />
+<text  x="1153.27" y="751.5" ></text>
+</g>
+<g >
+<title>scheduler_tick (33,754,993 samples, 0.03%)</title><rect x="81.2" y="613" width="0.4" height="15.0" fill="rgb(246,190,45)" rx="2" ry="2" />
+<text  x="84.16" y="623.5" ></text>
+</g>
+<g >
+<title>Matrix::operator[] (33,672,310 samples, 0.03%)</title><rect x="91.0" y="757" width="0.4" height="15.0" fill="rgb(253,222,53)" rx="2" ry="2" />
+<text  x="93.99" y="767.5" ></text>
+</g>
+<g >
+<title>allocTmpMatrix (67,424,871 samples, 0.07%)</title><rect x="645.7" y="693" width="0.8" height="15.0" fill="rgb(251,213,51)" rx="2" ry="2" />
+<text  x="648.73" y="703.5" ></text>
+</g>
+<g >
+<title>operator new (33,433,233 samples, 0.03%)</title><rect x="733.3" y="709" width="0.4" height="15.0" fill="rgb(216,51,12)" rx="2" ry="2" />
+<text  x="736.31" y="719.5" ></text>
+</g>
+<g >
+<title>allocTmpMatrix (67,055,270 samples, 0.07%)</title><rect x="631.6" y="725" width="0.8" height="15.0" fill="rgb(251,213,51)" rx="2" ry="2" />
+<text  x="634.60" y="735.5" ></text>
+</g>
+<g >
+<title>tick_sched_handle.isra.0 (33,483,253 samples, 0.03%)</title><rect x="836.7" y="613" width="0.4" height="15.0" fill="rgb(231,121,29)" rx="2" ry="2" />
+<text  x="839.67" y="623.5" ></text>
+</g>
+<g >
+<title>psi_group_change (33,532,363 samples, 0.03%)</title><rect x="165.2" y="597" width="0.4" height="15.0" fill="rgb(226,101,24)" rx="2" ry="2" />
+<text  x="168.24" y="607.5" ></text>
+</g>
+<g >
+<title>[unknown] (301,869,081 samples, 0.30%)</title><rect x="10.0" y="645" width="3.5" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="13.00" y="655.5" ></text>
+</g>
+<g >
+<title>Matrix::getShape (67,177,362 samples, 0.07%)</title><rect x="1171.3" y="741" width="0.8" height="15.0" fill="rgb(223,83,20)" rx="2" ry="2" />
+<text  x="1174.28" y="751.5" ></text>
+</g>
+<g >
+<title>Matrix::transpose (133,513,375 samples, 0.13%)</title><rect x="203.0" y="741" width="1.5" height="15.0" fill="rgb(249,203,48)" rx="2" ry="2" />
+<text  x="205.96" y="751.5" ></text>
+</g>
+<g >
+<title>std::__uninitialized_copy&lt;true&gt;::__uninit_copy&lt;__gnu_cxx::__normal_iterator&lt;Matrix* const*, std::vector&lt;Matrix*, std::allocator&lt;Matrix*&gt; &gt; &gt;, Matrix**&gt; (18,588,063 samples, 0.02%)</title><rect x="1169.1" y="677" width="0.2" height="15.0" fill="rgb(238,152,36)" rx="2" ry="2" />
+<text  x="1172.10" y="687.5" ></text>
+</g>
+<g >
+<title>Parameters::inc_grad (12,626,504,999 samples, 12.54%)</title><rect x="734.1" y="741" width="148.0" height="15.0" fill="rgb(253,223,53)" rx="2" ry="2" />
+<text  x="737.09" y="751.5" >Parameters::inc_grad</text>
+</g>
+<g >
+<title>__asan::QuarantineCallback::Recycle (33,461,934 samples, 0.03%)</title><rect x="10.8" y="197" width="0.4" height="15.0" fill="rgb(222,81,19)" rx="2" ry="2" />
+<text  x="13.79" y="207.5" ></text>
+</g>
+<g >
+<title>pthread_getspecific@plt (67,180,443 samples, 0.07%)</title><rect x="1189.2" y="821" width="0.8" height="15.0" fill="rgb(229,111,26)" rx="2" ry="2" />
+<text  x="1192.21" y="831.5" ></text>
+</g>
+<g >
+<title>Rnn::forward (15,897,293,921 samples, 15.79%)</title><rect x="983.8" y="757" width="186.3" height="15.0" fill="rgb(223,83,19)" rx="2" ry="2" />
+<text  x="986.78" y="767.5" >Rnn::forward</text>
+</g>
+<g >
+<title>[unknown] (201,166,076 samples, 0.20%)</title><rect x="10.0" y="405" width="2.4" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="13.00" y="415.5" ></text>
+</g>
+<g >
+<title>__sanitizer::mem_is_zero (33,678,883 samples, 0.03%)</title><rect x="632.0" y="677" width="0.4" height="15.0" fill="rgb(220,71,17)" rx="2" ry="2" />
+<text  x="634.99" y="687.5" ></text>
+</g>
+<g >
+<title>kthread_is_per_cpu (33,492,066 samples, 0.03%)</title><rect x="499.0" y="533" width="0.4" height="15.0" fill="rgb(246,189,45)" rx="2" ry="2" />
+<text  x="501.97" y="543.5" ></text>
+</g>
+<g >
+<title>Matrix::checkShape (33,570,937 samples, 0.03%)</title><rect x="627.7" y="725" width="0.4" height="15.0" fill="rgb(245,187,44)" rx="2" ry="2" />
+<text  x="630.66" y="735.5" ></text>
+</g>
+<g >
+<title>__sysvec_irq_work (33,492,066 samples, 0.03%)</title><rect x="499.0" y="693" width="0.4" height="15.0" fill="rgb(229,110,26)" rx="2" ry="2" />
+<text  x="501.97" y="703.5" ></text>
+</g>
+<g >
+<title>Matrix::zero (33,681,557 samples, 0.03%)</title><rect x="1098.3" y="709" width="0.4" height="15.0" fill="rgb(206,8,2)" rx="2" ry="2" />
+<text  x="1101.31" y="719.5" ></text>
+</g>
+<g >
+<title>Matrix::getShape (67,025,494 samples, 0.07%)</title><rect x="90.2" y="757" width="0.8" height="15.0" fill="rgb(223,83,20)" rx="2" ry="2" />
+<text  x="93.20" y="767.5" ></text>
+</g>
+<g >
+<title>std::min&lt;unsigned int&gt; (1,072,566,441 samples, 1.07%)</title><rect x="967.7" y="725" width="12.6" height="15.0" fill="rgb(237,151,36)" rx="2" ry="2" />
+<text  x="970.68" y="735.5" ></text>
+</g>
+<g >
+<title>std::min&lt;unsigned int&gt; (888,241,753 samples, 0.88%)</title><rect x="871.7" y="725" width="10.4" height="15.0" fill="rgb(237,151,36)" rx="2" ry="2" />
+<text  x="874.67" y="735.5" ></text>
+</g>
+<g >
+<title>[unknown] (33,626,396 samples, 0.03%)</title><rect x="10.0" y="133" width="0.4" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="13.00" y="143.5" ></text>
+</g>
+<g >
+<title>std::_Vector_base&lt;Matrix*, std::allocator&lt;Matrix*&gt; &gt;::~_Vector_base (33,648,350 samples, 0.03%)</title><rect x="1179.9" y="757" width="0.4" height="15.0" fill="rgb(208,16,4)" rx="2" ry="2" />
+<text  x="1182.93" y="767.5" ></text>
+</g>
+<g >
+<title>hrtimer_interrupt (33,754,993 samples, 0.03%)</title><rect x="81.2" y="693" width="0.4" height="15.0" fill="rgb(228,109,26)" rx="2" ry="2" />
+<text  x="84.16" y="703.5" ></text>
+</g>
+<g >
+<title>Matrix::split (436,052,849 samples, 0.43%)</title><rect x="209.6" y="757" width="5.1" height="15.0" fill="rgb(209,19,4)" rx="2" ry="2" />
+<text  x="212.63" y="767.5" ></text>
+</g>
+<g >
+<title>asm_sysvec_irq_work (33,520,850 samples, 0.03%)</title><rect x="837.1" y="709" width="0.4" height="15.0" fill="rgb(219,64,15)" rx="2" ry="2" />
+<text  x="840.07" y="719.5" ></text>
+</g>
+<g >
+<title>__sqrt_finite@GLIBC_2.15 (33,536,342 samples, 0.03%)</title><rect x="1174.8" y="773" width="0.4" height="15.0" fill="rgb(249,204,48)" rx="2" ry="2" />
+<text  x="1177.82" y="783.5" ></text>
+</g>
+<g >
+<title>__memset_avx2_unaligned_erms (33,483,361 samples, 0.03%)</title><rect x="1097.5" y="677" width="0.4" height="15.0" fill="rgb(223,84,20)" rx="2" ry="2" />
+<text  x="1100.52" y="687.5" ></text>
+</g>
+<g >
+<title>__memset_avx2_unaligned_erms (33,482,519 samples, 0.03%)</title><rect x="493.5" y="677" width="0.4" height="15.0" fill="rgb(223,84,20)" rx="2" ry="2" />
+<text  x="496.47" y="687.5" ></text>
+</g>
+<g >
+<title>__asan::GetCurrentThread (66,973,446 samples, 0.07%)</title><rect x="19.4" y="805" width="0.8" height="15.0" fill="rgb(219,68,16)" rx="2" ry="2" />
+<text  x="22.44" y="815.5" ></text>
+</g>
+<g >
+<title>Shape::size (33,699,533 samples, 0.03%)</title><rect x="489.9" y="677" width="0.4" height="15.0" fill="rgb(241,169,40)" rx="2" ry="2" />
+<text  x="492.93" y="687.5" ></text>
+</g>
+<g >
+<title>[unknown] (234,792,466 samples, 0.23%)</title><rect x="10.0" y="533" width="2.8" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="13.00" y="543.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;Matrix*, std::allocator&lt;Matrix*&gt; &gt;::push_back (33,753,279 samples, 0.03%)</title><rect x="498.6" y="709" width="0.4" height="15.0" fill="rgb(232,128,30)" rx="2" ry="2" />
+<text  x="501.58" y="719.5" ></text>
+</g>
+<g >
+<title>dbs_irq_work (33,492,066 samples, 0.03%)</title><rect x="499.0" y="629" width="0.4" height="15.0" fill="rgb(206,5,1)" rx="2" ry="2" />
+<text  x="501.97" y="639.5" ></text>
+</g>
+<g >
+<title>std::__distance&lt;__gnu_cxx::__normal_iterator&lt;Parameters**, std::vector&lt;Parameters*, std::allocator&lt;Parameters*&gt; &gt; &gt; &gt; (33,561,768 samples, 0.03%)</title><rect x="914.7" y="677" width="0.4" height="15.0" fill="rgb(249,202,48)" rx="2" ry="2" />
+<text  x="917.71" y="687.5" ></text>
+</g>
+<g >
+<title>[unknown] (2,315,271,545 samples, 2.30%)</title><rect x="10.0" y="821" width="27.1" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="13.00" y="831.5" >[..</text>
+</g>
+<g >
+<title>asm_sysvec_apic_timer_interrupt (33,500,711 samples, 0.03%)</title><rect x="1099.1" y="725" width="0.4" height="15.0" fill="rgb(232,127,30)" rx="2" ry="2" />
+<text  x="1102.10" y="735.5" ></text>
+</g>
+<g >
+<title>__asan_region_is_poisoned (33,756,590 samples, 0.03%)</title><rect x="1097.1" y="677" width="0.4" height="15.0" fill="rgb(219,65,15)" rx="2" ry="2" />
+<text  x="1100.13" y="687.5" ></text>
+</g>
+<g >
+<title>Matrix::Matrix (33,617,718 samples, 0.03%)</title><rect x="65.4" y="757" width="0.4" height="15.0" fill="rgb(237,150,35)" rx="2" ry="2" />
+<text  x="68.42" y="767.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;Matrix*, std::allocator&lt;Matrix*&gt; &gt;::push_back (33,584,195 samples, 0.03%)</title><rect x="733.7" y="709" width="0.4" height="15.0" fill="rgb(232,128,30)" rx="2" ry="2" />
+<text  x="736.70" y="719.5" ></text>
+</g>
+<g >
+<title>Matrix::operator[] (133,834,751 samples, 0.13%)</title><rect x="1144.0" y="725" width="1.6" height="15.0" fill="rgb(253,222,53)" rx="2" ry="2" />
+<text  x="1146.99" y="735.5" ></text>
+</g>
+<g >
+<title>__asan::PoisonShadow (33,663,119 samples, 0.03%)</title><rect x="36.3" y="789" width="0.4" height="15.0" fill="rgb(231,120,28)" rx="2" ry="2" />
+<text  x="39.35" y="799.5" ></text>
+</g>
+<g >
+<title>std::min&lt;unsigned int&gt; (634,785,656 samples, 0.63%)</title><rect x="1161.7" y="741" width="7.4" height="15.0" fill="rgb(237,151,36)" rx="2" ry="2" />
+<text  x="1164.66" y="751.5" ></text>
+</g>
+<g >
+<title>[unknown] (301,869,081 samples, 0.30%)</title><rect x="10.0" y="741" width="3.5" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="13.00" y="751.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;Parameters*, std::allocator&lt;Parameters*&gt; &gt;::_M_insert_dispatch&lt;__gnu_cxx::__normal_iterator&lt;Parameters**, std::vector&lt;Parameters*, std::allocator&lt;Parameters*&gt; &gt; &gt; &gt; (33,561,768 samples, 0.03%)</title><rect x="914.7" y="725" width="0.4" height="15.0" fill="rgb(229,110,26)" rx="2" ry="2" />
+<text  x="917.71" y="735.5" ></text>
+</g>
+<g >
+<title>Matrix::operator+= (11,704,678,839 samples, 11.63%)</title><rect x="734.5" y="725" width="137.2" height="15.0" fill="rgb(220,70,16)" rx="2" ry="2" />
+<text  x="737.49" y="735.5" >Matrix::operator+=</text>
+</g>
+<g >
+<title>CrossEntropyLoss::CrossEntropyLoss (33,711,530 samples, 0.03%)</title><rect x="85.5" y="773" width="0.4" height="15.0" fill="rgb(253,225,53)" rx="2" ry="2" />
+<text  x="88.48" y="783.5" ></text>
+</g>
+<g >
+<title>__asan::AsanTSDGet (33,525,493 samples, 0.03%)</title><rect x="19.0" y="805" width="0.4" height="15.0" fill="rgb(251,214,51)" rx="2" ry="2" />
+<text  x="22.05" y="815.5" ></text>
+</g>
+<g >
+<title>schedule (33,520,850 samples, 0.03%)</title><rect x="837.1" y="629" width="0.4" height="15.0" fill="rgb(254,229,54)" rx="2" ry="2" />
+<text  x="840.07" y="639.5" ></text>
+</g>
+<g >
+<title>Matrix::zero (67,157,256 samples, 0.07%)</title><rect x="732.5" y="709" width="0.8" height="15.0" fill="rgb(206,8,2)" rx="2" ry="2" />
+<text  x="735.52" y="719.5" ></text>
+</g>
+<g >
+<title>[unknown] (234,792,466 samples, 0.23%)</title><rect x="10.0" y="549" width="2.8" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="13.00" y="559.5" ></text>
+</g>
+<g >
+<title>[unknown] (301,869,081 samples, 0.30%)</title><rect x="10.0" y="661" width="3.5" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="13.00" y="671.5" ></text>
+</g>
+<g >
+<title>Matrix::operator[] (32,605,452 samples, 0.03%)</title><rect x="639.1" y="725" width="0.3" height="15.0" fill="rgb(253,222,53)" rx="2" ry="2" />
+<text  x="642.06" y="735.5" ></text>
+</g>
+<g >
+<title>std::_Vector_base&lt;unsigned int, std::allocator&lt;unsigned int&gt; &gt;::_Vector_base (33,711,530 samples, 0.03%)</title><rect x="85.5" y="741" width="0.4" height="15.0" fill="rgb(227,105,25)" rx="2" ry="2" />
+<text  x="88.48" y="751.5" ></text>
+</g>
+<g >
+<title>__libc_start_main (96,100,139,957 samples, 95.45%)</title><rect x="54.0" y="821" width="1126.3" height="15.0" fill="rgb(236,142,34)" rx="2" ry="2" />
+<text  x="57.01" y="831.5" >__libc_start_main</text>
+</g>
+<g >
+<title>__asan_region_is_poisoned (33,720,803 samples, 0.03%)</title><rect x="1145.9" y="677" width="0.4" height="15.0" fill="rgb(219,65,15)" rx="2" ry="2" />
+<text  x="1148.94" y="687.5" ></text>
+</g>
+<g >
+<title>Matrix::Matrix (33,724,986 samples, 0.03%)</title><rect x="645.7" y="677" width="0.4" height="15.0" fill="rgb(237,150,35)" rx="2" ry="2" />
+<text  x="648.73" y="687.5" ></text>
+</g>
+<g >
+<title>cpufreq_this_cpu_can_update (33,483,253 samples, 0.03%)</title><rect x="836.7" y="533" width="0.4" height="15.0" fill="rgb(220,71,17)" rx="2" ry="2" />
+<text  x="839.67" y="543.5" ></text>
+</g>
+<g >
+<title>__sanitizer::StackDepotBase&lt;__sanitizer::StackDepotNode, 1, 20&gt;::find (255,186,967 samples, 0.25%)</title><rect x="1186.2" y="821" width="3.0" height="15.0" fill="rgb(254,228,54)" rx="2" ry="2" />
+<text  x="1189.22" y="831.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;Matrix*, std::allocator&lt;Matrix*&gt; &gt;::operator= (18,588,063 samples, 0.02%)</title><rect x="1169.1" y="741" width="0.2" height="15.0" fill="rgb(228,106,25)" rx="2" ry="2" />
+<text  x="1172.10" y="751.5" ></text>
+</g>
+<g >
+<title>std::min&lt;unsigned int&gt; (3,052,190,258 samples, 3.03%)</title><rect x="165.6" y="725" width="35.8" height="15.0" fill="rgb(237,151,36)" rx="2" ry="2" />
+<text  x="168.63" y="735.5" >std..</text>
+</g>
+<g >
+<title>Matrix::operator[] (66,510,526 samples, 0.07%)</title><rect x="202.2" y="725" width="0.8" height="15.0" fill="rgb(253,222,53)" rx="2" ry="2" />
+<text  x="205.18" y="735.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;CrosEntropyInfo, std::allocator&lt;CrosEntropyInfo&gt; &gt;::_S_use_relocate (34,036,551 samples, 0.03%)</title><rect x="91.4" y="741" width="0.4" height="15.0" fill="rgb(247,193,46)" rx="2" ry="2" />
+<text  x="94.38" y="751.5" ></text>
+</g>
+<g >
+<title>Matrix::~Matrix (33,660,410 samples, 0.03%)</title><rect x="72.9" y="757" width="0.4" height="15.0" fill="rgb(223,86,20)" rx="2" ry="2" />
+<text  x="75.90" y="767.5" ></text>
+</g>
+<g >
+<title>[unknown] (67,136,626 samples, 0.07%)</title><rect x="10.0" y="181" width="0.8" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="13.00" y="191.5" ></text>
+</g>
+<g >
+<title>RnnLM::backward (69,376,992,667 samples, 68.91%)</title><rect x="93.7" y="773" width="813.2" height="15.0" fill="rgb(206,8,1)" rx="2" ry="2" />
+<text  x="96.74" y="783.5" >RnnLM::backward</text>
+</g>
+<g >
+<title>__gnu_cxx::operator-&lt;Parameters**, std::vector&lt;Parameters*, std::allocator&lt;Parameters*&gt; &gt; &gt; (33,561,768 samples, 0.03%)</title><rect x="914.7" y="661" width="0.4" height="15.0" fill="rgb(234,135,32)" rx="2" ry="2" />
+<text  x="917.71" y="671.5" ></text>
+</g>
+<g >
+<title>exit_to_user_mode_prepare (33,520,850 samples, 0.03%)</title><rect x="837.1" y="645" width="0.4" height="15.0" fill="rgb(228,108,25)" rx="2" ry="2" />
+<text  x="840.07" y="655.5" ></text>
+</g>
+<g >
+<title>sysvec_apic_timer_interrupt (39,260,699 samples, 0.04%)</title><rect x="164.8" y="709" width="0.4" height="15.0" fill="rgb(220,69,16)" rx="2" ry="2" />
+<text  x="167.78" y="719.5" ></text>
+</g>
+<g >
+<title>Matrix::zero (268,611,674 samples, 0.27%)</title><rect x="729.0" y="693" width="3.1" height="15.0" fill="rgb(206,8,2)" rx="2" ry="2" />
+<text  x="731.99" y="703.5" ></text>
+</g>
+<g >
+<title>allocTmpMatrix (67,220,622 samples, 0.07%)</title><rect x="652.8" y="709" width="0.8" height="15.0" fill="rgb(251,213,51)" rx="2" ry="2" />
+<text  x="655.81" y="719.5" ></text>
+</g>
+<g >
+<title>Matrix::operator[] (33,470,342 samples, 0.03%)</title><rect x="980.3" y="741" width="0.3" height="15.0" fill="rgb(253,222,53)" rx="2" ry="2" />
+<text  x="983.25" y="751.5" ></text>
+</g>
+<g >
+<title>allocTmpMatrix (134,256,489 samples, 0.13%)</title><rect x="212.8" y="741" width="1.5" height="15.0" fill="rgb(251,213,51)" rx="2" ry="2" />
+<text  x="215.77" y="751.5" ></text>
+</g>
+<g >
+<title>__asan::Allocator::Allocate (1,070,952,481 samples, 1.06%)</title><rect x="37.1" y="821" width="12.6" height="15.0" fill="rgb(229,111,26)" rx="2" ry="2" />
+<text  x="40.14" y="831.5" ></text>
+</g>
+<g >
+<title>syscall_return_via_sysret (33,602,570 samples, 0.03%)</title><rect x="13.5" y="789" width="0.4" height="15.0" fill="rgb(229,113,27)" rx="2" ry="2" />
+<text  x="16.54" y="799.5" ></text>
+</g>
+<g >
+<title>[unknown] (201,166,076 samples, 0.20%)</title><rect x="10.0" y="421" width="2.4" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="13.00" y="431.5" ></text>
+</g>
+<g >
+<title>__asan_region_is_poisoned (33,516,266 samples, 0.03%)</title><rect x="212.8" y="693" width="0.4" height="15.0" fill="rgb(219,65,15)" rx="2" ry="2" />
+<text  x="215.77" y="703.5" ></text>
+</g>
+<g >
+<title>RnnLM::forward (21,388,889,538 samples, 21.24%)</title><rect x="923.3" y="773" width="250.7" height="15.0" fill="rgb(234,137,32)" rx="2" ry="2" />
+<text  x="926.35" y="783.5" >RnnLM::forward</text>
+</g>
+<g >
+<title>Matrix::getShape (33,671,715 samples, 0.03%)</title><rect x="985.7" y="725" width="0.4" height="15.0" fill="rgb(223,83,20)" rx="2" ry="2" />
+<text  x="988.75" y="735.5" ></text>
+</g>
+<g >
+<title>std::pow&lt;float, int&gt; (33,674,220 samples, 0.03%)</title><rect x="85.1" y="757" width="0.4" height="15.0" fill="rgb(249,206,49)" rx="2" ry="2" />
+<text  x="88.09" y="767.5" ></text>
+</g>
+<g >
+<title>__asan::Allocator::QuarantineChunk (33,670,753 samples, 0.03%)</title><rect x="1177.2" y="741" width="0.4" height="15.0" fill="rgb(247,194,46)" rx="2" ry="2" />
+<text  x="1180.17" y="751.5" ></text>
+</g>
+<g >
+<title>[unknown] (234,792,466 samples, 0.23%)</title><rect x="10.0" y="469" width="2.8" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="13.00" y="479.5" ></text>
+</g>
+<g >
+<title>[unknown] (100,598,560 samples, 0.10%)</title><rect x="10.0" y="261" width="1.2" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="13.00" y="271.5" ></text>
+</g>
+<g >
+<title>Matrix::Matrix (134,306,310 samples, 0.13%)</title><rect x="984.2" y="741" width="1.5" height="15.0" fill="rgb(237,150,35)" rx="2" ry="2" />
+<text  x="987.17" y="751.5" ></text>
+</g>
+<g >
+<title>[unknown] (167,646,581 samples, 0.17%)</title><rect x="10.0" y="389" width="2.0" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="13.00" y="399.5" ></text>
+</g>
+<g >
+<title>__asan::Allocator::QuarantineChunk (100,610,311 samples, 0.10%)</title><rect x="17.9" y="805" width="1.1" height="15.0" fill="rgb(247,194,46)" rx="2" ry="2" />
+<text  x="20.87" y="815.5" ></text>
+</g>
+<g >
+<title>insert_work (33,492,066 samples, 0.03%)</title><rect x="499.0" y="581" width="0.4" height="15.0" fill="rgb(216,52,12)" rx="2" ry="2" />
+<text  x="501.97" y="591.5" ></text>
+</g>
+<g >
+<title>__asan_region_is_poisoned (33,539,363 samples, 0.03%)</title><rect x="490.3" y="677" width="0.4" height="15.0" fill="rgb(219,65,15)" rx="2" ry="2" />
+<text  x="493.33" y="687.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;Matrix*, std::allocator&lt;Matrix*&gt; &gt;::begin (33,470,073 samples, 0.03%)</title><rect x="1169.7" y="709" width="0.4" height="15.0" fill="rgb(241,166,39)" rx="2" ry="2" />
+<text  x="1172.70" y="719.5" ></text>
+</g>
+<g >
+<title>__sanitizer::StackDepotBase&lt;__sanitizer::StackDepotNode, 1, 20&gt;::Put (369,135,453 samples, 0.37%)</title><rect x="32.0" y="805" width="4.3" height="15.0" fill="rgb(226,99,23)" rx="2" ry="2" />
+<text  x="35.02" y="815.5" ></text>
+</g>
+<g >
+<title>__asan::AsanThread::stack_top (33,798,819 samples, 0.03%)</title><rect x="1155.0" y="677" width="0.4" height="15.0" fill="rgb(251,214,51)" rx="2" ry="2" />
+<text  x="1157.98" y="687.5" ></text>
+</g>
+<g >
+<title>std::min&lt;unsigned int&gt; (10,711,840,741 samples, 10.64%)</title><rect x="499.8" y="725" width="125.5" height="15.0" fill="rgb(237,151,36)" rx="2" ry="2" />
+<text  x="502.76" y="735.5" >std::min&lt;unsign..</text>
+</g>
+<g >
+<title>__strpbrk_sse42 (33,663,119 samples, 0.03%)</title><rect x="36.3" y="805" width="0.4" height="15.0" fill="rgb(212,34,8)" rx="2" ry="2" />
+<text  x="39.35" y="815.5" ></text>
+</g>
+<g >
+<title>CrossEntropyLoss::backward (234,614,219 samples, 0.23%)</title><rect x="85.9" y="773" width="2.7" height="15.0" fill="rgb(215,50,11)" rx="2" ry="2" />
+<text  x="88.88" y="783.5" ></text>
+</g>
+<g >
+<title>Matrix::Matrix (100,797,767 samples, 0.10%)</title><rect x="1097.1" y="709" width="1.2" height="15.0" fill="rgb(237,150,35)" rx="2" ry="2" />
+<text  x="1100.13" y="719.5" ></text>
+</g>
+<g >
+<title>allocTmpMatrix (635,433,139 samples, 0.63%)</title><rect x="726.6" y="725" width="7.5" height="15.0" fill="rgb(251,213,51)" rx="2" ry="2" />
+<text  x="729.65" y="735.5" ></text>
+</g>
+<g >
+<title>__asan::QuarantineCallback::Recycle (33,524,634 samples, 0.03%)</title><rect x="12.8" y="549" width="0.3" height="15.0" fill="rgb(222,81,19)" rx="2" ry="2" />
+<text  x="15.75" y="559.5" ></text>
+</g>
+<g >
+<title>__memmove_sse2_unaligned_erms (33,599,027 samples, 0.03%)</title><rect x="1146.3" y="677" width="0.4" height="15.0" fill="rgb(208,14,3)" rx="2" ry="2" />
+<text  x="1149.34" y="687.5" ></text>
+</g>
+<g >
+<title>std::min&lt;unsigned int&gt; (2,080,280,979 samples, 2.07%)</title><rect x="882.5" y="741" width="24.4" height="15.0" fill="rgb(237,151,36)" rx="2" ry="2" />
+<text  x="885.47" y="751.5" >s..</text>
+</g>
+<g >
+<title>__asan::GetMallocContextSize (33,518,498 samples, 0.03%)</title><rect x="498.2" y="709" width="0.4" height="15.0" fill="rgb(251,216,51)" rx="2" ry="2" />
+<text  x="501.19" y="719.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;Matrix*, std::allocator&lt;Matrix*&gt; &gt;::~vector (33,648,350 samples, 0.03%)</title><rect x="1179.9" y="773" width="0.4" height="15.0" fill="rgb(209,22,5)" rx="2" ry="2" />
+<text  x="1182.93" y="783.5" ></text>
+</g>
+<g >
+<title>__sanitizer::mem_is_zero (33,639,153 samples, 0.03%)</title><rect x="731.7" y="677" width="0.4" height="15.0" fill="rgb(220,71,17)" rx="2" ry="2" />
+<text  x="734.74" y="687.5" ></text>
+</g>
+<g >
+<title>CrossEntropyLoss::forward (335,737,548 samples, 0.33%)</title><rect x="88.6" y="773" width="4.0" height="15.0" fill="rgb(243,179,42)" rx="2" ry="2" />
+<text  x="91.63" y="783.5" ></text>
+</g>
+<g >
+<title>[unknown] (234,792,466 samples, 0.23%)</title><rect x="10.0" y="517" width="2.8" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="13.00" y="527.5" ></text>
+</g>
+<g >
+<title>sysvec_apic_timer_interrupt (33,483,253 samples, 0.03%)</title><rect x="836.7" y="693" width="0.4" height="15.0" fill="rgb(220,69,16)" rx="2" ry="2" />
+<text  x="839.67" y="703.5" ></text>
+</g>
+<g >
+<title>psi_group_change (33,520,850 samples, 0.03%)</title><rect x="837.1" y="581" width="0.4" height="15.0" fill="rgb(226,101,24)" rx="2" ry="2" />
+<text  x="840.07" y="591.5" ></text>
+</g>
+<g >
+<title>Matrix::Matrix (100,637,437 samples, 0.10%)</title><rect x="212.8" y="725" width="1.2" height="15.0" fill="rgb(237,150,35)" rx="2" ry="2" />
+<text  x="215.77" y="735.5" ></text>
+</g>
+<g >
+<title>__memset_avx2_unaligned_erms (33,629,207 samples, 0.03%)</title><rect x="1170.5" y="709" width="0.4" height="15.0" fill="rgb(223,84,20)" rx="2" ry="2" />
+<text  x="1173.49" y="719.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;Matrix*, std::allocator&lt;Matrix*&gt; &gt;::_M_allocate_and_copy&lt;__gnu_cxx::__normal_iterator&lt;Matrix* const*, std::vector&lt;Matrix*, std::allocator&lt;Matrix*&gt; &gt; &gt; &gt; (18,588,063 samples, 0.02%)</title><rect x="1169.1" y="725" width="0.2" height="15.0" fill="rgb(249,205,49)" rx="2" ry="2" />
+<text  x="1172.10" y="735.5" ></text>
+</g>
+<g >
+<title>Matrix::tanh (536,403,699 samples, 0.53%)</title><rect x="647.3" y="725" width="6.3" height="15.0" fill="rgb(242,172,41)" rx="2" ry="2" />
+<text  x="650.31" y="735.5" ></text>
+</g>
+<g >
+<title>__asan::GetCurrentThread (33,553,754 samples, 0.03%)</title><rect x="49.7" y="821" width="0.4" height="15.0" fill="rgb(219,68,16)" rx="2" ry="2" />
+<text  x="52.69" y="831.5" ></text>
+</g>
+<g >
+<title>irqentry_exit (33,520,850 samples, 0.03%)</title><rect x="837.1" y="677" width="0.4" height="15.0" fill="rgb(219,66,15)" rx="2" ry="2" />
+<text  x="840.07" y="687.5" ></text>
+</g>
+<g >
+<title>[unknown] (301,869,081 samples, 0.30%)</title><rect x="10.0" y="805" width="3.5" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="13.00" y="815.5" ></text>
+</g>
+<g >
+<title>tick_sched_timer (33,754,993 samples, 0.03%)</title><rect x="81.2" y="661" width="0.4" height="15.0" fill="rgb(254,227,54)" rx="2" ry="2" />
+<text  x="84.16" y="671.5" ></text>
+</g>
+<g >
+<title>Matrix::Matrix (67,076,193 samples, 0.07%)</title><rect x="660.3" y="693" width="0.8" height="15.0" fill="rgb(237,150,35)" rx="2" ry="2" />
+<text  x="663.28" y="703.5" ></text>
+</g>
+<g >
+<title>__sanitizer::mem_is_zero (134,174,046 samples, 0.13%)</title><rect x="493.9" y="677" width="1.5" height="15.0" fill="rgb(220,71,17)" rx="2" ry="2" />
+<text  x="496.87" y="687.5" ></text>
+</g>
+<g >
+<title>__GI___libc_write (33,602,570 samples, 0.03%)</title><rect x="13.5" y="805" width="0.4" height="15.0" fill="rgb(217,57,13)" rx="2" ry="2" />
+<text  x="16.54" y="815.5" ></text>
+</g>
+<g >
+<title>operator- (335,958,362 samples, 0.33%)</title><rect x="657.1" y="725" width="4.0" height="15.0" fill="rgb(213,41,9)" rx="2" ry="2" />
+<text  x="660.13" y="735.5" ></text>
+</g>
+<g >
+<title>[unknown] (234,792,466 samples, 0.23%)</title><rect x="10.0" y="437" width="2.8" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="13.00" y="447.5" ></text>
+</g>
+<g >
+<title>__sanitizer::BufferedStackTrace::FastUnwindStack (401,657,761 samples, 0.40%)</title><rect x="1180.7" y="821" width="4.7" height="15.0" fill="rgb(219,66,15)" rx="2" ry="2" />
+<text  x="1183.73" y="831.5" ></text>
+</g>
+<g >
+<title>Matrix::dot (34,896,504,221 samples, 34.66%)</title><rect x="216.3" y="741" width="409.0" height="15.0" fill="rgb(238,154,36)" rx="2" ry="2" />
+<text  x="219.31" y="751.5" >Matrix::dot</text>
+</g>
+<g >
+<title>__memset_avx2_erms (301,942,239 samples, 0.30%)</title><rect x="23.8" y="805" width="3.5" height="15.0" fill="rgb(230,117,28)" rx="2" ry="2" />
+<text  x="26.76" y="815.5" ></text>
+</g>
+<g >
+<title>std::vector&lt;Matrix*, std::allocator&lt;Matrix*&gt; &gt;::_M_realloc_insert&lt;Matrix* const&amp;&gt; (66,777,380 samples, 0.07%)</title><rect x="1169.3" y="725" width="0.8" height="15.0" fill="rgb(220,72,17)" rx="2" ry="2" />
+<text  x="1172.31" y="735.5" ></text>
+</g>
+</g>
+</svg>
