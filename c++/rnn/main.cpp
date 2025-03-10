@@ -51,9 +51,11 @@ std::string generateDateTimeSuffix() {
     return oss.str();
 }
 
-void save_checkpoint(RnnLM &lm) {
+void save_checkpoint(const std::string & prefix, int epoch, RnnLM &lm) {
     std::cout << "shutting down" << std::endl;
-    std::string checkpoint_name = "checkpoint" + generateDateTimeSuffix() + ".bin";
+    std::ostringstream oss;
+    oss << prefix << "_" << epoch << ".bin";
+    std::string checkpoint_name = oss.str();
     std::string path = "./checkpoints/" + checkpoint_name;
     auto parameters = lm.get_parameters();
     std::ofstream out(path, std::ios::out | std::ios::binary);
@@ -118,6 +120,7 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
         init_weight(parameters[3]);
     }
     Adam adam(parameters, 0.001);
+    std::string checkpoint_prefix = "checkpoint" + generateDateTimeSuffix();
     for (uint epoch = 0; epoch < epochs; epoch++) {
         DATATYPE loss_sum = 0;
         for (uint i = 0; i < loader.data.size() - num_steps; i++) {
@@ -147,15 +150,16 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
             lm.release(ctx);
             freeTmpMatrix();
             if (shutdown) {
-                save_checkpoint(lm);
+                save_checkpoint(checkpoint_prefix, epoch, lm);
                 exit(0);
             }
             print_progress(i+1, loader.data.size() - num_steps);
         }
+        save_checkpoint(checkpoint_prefix, epoch, lm);
         std::cout << "epoch " << epoch << " loss : " << loss_sum/(loader.data.size() - num_steps) << std::endl;
     }
     if (epochs > 0) {
-        save_checkpoint(lm);
+        // pass
     } else {
         std::cout << "serving mode" << std::endl;
     }
