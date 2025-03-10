@@ -37,3 +37,39 @@ prefix :  and the still
 predict :  and the still  fare wore far far f
 epoch  1  started.
 ```
+
+### c++ predict
+
+```
+(base) cs@cs-desktop:~/project/recognizing_handwritten_digits/c++/lstm$ ./lstm -e 0 -c ./checkpoints/checkpoint_20250310_204527_24.bin
+epochs : 0
+train by ../../resources/timemachine_preprocessed.txt
+epochs : 0
+Data loaded
+loading from checkpoint : ./checkpoints/checkpoint_20250310_204527_24.bin
+loaded from checkpoint
+serving mode
+prefix : time traveller
+predicted :  fonthes a to s fogeovero tave
+
+
+...
+prefix : the time machine
+predicted :  by an an was as a ta ad an w
+...
+
+prefix : expounding a recondite
+predicted :  mam t ts f mad f con wy w sat
+prefix :  traveller for so
+predicted :  it inthis n tnthis is n to hi
+prefix : it has
+predicted :  ly a pe t t te t tr y t t te
+prefix : so most people
+predicted : ssfos s gets ov o sf s s te sa
+prefix : is simply
+predicted : hasanibein oresonchischisanith
+prefix :  we cannot move about
+predicted : neat to ughes n tnts t th n to
+prefix : and the still
+predicted : ow i or has a ge mas t ie hasa
+```
