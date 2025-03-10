@@ -161,6 +161,7 @@ def train_llm():
     rnnlm.predict("the time machine", 20)
     rnnlm.predict("expounding a recondite", 20)
     rnnlm.predict(" traveller for so", 20)
+    rnnlm.predict("it has", 20)
 
 if __name__ == '__main__':
     train_llm()
