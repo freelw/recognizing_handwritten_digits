@@ -99,7 +99,7 @@ predicted :  be convenient to speak of him
 
 ### perf
 
-![alt text](p_1392544.svg)
+![alt text](./svg/p_1392544.svg)
 
 ### openmp 安装
 
