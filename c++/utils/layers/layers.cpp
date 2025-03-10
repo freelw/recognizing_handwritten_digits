@@ -248,7 +248,8 @@ Rnn::~Rnn() {
     delete bh;
 }
 
-RnnRes Rnn::forward(RnnContext *ctx, const std::vector<Matrix *> &inputs, Matrix *hidden, Matrix *) {
+RnnRes Rnn::forward(Context *_ctx, const std::vector<Matrix *> &inputs, Matrix *hidden, Matrix *) {
+    RnnContext *ctx = (RnnContext *)_ctx;
     assert(ctx->inputs.size() == 0);
     assert(ctx->hiddens.size() == 0);
     assert(ctx->states.size() == 0);
@@ -285,9 +286,10 @@ RnnRes Rnn::forward(RnnContext *ctx, const std::vector<Matrix *> &inputs, Matrix
 }
 
 Matrix *Rnn::backward(
-    RnnContext *ctx,
+    Context *_ctx,
     const std::vector<Matrix *> &grad_hiddens_vec,
     const std::vector<Matrix *> &grad_cells_vec) {
+    RnnContext *ctx = (RnnContext *)_ctx;
     assert(ctx->inputs.size() + 1 == ctx->hiddens.size());
     assert(ctx->states.size() + 1 == ctx->hiddens.size());
     Matrix *grad = grad_hiddens_vec[grad_hiddens_vec.size()-1];
@@ -311,11 +313,12 @@ Matrix *Rnn::backward(
     return grad;
 }
 
-RnnContext *Rnn::init() {
+Context *Rnn::init() {
     return new RnnContext();
 }
 
-void Rnn::release(RnnContext *ctx) {
+void Rnn::release(Context *_ctx) {
+    RnnContext *ctx = (RnnContext *)_ctx;
     delete ctx;
 }
 
@@ -393,25 +396,25 @@ LSTM::~LSTM() {
     delete bc;
 }
 
-RnnRes LSTM::forward(RnnContext *ctx, const std::vector<Matrix*> &inputs, Matrix *hidden, Matrix *cell) {
+RnnRes LSTM::forward(Context *ctx, const std::vector<Matrix*> &inputs, Matrix *hidden, Matrix *cell) {
     assert(false);
 }
 
 Matrix *LSTM::backward(
-    RnnContext *ctx,
+    Context *ctx,
     const std::vector<Matrix *> &grad_hiddens_vec,
     const std::vector<Matrix *> &grad_cells_vec) {
     assert(false);
     return nullptr;
 }
 
-RnnContext *LSTM::init() {
+Context *LSTM::init() {
     assert(false);
     return nullptr;
 
 }
 
-void LSTM::release(RnnContext *ctx) {
+void LSTM::release(Context *ctx) {
     assert(false);
 }
 

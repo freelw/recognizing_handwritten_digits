@@ -82,7 +82,8 @@ class CrossEntropyLoss: public Layer {
         std::vector<uint> labels;
 };
 
-class RnnContext {
+
+class RnnContext: public Context {
     public:
         std::vector<Matrix*> inputs;
         std::vector<Matrix*> hiddens;
@@ -102,13 +103,13 @@ class RnnBase {
     public:
         RnnBase() {};
         virtual ~RnnBase() {};
-        virtual RnnRes forward(RnnContext *, const std::vector<Matrix*> &inputs, Matrix *hidden, Matrix *cell) = 0;
+        virtual RnnRes forward(Context *, const std::vector<Matrix*> &inputs, Matrix *hidden, Matrix *cell) = 0;
         virtual Matrix *backward(
-            RnnContext *,
+            Context *,
             const std::vector<Matrix *> &grad_hiddens_vec,
             const std::vector<Matrix *> &grad_cells_vec) = 0;
-        virtual RnnContext *init() = 0;
-        virtual void release(RnnContext *) = 0;
+        virtual Context *init() = 0;
+        virtual void release(Context *) = 0;
         virtual std::vector<Parameters*> get_parameters() = 0;
         virtual void zero_grad() = 0;
         virtual uint get_hidden_num() = 0;
@@ -118,13 +119,13 @@ class Rnn: public RnnBase {
     public:
         Rnn(uint i, uint h, DATATYPE _sigma, bool _rand);
         virtual ~Rnn();
-        virtual RnnRes forward(RnnContext *, const std::vector<Matrix*> &inputs, Matrix *hidden, Matrix *cell);
+        virtual RnnRes forward(Context *, const std::vector<Matrix*> &inputs, Matrix *hidden, Matrix *cell);
         virtual Matrix *backward(
-            RnnContext *, 
+            Context *, 
             const std::vector<Matrix *> &grad_hiddens_vec,
             const std::vector<Matrix *> &grad_cells_vec);
-        virtual RnnContext *init();
-        virtual void release(RnnContext *);
+        virtual Context *init();
+        virtual void release(Context *);
         virtual std::vector<Parameters*> get_parameters();
         virtual void zero_grad();
         DATATYPE get_sigma() {
@@ -148,14 +149,14 @@ class LSTM: public RnnBase {
         LSTM(uint i, uint h, DATATYPE _sigma, bool _rand);
         virtual ~LSTM();
         virtual RnnRes forward(
-            RnnContext *, const std::vector<Matrix*> &inputs,
+            Context *, const std::vector<Matrix*> &inputs,
             Matrix *hidden, Matrix *cell);
         virtual Matrix *backward(
-            RnnContext *,
+            Context *,
             const std::vector<Matrix *> &grad_hiddens_vec,
             const std::vector<Matrix *> &grad_cells_vec);
-        virtual RnnContext *init();
-        virtual void release(RnnContext *);
+        virtual Context *init();
+        virtual void release(Context *);
         virtual std::vector<Parameters*> get_parameters();
         virtual void zero_grad();
         virtual uint get_hidden_num() {

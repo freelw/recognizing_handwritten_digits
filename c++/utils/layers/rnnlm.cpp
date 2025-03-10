@@ -45,7 +45,7 @@ void RnnLM::backward(RnnLMContext *ctx, Matrix* grad) {
 
 RnnLMContext *RnnLM::init() {
     RnnLMContext *ctx = new RnnLMContext();
-    ctx->rnn_ctx = rnn->init();
+    ctx->rnn_ctx = (RnnContext*)rnn->init();
     ctx->fc_ctx = (LinerContext*)fc->init();
     return ctx;
 }
