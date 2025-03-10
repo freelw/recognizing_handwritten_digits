@@ -20,7 +20,7 @@ void Adam::step() {
                 auto &v = (*mv)[i][j];
                 auto &gradient = (*grad)[i][j];
                 m = beta1 * m + (1 - beta1) * gradient;
-                v = beta2 * v + (1 - beta2) * gradient * gradient;
+                v = beta2 * v + (1 - beta2) * std::pow(gradient, 2);
                 DATATYPE m_hat = m / (1 - std::pow(beta1, t));
                 DATATYPE v_hat = v / (1 - std::pow(beta2, t));
                 // std::cout << "value before : " << value << std::endl;

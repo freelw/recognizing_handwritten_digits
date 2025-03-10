@@ -4,17 +4,17 @@
 #include "layers/layers.h"
 class Adam {
     public:
-        Adam(std::vector<Parameters*> _parameters, float _lr,
-            float _beta1 = 0.9, float _beta2 = 0.95, float _epsilon = 1e-8)
+        Adam(std::vector<Parameters*> _parameters, DATATYPE _lr,
+            DATATYPE _beta1 = 0.9, DATATYPE _beta2 = 0.95, DATATYPE _epsilon = 1e-8)
             : parameters(_parameters), lr(_lr),
                 beta1(_beta1), beta2(_beta2), epsilon(_epsilon)
             {}
         void step();
     private:
         std::vector<Parameters*> parameters;
-        float lr; 
-        float beta1;
-        float beta2;
-        float epsilon;
+        DATATYPE lr; 
+        DATATYPE beta1;
+        DATATYPE beta2;
+        DATATYPE epsilon;
 };
 #endif
