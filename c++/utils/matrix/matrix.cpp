@@ -78,9 +78,12 @@ ostream &operator<<(ostream &output, const Matrix &m) {
 Matrix *Matrix::operator+(const Matrix &m) {
     checkShape(m);
     Matrix *res = allocTmpMatrix(this);
+    #pragma omp parallel for num_threads(4)
     for (uint i = 0; i < shape.rowCnt; ++i) {
+        DATATYPE *m_data = m[i];
+        DATATYPE *this_data = (*res)[i];
         for (uint j = 0; j < shape.colCnt; ++j) {
-            (*res)[i][j] += m[i][j];
+            this_data[j] += m_data[j];
         }
     }
     return res;
@@ -265,9 +268,11 @@ Matrix *Matrix::dot(const Matrix &m) {
 
 Matrix *Matrix::transpose() {
     Matrix *res = allocTmpMatrix(Shape(shape.colCnt, shape.rowCnt));
+    #pragma omp parallel for num_threads(4)
     for (uint i = 0; i < shape.colCnt; ++ i) {
+        DATATYPE *data = (*res)[i];
         for (uint j = 0; j < shape.rowCnt; ++ j) {
-            (*res)[i][j] = (*this)[j][i];
+            data[j] = (*this)[j][i];
         }
     }
     return res;
