@@ -52,7 +52,6 @@ std::string generateDateTimeSuffix() {
 }
 
 void save_checkpoint(const std::string & prefix, int epoch, RnnLM &lm) {
-    std::cout << "shutting down" << std::endl;
     std::ostringstream oss;
     oss << prefix << "_" << epoch << ".bin";
     std::string checkpoint_name = oss.str();
