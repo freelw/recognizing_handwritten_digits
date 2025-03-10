@@ -6,7 +6,7 @@
 #include <assert.h>
 #include "matrix/matrix.h"
 #include <vector>
-#include "common.h"
+#include "lmcommon/common.h"
 
 #define INPUT_NUM 28
 

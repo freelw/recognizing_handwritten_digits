@@ -1,5 +1,5 @@
 #include "rnnlm.h"
-#include "common.h"
+#include "lmcommon/common.h"
 
 #include <iostream>
 

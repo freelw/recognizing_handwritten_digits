@@ -3,7 +3,7 @@
 #include <chrono>
 #include <sstream>
 #include <iomanip>
-#include "dataloader.h"
+#include "lmcommon/dataloader.h"
 #include "layers/rnnlm.h"
 #include "optimizers/optimizers.h"
 #include "getopt.h"
