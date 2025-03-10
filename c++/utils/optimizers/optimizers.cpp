@@ -23,9 +23,7 @@ void Adam::step() {
                 v = beta2 * v + (1 - beta2) * std::pow(gradient, 2);
                 DATATYPE m_hat = m / (1 - std::pow(beta1, t));
                 DATATYPE v_hat = v / (1 - std::pow(beta2, t));
-                // std::cout << "value before : " << value << std::endl;
                 value -=  lr * (m_hat / (std::sqrt(v_hat) + epsilon));
-                // std::cout << "value after : " << value << std::endl;
             }
         }
     }
