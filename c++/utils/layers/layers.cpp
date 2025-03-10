@@ -417,6 +417,8 @@ RnnRes LSTM::forward(Context *ctx, const std::vector<Matrix*> &inputs, Matrix *h
     }
     cell->checkShape(Shape(hidden_num, batch_size));
     lstm_ctx->cells.push_back(cell);
+    auto cell_tanh = cell->tanh();
+    lstm_ctx->cells_tanh.push_back(cell_tanh);
 
     RnnRes res;
     res.states.reserve(inputs.size());
@@ -463,7 +465,6 @@ Matrix *LSTM::backward(
     Context *ctx,
     const std::vector<Matrix *> &grad_hiddens_vec) {
     
-    
     LSTMContext *lstm_ctx = (LSTMContext *)ctx;
     assert(grad_hiddens_vec.size() == lstm_ctx->inputs.size());
     assert(lstm_ctx->inputs.size() + 1 == lstm_ctx->hiddens.size());
@@ -485,8 +486,8 @@ Matrix *LSTM::backward(
         auto x = lstm_ctx->inputs[ii];
         auto hminus1 = lstm_ctx->hiddens[ii];
         auto cminus1 = lstm_ctx->cells[ii];
-        auto cell = lstm_ctx->cells[ii];
-        auto cell_tanh = lstm_ctx->cells_tanh[ii];
+        auto cell = lstm_ctx->cells[ii+1];
+        auto cell_tanh = lstm_ctx->cells_tanh[ii+1];
         auto o_sigmoid = lstm_ctx->o_sigmoid[ii];
         auto o = lstm_ctx->o[ii];
         auto grad_o_sigmoid = *grad_hidden * *cell_tanh;
@@ -535,6 +536,10 @@ Matrix *LSTM::backward(
         *grad_hidden += *(whf->get_weight()->transpose()->at(*grad_f));
         *grad_hidden += *(who->get_weight()->transpose()->at(*grad_o));
         *grad_hidden += *(whc->get_weight()->transpose()->at(*grad_c));
+
+        if (ii >= 1) {
+            *grad_hidden += *(grad_hiddens_vec[ii-1]);
+        }
     }
     return grad_hidden;
 }
