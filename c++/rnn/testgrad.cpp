@@ -1,6 +1,6 @@
 #include "layers/layers.h"
 #include "optimizers/optimizers.h"
-#include "rnnlm.h"
+#include "layers/rnnlm.h"
 #include <iostream>
 
 

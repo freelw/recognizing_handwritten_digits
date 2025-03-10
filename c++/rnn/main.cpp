@@ -4,7 +4,7 @@
 #include <sstream>
 #include <iomanip>
 #include "dataloader.h"
-#include "rnnlm.h"
+#include "layers/rnnlm.h"
 #include "optimizers/optimizers.h"
 #include "getopt.h"
 #include <unistd.h>
