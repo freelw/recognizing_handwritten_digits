@@ -157,7 +157,10 @@ def train_llm():
             loss.backward()
             optimizer.step()
         print("epoch : ", epoch, " loss : ", loss_sum / length)
-    rnnlm.predict("time traveller", 10)
+    rnnlm.predict("time traveller", 20)
+    rnnlm.predict("the time machine", 20)
+    rnnlm.predict("expounding a recondite", 20)
+    rnnlm.predict(" traveller for so", 20)
 
 if __name__ == '__main__':
     train_llm()
