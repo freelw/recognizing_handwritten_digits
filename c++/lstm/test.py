@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 global g_vocab_size
 g_vocab_size = 28
+emit_clip = 0
 
 class LSTM:
     def __init__(self, num_inputs, num_hiddens, sigma=0.01):
@@ -70,9 +71,10 @@ class RnnLM:
 
         state = self.rnn.forward(preprocess_prefix, None, None)
         output_states = [state[-1]]
+        # print ("output_states : ", output_states)
         outputs = []
         for i in range(num_preds):
-            last_state_c, last_state_h = output_states[-1]
+            last_state_h, last_state_c  = output_states[-1]
             output = self.output_layer(last_state_h)
             predict_index = torch.argmax(output).item()
             outputs.append(to_char(predict_index))
@@ -83,8 +85,9 @@ class RnnLM:
         print("predict : ", prefix, "".join(outputs))
 
 def get_timemachine():
-    with open("../../resources/timemachine_preprocessed.txt") as f:
-    #with open("../../resources/timemachine_small.txt") as f:
+    #with open("../../resources/timemachine_preprocessed.txt") as f:
+    #with open("../../resources/timemachine_middle.txt") as f:
+    with open("../../resources/timemachine_small.txt") as f:
         return f.read()
 
 def tokenize(text):
@@ -129,6 +132,16 @@ def load_data(num_steps=32):
         Y.append(y)
     return X, Y
 
+def clip_gradients(grad_clip_val, model):
+    global emit_clip
+    params = [p for p in model.parameters() if p.requires_grad]
+    norm = torch.sqrt(sum(torch.sum((p.grad ** 2)) for p in params))
+    if norm > grad_clip_val:
+        emit_clip += 1
+        for param in params:
+            # print ("norm : ", norm)
+            param.grad[:] *= grad_clip_val / norm
+
 def train_llm():
     num_steps = 32
     num_hiddens = 32
@@ -140,10 +153,12 @@ def train_llm():
     optimizer = torch.optim.Adam(rnnlm.parameters(), lr=0.001)  # Change learning rate to 0.001
     loss_fn = torch.nn.CrossEntropyLoss()
     
-    for epoch in range(30):
+    global emit_clip
+    for epoch in range(100):
         loss_sum = 0
         print("epoch ", epoch, " started.")
         length = len(X)
+        emit_clip = 0
         for i in range(length):
             x, y = X[i], Y[i]
             inputs = []
@@ -155,9 +170,10 @@ def train_llm():
             loss_sum += loss.item()
             optimizer.zero_grad()
             loss.backward()
+            clip_gradients(1, rnnlm)
             optimizer.step()
             print("\r[", i, "/", length, "]", end="", flush=True)
-        print("epoch : ", epoch, " loss : ", loss_sum / length)
+        print("epoch : ", epoch, " loss : ", loss_sum / length, " emit_clip : ", emit_clip)
         prefixs = [
             "time traveller",
             "the time machine",
