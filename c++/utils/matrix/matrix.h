@@ -51,7 +51,7 @@ public:
     friend Matrix *operator-(DATATYPE, const Matrix &m);
     DATATYPE* operator[](unsigned int index) const;
     Shape getShape() const;
-    Matrix *dot(const Matrix &m);
+    Matrix *at(const Matrix &m);
     Matrix *transpose();
     bool valid(uint x, uint y) const;
     void reShape(Shape shape);

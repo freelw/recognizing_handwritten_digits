@@ -9,6 +9,7 @@ SRCDIR+= ../utils/matrix
 SRCDIR+= ../utils/layers
 SRCDIR+= ../utils/optimizers
 SRCDIR+= ../utils/parameters
+SRCDIR+= ../utils/lmcommon
 SRCS := $(wildcard *.cpp) $(wildcard $(addsuffix /*.cpp, $(SRCDIR)))
 OBJECTS := $(patsubst %.c,%.o,$(SRCS))
 $(TARGET) : $(OBJECTS)

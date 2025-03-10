@@ -245,7 +245,7 @@ Shape Matrix::getShape() const {
     return shape;
 }
 
-Matrix *Matrix::dot(const Matrix &m) {
+Matrix *Matrix::at(const Matrix &m) {
     assert(m.shape.rowCnt == shape.colCnt);
     Matrix *res = allocTmpMatrix(Shape(shape.rowCnt, m.shape.colCnt));
 

@@ -45,7 +45,7 @@ Matrix *Liner::forward(Context *ctx, Matrix *input) {
     ln_ctx->input = input;
     auto w = weigt->get_weight();
     auto b = bias->get_weight();
-    Matrix *res = w->dot(*input);
+    Matrix *res = w->at(*input);
     
     for (uint j = 0; j < input->getShape().colCnt; ++ j) {
         for (uint i = 0; i < output_num; ++ i) {
@@ -59,10 +59,10 @@ Matrix *Liner::backward(Context *ctx, Matrix *grad) {
     assert(grad->getShape().rowCnt == output_num);
     LinerContext *ln_ctx = (LinerContext *)ctx;
     auto w = weigt->get_weight();
-    Matrix *res_grad = w->transpose()->dot(*grad);
+    Matrix *res_grad = w->transpose()->at(*grad);
     Matrix *bias_grad = grad->sum(1);
     bias->set_grad(bias_grad);
-    Matrix *weight_grad = grad->dot(*(ln_ctx->input->transpose()));
+    Matrix *weight_grad = grad->at(*(ln_ctx->input->transpose()));
     weigt->set_grad(weight_grad);
     bias_grad->checkShape(*(bias->get_grad()));
     weight_grad->checkShape(*(weigt->get_grad()));
@@ -268,7 +268,7 @@ RnnRes Rnn::forward(Context *_ctx, const std::vector<Matrix *> &inputs, Matrix *
     RnnRes res;
     res.states.reserve(inputs.size());
     for (auto x : inputs) {
-        Matrix *state = *(wxh->get_weight()->dot(*x)) + *(whh->get_weight()->dot(*hidden));
+        Matrix *state = *(wxh->get_weight()->at(*x)) + *(whh->get_weight()->at(*hidden));
         Shape shape = state->getShape();
         state->checkShape(Shape(hidden_num, batch_size));
         for (uint i = 0; i < shape.rowCnt; ++ i) {
@@ -300,11 +300,11 @@ Matrix *Rnn::backward(
         auto state = ctx->states[i];
         grad = (*state->tanh_prime()) * *grad;
         bh->inc_grad(grad);
-        Matrix *wxh_grad = grad->dot(*(x->transpose()));
+        Matrix *wxh_grad = grad->at(*(x->transpose()));
         wxh->inc_grad(wxh_grad);
-        Matrix *whh_grad = grad->dot(*(htminus1->transpose()));
+        Matrix *whh_grad = grad->at(*(htminus1->transpose()));
         whh->inc_grad(whh_grad);
-        grad = whh->get_weight()->transpose()->dot(*grad);
+        grad = whh->get_weight()->transpose()->at(*grad);
         if (i >= 1) {
             *grad += *(grad_hiddens_vec[i-1]);
         }

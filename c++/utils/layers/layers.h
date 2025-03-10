@@ -144,6 +144,22 @@ class Rnn: public RnnBase {
         bool rand;
 };
 
+class LSTMContext: public Context {
+    public:
+        std::vector<Matrix*> inputs;
+        std::vector<Matrix*> hiddens;
+        std::vector<Matrix*> hiddens_stats;
+        std::vector<Matrix*> cells;
+        std::vector<Matrix*> cells_stats;
+        void clear() {
+            inputs.clear();
+            hiddens.clear();
+            hiddens_stats.clear();
+            cells.clear();
+            cells_stats.clear();
+        }
+};
+
 class LSTM: public RnnBase {
     public:
         LSTM(uint i, uint h, DATATYPE _sigma, bool _rand);
