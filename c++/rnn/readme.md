@@ -68,6 +68,35 @@ user    727m5.501s
 sys     0m3.839s
 ```
 
+```
+(d2l) cs@cs-desktop:~/project/recognizing_handwritten_digits/c++/rnn$ ./rnn -e 0 -c ./checkpoints/checkpoint_20250310_102447.bin 
+epochs : 0
+train by ../../resources/timemachine_preprocessed.txt
+epochs : 0
+Data loaded
+loading from checkpoint : ./checkpoints/checkpoint_20250310_102447.bin
+loaded from checkpoint
+serving mode
+prefix : time traveller
+predicted :  for so it will be convenient 
+prefix : the time machine
+predicted :  by h g wells i the time trave
+prefix : expounding a recondite
+predicted :  matter to us his grey eyes sh
+prefix :  traveller for so
+predicted :  it will be convenient to spea
+prefix : it has
+predicted :  erecondite matter to us his g
+prefix : so most people
+predicted : res shine by h g wells i the t
+prefix : is simply 
+predicted : e tam was expounding a recondi
+prefix :  we cannot move about
+predicted :  and and twankled and his usua
+prefix : and the still
+predicted :  be convenient to speak of him
+```
+
 ### perf
 
 ![alt text](p_1364762.svg)

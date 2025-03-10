@@ -165,6 +165,10 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
         "expounding a recondite",
         " traveller for so",
         "it has",
+        "so most people",
+        "is simply ",
+        " we cannot move about",
+        "and the still",
     };
     for (auto prefix : prefixs) {
         std::string predicted = lm.predict(prefix, 30);

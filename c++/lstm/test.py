@@ -84,6 +84,7 @@ class RnnLM:
 
 def get_timemachine():
     with open("../../resources/timemachine_preprocessed.txt") as f:
+    #with open("../../resources/timemachine_small.txt") as f:
         return f.read()
 
 def tokenize(text):
@@ -162,6 +163,8 @@ def train_llm():
     rnnlm.predict("expounding a recondite", 20)
     rnnlm.predict(" traveller for so", 20)
     rnnlm.predict("it has", 20)
+    rnnlm.predict("it will", 20)
+    
 
 if __name__ == '__main__':
     train_llm()
