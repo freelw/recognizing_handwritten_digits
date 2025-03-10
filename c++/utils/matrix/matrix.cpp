@@ -75,6 +75,18 @@ ostream &operator<<(ostream &output, const Matrix &m) {
     return output;
 }
 
+Matrix *Matrix::expand_add(const Matrix &m) {
+    assert(m.shape.rowCnt == shape.rowCnt);
+    assert(m.shape.colCnt == 1);
+    Matrix *res = allocTmpMatrix(this);
+    for (uint i = 0; i < shape.rowCnt; ++i) {
+        for (uint j = 0; j < shape.colCnt; ++j) {
+            (*res)[i][j] += m[i][0];
+        }
+    }
+    return res;
+}
+
 Matrix *Matrix::operator+(const Matrix &m) {
     checkShape(m);
     Matrix *res = allocTmpMatrix(this);
@@ -331,7 +343,7 @@ DATATYPE *Matrix::getData() const {
     return data;
 }
 
-DATATYPE sigmoid_double(DATATYPE z) {
+DATATYPE sigmoid(DATATYPE z) {
     return 1./(1.+exp(-z));
 }
 
@@ -340,7 +352,7 @@ Matrix *sigmoid(const Matrix &m) {
     Matrix *res = allocTmpMatrix(m);
     for (uint i = 0; i < shape.rowCnt; ++i) {
         for (uint j = 0; j < shape.colCnt; ++j) {
-            (*res)[i][j] = sigmoid_double((*res)[i][j]);
+            (*res)[i][j] = sigmoid((*res)[i][j]);
         }
     }
     return res;

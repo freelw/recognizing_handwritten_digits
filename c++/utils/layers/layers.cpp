@@ -397,7 +397,57 @@ LSTM::~LSTM() {
 }
 
 RnnRes LSTM::forward(Context *ctx, const std::vector<Matrix*> &inputs, Matrix *hidden, Matrix *cell) {
-    assert(false);
+    LSTMContext *lstm_ctx = (LSTMContext *)ctx;
+    assert(lstm_ctx->inputs.size() == 0);
+    assert(lstm_ctx->hiddens.size() == 0);
+    assert(lstm_ctx->hiddens_stats.size() == 0);
+    assert(lstm_ctx->cells.size() == 0);
+    assert(lstm_ctx->cells_stats.size() == 0);
+    assert(inputs.size() >= 1);
+    lstm_ctx->inputs = inputs;
+    uint batch_size = inputs[0]->getShape().colCnt;
+    assert(batch_size == 1);
+
+    if (!hidden) {
+        hidden = allocTmpMatrix(Shape(hidden_num, batch_size));
+    }
+    hidden->checkShape(Shape(hidden_num, batch_size));
+    lstm_ctx->hiddens.push_back(hidden);
+
+    if (!cell) {
+        cell = allocTmpMatrix(Shape(hidden_num, batch_size));
+    }
+    cell->checkShape(Shape(hidden_num, batch_size));
+    lstm_ctx->cells.push_back(cell);
+
+    RnnRes res;
+    res.states.reserve(inputs.size());
+    for (auto x : inputs) {
+        Matrix *i = (*(wxi->get_weight()->at(*x)) + *(whi->get_weight()->at(*hidden)))->expand_add(*(bi->get_weight()));
+        Matrix *f = (*(wxf->get_weight()->at(*x)) + *(whf->get_weight()->at(*hidden)))->expand_add(*(bf->get_weight()));
+        Matrix *o = (*(wxo->get_weight()->at(*x)) + *(who->get_weight()->at(*hidden)))->expand_add(*(bo->get_weight()));
+        Matrix *c = (*(wxc->get_weight()->at(*x)) + *(whc->get_weight()->at(*hidden)))->expand_add(*(bc->get_weight()));
+        i->checkShape(Shape(hidden_num, batch_size));
+        f->checkShape(Shape(hidden_num, batch_size));
+        o->checkShape(Shape(hidden_num, batch_size));
+        c->checkShape(Shape(hidden_num, batch_size));
+        Matrix *f_sigmoid = sigmoid(*f);
+        Matrix *i_sigmoid = sigmoid(*i);
+        Matrix *o_sigmoid = sigmoid(*o);
+        Matrix *c_tanh = c->tanh();
+        f_sigmoid->checkShape(Shape(hidden_num, batch_size));
+        i_sigmoid->checkShape(Shape(hidden_num, batch_size));
+        o_sigmoid->checkShape(Shape(hidden_num, batch_size));
+        c_tanh->checkShape(Shape(hidden_num, batch_size));
+        cell = *(*f_sigmoid * *cell) + *(*i_sigmoid * *c_tanh);
+        cell->checkShape(Shape(hidden_num, batch_size));
+        lstm_ctx->cells.push_back(cell);
+        hidden = *o_sigmoid * *cell->tanh();
+        hidden->checkShape(Shape(hidden_num, batch_size));
+        lstm_ctx->hiddens.push_back(hidden);
+        res.states.push_back(hidden);
+    }
+    return res;
 }
 
 Matrix *LSTM::backward(
@@ -409,20 +459,43 @@ Matrix *LSTM::backward(
 }
 
 Context *LSTM::init() {
-    assert(false);
-    return nullptr;
-
+    return new LSTMContext();
 }
 
 void LSTM::release(Context *ctx) {
-    assert(false);
+    LSTMContext *lstm_ctx = (LSTMContext *)ctx;
+    delete lstm_ctx;
 }
 
 std::vector<Parameters*> LSTM::get_parameters() {
-    assert(false);
+    std::vector<Parameters*> res;
+    res.push_back(wxi);
+    res.push_back(whi);
+    res.push_back(wxf);
+    res.push_back(whf);
+    res.push_back(wxo);
+    res.push_back(who);
+    res.push_back(wxc);
+    res.push_back(whc);
+    res.push_back(bi);
+    res.push_back(bf);
+    res.push_back(bo);
+    res.push_back(bc);
+    return res;
 }
 
 void LSTM::zero_grad() {
-    assert(false);
+    wxi->zero_grad();
+    whi->zero_grad();
+    wxf->zero_grad();
+    whf->zero_grad();
+    wxo->zero_grad();
+    who->zero_grad();
+    wxc->zero_grad();
+    whc->zero_grad();
+    bi->zero_grad();
+    bf->zero_grad();
+    bo->zero_grad();
+    bc->zero_grad();
 }
 
