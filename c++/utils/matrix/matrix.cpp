@@ -6,6 +6,8 @@
 #include <vector>
 #include <omp.h> // Include OpenMP header
 
+#define OMP_THREADS 4
+
 Matrix::Matrix(Shape _shape)
         : initialized(false),
         allocated(false),
@@ -90,7 +92,7 @@ Matrix *Matrix::expand_add(const Matrix &m) {
 Matrix *Matrix::operator+(const Matrix &m) {
     checkShape(m);
     Matrix *res = allocTmpMatrix(this);
-    #pragma omp parallel for num_threads(4)
+    #pragma omp parallel for num_threads(OMP_THREADS)
     for (uint i = 0; i < shape.rowCnt; ++i) {
         DATATYPE *m_data = m[i];
         DATATYPE *this_data = (*res)[i];
@@ -225,9 +227,11 @@ Matrix *Matrix::operator/(DATATYPE v) {
 
 Matrix *Matrix::tanh() {
     Matrix *res = allocTmpMatrix(this);
+    #pragma omp parallel for num_threads(OMP_THREADS)
     for (uint i = 0; i < shape.rowCnt; ++i) {
+        auto row = (*res)[i];
         for (uint j = 0; j < shape.colCnt; ++j) {
-            (*res)[i][j] = std::tanh((*res)[i][j]);
+            row[j] = std::tanh(row[j]);
         }
     }
     return res;
@@ -266,7 +270,7 @@ Matrix *Matrix::at(const Matrix &m) {
     DATATYPE *this_data = this->getData();
 
     // use openmp for parallelization
-    #pragma omp parallel for num_threads(4)
+    #pragma omp parallel for num_threads(OMP_THREADS)
     for (uint i = 0; i < shape.rowCnt; ++i) {
         for (uint j = 0; j < m.shape.colCnt; ++j) {
             for (uint k = 0; k < shape.colCnt; ++k) {
