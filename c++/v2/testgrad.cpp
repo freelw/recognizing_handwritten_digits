@@ -42,15 +42,15 @@ void testgrad() {
     // cout << *parameters[0]->get_weight() << endl;
     // cout << *parameters[2]->get_weight() << endl;
 
-    Matrix *input = allocTmpMatrix(Shape(7, 30));
+    Matrix *input = allocTmpMatrix(Shape(7, 1));
     std::vector<uint> labels;
-    for (uint j = 0; j < 15; ++ j) {
+    for (uint j = 0; j < 1; ++ j) {
         for (uint i = 0; i < 7; ++ i) {
             (*input)[i][j*2] = 10 + i;
-            (*input)[i][j*2+1] = 10 - i;
+            // (*input)[i][j*2+1] = 10 - i;
         }
         labels.push_back(1);
-        labels.push_back(0);
+        // labels.push_back(0);
     }
 
     Adam adam(m.get_parameters(), 0.001);

@@ -46,7 +46,7 @@ void testgrad() {
     Matrix *mb1 = allocTmpMatrix(Shape(4, 1));
     Matrix *mW2 = allocTmpMatrix(Shape(3, 4));
     Matrix *mb2 = allocTmpMatrix(Shape(3, 1));
-    Matrix *mX = allocTmpMatrix(Shape(7, 30));
+    Matrix *mX = allocTmpMatrix(Shape(7, 1));
 
     (*mW1)[0][0] = 0.9;
     (*mW1)[1][0] = -0.9;
@@ -57,13 +57,13 @@ void testgrad() {
     std::cout << *mW2 << std::endl;
 
     std::vector<uint> labels;
-    for (uint j = 0; j < 15; ++ j) {
+    for (uint j = 0; j < 1; ++ j) {
         for (uint i = 0; i < 7; ++ i) {
             (*mX)[i][j*2] = 10 + i;
-            (*mX)[i][j*2+1] = 10 - i;
+            // (*mX)[i][j*2+1] = 10 - i;
         }
         labels.push_back(1);
-        labels.push_back(0);
+        // labels.push_back(0);
     }
 
     std::vector<autograd::Parameters *> parameters;
@@ -85,11 +85,11 @@ void testgrad() {
     //auto Z1 = X->at(W1)->expand_add(b1)->Relu();
     auto Z1 = W1->at(X)->expand_add(b1)->Relu();
     assert(Z1->get_weight()->getShape().rowCnt == 4);
-    assert(Z1->get_weight()->getShape().colCnt == 30);
+    assert(Z1->get_weight()->getShape().colCnt == 1);
     // auto Z2 = Z1->at(W2)->expand_add(b2)->Relu();
     auto Z2 = W2->at(Z1)->expand_add(b2)->Relu();
     assert(Z2->get_weight()->getShape().rowCnt == 3);
-    assert(Z2->get_weight()->getShape().colCnt == 30);
+    assert(Z2->get_weight()->getShape().colCnt == 1);
     auto loss = Z2->CrossEntropy(labels);
     assert(loss->get_weight()->getShape().rowCnt == 1);
     assert(loss->get_weight()->getShape().colCnt == 1);
@@ -99,14 +99,14 @@ void testgrad() {
     loss->backward();
     adam.step();
 
-    std::cout << W1->get_weight() << std::endl;
-    std::cout << W1->get_grad() << std::endl;
-    std::cout << b1->get_weight() << std::endl;
-    std::cout << b1->get_grad() << std::endl;
-    std::cout << W2->get_weight() << std::endl;
-    std::cout << W2->get_grad() << std::endl;
-    std::cout << b2->get_weight() << std::endl;
-    std::cout << b2->get_grad() << std::endl;
+    std::cout << *(W1->get_weight()) << std::endl;
+    std::cout << *(W1->get_grad()) << std::endl;
+    std::cout << *(b1->get_weight()) << std::endl;
+    std::cout << *(b1->get_grad()) << std::endl;
+    std::cout << *(W2->get_weight()) << std::endl;
+    std::cout << *(W2->get_grad()) << std::endl;
+    std::cout << *(b2->get_weight()) << std::endl;
+    std::cout << *(b2->get_grad()) << std::endl;
     autograd::freeAllNodes();
     autograd::freeAllEdges();
     freeTmpMatrix();
