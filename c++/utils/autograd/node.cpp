@@ -33,38 +33,7 @@ namespace autograd {
         (*loss)[0][0] = loss_value/labels.size();
         return loss;
     }
-
-    Matrix * CrossEntropyGrad(Matrix *input, const std::vector<uint> &labels) {
-        Matrix *grad = allocTmpMatrix(Shape(input->getShape()));
-        auto batch_size = labels.size();
-        for (uint j = 0; j < input->getShape().colCnt; ++ j) {
-            DATATYPE max = (*input)[0][j];
-            for (uint i = 0; i < input->getShape().rowCnt; ++ i) {
-                auto e = (*input)[i][j];
-                if (max < e) {
-                    max = e;
-                }
-            }
-            DATATYPE sum = 0;
-            auto target = labels[j];
-            DATATYPE zt = (*input)[target][j];
-            for (uint i = 0; i < input->getShape().rowCnt; ++ i) {
-                DATATYPE e = (*input)[i][j];
-                e = std::exp(e-max);
-                sum += e;
-            }
-            for (uint i = 0; i < input->getShape().rowCnt; ++i) {
-                if (i == target) {
-                    continue;
-                }
-                auto &_grad = (*grad)[i][j];
-                _grad = std::exp((*input)[i][j] - max) / sum / batch_size;
-            }
-            (*grad)[target][j] = (std::exp((*input)[target][j] - max) / sum - 1) / batch_size;
-        }
-        return grad;
-    }
-   
+ 
     Node *Node::operator+(Node *rhs) {
         auto *node = allocNode(*w + *(rhs->w));
         if (is_require_grad() || rhs->is_require_grad()) {
@@ -122,7 +91,7 @@ namespace autograd {
         assert(info.size() == w->getShape().colCnt);
         if (is_require_grad()) {
             node->require_grad();
-            node->edges.push_back(CrossEntropyEdge::create(this, labels));
+            node->edges.push_back(CrossEntropyEdge::create(this, labels, info));
         }
         return node;
     }
