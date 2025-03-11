@@ -14,10 +14,18 @@ class MLP {
         DATATYPE backward(Matrix *input, const std::vector<uint> &labels);
         std::vector<Parameters*> get_parameters();
     private:
-        Parameters *W1;
-        Parameters *b1;
-        Parameters *W2;
-        Parameters *b2;
+        Matrix *mW1;
+        Matrix *mb1;
+        Matrix *mW2;
+        Matrix *mb2;
+        Node *W1;
+        Node *b1;
+        Node *W2;
+        Node *b2;
+        Parameters *PW1;
+        Parameters *Pb1;
+        Parameters *PW2;
+        Parameters *Pb2;
 };
     
 } // namespace autograd
