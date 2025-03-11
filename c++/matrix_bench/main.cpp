@@ -1,5 +1,5 @@
 #include <iostream>
-#define OMP_THREADS 4
+#define OMP_THREADS 8
 #include "matrix/matrix.h"
 #include <random>
 #include <chrono>
