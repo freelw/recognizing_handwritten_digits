@@ -1,5 +1,5 @@
 #include "node.h"
-
+#include <assert.h>
 
 namespace autograd {
    
@@ -22,10 +22,10 @@ namespace autograd {
         if (is_require_grad() || rhs->is_require_grad()) {
             node->require_grad();
             if (is_require_grad()) {
-                node->edges.push_back(allocEdge({}, Add, this));
+                node->edges.push_back(allocEdge({}, ExpandAdd, this));
             }
             if (rhs->is_require_grad()) {
-                node->edges.push_back(allocEdge({}, Add, rhs));
+                node->edges.push_back(allocEdge({}, ExpandAdd, rhs));
             }
         }
         return node;
@@ -36,7 +36,7 @@ namespace autograd {
         if (is_require_grad() || rhs->is_require_grad()) {
             node->require_grad();
             if (is_require_grad()) {
-                node->edges.push_back(allocEdge({rhs->w}, MatMul, this->grad));
+                node->edges.push_back(allocEdge({rhs->w}, MatMul, this));
             }
             if (rhs->is_require_grad()) {
                 node->edges.push_back(allocEdge({w}, MatMul, rhs));
@@ -49,7 +49,7 @@ namespace autograd {
         auto *node = allocNode(w->Relu());
         if (is_require_grad()) {
             node->require_grad();
-            node->edges.push_back(allocEdge({w}, OpType::Relu, grad));
+            node->edges.push_back(allocEdge({w}, OpType::Relu, this));
         }
         return node;
     }
@@ -59,26 +59,37 @@ namespace autograd {
         if (!is_require_grad()) {
             return;
         }
-        if (grad == nullptr) {
-            grad = allocTmpMatrix(w->getShape());
-        }
+        assert(grad != nullptr);
         for (auto edge : edges) {
+            edge->node->dec_ref();
+            if (!edge->node->is_require_grad()) {
+                continue;
+            }
             switch (edge->type) {
                 case Add:
-                    *grad += *edge->t_grad;
+                    assert(edge->params.size() == 0);
+                    *edge->node->grad += *grad;
+                    break;
+                case ExpandAdd:
+                    assert(edge->params.size() == 0);
+                    *edge->node->grad += *(grad->sum(1));
                     break;
                 case MatMul:
-                    *grad += *(*edge->t_grad * *(edge->params[0]->transpose()));
+                    assert(edge->params.size() == 1);
+                    *edge->node->grad += *(grad->at(*(edge->params[0]->transpose())));
                     break;
                 case OpType::Relu:
-                    *grad += *(*edge->t_grad * *(w->Relu_prime()));
+                    assert(edge->params.size() == 0);
                     break;
                 default:
                     break;
             }
         }
         for (auto edge : edges) {
-            edge->node->backward();
+            if (edge->node->is_require_grad() && 
+                edge->node->get_ref() == 0) {
+                edge->node->backward();
+            }
         }
     }
 

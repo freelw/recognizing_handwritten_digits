@@ -9,6 +9,7 @@
 namespace autograd {
     enum OpType {
         Add,
+        ExpandAdd,
         Mul,
         Sub,
         Div,
@@ -38,7 +39,6 @@ namespace autograd {
         Edge(
             const std::vector<Matrix *> &_params,
             OpType _type,
-            Matrix *_t_grad,
             Node *_node) 
             : params(_params), type(_type),
             node(_node) {
@@ -59,6 +59,9 @@ namespace autograd {
         }
         void require_grad() {
             requires_grad = true;
+            if (grad == nullptr) {
+                grad = allocTmpMatrix(w->getShape());
+            }
         }
         bool is_require_grad() const {
             return requires_grad;
