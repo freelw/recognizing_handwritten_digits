@@ -89,5 +89,6 @@ Matrix *allocTmpMatrix(Matrix *m);
 Matrix *allocTmpMatrix(const Matrix &m);
 Matrix *allocTmpMatrix(const Shape & shape);
 void freeTmpMatrix();
+void init_weight(Matrix *weight, DATATYPE sigma);
 
 #endif

@@ -5,6 +5,8 @@
 #include <string.h>
 #include <vector>
 #include <omp.h> // Include OpenMP header
+#include <random>
+#include <chrono>
 
 Matrix::Matrix(Shape _shape)
         : initialized(false),
@@ -430,4 +432,15 @@ TrainingData::TrainingData(int input_layer_size, int _y)
 
 TrainingData::~TrainingData() {
     delete x;
+}
+
+void init_weight(Matrix *weight, DATATYPE sigma) {
+    unsigned seed1 = std::chrono::system_clock::now().time_since_epoch().count();
+    std::default_random_engine generator_w(seed1);
+    std::normal_distribution<DATATYPE> distribution_w(0.0, sigma);
+    for (uint i = 0; i < weight->getShape().rowCnt; ++ i) {
+        for (uint j = 0; j < weight->getShape().colCnt; ++ j) {
+            (*weight)[i][j] = distribution_w(generator_w);
+        }
+    }
 }
