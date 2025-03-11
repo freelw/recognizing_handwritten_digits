@@ -7,6 +7,10 @@
 
 using namespace std;
 
+#ifndef OMP_THREADS
+#define OMP_THREADS 4
+#endif
+
 struct Shape {
     uint rowCnt;
     uint colCnt;

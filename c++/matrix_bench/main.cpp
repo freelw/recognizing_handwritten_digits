@@ -1,4 +1,5 @@
 #include <iostream>
+#define OMP_THREADS 4
 #include "matrix/matrix.h"
 #include <random>
 #include <chrono>
@@ -28,8 +29,8 @@ int main() {
     Matrix *Wo = new Matrix(Shape(output_size, hidden_size));
     Matrix *Bo = new Matrix(Shape(output_size, 1));
 
-    
-    for (auto epoch = 0; epoch < 30; ++ epoch) {
+    cout << "OMP_THREADS : " << OMP_THREADS << endl;
+    for (auto epoch = 0; epoch < 1; ++ epoch) {
         for (auto i = 0; i < 170; ++ i) {
             Matrix *H = allocTmpMatrix(Shape(hidden_size, batch_size));
             for (uint j = 0; j < num_steps; ++ j) {
@@ -42,5 +43,11 @@ int main() {
         }
         cout << endl;
     }
+    delete Input;
+    delete Wx;
+    delete Wh;
+    delete B;
+    delete Wo;
+    delete Bo;
     return 0;
 }

@@ -6,8 +6,6 @@
 #include <vector>
 #include <omp.h> // Include OpenMP header
 
-#define OMP_THREADS 4
-
 Matrix::Matrix(Shape _shape)
         : initialized(false),
         allocated(false),
