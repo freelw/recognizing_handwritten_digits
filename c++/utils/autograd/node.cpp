@@ -1,5 +1,6 @@
 #include "node.h"
 #include <assert.h>
+#include <iostream>
 
 namespace autograd {
 

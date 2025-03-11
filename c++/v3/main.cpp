@@ -42,11 +42,11 @@
 }*/
 
 void testgrad() {
-    Matrix *mW1 = allocTmpMatrix(Shape(4, 7));
-    Matrix *mb1 = allocTmpMatrix(Shape(4, 1));
-    Matrix *mW2 = allocTmpMatrix(Shape(3, 4));
-    Matrix *mb2 = allocTmpMatrix(Shape(3, 1));
-    Matrix *mX = allocTmpMatrix(Shape(7, 1));
+    Matrix *mW1 = allocTmpMatrix(Shape(4, 7))->fill(0.1);
+    Matrix *mb1 = allocTmpMatrix(Shape(4, 1))->fill(0.1);
+    Matrix *mW2 = allocTmpMatrix(Shape(3, 4))->fill(0.1);
+    Matrix *mb2 = allocTmpMatrix(Shape(3, 1))->fill(0.1);
+    Matrix *mX = allocTmpMatrix(Shape(7, 1))->fill(0.1);    
 
     (*mW1)[0][0] = 0.9;
     (*mW1)[1][0] = -0.9;
@@ -83,13 +83,20 @@ void testgrad() {
 
     autograd::Adam adam(parameters, 0.001);
     //auto Z1 = X->at(W1)->expand_add(b1)->Relu();
+    // std::cout << "X : " << *X->get_weight() << std::endl;
+    // std::cout << "W1 : " << *W1->get_weight() << std::endl;
+    // std::cout << "b1 : " << *b1->get_weight() << std::endl;
     auto Z1 = W1->at(X)->expand_add(b1)->Relu();
     assert(Z1->get_weight()->getShape().rowCnt == 4);
     assert(Z1->get_weight()->getShape().colCnt == 1);
+    std::cout << "Z1 : " << *(Z1->get_weight()) << std::endl;
+    
     // auto Z2 = Z1->at(W2)->expand_add(b2)->Relu();
-    auto Z2 = W2->at(Z1)->expand_add(b2)->Relu();
+    auto Z2 = W2->at(Z1)->expand_add(b2);
     assert(Z2->get_weight()->getShape().rowCnt == 3);
     assert(Z2->get_weight()->getShape().colCnt == 1);
+
+    std::cout << "Z2 : " << *(Z2->get_weight()) << std::endl;
     auto loss = Z2->CrossEntropy(labels);
     assert(loss->get_weight()->getShape().rowCnt == 1);
     assert(loss->get_weight()->getShape().colCnt == 1);

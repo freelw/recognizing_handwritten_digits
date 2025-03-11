@@ -67,6 +67,7 @@ public:
     Matrix *sum(uint dim);
     std::vector<Matrix *> split(uint dim);
     DATATYPE *getData() const;
+    Matrix *fill(DATATYPE value);
 private:
     bool initialized;
     bool allocated;

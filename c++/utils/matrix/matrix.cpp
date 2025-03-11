@@ -369,6 +369,15 @@ DATATYPE *Matrix::getData() const {
     return data;
 }
 
+Matrix *Matrix::fill(DATATYPE value) {
+    for (uint i = 0; i < shape.rowCnt; ++ i) {
+        for (uint j = 0; j < shape.colCnt; ++ j) {
+            (*this)[i][j] = value;
+        }
+    }
+    return this;
+}
+
 DATATYPE sigmoid(DATATYPE z) {
     return 1./(1.+exp(-z));
 }
