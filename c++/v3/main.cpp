@@ -40,13 +40,16 @@
     }
     freeTmpMatrix();
 }*/
+Matrix *allocMatrix(Shape shape) {
+    return new Matrix(shape);
+}
 
 void testgrad() {
-    Matrix *mW1 = allocTmpMatrix(Shape(4, 7))->fill(0.1);
-    Matrix *mb1 = allocTmpMatrix(Shape(4, 1))->fill(0.1);
-    Matrix *mW2 = allocTmpMatrix(Shape(3, 4))->fill(0.1);
-    Matrix *mb2 = allocTmpMatrix(Shape(3, 1))->fill(0.1);
-    Matrix *mX = allocTmpMatrix(Shape(7, 1))->fill(0.1);    
+    Matrix *mW1 = allocMatrix(Shape(4, 7))->fill(0.1);
+    Matrix *mb1 = allocMatrix(Shape(4, 1))->fill(0.1);
+    Matrix *mW2 = allocMatrix(Shape(3, 4))->fill(0.1);
+    Matrix *mb2 = allocMatrix(Shape(3, 1))->fill(0.1);
+    Matrix *mX = allocMatrix(Shape(7, 30));
 
     (*mW1)[0][0] = 0.9;
     (*mW1)[1][0] = -0.9;
@@ -57,13 +60,13 @@ void testgrad() {
     std::cout << *mW2 << std::endl;
 
     std::vector<uint> labels;
-    for (uint j = 0; j < 1; ++ j) {
+    for (uint j = 0; j < 15; ++ j) {
         for (uint i = 0; i < 7; ++ i) {
             (*mX)[i][j*2] = 10 + i;
-            // (*mX)[i][j*2+1] = 10 - i;
+            (*mX)[i][j*2+1] = 10 - i;
         }
         labels.push_back(1);
-        // labels.push_back(0);
+        labels.push_back(0);
     }
 
     std::vector<autograd::Parameters *> parameters;
@@ -86,34 +89,39 @@ void testgrad() {
     // std::cout << "X : " << *X->get_weight() << std::endl;
     // std::cout << "W1 : " << *W1->get_weight() << std::endl;
     // std::cout << "b1 : " << *b1->get_weight() << std::endl;
-    auto Z1 = W1->at(X)->expand_add(b1)->Relu();
-    assert(Z1->get_weight()->getShape().rowCnt == 4);
-    assert(Z1->get_weight()->getShape().colCnt == 1);
-    std::cout << "Z1 : " << *(Z1->get_weight()) << std::endl;
-    
-    // auto Z2 = Z1->at(W2)->expand_add(b2)->Relu();
-    auto Z2 = W2->at(Z1)->expand_add(b2);
-    assert(Z2->get_weight()->getShape().rowCnt == 3);
-    assert(Z2->get_weight()->getShape().colCnt == 1);
+    for (auto k = 0; k < 20; ++ k) {
+        auto Z1 = W1->at(X)->expand_add(b1)->Relu();
+        assert(Z1->get_weight()->getShape().rowCnt == 4);
+        assert(Z1->get_weight()->getShape().colCnt == 30);
+        // std::cout << "Z1 : " << *(Z1->get_weight()) << std::endl;
+        
+        // auto Z2 = Z1->at(W2)->expand_add(b2)->Relu();
+        auto Z2 = W2->at(Z1)->expand_add(b2);
+        assert(Z2->get_weight()->getShape().rowCnt == 3);
+        assert(Z2->get_weight()->getShape().colCnt == 30);
 
-    std::cout << "Z2 : " << *(Z2->get_weight()) << std::endl;
-    auto loss = Z2->CrossEntropy(labels);
-    assert(loss->get_weight()->getShape().rowCnt == 1);
-    assert(loss->get_weight()->getShape().colCnt == 1);
-    std::cout << "loss : " << *(loss->get_weight()) << std::endl;
+        // std::cout << "Z2 : " << *(Z2->get_weight()) << std::endl;
+        auto loss = Z2->CrossEntropy(labels);
+        assert(loss->get_weight()->getShape().rowCnt == 1);
+        assert(loss->get_weight()->getShape().colCnt == 1);
+    // std::cout << "loss : " << *(loss->get_weight()) << std::endl;
+        adam.zero_grad();
+        loss->backward();
+        adam.step();
 
-    adam.zero_grad();
-    loss->backward();
-    adam.step();
+        if (k == 19) {
+            std::cout << *(W1->get_weight()) << std::endl;
+            std::cout << *(W1->get_grad()) << std::endl;
+            std::cout << *(b1->get_weight()) << std::endl;
+            std::cout << *(b1->get_grad()) << std::endl;
+            std::cout << *(W2->get_weight()) << std::endl;
+            std::cout << *(W2->get_grad()) << std::endl;
+            std::cout << *(b2->get_weight()) << std::endl;
+            std::cout << *(b2->get_grad()) << std::endl;
+        }
+        freeTmpMatrix();
+    }
 
-    std::cout << *(W1->get_weight()) << std::endl;
-    std::cout << *(W1->get_grad()) << std::endl;
-    std::cout << *(b1->get_weight()) << std::endl;
-    std::cout << *(b1->get_grad()) << std::endl;
-    std::cout << *(W2->get_weight()) << std::endl;
-    std::cout << *(W2->get_grad()) << std::endl;
-    std::cout << *(b2->get_weight()) << std::endl;
-    std::cout << *(b2->get_grad()) << std::endl;
     autograd::freeAllNodes();
     autograd::freeAllEdges();
     freeTmpMatrix();
@@ -121,6 +129,11 @@ void testgrad() {
     for (auto p : parameters) {
         delete p;
     }
+    delete mW1;
+    delete mb1;
+    delete mW2;
+    delete mb2;
+    delete mX;
 }
 
 int main(int argc, char *argv[]) {

@@ -48,9 +48,7 @@ namespace autograd {
             }
             void require_grad() {
                 requires_grad = true;
-                if (grad == nullptr) {
-                    grad = allocTmpMatrix(w->getShape());
-                }
+                grad = allocTmpMatrix(w->getShape());
             }
             bool is_require_grad() const {
                 return requires_grad;
@@ -78,9 +76,7 @@ namespace autograd {
             }
 
             void zero_grad() {
-                if (grad != nullptr) {
-                    grad->zero();
-                }
+                grad = allocTmpMatrix(w->getShape());                
             }
 
             Node *operator+(Node *rhs);

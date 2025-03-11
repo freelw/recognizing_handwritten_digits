@@ -7,3 +7,4 @@ c++/rnn/rnn
 c++/lstm/lstm
 c++/matrix_bench/bench
 c++/v3/autogradtest
+c++/v3/c.log

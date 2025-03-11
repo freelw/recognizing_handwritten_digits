@@ -4,12 +4,14 @@ namespace autograd {
 
     Parameters::Parameters(Node *node) {
         w = node;
-        m = allocTmpMatrix(w->getShape());
-        v = allocTmpMatrix(w->getShape());
+        m = new Matrix(w->getShape());
+        v = new Matrix(w->getShape());
         t = 0;
     }
 
     Parameters::~Parameters() {
+        delete m;
+        delete v;
     }
 
     void Parameters::zero_grad() {
