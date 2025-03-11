@@ -5,7 +5,6 @@ TARGET	= recognizing_handwritten_digits_v1
 CFLAGS = -g -Wall $(DIR_INC) $(DIR_LIB)
 LDFLAGS += -lstdc++
 SRCDIR:= ../utils/dataloader
-SRCDIR+= ../utils/matrix
 SRCS := $(wildcard *.cpp) $(wildcard $(addsuffix /*.cpp, $(SRCDIR)))
 OBJECTS := $(patsubst %.c,%.o,$(SRCS))
 $(TARGET) : $(OBJECTS)

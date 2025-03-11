@@ -69,11 +69,6 @@ Matrix *Liner::backward(Context *ctx, Matrix *grad) {
     return res_grad;
 }
 
-void Liner::zero_grad() {
-    weigt->zero_grad();
-    bias->zero_grad();
-}
-
 Context *Liner::init() {
     return new LinerContext();
 }
@@ -330,12 +325,6 @@ std::vector<Parameters*> Rnn::get_parameters() {
     return res;
 }
 
-void Rnn::zero_grad() {
-    wxh->zero_grad();
-    whh->zero_grad();
-    bh->zero_grad();
-}
-
 void init_weight(Matrix *weight, DATATYPE sigma) {
     unsigned seed1 = std::chrono::system_clock::now().time_since_epoch().count();
     std::default_random_engine generator_w(seed1);
@@ -570,19 +559,3 @@ std::vector<Parameters*> LSTM::get_parameters() {
     res.push_back(bc);
     return res;
 }
-
-void LSTM::zero_grad() {
-    wxi->zero_grad();
-    whi->zero_grad();
-    wxf->zero_grad();
-    whf->zero_grad();
-    wxo->zero_grad();
-    who->zero_grad();
-    wxc->zero_grad();
-    whc->zero_grad();
-    bi->zero_grad();
-    bf->zero_grad();
-    bo->zero_grad();
-    bc->zero_grad();
-}
-

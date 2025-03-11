@@ -11,8 +11,6 @@
 
 bool shutdown = false;
 
-extern int emit_clip;
-
 #define RESOURCE_NAME "../../resources/timemachine_preprocessed.txt"
 
 void load_data() {
@@ -114,7 +112,7 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
     std::string checkpoint_prefix = "checkpoint" + generateDateTimeSuffix();
     for (uint epoch = 0; epoch < epochs; epoch++) {
         DATATYPE loss_sum = 0;
-        emit_clip = 0;
+        int emit_clip = 0;
         for (uint i = 0; i < loader.data.size() - num_steps; i++) {
             std::vector<Matrix *> inputs;
             std::vector<uint> labels;
@@ -135,9 +133,11 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
             loss_sum += (*loss)[0][0];
             auto grad = loss_fn.backward(ce_ctx, nullptr);
             loss_fn.release(ce_ctx);
-            lm.zero_grad();
+            adam.zero_grad();
             lm.backward(ctx, grad);
-            lm.clip_grad(1);
+            if (adam.clip_grad(1)) {
+                emit_clip++;
+            }
             adam.step();
             lm.release(ctx);
             freeTmpMatrix();

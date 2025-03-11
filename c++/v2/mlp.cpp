@@ -61,9 +61,3 @@ std::vector<Parameters*> MLP::get_parameters() {
     }
     return res;
 }
-
-void MLP::zero_grad() {
-    for (auto layer : layers) {
-        layer->zero_grad();
-    }
-}

@@ -3,8 +3,6 @@
 
 #include <iostream>
 
-int emit_clip = 0;
-
 RnnLM::RnnLM(RnnBase *_rnn, uint _vocab_size, bool rand) : rnn(_rnn), vocab_size(_vocab_size) {
     if (!rand) {
         std::cerr << "Warning: using fixed weight for RnnLM" << std::endl;
@@ -63,34 +61,6 @@ std::vector<Parameters*> RnnLM::get_parameters() {
     auto fc_params = fc->get_parameters();
     res.insert(res.end(), fc_params.begin(), fc_params.end());
     return res;
-}
-
-void RnnLM::zero_grad() {
-    rnn->zero_grad();
-    fc->zero_grad();
-}
-
-void RnnLM::clip_grad(DATATYPE grad_clip_val) {
-    std::vector<Parameters*> params = get_parameters();
-    double norm = 0;
-    for (auto param : params) {
-        auto grad = param->get_grad();
-        Shape shape = grad->getShape();
-        for (uint i = 0; i < shape.rowCnt; ++ i) {
-            for (uint j = 0; j < shape.colCnt; ++ j) {
-                norm += std::pow((*grad)[i][j], 2);
-            }
-        }
-    }
-    norm = sqrt(norm);
-    if (norm > grad_clip_val) {
-        emit_clip++;
-        for (auto param : params) {
-            // std::cout << "norm : " << norm << endl;
-            auto grad = param->get_grad();
-            *grad *= grad_clip_val / norm;
-        }
-    }
 }
 
 std::string RnnLM::predict(const std::string &prefix, uint num_preds) {

@@ -1,11 +1,9 @@
 DIR_INC = -I./
-DIR_INC += -I../utils
+DIR_INC += -I../utils/
 DIR_LIB = -L./
-TARGET	= recognizing_handwritten_digits_v0
-#CFLAGS = -g -Wall $(DIR_INC) $(DIR_LIB)
+TARGET	= bench
 CFLAGS = -g -Wall $(DIR_INC) $(DIR_LIB) -fsanitize=address -fopenmp
-LDFLAGS += -lstdc++
-SRCDIR:= ../utils/dataloader
+LDFLAGS += -lstdc++ -fopenmp
 SRCDIR+= ../utils/matrix
 SRCS := $(wildcard *.cpp) $(wildcard $(addsuffix /*.cpp, $(SRCDIR)))
 OBJECTS := $(patsubst %.c,%.o,$(SRCS))
@@ -16,7 +14,3 @@ $(TARGET) : $(OBJECTS)
 clean:
 	@rm -f *.o $(TARGET)
 .PHONY:clean
-prepare_data:
-	cd ../../resources && \
-	gunzip -c train-labels-idx1-ubyte.gz > train-labels-idx1-ubyte && \
-	gunzip -c train-images-idx3-ubyte.gz > train-images-idx3-ubyte

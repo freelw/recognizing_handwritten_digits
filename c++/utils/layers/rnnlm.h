@@ -15,8 +15,6 @@ class RnnLM {
         virtual RnnLMContext *init();
         virtual void release(RnnLMContext *);
         virtual std::vector<Parameters*> get_parameters();
-        virtual void zero_grad();
-        void clip_grad(DATATYPE grad_clip_val);
         std::string predict(const std::string &prefix, uint num_preds);
     private:
         RnnBase *rnn;

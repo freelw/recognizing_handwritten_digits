@@ -10,6 +10,8 @@ class Adam {
                 beta1(_beta1), beta2(_beta2), epsilon(_epsilon)
             {}
         void step();
+        void zero_grad();
+        bool clip_grad(DATATYPE grad_clip_val);
     private:
         std::vector<Parameters*> parameters;
         DATATYPE lr; 
