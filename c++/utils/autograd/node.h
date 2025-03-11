@@ -72,6 +72,16 @@ namespace autograd {
                 return grad;
             }
 
+            Shape getShape() {
+                return w->getShape();
+            }
+
+            void zero_grad() {
+                if (grad != nullptr) {
+                    grad->zero();
+                }
+            }
+
             Node *operator+(Node *rhs);
             Node *expand_add(Node *rhs);
             Node *at(Node *rhs);
