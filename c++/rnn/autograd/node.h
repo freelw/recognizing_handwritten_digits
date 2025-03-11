@@ -7,6 +7,9 @@
 #include "matrix/matrix.h"
 
 namespace autograd {
+    extern std::vector<Edge *> edges;
+    extern std::vector<Node *> nodes;
+
     enum OpType {
         Add,
         ExpandAdd,
@@ -34,22 +37,128 @@ namespace autograd {
         Flatten,
     };
     class Node;
+
     class Edge {
     public:
         Edge(
-            const std::vector<Matrix *> &_params,
             OpType _type,
             Node *_node) 
-            : params(_params), type(_type),
+            : type(_type),
             node(_node) {
                 node->inc_ref();
             }
-    private:
-        std::vector<Matrix *> params;
+        virtual ~Edge() {};
+        virtual void backward(Matrix *grad) = 0;
+    protected:
         OpType type;
-        Node *node;
+        Node *node; // node that this edge points to
     friend class Node;
     };
+
+    class AddEdge : public Edge {
+        public:
+            static Edge* create(Node *_node) {
+                Edge *edge = new AddEdge(_node);
+                edges.push_back(edge);
+                return edge;
+            }
+            AddEdge(Node *_node)
+                : Edge(Add, _node) {}
+            virtual ~AddEdge() {}
+            void backward(Matrix *grad) override {
+                assert(node->is_require_grad());
+                *node->get_grad() += *grad;
+            }
+    };
+
+    class ExpandAddEdge : public Edge {
+        public:
+            static Edge* create(Node *_node) {
+                Edge *edge = new ExpandAddEdge(_node);
+                edges.push_back(edge);
+                return edge;
+            }
+            ExpandAddEdge(Node *_node)
+                : Edge(ExpandAdd, _node) {}
+            virtual ~ExpandAddEdge() {}
+            void backward(Matrix *grad) override {
+                assert(node->is_require_grad());
+                *node->get_grad() += *(grad->sum(1));
+            }
+    };
+
+    class MatMulEdge : public Edge {
+        public:
+            static Edge* create(Node *_node, Matrix *_param) {
+                Edge *edge = new MatMulEdge(_node, _param);
+                edges.push_back(edge);
+                return edge;
+            }
+            MatMulEdge(Node *_node, Matrix *_param)
+                : Edge(MatMul, _node), param(_param) {}
+            virtual ~MatMulEdge() {}
+            void backward(Matrix *grad) override {
+                assert(node->is_require_grad());
+                *node->get_grad() += *(grad->at(*(param->transpose())));
+            }
+        private:
+            Matrix *param;
+    };
+
+    class ReluEdge : public Edge {
+        public:
+            static Edge* create(Node *_node) {
+                Edge *edge = new ReluEdge(_node);
+                edges.push_back(edge);
+                return edge;
+            }
+            ReluEdge(Node *_node)
+                : Edge(Relu, _node) {}
+            virtual ~ReluEdge() {}
+            void backward(Matrix *grad) override {
+                assert(node->is_require_grad());
+                for (uint i = 0; i < grad->getShape().rowCnt; ++ i) {
+                    for (uint j = 0; j < grad->getShape().colCnt; ++ j) {
+                        auto &value = (*node->get_weight())[i][j];
+                        (*node->get_grad())[i][j] += value > 0 ? (*grad)[i][j] : 0;
+                    }
+                }
+            }
+    };
+
+    struct CrosEntropyInfo {
+        DATATYPE sum, max;
+    };
+
+    class CrossEntropyEdge : public Edge {
+        public:
+            static Edge* create(Node *_node, const std::vector<uint> &_labels, const std::vector<CrosEntropyInfo> &_info) { 
+                Edge *edge = new CrossEntropyEdge(_node, _labels, _info);
+                edges.push_back(edge);
+                return edge;
+            }
+            CrossEntropyEdge(Node *_node, const std::vector<uint> &_labels, const std::vector<CrosEntropyInfo> &_info)
+                : Edge(CrossEntropy, _node), labels(_labels), info(_info) {}
+            virtual ~CrossEntropyEdge() {}
+            void backward(Matrix *) override {
+                assert(node->is_require_grad());
+                for (uint i = 0; i < labels.size(); ++ i) {
+                    auto target = labels[i];
+                    for (uint j = 0; j < node->get_weight()->getShape().rowCnt; ++ j) {
+                        if (j == target) {
+                            continue;
+                        }
+                        auto &_grad = (*node->get_grad())[j][i];
+                        _grad = std::exp((*node->get_weight())[j][i] - max) / sum / labels.size();
+                    }
+                    (*node->get_grad())[target][i] = (std::exp((*node->get_weight())[target][i] - max) / sum - 1) / labels.size();
+                }
+            }
+        private:
+            std::vector<uint> labels;
+            std::vector<CrosEntropyInfo> info;
+    };
+
     class Node {
     public:
         Node(Matrix *_w, bool magic = false)
@@ -77,11 +186,18 @@ namespace autograd {
         }
 
         void backward();
+        Matrix *get_weight() {
+            return w;
+        }
+        Matrix *get_grad() {
+            return grad;
+        }
 
         Node *operator+(Node *rhs);
         Node *expand_add(Node *rhs);
         Node *at(Node *rhs);
         Node *Relu();
+        Node *CrossEntropy(const std::vector<uint> &labels);
         // Node *operator*(Node &rhs);
         // Node *operator/(Node &rhs);
         // Node *operator-(Node &rhs);
@@ -95,11 +211,7 @@ namespace autograd {
         int ref_cnt;
     };
 
-    extern std::vector<Edge *> edges;
-    extern std::vector<Node *> nodes;
-
     Node *allocNode(Matrix *w);
-    Edge *allocEdge(const std::vector<Matrix *> &_params, OpType _type, Matrix *_t_grad);
     void freeAllNodes();
     void freeAllEdges();
 } // namespace autograd
