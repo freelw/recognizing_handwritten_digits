@@ -49,6 +49,8 @@ public:
     Matrix *operator*(DATATYPE);
     Matrix *operator*=(DATATYPE);
     Matrix *operator/(DATATYPE);
+    Matrix *Relu();
+    Matrix *Relu_prime();
     Matrix *tanh();
     Matrix *tanh_prime();
     Matrix& operator=(const Matrix &m);

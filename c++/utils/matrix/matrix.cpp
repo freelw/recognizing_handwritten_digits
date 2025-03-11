@@ -223,6 +223,30 @@ Matrix *Matrix::operator/(DATATYPE v) {
     return res;
 }
 
+Matrix *Matrix::Relu() {
+    Matrix *res = allocTmpMatrix(this);
+    #pragma omp parallel for num_threads(OMP_THREADS)
+    for (uint i = 0; i < shape.rowCnt; ++i) {
+        auto row = (*res)[i];
+        for (uint j = 0; j < shape.colCnt; ++j) {
+            row[j] = std::max(row[j], (DATATYPE)0);
+        }
+    }
+    return res;
+}
+
+Matrix *Matrix::Relu_prime() {
+    Matrix *res = allocTmpMatrix(this);
+    #pragma omp parallel for num_threads(OMP_THREADS)
+    for (uint i = 0; i < shape.rowCnt; ++i) {
+        auto row = (*res)[i];
+        for (uint j = 0; j < shape.colCnt; ++j) {
+            row[j] = row[j] > 0 ? 1 : 0;
+        }
+    }
+    return res;
+}
+
 Matrix *Matrix::tanh() {
     Matrix *res = allocTmpMatrix(this);
     #pragma omp parallel for num_threads(OMP_THREADS)
