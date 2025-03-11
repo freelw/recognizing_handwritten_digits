@@ -21,7 +21,6 @@ class Layer {
         virtual std::vector<Parameters*> get_parameters() {
             return {};
         }
-        virtual void zero_grad() {}
 };
 
 class LinerContext: public Context {
@@ -38,7 +37,6 @@ class Liner: public Layer {
         virtual Context *init();
         virtual void release(Context *);
         virtual std::vector<Parameters*> get_parameters();
-        virtual void zero_grad();
     private:
         uint input_num;
         uint output_num;
@@ -109,7 +107,6 @@ class RnnBase {
         virtual Context *init() = 0;
         virtual void release(Context *) = 0;
         virtual std::vector<Parameters*> get_parameters() = 0;
-        virtual void zero_grad() = 0;
         virtual uint get_hidden_num() = 0;
 };
 
@@ -124,7 +121,6 @@ class Rnn: public RnnBase {
         virtual Context *init();
         virtual void release(Context *);
         virtual std::vector<Parameters*> get_parameters();
-        virtual void zero_grad();
         DATATYPE get_sigma() {
             return sigma;
         }
@@ -173,7 +169,6 @@ class LSTM: public RnnBase {
         virtual Context *init();
         virtual void release(Context *);
         virtual std::vector<Parameters*> get_parameters();
-        virtual void zero_grad();
         virtual uint get_hidden_num() {
             return hidden_num;
         }

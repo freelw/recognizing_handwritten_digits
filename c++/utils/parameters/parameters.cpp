@@ -41,9 +41,11 @@ Matrix *Parameters::get_m() {
 Matrix *Parameters::get_v() {
     return v;
 }
+
 int Parameters::get_t() {
     return t;
 }
+
 void Parameters::inc_t() {
     t++;
 }

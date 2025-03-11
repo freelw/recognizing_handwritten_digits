@@ -28,3 +28,31 @@ void Adam::step() {
         }
     }
 }
+
+void Adam::zero_grad() {
+    for (auto p : parameters) {
+        p->zero_grad();
+    }
+}
+
+bool Adam::clip_grad(DATATYPE grad_clip_val) {
+    DATATYPE norm = 0;
+    
+    for (auto param : parameters) {
+        auto grad = param->get_grad();
+        Shape shape = grad->getShape();
+        for (uint i = 0; i < shape.rowCnt; ++ i) {
+            for (uint j = 0; j < shape.colCnt; ++ j) {
+                norm += std::pow((*grad)[i][j], 2);
+            }
+        }
+    }
+    norm = sqrt(norm);
+    if (norm > grad_clip_val) {
+        for (auto param : parameters) {
+            auto grad = param->get_grad();
+            *grad *= grad_clip_val / norm;
+        }
+    }
+    return norm > grad_clip_val;
+}

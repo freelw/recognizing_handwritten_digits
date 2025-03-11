@@ -49,9 +49,9 @@ void testgrad() {
         auto grad = loss_fn.backward(ce_ctx, nullptr);
         loss_fn.release(ce_ctx);
         // std::cout << "grad : " << *grad << std::endl;
-        lm.zero_grad();
+        adam.zero_grad();
         lm.backward(ctx, grad);
-        lm.clip_grad(1);
+        adam.clip_grad(1);
         adam.step();
         lm.release(ctx);
     }

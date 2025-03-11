@@ -14,7 +14,6 @@ class MLP {
         Matrix *forward(Matrix *input);
         DATATYPE backward(Matrix *input, const std::vector<uint> &labels);
         std::vector<Parameters*> get_parameters();
-        void zero_grad();
     private:
         std::vector<Layer*> layers;
         uint input;

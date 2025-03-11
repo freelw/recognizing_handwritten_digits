@@ -3,7 +3,7 @@ DIR_INC += -I../utils
 DIR_LIB = -L./
 TARGET	= recognizing_handwritten_digits_v0
 #CFLAGS = -g -Wall $(DIR_INC) $(DIR_LIB)
-CFLAGS = -g -Wall $(DIR_INC) $(DIR_LIB) -fsanitize=address
+CFLAGS = -g -Wall $(DIR_INC) $(DIR_LIB) -fsanitize=address -fopenmp
 LDFLAGS += -lstdc++
 SRCDIR:= ../utils/dataloader
 SRCDIR+= ../utils/matrix

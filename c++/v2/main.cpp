@@ -51,7 +51,7 @@ double update_mini_batch(
     for (uint j = 0; j < mini_batch.size(); ++ j) {
         labels.emplace_back(mini_batch[j]->y);
     }
-    m.zero_grad();
+    optimizer.zero_grad();
     double loss = m.backward(input, labels);
     optimizer.step();
     freeTmpMatrix();

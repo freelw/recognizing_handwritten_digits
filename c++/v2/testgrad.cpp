@@ -56,7 +56,7 @@ void testgrad() {
     Adam adam(m.get_parameters(), 0.001);
     
     for (uint k = 0; k < 20; ++ k) {
-        m.zero_grad();
+        adam.zero_grad();
         auto loss = m.backward(input, labels);
         cout << k << " loss : " << loss << endl;
         adam.step();
