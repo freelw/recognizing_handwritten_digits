@@ -53,7 +53,7 @@ namespace autograd {
         if (is_require_grad() || rhs->is_require_grad()) {
             node->require_grad();
             if (is_require_grad()) {
-                node->edges.push_back(ExpandAddEdge::create(this));
+                node->edges.push_back(AddEdge::create(this));
             }
             if (rhs->is_require_grad()) {
                 node->edges.push_back(ExpandAddEdge::create(rhs));
@@ -67,10 +67,10 @@ namespace autograd {
         if (is_require_grad() || rhs->is_require_grad()) {
             node->require_grad();
             if (is_require_grad()) {
-                node->edges.push_back(MatMulEdge::create(this, rhs->get_weight()));
+                node->edges.push_back(MatMulLEdge::create(this, rhs->get_weight()));
             }
             if (rhs->is_require_grad()) {
-                node->edges.push_back(MatMulEdge::create(rhs, w));
+                node->edges.push_back(MatMulREdge::create(rhs, w));
             }
         }
         return node;

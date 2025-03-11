@@ -18,7 +18,8 @@ namespace autograd {
         Mul,
         Sub,
         Div,
-        MatMul,
+        MatMulL,
+        MatMulR,
         Tanh,
         Sigmoid,
         Relu,
@@ -149,22 +150,42 @@ namespace autograd {
             }
     };
 
-    class MatMulEdge : public Edge {
+    class MatMulLEdge : public Edge {
         public:
             static Edge* create(Node *_node, Matrix *_param) {
-                Edge *edge = new MatMulEdge(_node, _param);
+                Edge *edge = new MatMulLEdge(_node, _param);
                 edges.push_back(edge);
                 return edge;
             }
-            MatMulEdge(Node *_node, Matrix *_param)
-                : Edge(MatMul, _node), param(_param) {}
-            virtual ~MatMulEdge() {}
+            MatMulLEdge(Node *_node, Matrix *_param)
+                : Edge(MatMulL, _node), param(_param) {}
+            virtual ~MatMulLEdge() {}
             void backward(Matrix *grad) override {
                 assert(node->is_require_grad());
+                // *node->get_grad() is grad of W
                 *node->get_grad() += *(grad->at(*(param->transpose())));
             }
         private:
-            Matrix *param;
+            Matrix *param; // Input Vector
+    };
+
+    class MatMulREdge : public Edge {
+        public:
+            static Edge* create(Node *_node, Matrix *_param) {
+                Edge *edge = new MatMulREdge(_node, _param);
+                edges.push_back(edge);
+                return edge;
+            }
+            MatMulREdge(Node *_node, Matrix *_param)
+                : Edge(MatMulR, _node), param(_param) {}
+            virtual ~MatMulREdge() {}
+            void backward(Matrix *grad) override {
+                assert(node->is_require_grad());
+                // *node->get_grad() is grad of Input
+                *node->get_grad() += *(param->transpose()->at(*grad));
+            }
+        private:
+            Matrix *param; // W
     };
 
     class ReluEdge : public Edge {

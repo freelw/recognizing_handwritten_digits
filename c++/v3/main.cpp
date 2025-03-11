@@ -71,6 +71,10 @@ void testgrad() {
     auto b1 = autograd::allocNode(mb1);
     auto W2 = autograd::allocNode(mW2);
     auto b2 = autograd::allocNode(mb2);
+    W1->require_grad();
+    b1->require_grad();
+    W2->require_grad();
+    b2->require_grad();
     auto X = autograd::allocNode(mX);
     parameters.push_back(new autograd::Parameters(W1));
     parameters.push_back(new autograd::Parameters(b1));
@@ -78,9 +82,18 @@ void testgrad() {
     parameters.push_back(new autograd::Parameters(b2));
 
     autograd::Adam adam(parameters, 0.001);
-    auto Z1 = X->at(W1)->expand_add(b1)->Relu();
-    auto Z2 = Z1->at(W2)->expand_add(b2)->Relu();
+    //auto Z1 = X->at(W1)->expand_add(b1)->Relu();
+    auto Z1 = W1->at(X)->expand_add(b1)->Relu();
+    assert(Z1->get_weight()->getShape().rowCnt == 4);
+    assert(Z1->get_weight()->getShape().colCnt == 30);
+    // auto Z2 = Z1->at(W2)->expand_add(b2)->Relu();
+    auto Z2 = W2->at(Z1)->expand_add(b2)->Relu();
+    assert(Z2->get_weight()->getShape().rowCnt == 3);
+    assert(Z2->get_weight()->getShape().colCnt == 30);
     auto loss = Z2->CrossEntropy(labels);
+    assert(loss->get_weight()->getShape().rowCnt == 1);
+    assert(loss->get_weight()->getShape().colCnt == 1);
+    std::cout << "loss : " << *(loss->get_weight()) << std::endl;
 
     adam.zero_grad();
     loss->backward();
