@@ -15,8 +15,8 @@ namespace autograd {
             Matrix *get_v();
             int get_t();
             void inc_t();
-            // std::string serialize();
-            // void deserialize(char *buffer);
+            std::string serialize();
+            void deserialize(char *buffer);
         private:
             Node *w;
             Matrix *m;

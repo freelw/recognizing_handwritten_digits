@@ -21,6 +21,7 @@ namespace autograd {
         MatMulL,
         MatMulR,
         Tanh,
+        Cat,
         Sigmoid,
         Relu,
         Softmax,
@@ -79,16 +80,22 @@ namespace autograd {
                 grad = allocTmpMatrix(w->getShape());                
             }
 
+            void checkShape(const Shape &shape) {
+                w->checkShape(shape);
+            }
+
             Node *operator+(Node *rhs);
             Node *expand_add(Node *rhs);
             Node *at(Node *rhs);
             Node *Relu();
             Node *CrossEntropy(const std::vector<uint> &labels);
+            Node *Tanh();
             // Node *operator*(Node &rhs);
             // Node *operator/(Node &rhs);
             // Node *operator-(Node &rhs);
             // Node *operator-();
             // friend Node *operator-(DATATYPE, Node &rhs);
+            friend Node *cat(const std::vector<Node *> &nodes);
         private:
             Matrix *w;
             Matrix *grad;
@@ -196,12 +203,7 @@ namespace autograd {
             virtual ~ReluEdge() {}
             void backward(Matrix *grad) override {
                 assert(node->is_require_grad());
-                for (uint i = 0; i < grad->getShape().rowCnt; ++ i) {
-                    for (uint j = 0; j < grad->getShape().colCnt; ++ j) {
-                        auto &value = (*node->get_weight())[i][j];
-                        (*node->get_grad())[i][j] += value > 0 ? (*grad)[i][j] : 0;
-                    }
-                }
+                *node->get_grad() += *(*grad * *(node->get_weight()->Relu_prime()));
             }
     };
 
@@ -240,6 +242,46 @@ namespace autograd {
             std::vector<CrosEntropyInfo> info;
     };
 
+    class TanhEdge : public Edge {
+        public:
+            static Edge* create(Node *_node) {
+                Edge *edge = new TanhEdge(_node);
+                edges.push_back(edge);
+                return edge;
+            }
+            TanhEdge(Node *_node)
+                : Edge(Tanh, _node) {}
+            virtual ~TanhEdge() {}
+            void backward(Matrix *grad) override {
+                assert(node->is_require_grad());
+                *node->get_grad() += *(*grad * *(node->get_weight()->tanh_prime()));
+            }
+    };
+
+    class CatEdge: public Edge {
+        public:
+            static Edge* create(Node *_node, uint _offset) {
+                Edge *edge = new CatEdge(_node, _offset);
+                edges.push_back(edge);
+                return edge;
+            }
+            CatEdge(Node *_node, uint _offset)
+                : Edge(OpType::Cat, _node), offset(_offset){}
+            virtual ~CatEdge() {}
+            void backward(Matrix *grad) override {
+                assert(node->is_require_grad());
+                Shape shape = node->get_weight()->getShape();
+                for (uint i = 0; i < shape.rowCnt; ++ i) {
+                    for (uint j = 0; j < shape.colCnt; ++ j) {
+                        (*node->get_grad())[i][j] += (*grad)[i][j+offset];
+                    }
+                }
+            }
+        private:
+            uint offset;
+    };
+
+    Node *cat(const std::vector<Node *> &nodes);
     Node *allocNode(Matrix *w);
     void freeAllNodes();
     void freeAllEdges();

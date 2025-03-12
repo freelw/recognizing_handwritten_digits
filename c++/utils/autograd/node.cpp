@@ -87,12 +87,44 @@ namespace autograd {
     }
 
     Node *Node::CrossEntropy(const std::vector<uint> &labels) {
+        assert(w->getShape().colCnt == labels.size());
         std::vector<CrosEntropyInfo> info;
         auto *node = allocNode(::autograd::CrossEntropyLoss(w, labels, info));
         assert(info.size() == w->getShape().colCnt);
         if (is_require_grad()) {
             node->require_grad();
             node->edges.push_back(CrossEntropyEdge::create(this, labels, info));
+        }
+        return node;
+    }
+
+    Node *Node::Tanh() {
+        auto *node = allocNode(w->tanh());
+        if (is_require_grad()) {
+            node->require_grad();
+            node->edges.push_back(TanhEdge::create(this));
+        }
+        return node;
+    }
+
+    Node *cat(const std::vector<Node *> &nodes) {
+        assert(nodes.size() > 0);
+        Shape shape = nodes[0]->get_weight()->getShape();
+        for (uint i = 0; i < nodes.size(); ++ i) {
+            nodes[i]->checkShape(shape);
+        }
+        Matrix *m = allocTmpMatrix(Shape(shape.rowCnt, shape.colCnt * nodes.size()));
+        Node *node = allocNode(m);
+        for (uint i = 0; i < nodes.size(); ++ i) {
+            for (uint j = 0; j < shape.colCnt; ++ j) {
+                for (uint k = 0; k < shape.rowCnt; ++ k) {
+                    (*m)[k][i*shape.colCnt+j] = (*nodes[i]->get_weight())[k][j];
+                }
+            }
+            if (nodes[i]->is_require_grad()) {
+                node->require_grad();
+                node->edges.push_back(CatEdge::create(nodes[i], i*shape.colCnt));
+            }
         }
         return node;
     }

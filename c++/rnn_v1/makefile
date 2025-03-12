@@ -7,9 +7,10 @@ LDFLAGS += -lstdc++ -fopenmp
 SRCDIR:= ../utils/dataloader
 SRCDIR+= ../utils/matrix
 SRCDIR+= ../utils/lmcommon
+SRCDIR+= ../utils/autograd
 SRCS := $(wildcard *.cpp) $(wildcard $(addsuffix /*.cpp, $(SRCDIR)))
 OBJECTS := $(patsubst %.c,%.o,$(SRCS))
-
+RELEASE_MSG="[warning!!!!!] Compiling with debug flags"
 ifeq ($(RELEASE),1)
 	CFLAGS += -O3
 	CFLAGS := $(filter-out -fsanitize=address, $(CFLAGS))
