@@ -111,15 +111,22 @@ int gen_batch(
     uint batch_size,
     std::vector<autograd::Node *> &inputs,
     std::vector<uint> &whole_labels) {
+    /*
+        这里第二个参数不能+1，因为还有留一个label
+        比如 content 长度为2
+        start = 0, num_steps = 2
+        这样即便用batch=1，最后一个元素也获取不到label
+    */
+    int cur_batch_size = std::min(batch_size, (int)loader.content.size() - start - num_steps); 
     
-    int cur_batch_size = std::min(batch_size, (int)loader.content.size() - start - num_steps);
     if (cur_batch_size <= 0) {
         return 0;
     }
-    for (int i = 0; i < cur_batch_size; i++) {
+    for (uint i = 0; i < num_steps; i++) {
         Matrix *input = nullptr;
         std::vector<uint> labels;
-        gen_matrix_labels(loader.content, start+i, num_steps, input, labels);    
+        gen_matrix_labels(loader.content, start+i, cur_batch_size, input, labels);
+        assert(input->getShape().colCnt == (uint)cur_batch_size);
         inputs.push_back(autograd::allocNode(input));
         whole_labels.insert(whole_labels.end(), labels.begin(), labels.end());
     }
@@ -176,7 +183,7 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
                 save_checkpoint(checkpoint_prefix, epoch, lm);
                 exit(0);
             }
-            print_progress(i+1, loader.content.length() - num_steps);
+            print_progress(i, loader.content.length() - num_steps);
         }
         save_checkpoint(checkpoint_prefix, epoch, lm);
         std::cout.precision(14);

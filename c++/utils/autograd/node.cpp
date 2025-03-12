@@ -87,7 +87,7 @@ namespace autograd {
     }
 
     Node *Node::CrossEntropy(const std::vector<uint> &labels) {
-        assert(w->getShape().rowCnt == labels.size());
+        assert(w->getShape().colCnt == labels.size());
         std::vector<CrosEntropyInfo> info;
         auto *node = allocNode(::autograd::CrossEntropyLoss(w, labels, info));
         assert(info.size() == w->getShape().colCnt);
