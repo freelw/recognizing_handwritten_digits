@@ -3,7 +3,7 @@
 #include <chrono>
 #include <sstream>
 #include <iomanip>
-#include "lmcommon/dataloader.h"
+#include "autograd/dataloader.h"
 #include "autograd/optimizers.h"
 #include "rnnlm.h"
 #include "getopt.h"
@@ -14,10 +14,7 @@
 bool shutdown = false;
 
 #define RESOURCE_NAME "../../resources/timemachine_preprocessed.txt"
-
-void load_data() {
-    DataLoader loader(RESOURCE_NAME);
-}
+#define BATCH_SIZE 1024
 
 void print_input(const std::vector<Matrix *> &inputs,
                 std::vector<uint> &labels, std::string &content) {
@@ -97,11 +94,10 @@ void test_print_progress() {
 void train(const std::string &corpus, const std::string &checkpoint, uint epochs) {
     std::cout << "train by " << corpus << std::endl;
     std::cout << "epochs : " << epochs << std::endl;
-    DataLoader loader(corpus);
+    autograd::DataLoader loader(corpus, BATCH_SIZE);
     std::cout << "Data loaded" << std::endl;
     uint num_steps = 32;
     uint hidden_num = 32;
-    bool rand = true;
     autograd::Rnn *rnn = new autograd::Rnn(INPUT_NUM, hidden_num, 0.01);
     autograd::RnnLM lm(rnn, INPUT_NUM);
     if (!checkpoint.empty()) {
@@ -117,39 +113,43 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
     for (uint epoch = 0; epoch < epochs; epoch++) {
         DATATYPE loss_sum = 0;
         int emit_clip = 0;
-        for (uint i = 0; i < loader.data.size() - num_steps; i++) {
+        for (uint i = 0; i < loader.data.size() - num_steps + 1; i++) {
             std::vector<Matrix *> inputs;
-            std::vector<uint> labels;
+            std::vector<uint> whole_labels;
             for (uint j = 0; j < num_steps; j++) {
                 assert(i+j < loader.data.size());
-                assert(i+j+1 < loader.labels.size());
+                // assert(i+j+1 < loader.labels.size());
                 inputs.push_back(loader.data[i+j]);
-                labels.push_back(loader.labels[i+j+1]);
+                // labels.push_back(loader.labels[i+j+1]);
+                auto &labels = loader.labelss[i+j];
+                whole_labels.insert(whole_labels.end(), labels.begin(), labels.end());
             }
+            Shape shape = inputs[0]->getShape();
+            assert(whole_labels.size() == num_steps*shape.colCnt);
             assert(inputs.size() == num_steps);
-            // RnnLMContext *ctx = lm.init();
-            // Matrix *res = lm.forward(ctx, inputs);
-            // res->checkShape(Shape(INPUT_NUM, num_steps));
-            // CrossEntropyLoss loss_fn(labels);
-            // CrossEntropyLossContext *ce_ctx = (CrossEntropyLossContext *)loss_fn.init();
-            // auto loss = loss_fn.forward(ce_ctx, res);
-            // loss->checkShape(Shape(1, 1));
-            // loss_sum += (*loss)[0][0];
-            // auto grad = loss_fn.backward(ce_ctx, nullptr);
-            // loss_fn.release(ce_ctx);
-            // adam.zero_grad();
-            // lm.backward(ctx, grad);
-            // if (adam.clip_grad(1)) {
-            //     emit_clip++;
-            // }
-            // adam.step();
-            // lm.release(ctx);
-            // freeTmpMatrix();
-            // if (shutdown) {
-            //     save_checkpoint(checkpoint_prefix, epoch, lm);
-            //     exit(0);
-            // }
-            // print_progress(i+1, loader.data.size() - num_steps);
+
+            std::vector<autograd::Node *> nodes;
+            for (uint j = 0; j < inputs.size(); j++) {
+                nodes.push_back(autograd::allocNode(inputs[j]));
+            }
+            auto loss = lm.forward(nodes)->CrossEntropy(whole_labels);
+            assert(loss->getShape().rowCnt == 1);
+            assert(loss->getShape().colCnt == 1);
+            loss_sum += (*loss->get_weight())[0][0];
+            adam.zero_grad();
+            loss->backward();
+            if (adam.clip_grad(1)) {
+                emit_clip++;
+            }
+            adam.step();
+            autograd::freeAllNodes();
+            autograd::freeAllEdges();
+            freeTmpMatrix();
+            if (shutdown) {
+                save_checkpoint(checkpoint_prefix, epoch, lm);
+                exit(0);
+            }
+            print_progress(i+1, loader.data.size() - num_steps);
         }
         save_checkpoint(checkpoint_prefix, epoch, lm);
         std::cout.precision(14);
@@ -176,9 +176,7 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
     //     std::cout << "prefix : " << prefix << std::endl;
     //     std::cout << "predicted : " << predicted << std::endl;
     // }
-    // freeTmpMatrix();
-    // delete rnn;
-
+    delete rnn;
     autograd::freeAllNodes();
     autograd::freeAllEdges();
     freeTmpMatrix();
