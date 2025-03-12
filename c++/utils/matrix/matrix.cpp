@@ -396,23 +396,23 @@ std::vector<uint> Matrix::argMax() {
     return res;
 }
 
-DATATYPE sigmoid(DATATYPE z) {
+DATATYPE _sigmoid(DATATYPE z) {
     return 1./(1.+exp(-z));
 }
 
-Matrix *sigmoid(const Matrix &m) {
-    Shape shape = m.getShape();
-    Matrix *res = allocTmpMatrix(m);
+Matrix *Matrix::sigmoid() {
+    Shape shape = getShape();
+    Matrix *res = allocTmpMatrix(this);
     for (uint i = 0; i < shape.rowCnt; ++i) {
         for (uint j = 0; j < shape.colCnt; ++j) {
-            (*res)[i][j] = sigmoid((*res)[i][j]);
+            (*res)[i][j] = _sigmoid((*res)[i][j]);
         }
     }
     return res;
 }
 
-Matrix *sigmoid_prime(const Matrix &m) {
-    return *sigmoid(m) * *(1 - *sigmoid(m));
+Matrix *Matrix::sigmoid_prime() {
+    return *sigmoid() * *(1 - *sigmoid());
 }
 
 std::vector<Matrix *> tmpMatrics;

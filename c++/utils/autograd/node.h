@@ -90,6 +90,7 @@ namespace autograd {
             Node *Relu();
             Node *CrossEntropy(const std::vector<uint> &labels);
             Node *Tanh();
+            Node *Sigmoid();
             // Node *operator*(Node &rhs);
             // Node *operator/(Node &rhs);
             // Node *operator-(Node &rhs);
@@ -255,6 +256,22 @@ namespace autograd {
             void backward(Matrix *grad) override {
                 assert(node->is_require_grad());
                 *node->get_grad() += *(*grad * *(node->get_weight()->tanh_prime()));
+            }
+    };
+
+    class SigmoidEdge : public Edge {
+        public:
+            static Edge* create(Node *_node) {
+                Edge *edge = new SigmoidEdge(_node);
+                edges.push_back(edge);
+                return edge;
+            }
+            SigmoidEdge(Node *_node)
+                : Edge(Sigmoid, _node) {}
+            virtual ~SigmoidEdge() {}
+            void backward(Matrix *grad) override {
+                assert(node->is_require_grad());
+                *node->get_grad() += *(*grad * *(node->get_weight()->sigmoid_prime()));
             }
     };
 

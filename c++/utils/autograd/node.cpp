@@ -107,6 +107,15 @@ namespace autograd {
         return node;
     }
 
+    Node *Node::Sigmoid() {
+        auto *node = allocNode(w->sigmoid());
+        if (is_require_grad()) {
+            node->require_grad();
+            node->edges.push_back(SigmoidEdge::create(this));
+        }
+        return node;
+    }
+
     Node *cat(const std::vector<Node *> &nodes) {
         assert(nodes.size() > 0);
         Shape shape = nodes[0]->get_weight()->getShape();

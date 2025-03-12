@@ -45,9 +45,7 @@ NetWork::NetWork(const std::vector<int> &_sizes)
 Matrix *NetWork::feedforward(Matrix *a) {
     Matrix *res = allocTmpMatrix(a);
     for (uint i = 0; i < sizes.size()-1; ++ i) {
-        res = sigmoid(
-            *(*(weights[i]->at(*res))+ *biases[i])
-        );
+        res = (*(weights[i]->at(*res))+ *biases[i])->sigmoid();
     }
     return res;
 }
@@ -137,17 +135,17 @@ void NetWork::backprop(
     for (uint i = 0; i < L; ++ i) {
         Matrix *z = *(weights[i]->at(*activation)) + *biases[i];
         zs.emplace_back(z);
-        activation = sigmoid(*z);
+        activation = z->sigmoid();
         activations.emplace_back(activation);
     }
     assert(activations.size() == L + 1);
-    Matrix *delta = *cost_derivative(activations[L], y) * *sigmoid_prime(*zs[L-1]);
+    Matrix *delta = *cost_derivative(activations[L], y) * *(zs[L-1]->sigmoid_prime());
     for (int l = L-1; l >= 0; -- l) {
         delta_nabla_b[l] = delta;
         auto activation_transpose = activations[l]->transpose();
         delta_nabla_w[l] = delta->at(*activation_transpose);
         if (l >= 1) {
-            delta = *(weights[l]->transpose()->at(*delta)) * *sigmoid_prime(*zs[l-1]);
+            delta = *(weights[l]->transpose()->at(*delta)) * *(zs[l-1]->sigmoid_prime());
         }
     }
 }
