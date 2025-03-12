@@ -1,7 +1,7 @@
 #include "rnnlm.h"
 
 namespace autograd {
-    Rnn::Rnn(uint input_num, uint hidden_num) {
+    Rnn::Rnn(uint input_num, uint _hidden_num) : hidden_num(_hidden_num) {
         mWxh = new Matrix(Shape(hidden_num, input_num));
         mWhh = new Matrix(Shape(hidden_num, hidden_num));
         mbh = new Matrix(Shape(hidden_num, 1));
@@ -38,10 +38,52 @@ namespace autograd {
         delete Pbh;
     }
 
-    Node *Rnn::forward(const std::vector<Node *> &input, Node *prev_hidden) {
-        // Node *hidden = Wxh->at(input[0])->expand_add(Whh->at(prev_hidden))->expand_add(bh)->Tanh();
-        // return hidden;
+    std::vector<Node *> Rnn::forward(const std::vector<Node *> &inputs, Node *prev_hidden) {
+        assert(inputs.size() > 0);
+        uint batch_size = inputs[0]->get_weight()->getShape().colCnt;
+        Node *hidden = nullptr;
+        if (prev_hidden == nullptr) {
+            hidden = allocNode(allocTmpMatrix(Shape(mWhh->getShape().rowCnt, batch_size)));
+        } else {
+            hidden = prev_hidden;
+        }
+        std::vector<Node *> res;
+        for (auto input : inputs) {
+            hidden = (*(Wxh->at(input)) + Whh->at(hidden))->expand_add(bh)->Tanh();
+            res.push_back(hidden);
+        }
+        return res;
+    }
 
+    std::vector<Parameters *> Rnn::get_parameters() {
+        return {PWxh, PWhh, Pbh};
+    }
+
+    RnnLM::RnnLM(Rnn *rnn, uint vocab_size) {
+        mW = new Matrix(Shape(vocab_size, rnn->get_hidden_num()));
+        mb = new Matrix(Shape(vocab_size, 1));
+        init_weight(mW, 0.02);
+        init_weight(mb, 0.02);
+        W = new Node(mW, true);
+        b = new Node(mb, true);
+        W->require_grad();
+        b->require_grad();
+        PW = new Parameters(W);
+        Pb = new Parameters(b);
+    }
+
+    RnnLM::~RnnLM() {
+        delete mW;
+        delete mb;
+        delete W;
+        delete b;
+        delete PW;
+        delete Pb;
+    }
+
+    Node *RnnLM::forward(std::vector<Node *> inputs) {
+        // 
         return nullptr;
     }
+
 } // namespace autograd

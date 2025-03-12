@@ -8,11 +8,14 @@ namespace autograd {
 
 class Rnn {
     public:
-        Rnn(uint input_num, uint hidden_num);
+        Rnn(uint input_num, uint _hidden_num);
         ~Rnn();
-        Node *forward(const std::vector<Node *> &input, Node *prev_hidden);
+        std::vector<Node *> forward(const std::vector<Node *> &inputs, Node *prev_hidden);
         std::vector<Parameters *> get_parameters();
+        uint get_hidden_num() { return hidden_num; }
     private:
+
+        uint hidden_num;
         Matrix *mWxh;
         Matrix *mWhh;
         Matrix *mbh;
@@ -30,9 +33,18 @@ class RnnLM {
     public:
         RnnLM(Rnn *rnn, uint vocab_size);
         ~RnnLM();
-        Node *forward(Node *ctx, std::vector<Node *> inputs);
+        Node *forward(std::vector<Node *> inputs);
         Node *predict(std::string prefix, uint max_len);
         std::vector<Parameters *> get_parameters();
+    private:
+        Rnn *rnn;
+        
+        Matrix *mW;
+        Matrix *mb;
+        Node *W;
+        Node *b;
+        Parameters *PW;
+        Parameters *Pb;
 };
 } // namespace autograd
 #endif
