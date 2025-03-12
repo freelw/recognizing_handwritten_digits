@@ -1,5 +1,5 @@
 #!/bin/bash
-
+export RELEASE=1
 pushd ./v0
 make clean
 make
@@ -45,11 +45,30 @@ if [ $? -ne 0 ]; then
 fi
 popd
 
+pushd ./rnn_v1
+make clean
+make
+if [ $? -ne 0 ]; then
+    echo "rnn_v1 build failed"
+    exit 1
+fi
+popd
+
 pushd ./lstm
 make clean
 make
 if [ $? -ne 0 ]; then
     echo "lstm build failed"
+    exit 1
+fi
+popd
+
+
+pushd ./lstm_v1
+make clean
+make
+if [ $? -ne 0 ]; then
+    echo "lstm_v1 build failed"
     exit 1
 fi
 popd
