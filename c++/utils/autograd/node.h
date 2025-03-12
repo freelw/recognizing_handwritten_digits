@@ -24,21 +24,7 @@ namespace autograd {
         Cat,
         Sigmoid,
         Relu,
-        Softmax,
         CrossEntropy,
-        LogSoftmax,
-        NLLLoss,
-        MSELoss,
-        Conv2d,
-        MaxPool2d,
-        AvgPool2d,
-        Dropout,
-        Embedding,
-        RNN,
-        LSTM,
-        GRU,
-        Linear,
-        Flatten,
     };
     class Node {
         public:
@@ -85,6 +71,7 @@ namespace autograd {
             }
 
             Node *operator+(Node *rhs);
+            Node *operator*(Node *rhs);
             Node *expand_add(Node *rhs);
             Node *at(Node *rhs);
             Node *Relu();
@@ -136,6 +123,24 @@ namespace autograd {
                 assert(node->is_require_grad());
                 *node->get_grad() += *grad;
             }
+    };
+
+    class MulEdge : public Edge {
+        public:
+            static Edge* create(Node *_node, Matrix *_param) {
+                Edge *edge = new MulEdge(_node, _param);
+                edges.push_back(edge);
+                return edge;
+            }
+            MulEdge(Node *_node, Matrix *_param)
+                : Edge(Mul, _node), param(_param) {}
+            virtual ~MulEdge() {}
+            void backward(Matrix *grad) override {
+                assert(node->is_require_grad());
+                *node->get_grad() += *(*grad * *(param));
+            }
+        private:
+            Matrix *param;
     };
 
     class ExpandAddEdge : public Edge {

@@ -49,6 +49,20 @@ namespace autograd {
         return node;
     }
 
+    Node *Node::operator*(Node *rhs) {
+        auto *node = allocNode(*w * *(rhs->w));
+        if (is_require_grad() || rhs->is_require_grad()) {
+            node->require_grad();
+            if (is_require_grad()) {
+                node->edges.push_back(MulEdge::create(this, rhs->get_weight()));
+            }
+            if (rhs->is_require_grad()) {
+                node->edges.push_back(MulEdge::create(rhs, w));
+            }
+        }
+        return node;
+    }
+
     Node *Node::expand_add(Node *rhs) {
         auto *node = allocNode(w->expand_add(*(rhs->w)));
         if (is_require_grad() || rhs->is_require_grad()) {

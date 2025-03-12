@@ -414,9 +414,9 @@ RnnRes LSTM::forward(Context *ctx, const std::vector<Matrix*> &inputs, Matrix *h
         f->checkShape(Shape(hidden_num, batch_size));
         o->checkShape(Shape(hidden_num, batch_size));
         c->checkShape(Shape(hidden_num, batch_size));
-        Matrix *f_sigmoid = sigmoid(*f);
-        Matrix *i_sigmoid = sigmoid(*i);
-        Matrix *o_sigmoid = sigmoid(*o);
+        Matrix *f_sigmoid = f->sigmoid();
+        Matrix *i_sigmoid = i->sigmoid();
+        Matrix *o_sigmoid = o->sigmoid();
         Matrix *c_tanh = c->tanh();
         lstm_ctx->f_sigmoid.push_back(f_sigmoid);
         lstm_ctx->i_sigmoid.push_back(i_sigmoid);
@@ -472,7 +472,7 @@ Matrix *LSTM::backward(
         auto grad_o_sigmoid = *grad_hidden * *cell_tanh;
         auto grad_cell_tanh = *grad_hidden * *o_sigmoid;
         auto _grad_cell = *grad_cell_tanh * *cell->tanh_prime();
-        auto grad_o = *grad_o_sigmoid * *sigmoid_prime(*o);
+        auto grad_o = *grad_o_sigmoid * *o->sigmoid_prime();
         *grad_cell += *_grad_cell;
         auto f = lstm_ctx->f[ii];
         auto f_sigmoid = lstm_ctx->f_sigmoid[ii];
@@ -483,8 +483,8 @@ Matrix *LSTM::backward(
         auto grad_f_sigmoid = *grad_cell * *cminus1;
         auto grad_i_sigmoid = *grad_cell * *c_tanh;
         auto grad_c_tanh = *grad_cell * *i_sigmoid;
-        auto grad_f = *grad_f_sigmoid * *sigmoid_prime(*f);
-        auto grad_i = *grad_i_sigmoid * *sigmoid_prime(*i);
+        auto grad_f = *grad_f_sigmoid * *f->sigmoid_prime();
+        auto grad_i = *grad_i_sigmoid * *i->sigmoid_prime();
         auto grad_c = *grad_c_tanh * *c->tanh_prime();
         grad_cell = *grad_cell * *f_sigmoid;
         bi->inc_grad(grad_i);
