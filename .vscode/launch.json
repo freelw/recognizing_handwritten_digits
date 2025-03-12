@@ -116,8 +116,10 @@
             "request": "launch",
             "program": "/home/cs/project/recognizing_handwritten_digits/c++/rnn_v1/rnn",
             "args": [
-                "-f",
-                "/home/cs/project/recognizing_handwritten_digits/resources/timemachine_small.txt"
+                "-e",
+                "0",
+                "-c",
+                "/home/cs/project/recognizing_handwritten_digits/c++/rnn_v1/checkpoints/checkpoint_20250312_232157_1.bin"
             ],
             "stopAtEntry": false,
             "cwd": "/home/cs/project/recognizing_handwritten_digits/c++/rnn_v1/",
