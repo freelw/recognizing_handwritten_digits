@@ -7,6 +7,7 @@ LDFLAGS += -lstdc++ -fopenmp
 SRCDIR:= ../utils/dataloader
 SRCDIR+= ../utils/matrix
 SRCDIR+= ../utils/lmcommon
+SRCDIR+= ../utils/autograd
 SRCS := $(wildcard *.cpp) $(wildcard $(addsuffix /*.cpp, $(SRCDIR)))
 OBJECTS := $(patsubst %.c,%.o,$(SRCS))
 

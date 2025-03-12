@@ -97,6 +97,15 @@ namespace autograd {
         return node;
     }
 
+    Node *Node::Tanh() {
+        auto *node = allocNode(w->tanh());
+        if (is_require_grad()) {
+            node->require_grad();
+            node->edges.push_back(TanhEdge::create(this));
+        }
+        return node;
+    }
+
     void Node::backward() {
         assert(ref_cnt == 0);
         if (!is_require_grad()) {

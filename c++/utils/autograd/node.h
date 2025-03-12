@@ -84,6 +84,7 @@ namespace autograd {
             Node *at(Node *rhs);
             Node *Relu();
             Node *CrossEntropy(const std::vector<uint> &labels);
+            Node *Tanh();
             // Node *operator*(Node &rhs);
             // Node *operator/(Node &rhs);
             // Node *operator-(Node &rhs);
@@ -196,12 +197,7 @@ namespace autograd {
             virtual ~ReluEdge() {}
             void backward(Matrix *grad) override {
                 assert(node->is_require_grad());
-                for (uint i = 0; i < grad->getShape().rowCnt; ++ i) {
-                    for (uint j = 0; j < grad->getShape().colCnt; ++ j) {
-                        auto &value = (*node->get_weight())[i][j];
-                        (*node->get_grad())[i][j] += value > 0 ? (*grad)[i][j] : 0;
-                    }
-                }
+                *node->get_grad() += *(*grad * *(node->get_weight()->Relu_prime()));
             }
     };
 
@@ -238,6 +234,22 @@ namespace autograd {
         private:
             std::vector<uint> labels;
             std::vector<CrosEntropyInfo> info;
+    };
+
+    class TanhEdge : public Edge {
+        public:
+            static Edge* create(Node *_node) {
+                Edge *edge = new TanhEdge(_node);
+                edges.push_back(edge);
+                return edge;
+            }
+            TanhEdge(Node *_node)
+                : Edge(Tanh, _node) {}
+            virtual ~TanhEdge() {}
+            void backward(Matrix *grad) override {
+                assert(node->is_require_grad());
+                *node->get_grad() += *(*grad * *(node->get_weight()->tanh_prime()));
+            }
     };
 
     Node *allocNode(Matrix *w);
