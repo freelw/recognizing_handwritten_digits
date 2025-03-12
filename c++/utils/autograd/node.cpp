@@ -106,34 +106,26 @@ namespace autograd {
         return node;
     }
 
-    /*
-        stack 先按照时间序列拼接成三维张量，在按照batch_size切割成二维张量
-    */
-    std::vector<Node *> stack(const std::vector<Node *> &nodes) {
+    Node *cat(const std::vector<Node *> &nodes) {
         assert(nodes.size() > 0);
         Shape shape = nodes[0]->get_weight()->getShape();
-        for (auto node : nodes) {
-            node->checkShape(shape);
+        for (uint i = 0; i < nodes.size(); ++ i) {
+            nodes[i]->checkShape(shape);
         }
-        
-        std::vector<Node *> res;
-        auto num_steps = nodes.size();
-        auto batch_size = shape.colCnt;
-        
-        for (uint i = 0; i < batch_size; ++ i) {
-            Matrix *m = allocTmpMatrix(Shape(shape.rowCnt, num_steps));
-            Node *new_node = allocNode(m);
-            new_node->require_grad();
-            for (uint j = 0; j < num_steps; ++ j) {
-                auto node = nodes[j];
+        Matrix *m = allocTmpMatrix(Shape(shape.rowCnt, shape.colCnt * nodes.size()));
+        Node *node = allocNode(m);
+        for (uint i = 0; i < nodes.size(); ++ i) {
+            for (uint j = 0; j < shape.colCnt; ++ j) {
                 for (uint k = 0; k < shape.rowCnt; ++ k) {
-                    (*m)[k][j] = (*node->get_weight())[k][i];
+                    (*m)[k][i*shape.colCnt+j] = (*nodes[i]->get_weight())[k][j];
                 }
-                new_node->edges.push_back(StackEdge::create(node, j, i));
             }
-            res.push_back(new_node);
+            if (nodes[i]->is_require_grad()) {
+                node->require_grad();
+                node->edges.push_back(CatEdge::create(nodes[i], i*shape.colCnt));
+            }
         }
-        return res;
+        return node;
     }
 
     void Node::backward() {

@@ -81,9 +81,22 @@ namespace autograd {
         delete Pb;
     }
 
-    Node *RnnLM::forward(std::vector<Node *> inputs) {
+    Node * RnnLM::forward(std::vector<Node *> inputs) {
+        assert(inputs.size() > 0);
+        Shape shape = inputs[0]->get_weight()->getShape();
         std::vector<Node *> hiddens = rnn->forward(inputs, nullptr);
-        std::vector<Node *> stack_hiddens = stack(hiddens);
+        std::vector<Node *> outputs;
+        for (auto hidden : hiddens) {
+            auto output = W->at(hidden)->expand_add(b);
+            outputs.push_back(output);
+        }
+        Node *res = cat(outputs);
+        assert(res->get_weight()->getShape().rowCnt == shape.rowCnt);
+        assert(res->get_weight()->getShape().colCnt == shape.colCnt*outputs.size());
+        return res;
+    }
+
+    Node * RnnLM::predict(const std::string &prefix, uint max_len) {
         return nullptr;
     }
 

@@ -21,7 +21,7 @@ namespace autograd {
         MatMulL,
         MatMulR,
         Tanh,
-        Stack,
+        Cat,
         Sigmoid,
         Relu,
         Softmax,
@@ -95,7 +95,7 @@ namespace autograd {
             // Node *operator-(Node &rhs);
             // Node *operator-();
             // friend Node *operator-(DATATYPE, Node &rhs);
-            friend std::vector<Node *> stack(const std::vector<Node *> &nodes);
+            friend Node *cat(const std::vector<Node *> &nodes);
         private:
             Matrix *w;
             Matrix *grad;
@@ -258,28 +258,30 @@ namespace autograd {
             }
     };
 
-    class StackEdge: public Edge {
+    class CatEdge: public Edge {
         public:
-            static Edge* create(Node *_node, uint _new_index, uint _old_index) {
-                Edge *edge = new StackEdge(_node, _new_index, _old_index);
+            static Edge* create(Node *_node, uint _offset) {
+                Edge *edge = new CatEdge(_node, _offset);
                 edges.push_back(edge);
                 return edge;
             }
-            StackEdge(Node *_node, uint _new_index, uint _old_index)
-                : Edge(OpType::Stack, _node), new_index(_new_index), old_index(_old_index) {}
-            virtual ~StackEdge() {}
+            CatEdge(Node *_node, uint _offset)
+                : Edge(OpType::Cat, _node), offset(_offset){}
+            virtual ~CatEdge() {}
             void backward(Matrix *grad) override {
                 assert(node->is_require_grad());
-                for (uint i = 0; i < node->get_weight()->getShape().rowCnt; ++ i) {
-                    (*node->get_grad())[i][old_index] += (*grad)[i][new_index];
+                Shape shape = node->get_weight()->getShape();
+                for (uint i = 0; i < shape.rowCnt; ++ i) {
+                    for (uint j = 0; j < shape.colCnt; ++ j) {
+                        (*node->get_grad())[i][j] += (*grad)[i][j+offset];
+                    }
                 }
             }
         private:
-            uint new_index;
-            uint old_index;
+            uint offset;
     };
 
-    std::vector<Node *> stack(const std::vector<Node *> &nodes);
+    Node *cat(const std::vector<Node *> &nodes);
     Node *allocNode(Matrix *w);
     void freeAllNodes();
     void freeAllEdges();

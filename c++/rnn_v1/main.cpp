@@ -181,7 +181,7 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
     // delete rnn;
 }
 
-void test_stack() {
+void test_cat() {
     std::vector<autograd::Node *> nodes;
     for (uint i = 0; i < 2; i++) {
         Matrix *m = allocTmpMatrix(Shape(3, 10));
@@ -196,11 +196,11 @@ void test_stack() {
         std::cout << "node : " << *node->get_weight() << std::endl;
     }
 
-    std::vector<autograd::Node *> res = autograd::stack(nodes);
+    auto res = autograd::cat(nodes);
 
-    for (auto node : res) {
-        std::cout << "res : " << *node->get_weight() << std::endl;
-    }
+    
+    std::cout << "res : " << *res->get_weight() << std::endl;
+    
 
     autograd::freeAllNodes();
     autograd::freeAllEdges();
@@ -210,7 +210,7 @@ void test_stack() {
 }
 
 int main(int argc, char *argv[]) {
-    test_stack();
+    test_cat();
     return -1;
     // register signal SIGINT and signal handler
     signal(SIGINT, signal_callback_handler);
