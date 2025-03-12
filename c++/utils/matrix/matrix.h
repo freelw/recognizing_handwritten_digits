@@ -8,7 +8,7 @@
 using namespace std;
 
 #ifndef OMP_THREADS
-#define OMP_THREADS 4
+#define OMP_THREADS 8
 #endif
 
 struct Shape {
@@ -53,6 +53,8 @@ public:
     Matrix *Relu_prime();
     Matrix *tanh();
     Matrix *tanh_prime();
+    Matrix *sigmoid();
+    Matrix *sigmoid_prime();
     Matrix& operator=(const Matrix &m);
     Matrix *pow2();
     friend Matrix *operator-(DATATYPE, const Matrix &m);

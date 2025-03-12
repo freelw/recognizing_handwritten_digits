@@ -1,15 +1,15 @@
 DIR_INC = -I./
-DIR_INC += -I../utils
+DIR_INC += -I../utils/
 DIR_LIB = -L./
-TARGET	= recognizing_handwritten_digits_v0
-#CFLAGS = -g -Wall $(DIR_INC) $(DIR_LIB)
+TARGET	= lstm_v1
 CFLAGS = -g -Wall $(DIR_INC) $(DIR_LIB) -fsanitize=address -fopenmp
-LDFLAGS += -lstdc++
+LDFLAGS += -lstdc++ -fopenmp
 SRCDIR:= ../utils/dataloader
 SRCDIR+= ../utils/matrix
+SRCDIR+= ../utils/lmcommon
+SRCDIR+= ../utils/autograd
 SRCS := $(wildcard *.cpp) $(wildcard $(addsuffix /*.cpp, $(SRCDIR)))
 OBJECTS := $(patsubst %.c,%.o,$(SRCS))
-
 RELEASE_MSG="[warning!!!!!] Compiling with debug flags"
 ifeq ($(RELEASE),1)
 	CFLAGS += -O3
@@ -27,7 +27,3 @@ $(TARGET) : $(OBJECTS)
 clean:
 	@rm -f *.o $(TARGET)
 .PHONY:clean
-prepare_data:
-	cd ../../resources && \
-	gunzip -c train-labels-idx1-ubyte.gz > train-labels-idx1-ubyte && \
-	gunzip -c train-images-idx3-ubyte.gz > train-images-idx3-ubyte

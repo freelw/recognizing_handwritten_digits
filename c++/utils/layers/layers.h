@@ -176,9 +176,6 @@ class LSTM: public RnnBase {
         uint input_num;
         uint hidden_num;
         DATATYPE sigma;
-        Parameters *wxh;
-        Parameters *whh;
-        Parameters *bh;
         Parameters *wxi;
         Parameters *whi;
         Parameters *bi;
