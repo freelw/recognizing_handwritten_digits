@@ -209,8 +209,62 @@ void test_cat() {
     freeTmpMatrix();
 }
 
+void test_cat_bp() {
+    Matrix *m0 = allocTmpMatrix(Shape(3, 1));
+    Matrix *m1 = allocTmpMatrix(Shape(3, 1));
+
+    m0->fill(0.1);
+    m1->fill(0.1);
+    (*m0)[0][0] = 0.8;
+    (*m1)[0][0] = 0.8;
+
+    std::vector<autograd::Node *> nodes;
+    nodes.push_back(autograd::allocNode(m0));
+    nodes.push_back(autograd::allocNode(m1));
+
+    for (auto node : nodes) {
+        node->require_grad();
+    }
+
+    auto res = autograd::cat(nodes);
+    std::vector<uint> labels = {0, 1};
+
+    auto loss = res->CrossEntropy(labels);
+    std::cout << "loss : " << *loss->get_weight() << std::endl;
+    loss->backward();
+
+    for (auto node : nodes) {
+        std::cout << "node : " << *node->get_grad() << std::endl;
+    }
+
+
+    for (auto node : nodes) {
+        node->zero_grad();
+    }
+    auto loss0 = nodes[0]->CrossEntropy({0});
+    loss0->backward();
+    std::cout << "loss0 : " << *loss0->get_weight() << std::endl;
+    auto loss1 = nodes[1]->CrossEntropy({1});
+    std::cout << "loss1 : " << *loss1->get_weight() << std::endl;
+    loss1->backward();
+
+    auto avg = ((*loss0->get_weight())[0][0] + (*loss1->get_weight())[0][0]) / 2;
+    std::cout << "avg : " << avg << std::endl;
+    for (auto node : nodes) {
+        std::cout << "node : " << *node->get_grad() << std::endl;
+        
+    }
+    for (auto node : nodes) {
+        std::cout << "node/2 : " << *((*node->get_grad())/2) << std::endl;
+    }
+
+    autograd::freeAllNodes();
+    autograd::freeAllEdges();
+    freeTmpMatrix();
+}
+
 int main(int argc, char *argv[]) {
-    test_cat();
+    test_cat_bp();
     return -1;
     // register signal SIGINT and signal handler
     signal(SIGINT, signal_callback_handler);
