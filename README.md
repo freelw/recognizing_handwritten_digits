@@ -10,6 +10,7 @@
 * [v0 手动推导公式的版本](https://github.com/freelw/recognizing_handwritten_digits/tree/main/c++/v0)
 * [v1 autograd的版本](https://github.com/freelw/recognizing_handwritten_digits/tree/main/c++/v1)
 * [v2 matrix autograd的版本](https://github.com/freelw/recognizing_handwritten_digits/tree/main/c++/v2)
+* [v3 自动构建计算图版本](https://github.com/freelw/recognizing_handwritten_digits/tree/main/c++/v3)
 * [pytorch 版本](https://github.com/freelw/recognizing_handwritten_digits/tree/main/pytorch)
 * [rnn c++ 版本](https://github.com/freelw/recognizing_handwritten_digits/tree/main/c++/rnn)
 * [lstm c++ 版本](https://github.com/freelw/recognizing_handwritten_digits/tree/main/c++/lstm)
