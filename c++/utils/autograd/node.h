@@ -79,6 +79,10 @@ namespace autograd {
                 grad = allocTmpMatrix(w->getShape());                
             }
 
+            void checkShape(const Shape &shape) {
+                w->checkShape(shape);
+            }
+
             Node *operator+(Node *rhs);
             Node *expand_add(Node *rhs);
             Node *at(Node *rhs);
@@ -251,6 +255,8 @@ namespace autograd {
                 *node->get_grad() += *(*grad * *(node->get_weight()->tanh_prime()));
             }
     };
+
+    std::vector<Node *> stack(const std::vector<Node *> &nodes, uint dim);
 
     Node *allocNode(Matrix *w);
     void freeAllNodes();

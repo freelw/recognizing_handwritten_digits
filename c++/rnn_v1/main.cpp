@@ -4,6 +4,7 @@
 #include <sstream>
 #include <iomanip>
 #include "lmcommon/dataloader.h"
+#include "rnnlm.h"
 #include "getopt.h"
 #include <unistd.h>
 
@@ -180,7 +181,37 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
     // delete rnn;
 }
 
+void test_stack() {
+    std::vector<autograd::Node *> nodes;
+    for (uint i = 0; i < 2; i++) {
+        Matrix *m = allocTmpMatrix(Shape(3, 10));
+        for (uint j = 0; j < 3; j++) {
+            for (uint k = 0; k < 10; k++) {
+                (*m)[j][k] = i*100+j*10+k;
+            }
+        }
+        nodes.push_back(autograd::allocNode(m));
+    }
+    for (auto node : nodes) {
+        std::cout << "node : " << *node->get_weight() << std::endl;
+    }
+
+    std::vector<autograd::Node *> res = autograd::stack(nodes, 0);
+
+    for (auto node : res) {
+        std::cout << "res : " << *node->get_weight() << std::endl;
+    }
+
+    autograd::freeAllNodes();
+    autograd::freeAllEdges();
+    
+    // assert(res)
+    freeTmpMatrix();
+}
+
 int main(int argc, char *argv[]) {
+    test_stack();
+    return -1;
     // register signal SIGINT and signal handler
     signal(SIGINT, signal_callback_handler);
 

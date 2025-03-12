@@ -127,6 +127,29 @@ namespace autograd {
         }
     }
 
+    std::vector<Node *> stack(const std::vector<Node *> &nodes, uint dim) {
+        assert(nodes.size() > 0);
+        Shape shape = nodes[0]->get_weight()->getShape();
+        for (auto node : nodes) {
+            node->checkShape(shape);
+        }
+        assert(dim == 0);
+        std::vector<Node *> res;
+        auto num_steps = nodes.size();
+        auto batch_size = shape.colCnt;
+        for (uint i = 0; i < batch_size; ++ i) {
+            Matrix *m = allocTmpMatrix(Shape(shape.rowCnt, num_steps));
+            for (uint j = 0; j < num_steps; ++ j) {
+                auto node = nodes[j];
+                for (uint k = 0; k < shape.rowCnt; ++ k) {
+                    (*m)[k][j] = (*node->get_weight())[k][i];
+                }
+            }
+            res.push_back(allocNode(m));
+        }
+        return res;
+    }
+
     std::vector<Edge *> edges;
     std::vector<Node *> nodes;
 
