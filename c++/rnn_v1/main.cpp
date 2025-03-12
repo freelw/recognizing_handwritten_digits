@@ -189,27 +189,27 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
         std::cout.precision(14);
         std::cout << "epoch " << epoch << " loss : " << loss_sum/loops << " emit_clip : " << emit_clip << std::endl;
     }
-    // if (epochs > 0) {
-    //     // pass
-    // } else {
-    //     std::cout << "serving mode" << std::endl;
-    // }
-    // std::vector<std::string> prefixs = {
-    //     "time traveller",
-    //     "the time machine",
-    //     "expounding a recondite",
-    //     " traveller for so",
-    //     "it has",
-    //     "so most people",
-    //     "is simply ",
-    //     " we cannot move about",
-    //     "and the still",
-    // };
-    // for (auto prefix : prefixs) {
-    //     std::string predicted = lm.predict(prefix, 30);
-    //     std::cout << "prefix : " << prefix << std::endl;
-    //     std::cout << "predicted : " << predicted << std::endl;
-    // }
+    if (epochs > 0) {
+        // pass
+    } else {
+        std::cout << "serving mode" << std::endl;
+    }
+    std::vector<std::string> prefixs = {
+        "time traveller",
+        "the time machine",
+        "expounding a recondite",
+        " traveller for so",
+        "it has",
+        "so most people",
+        "is simply ",
+        " we cannot move about",
+        "and the still",
+    };
+    for (auto prefix : prefixs) {
+        std::string predicted = lm.predict(prefix, 30);
+        std::cout << "prefix : " << prefix << std::endl;
+        std::cout << "predicted : " << predicted << std::endl;
+    }
     delete rnn;
     autograd::freeAllNodes();
     autograd::freeAllEdges();

@@ -34,10 +34,12 @@ class RnnLM {
         RnnLM(Rnn *_rnn, uint vocab_size);
         ~RnnLM();
         Node *forward(std::vector<Node *> inputs);
-        Node *predict(const std::string &prefix, uint max_len);
+        Node *output_layer(Node *hidden);
+        std::string predict(const std::string &prefix, uint num_preds);
         std::vector<Parameters *> get_parameters();
     private:
         Rnn *rnn;
+        uint vocab_size;
         
         Matrix *mW;
         Matrix *mb;

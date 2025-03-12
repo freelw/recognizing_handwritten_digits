@@ -68,6 +68,7 @@ public:
     std::vector<Matrix *> split(uint dim);
     DATATYPE *getData() const;
     Matrix *fill(DATATYPE value);
+    std::vector<uint> argMax();
 private:
     bool initialized;
     bool allocated;

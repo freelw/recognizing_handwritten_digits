@@ -380,6 +380,22 @@ Matrix *Matrix::fill(DATATYPE value) {
     return this;
 }
 
+std::vector<uint> Matrix::argMax() {
+    Shape shape = getShape();
+    std::vector<uint> res;
+    res.reserve(shape.colCnt);
+    for (uint i = 0; i < shape.colCnt; ++ i) {
+        uint max_index = 0;
+        for (uint j = 1; j < shape.rowCnt; ++ j) {
+            if ((*this)[j][i] > (*this)[max_index][i]) {
+                max_index = j;
+            }
+        }
+        res.push_back(max_index);
+    }
+    return res;
+}
+
 DATATYPE sigmoid(DATATYPE z) {
     return 1./(1.+exp(-z));
 }
