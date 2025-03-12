@@ -13,7 +13,7 @@
 class DataLoader {
 
 public:
-    DataLoader(const std::string &filename, uint batch_size = 1) {
+    DataLoader(const std::string &filename) {
         std::ifstream ifs(filename);
         std::string _content((std::istreambuf_iterator<char>(ifs)),
                              (std::istreambuf_iterator<char>()));
