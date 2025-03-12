@@ -104,7 +104,6 @@ void testgrad() {
     delete mX;
 }
 
-
 DATATYPE update_mini_batch(
     autograd::MLP &m,
     std::vector<TrainingData*> &mini_batch,
@@ -218,7 +217,6 @@ void train(int epochs, int batch_size, bool use_dropout, bool eval) {
 
 int main(int argc, char *argv[]) {
     // testgrad();
-
     if (argc != 5) {
         std::cout << "Usage: " << argv[0] << " <epochs> <batch_size> <use_dropout> <eval>" << std::endl;
         return 1;
