@@ -106,6 +106,33 @@ namespace autograd {
         return node;
     }
 
+    std::vector<Node *> stack(const std::vector<Node *> &nodes, uint dim) {
+        assert(nodes.size() > 0);
+        Shape shape = nodes[0]->get_weight()->getShape();
+        for (auto node : nodes) {
+            node->checkShape(shape);
+        }
+        assert(dim == 0);
+        std::vector<Node *> res;
+        auto num_steps = nodes.size();
+        auto batch_size = shape.colCnt;
+        
+        for (uint i = 0; i < batch_size; ++ i) {
+            Matrix *m = allocTmpMatrix(Shape(shape.rowCnt, num_steps));
+            Node *new_node = allocNode(m);
+            new_node->require_grad();
+            for (uint j = 0; j < num_steps; ++ j) {
+                auto node = nodes[j];
+                for (uint k = 0; k < shape.rowCnt; ++ k) {
+                    (*m)[k][j] = (*node->get_weight())[k][i];
+                }
+                new_node->edges.push_back(StackEdge::create(node, 0, j, i));
+            }
+            res.push_back(new_node);
+        }
+        return res;
+    }
+
     void Node::backward() {
         assert(ref_cnt == 0);
         if (!is_require_grad()) {
@@ -125,29 +152,6 @@ namespace autograd {
                 edge->node->backward();
             }
         }
-    }
-
-    std::vector<Node *> stack(const std::vector<Node *> &nodes, uint dim) {
-        assert(nodes.size() > 0);
-        Shape shape = nodes[0]->get_weight()->getShape();
-        for (auto node : nodes) {
-            node->checkShape(shape);
-        }
-        assert(dim == 0);
-        std::vector<Node *> res;
-        auto num_steps = nodes.size();
-        auto batch_size = shape.colCnt;
-        for (uint i = 0; i < batch_size; ++ i) {
-            Matrix *m = allocTmpMatrix(Shape(shape.rowCnt, num_steps));
-            for (uint j = 0; j < num_steps; ++ j) {
-                auto node = nodes[j];
-                for (uint k = 0; k < shape.rowCnt; ++ k) {
-                    (*m)[k][j] = (*node->get_weight())[k][i];
-                }
-            }
-            res.push_back(allocNode(m));
-        }
-        return res;
     }
 
     std::vector<Edge *> edges;
