@@ -295,6 +295,7 @@ void test_cat_bp() {
 }
 
 int main(int argc, char *argv[]) {
+    cout << "OMP_THREADS: " << OMP_THREADS << endl;
     // register signal SIGINT and signal handler
     signal(SIGINT, signal_callback_handler);
 
