@@ -3,6 +3,7 @@
 #include "autograd/optimizers.h"
 #include <iostream>
 #include "dataloader/mnist_loader_base.h"
+#include "mlp.h"
 #include <algorithm>
 #include <random>
 #include <chrono>
@@ -104,72 +105,80 @@ void testgrad() {
 }
 
 
-// double update_mini_batch(
-//     MLP &m,
-//     std::vector<TrainingData*> &mini_batch,
-//     Adam &optimizer) {
-//     Matrix *input = allocTmpMatrix(Shape(INPUT_LAYER_SIZE, mini_batch.size()));
-//     std::vector<uint> labels;
-//     for (uint i = 0; i < INPUT_LAYER_SIZE; ++ i) {
-//         for (uint j = 0; j < mini_batch.size(); ++ j) {
-//             (*input)[i][j] = (*(mini_batch[j]->x))[i][0];
-//         }
-//     }
-//     labels.reserve(mini_batch.size());
-//     for (uint j = 0; j < mini_batch.size(); ++ j) {
-//         labels.emplace_back(mini_batch[j]->y);
-//     }
-//     optimizer.zero_grad();
-//     double loss = m.backward(input, labels);
-//     optimizer.step();
-//     freeTmpMatrix();
-//     return loss;
-// }
+DATATYPE update_mini_batch(
+    autograd::MLP &m,
+    std::vector<TrainingData*> &mini_batch,
+    autograd::Adam &optimizer) {
+    Matrix *input = allocTmpMatrix(Shape(INPUT_LAYER_SIZE, mini_batch.size()));
+    std::vector<uint> labels;
+    for (uint i = 0; i < INPUT_LAYER_SIZE; ++ i) {
+        for (uint j = 0; j < mini_batch.size(); ++ j) {
+            (*input)[i][j] = (*(mini_batch[j]->x))[i][0];
+        }
+    }
+    labels.reserve(mini_batch.size());
+    for (uint j = 0; j < mini_batch.size(); ++ j) {
+        labels.emplace_back(mini_batch[j]->y);
+    }
+    optimizer.zero_grad();
+    auto loss = m.forward(autograd::allocNode(input))->CrossEntropy(labels);
+    assert(loss->get_weight()->getShape().rowCnt == 1);
+    assert(loss->get_weight()->getShape().colCnt == 1);
+    DATATYPE ret = *(loss->get_weight())[0][0];
+    loss->backward();
+    optimizer.step();
+    autograd::freeAllNodes();
+    autograd::freeAllEdges();
+    freeTmpMatrix();
+    return ret;
+}
 
-// int evaluate(MLP &m, std::vector<TrainingData*> &v_test_data) {
-//     int sum = 0;
-//     for (uint i = 0; i < v_test_data.size(); ++ i) {
-//         Matrix *res = m.forward(v_test_data[i]->x);
-//         res->checkShape(Shape(10, 1));
-//         uint index = 0;
-//         for (uint j = 1; j < res->getShape().rowCnt; ++ j) {
-//             if ((*res)[j][0] > (*res)[index][0]) {
-//                 index = j;
-//             }
-//         }
-//         if (index == v_test_data[i]->y) {
-//             sum ++;
-//         }
-//     }
-//     return sum;
-// }
+int evaluate(autograd::MLP &m, std::vector<TrainingData*> &v_test_data) {
+    int sum = 0;
+    for (uint i = 0; i < v_test_data.size(); ++ i) {
+        Matrix *res = m.forward(autograd::allocNode(v_test_data[i]->x))->get_weight();
+        res->checkShape(Shape(10, 1));
+        uint index = 0;
+        for (uint j = 1; j < res->getShape().rowCnt; ++ j) {
+            if ((*res)[j][0] > (*res)[index][0]) {
+                index = j;
+            }
+        }
+        if (index == v_test_data[i]->y) {
+            sum ++;
+        }
+    }
+    return sum;
+}
 
-// void SGD(MLP &m, std::vector<TrainingData*> &v_training_data,
-//     std::vector<TrainingData*> &v_test_data,
-//     int epochs, int mini_batch_size, Adam &optimizer, bool eval) {
+void SGD(autograd::MLP &m, std::vector<TrainingData*> &v_training_data,
+    std::vector<TrainingData*> &v_test_data,
+    int epochs, int mini_batch_size, autograd::Adam &optimizer, bool eval) {
 
-//     int n = v_training_data.size();
-//     for (auto e = 0; e < epochs; ++ e) {
-//         auto rng = std::default_random_engine {};
-//         std::shuffle(std::begin(v_training_data), std::end(v_training_data), rng);
-//         std::vector<std::vector<TrainingData*>> mini_batches;
-//         for (auto i = 0; i < n; i += mini_batch_size) {
-//             std::vector<TrainingData*> tmp;
-//             auto end = min(i+mini_batch_size, n);
-//             tmp.assign(v_training_data.begin()+i,v_training_data.begin()+end);
-//             mini_batches.emplace_back(tmp);
-//         }
-//         double loss_sum = 0;
-//         for (uint i = 0; i < mini_batches.size(); ++ i) {
-//             loss_sum += update_mini_batch(m, mini_batches[i], optimizer);
-//         }
-//         cout << "epoch : [" << e+1 << "/" << epochs << "] loss : " << loss_sum / mini_batches.size() << endl;
-//         if (eval) {
-//             std::cout << evaluate(m, v_test_data) << " / " << v_test_data.size() << std::endl;
-//         }
-//         freeTmpMatrix();
-//     }
-// }
+    int n = v_training_data.size();
+    for (auto e = 0; e < epochs; ++ e) {
+        auto rng = std::default_random_engine {};
+        std::shuffle(std::begin(v_training_data), std::end(v_training_data), rng);
+        std::vector<std::vector<TrainingData*>> mini_batches;
+        for (auto i = 0; i < n; i += mini_batch_size) {
+            std::vector<TrainingData*> tmp;
+            auto end = min(i+mini_batch_size, n);
+            tmp.assign(v_training_data.begin()+i,v_training_data.begin()+end);
+            mini_batches.emplace_back(tmp);
+        }
+        double loss_sum = 0;
+        for (uint i = 0; i < mini_batches.size(); ++ i) {
+            loss_sum += update_mini_batch(m, mini_batches[i], optimizer);
+        }
+        cout << "epoch : [" << e+1 << "/" << epochs << "] loss : " << loss_sum / mini_batches.size() << endl;
+        if (eval) {
+            std::cout << evaluate(m, v_test_data) << " / " << v_test_data.size() << std::endl;
+        }
+        autograd::freeAllNodes();
+        autograd::freeAllEdges();
+        freeTmpMatrix();
+    }
+}
 
 void train(int epochs, int batch_size, bool use_dropout, bool eval) {
     cout << "eval : " << eval << endl;
@@ -196,11 +205,9 @@ void train(int epochs, int batch_size, bool use_dropout, bool eval) {
     }
     cout << "data loaded." << endl;
     
-
-    // MLP m(INPUT_LAYER_SIZE, {30, 10});
-    // m.init();
-    // Adam adam(m.get_parameters(), 0.001);
-    // SGD(m, v_training_data, v_test_data, epochs, batch_size, adam, eval);
+    autograd::MLP m(INPUT_LAYER_SIZE, {30, 10});
+    autograd::Adam adam(m.get_parameters(), 0.001);
+    SGD(m, v_training_data, v_test_data, epochs, batch_size, adam, eval);
     for (uint i = 0; i < v_training_data.size(); ++ i) {
         delete v_training_data[i];
     }
@@ -221,5 +228,6 @@ int main(int argc, char *argv[]) {
     int use_dropout = atoi(argv[3]);
     int eval = atoi(argv[4]);
     train(epochs, batch_size, use_dropout == 1, eval == 1);
+    freeTmpMatrix();
     return 0;
 }

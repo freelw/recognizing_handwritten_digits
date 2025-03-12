@@ -14,15 +14,16 @@ MLP::MLP(uint _input, const std::vector<uint> &_outputs) {
     mW2 = allocMatrix(Shape(_outputs[1], _outputs[0]));
     mb2 = allocMatrix(Shape(_outputs[1], 1));
 
-    init_weight(mW1, 0.1);
-    init_weight(mb1, 0.1);
-    init_weight(mW2, 0.1);
-    init_weight(mb2, 0.1);
+    auto sigma = 0.02;
+    init_weight(mW1, sigma);
+    init_weight(mb1, sigma);
+    init_weight(mW2, sigma);
+    init_weight(mb2, sigma);
     
-    W1 = allocNode(mW1);
-    b1 = allocNode(mb1);
-    W2 = allocNode(mW2);
-    b2 = allocNode(mb2);
+    W1 = new Node(mW1, true);
+    b1 = new Node(mb1, true);
+    W2 = new Node(mW2, true);
+    b2 = new Node(mb2, true);
 
     W1->require_grad();
     b1->require_grad();
@@ -63,10 +64,19 @@ MLP::~MLP() {
     delete Pb2;
 }
 
-Matrix *MLP::forward(Matrix *input) {
-    auto Z1 = W1->at(input)->expand_add(b1->get_weight())->Relu();
-    auto Z2 = W2->get_weight()->at(Z1)->expand_add(b2->get_weight());
+Node *MLP::forward(Node *input) {
+    auto Z1 = W1->at(input)->expand_add(b1)->Relu();
+    auto Z2 = W2->at(Z1)->expand_add(b2);
     return Z2;
+}
+
+std::vector<Parameters*> MLP::get_parameters() {
+    std::vector<Parameters*> res;
+    res.push_back(PW1);
+    res.push_back(Pb1);
+    res.push_back(PW2);
+    res.push_back(Pb2);
+    return res;
 }
 
 }// namespace autograd

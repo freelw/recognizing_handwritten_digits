@@ -10,7 +10,17 @@ SRCDIR+= ../utils/autograd
 SRCDIR+= ../utils/lmcommon
 SRCS := $(wildcard *.cpp) $(wildcard $(addsuffix /*.cpp, $(SRCDIR)))
 OBJECTS := $(patsubst %.c,%.o,$(SRCS))
+
+ifeq ($(RELEASE),1)
+	CFLAGS += -O3
+	CFLAGS := $(filter-out -fsanitize=address, $(CFLAGS))
+	RELEASE_MSG = "Compiling with optimizations for release"
+else
+	CFLAGS += -fsanitize=address
+endif
+
 $(TARGET) : $(OBJECTS)
+	@echo $(RELEASE_MSG)
 	g++ $(CFLAGS) $^ -o $@ $(LDFLAGS)
 %.o : %.c
 	g++ -c $(CFLAGS) $< -o $@
