@@ -58,7 +58,7 @@ namespace autograd {
         return {PWxh, PWhh, Pbh};
     }
 
-    RnnLM::RnnLM(Rnn *rnn, uint vocab_size) {
+    RnnLM::RnnLM(Rnn *_rnn, uint vocab_size) : rnn(_rnn) {
         mW = new Matrix(Shape(vocab_size, rnn->get_hidden_num()));
         mb = new Matrix(Shape(vocab_size, 1));
         init_weight(mW, 0.02);

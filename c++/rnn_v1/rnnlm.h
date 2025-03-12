@@ -31,7 +31,7 @@ class Rnn {
 
 class RnnLM {
     public:
-        RnnLM(Rnn *rnn, uint vocab_size);
+        RnnLM(Rnn *_rnn, uint vocab_size);
         ~RnnLM();
         Node *forward(std::vector<Node *> inputs);
         Node *predict(const std::string &prefix, uint max_len);

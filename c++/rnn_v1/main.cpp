@@ -91,10 +91,22 @@ void test_print_progress() {
     }
 }
 
+int gen_batch(
+    autograd::DataLoader &loader,
+    uint num_steps,
+    uint batch_size,
+    std::vector<autograd::Node *> &inputs,
+    std::vector<uint> &whole_labels) {
+    
+    
+
+    return 0;
+}
+
 void train(const std::string &corpus, const std::string &checkpoint, uint epochs) {
     std::cout << "train by " << corpus << std::endl;
     std::cout << "epochs : " << epochs << std::endl;
-    autograd::DataLoader loader(corpus, BATCH_SIZE);
+    autograd::DataLoader loader(corpus);
     std::cout << "Data loaded" << std::endl;
     uint num_steps = 32;
     uint hidden_num = 32;
@@ -113,26 +125,22 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
     for (uint epoch = 0; epoch < epochs; epoch++) {
         DATATYPE loss_sum = 0;
         int emit_clip = 0;
-        for (uint i = 0; i < loader.data.size() - num_steps + 1; i++) {
-            std::vector<Matrix *> inputs;
-            std::vector<uint> whole_labels;
-            for (uint j = 0; j < num_steps; j++) {
-                assert(i+j < loader.data.size());
-                // assert(i+j+1 < loader.labels.size());
-                inputs.push_back(loader.data[i+j]);
-                // labels.push_back(loader.labels[i+j+1]);
-                auto &labels = loader.labelss[i+j];
-                whole_labels.insert(whole_labels.end(), labels.begin(), labels.end());
-            }
-            Shape shape = inputs[0]->getShape();
-            assert(whole_labels.size() == num_steps*shape.colCnt);
-            assert(inputs.size() == num_steps);
+        int i = 0;
+        int loops = 0;
+        while (1) {
+            
 
-            std::vector<autograd::Node *> nodes;
-            for (uint j = 0; j < inputs.size(); j++) {
-                nodes.push_back(autograd::allocNode(inputs[j]));
+            std::vector<autograd::Node *> inputs;
+            std::vector<uint> whole_labels;
+
+            int ret = gen_batch(loader, num_steps, BATCH_SIZE, inputs, whole_labels);
+            if (ret == 0){
+                break;
             }
-            auto loss = lm.forward(nodes)->CrossEntropy(whole_labels);
+            i += ret;
+            loops++;
+
+            auto loss = lm.forward(inputs)->CrossEntropy(whole_labels);
             assert(loss->getShape().rowCnt == 1);
             assert(loss->getShape().colCnt == 1);
             loss_sum += (*loss->get_weight())[0][0];
@@ -149,11 +157,11 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
                 save_checkpoint(checkpoint_prefix, epoch, lm);
                 exit(0);
             }
-            print_progress(i+1, loader.data.size() - num_steps);
+            print_progress(i+1, loader.content.length() - num_steps);
         }
         save_checkpoint(checkpoint_prefix, epoch, lm);
         std::cout.precision(14);
-        std::cout << "epoch " << epoch << " loss : " << loss_sum/(loader.data.size() - num_steps) << " emit_clip : " << emit_clip << std::endl;
+        std::cout << "epoch " << epoch << " loss : " << loss_sum/loops << " emit_clip : " << emit_clip << std::endl;
     }
     // if (epochs > 0) {
     //     // pass
