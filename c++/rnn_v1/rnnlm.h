@@ -8,7 +8,7 @@ namespace autograd {
 
 class Rnn {
     public:
-        Rnn(uint input_num, uint _hidden_num);
+        Rnn(uint input_num, uint _hidden_num, DATATYPE sigma);
         ~Rnn();
         std::vector<Node *> forward(const std::vector<Node *> &inputs, Node *prev_hidden);
         std::vector<Parameters *> get_parameters();

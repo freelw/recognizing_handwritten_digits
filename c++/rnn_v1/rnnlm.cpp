@@ -1,12 +1,11 @@
 #include "rnnlm.h"
 
 namespace autograd {
-    Rnn::Rnn(uint input_num, uint _hidden_num) : hidden_num(_hidden_num) {
+    Rnn::Rnn(uint input_num, uint _hidden_num, DATATYPE sigma) : hidden_num(_hidden_num) {
         mWxh = new Matrix(Shape(hidden_num, input_num));
         mWhh = new Matrix(Shape(hidden_num, hidden_num));
         mbh = new Matrix(Shape(hidden_num, 1));
         
-        auto sigma = 0.02;
         init_weight(mWxh, sigma);
         init_weight(mWhh, sigma);
         init_weight(mbh, sigma);
@@ -98,6 +97,15 @@ namespace autograd {
 
     Node * RnnLM::predict(const std::string &prefix, uint max_len) {
         return nullptr;
+    }
+
+    std::vector<Parameters *> RnnLM::get_parameters() {
+        std::vector<Parameters *> res;
+        res.push_back(PW);
+        res.push_back(Pb);
+        auto rnn_params = rnn->get_parameters();
+        res.insert(res.end(), rnn_params.begin(), rnn_params.end());
+        return res;
     }
 
 } // namespace autograd
