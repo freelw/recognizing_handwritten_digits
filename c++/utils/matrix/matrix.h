@@ -8,7 +8,7 @@
 using namespace std;
 
 #ifndef OMP_THREADS
-#define OMP_THREADS 4
+#define OMP_THREADS 8
 #endif
 
 struct Shape {
