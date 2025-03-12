@@ -106,13 +106,16 @@ namespace autograd {
         return node;
     }
 
-    std::vector<Node *> stack(const std::vector<Node *> &nodes, uint dim) {
+    /*
+        stack 先按照时间序列拼接成三维张量，在按照batch_size切割成二维张量
+    */
+    std::vector<Node *> stack(const std::vector<Node *> &nodes) {
         assert(nodes.size() > 0);
         Shape shape = nodes[0]->get_weight()->getShape();
         for (auto node : nodes) {
             node->checkShape(shape);
         }
-        assert(dim == 0);
+        
         std::vector<Node *> res;
         auto num_steps = nodes.size();
         auto batch_size = shape.colCnt;
@@ -126,7 +129,7 @@ namespace autograd {
                 for (uint k = 0; k < shape.rowCnt; ++ k) {
                     (*m)[k][j] = (*node->get_weight())[k][i];
                 }
-                new_node->edges.push_back(StackEdge::create(node, 0, j, i));
+                new_node->edges.push_back(StackEdge::create(node, j, i));
             }
             res.push_back(new_node);
         }

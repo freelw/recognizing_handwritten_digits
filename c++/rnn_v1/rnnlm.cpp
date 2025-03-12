@@ -82,7 +82,8 @@ namespace autograd {
     }
 
     Node *RnnLM::forward(std::vector<Node *> inputs) {
-        // 
+        std::vector<Node *> hiddens = rnn->forward(inputs, nullptr);
+        std::vector<Node *> stack_hiddens = stack(hiddens);
         return nullptr;
     }
 

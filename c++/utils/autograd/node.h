@@ -95,7 +95,7 @@ namespace autograd {
             // Node *operator-(Node &rhs);
             // Node *operator-();
             // friend Node *operator-(DATATYPE, Node &rhs);
-            friend std::vector<Node *> stack(const std::vector<Node *> &nodes, uint dim);
+            friend std::vector<Node *> stack(const std::vector<Node *> &nodes);
         private:
             Matrix *w;
             Matrix *grad;
@@ -260,33 +260,26 @@ namespace autograd {
 
     class StackEdge: public Edge {
         public:
-            static Edge* create(Node *_node, uint _dim, uint _new_index, uint _old_index) {
-                Edge *edge = new StackEdge(_node, _dim, _new_index, _old_index);
+            static Edge* create(Node *_node, uint _new_index, uint _old_index) {
+                Edge *edge = new StackEdge(_node, _new_index, _old_index);
                 edges.push_back(edge);
                 return edge;
             }
-            StackEdge(Node *_node, uint _dim, uint _new_index, uint _old_index)
-                : Edge(OpType::Stack, _node), dim(_dim), new_index(_new_index), old_index(_old_index) {}
+            StackEdge(Node *_node, uint _new_index, uint _old_index)
+                : Edge(OpType::Stack, _node), new_index(_new_index), old_index(_old_index) {}
             virtual ~StackEdge() {}
             void backward(Matrix *grad) override {
-                
                 assert(node->is_require_grad());
-                assert(dim == 0);
-
-                if (dim == 0) {
-                    for (uint i = 0; i < node->get_weight()->getShape().rowCnt; ++ i) {
-                        (*node->get_grad())[i][old_index] += (*grad)[i][new_index];
-                    }
+                for (uint i = 0; i < node->get_weight()->getShape().rowCnt; ++ i) {
+                    (*node->get_grad())[i][old_index] += (*grad)[i][new_index];
                 }
-
             }
         private:
-            uint dim;
             uint new_index;
             uint old_index;
     };
 
-    std::vector<Node *> stack(const std::vector<Node *> &nodes, uint dim);
+    std::vector<Node *> stack(const std::vector<Node *> &nodes);
     Node *allocNode(Matrix *w);
     void freeAllNodes();
     void freeAllEdges();

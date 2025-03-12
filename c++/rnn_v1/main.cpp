@@ -196,7 +196,7 @@ void test_stack() {
         std::cout << "node : " << *node->get_weight() << std::endl;
     }
 
-    std::vector<autograd::Node *> res = autograd::stack(nodes, 0);
+    std::vector<autograd::Node *> res = autograd::stack(nodes);
 
     for (auto node : res) {
         std::cout << "res : " << *node->get_weight() << std::endl;
