@@ -6,3 +6,5 @@ c++/v2/recognizing_handwritten_digits_v2
 c++/rnn/rnn
 c++/lstm/lstm
 c++/matrix_bench/bench
+c++/v3/autogradtest
+c++/v3/c.log

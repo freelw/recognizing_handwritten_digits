@@ -49,6 +49,8 @@ public:
     Matrix *operator*(DATATYPE);
     Matrix *operator*=(DATATYPE);
     Matrix *operator/(DATATYPE);
+    Matrix *Relu();
+    Matrix *Relu_prime();
     Matrix *tanh();
     Matrix *tanh_prime();
     Matrix& operator=(const Matrix &m);
@@ -65,6 +67,7 @@ public:
     Matrix *sum(uint dim);
     std::vector<Matrix *> split(uint dim);
     DATATYPE *getData() const;
+    Matrix *fill(DATATYPE value);
 private:
     bool initialized;
     bool allocated;
@@ -86,5 +89,6 @@ Matrix *allocTmpMatrix(Matrix *m);
 Matrix *allocTmpMatrix(const Matrix &m);
 Matrix *allocTmpMatrix(const Shape & shape);
 void freeTmpMatrix();
+void init_weight(Matrix *weight, DATATYPE sigma);
 
 #endif

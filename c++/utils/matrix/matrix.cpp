@@ -5,6 +5,8 @@
 #include <string.h>
 #include <vector>
 #include <omp.h> // Include OpenMP header
+#include <random>
+#include <chrono>
 
 Matrix::Matrix(Shape _shape)
         : initialized(false),
@@ -223,6 +225,30 @@ Matrix *Matrix::operator/(DATATYPE v) {
     return res;
 }
 
+Matrix *Matrix::Relu() {
+    Matrix *res = allocTmpMatrix(this);
+    #pragma omp parallel for num_threads(OMP_THREADS)
+    for (uint i = 0; i < shape.rowCnt; ++i) {
+        auto row = (*res)[i];
+        for (uint j = 0; j < shape.colCnt; ++j) {
+            row[j] = std::max(row[j], (DATATYPE)0);
+        }
+    }
+    return res;
+}
+
+Matrix *Matrix::Relu_prime() {
+    Matrix *res = allocTmpMatrix(this);
+    #pragma omp parallel for num_threads(OMP_THREADS)
+    for (uint i = 0; i < shape.rowCnt; ++i) {
+        auto row = (*res)[i];
+        for (uint j = 0; j < shape.colCnt; ++j) {
+            row[j] = row[j] > 0 ? 1 : 0;
+        }
+    }
+    return res;
+}
+
 Matrix *Matrix::tanh() {
     Matrix *res = allocTmpMatrix(this);
     #pragma omp parallel for num_threads(OMP_THREADS)
@@ -345,6 +371,15 @@ DATATYPE *Matrix::getData() const {
     return data;
 }
 
+Matrix *Matrix::fill(DATATYPE value) {
+    for (uint i = 0; i < shape.rowCnt; ++ i) {
+        for (uint j = 0; j < shape.colCnt; ++ j) {
+            (*this)[i][j] = value;
+        }
+    }
+    return this;
+}
+
 DATATYPE sigmoid(DATATYPE z) {
     return 1./(1.+exp(-z));
 }
@@ -397,4 +432,15 @@ TrainingData::TrainingData(int input_layer_size, int _y)
 
 TrainingData::~TrainingData() {
     delete x;
+}
+
+void init_weight(Matrix *weight, DATATYPE sigma) {
+    unsigned seed1 = std::chrono::system_clock::now().time_since_epoch().count();
+    std::default_random_engine generator_w(seed1);
+    std::normal_distribution<DATATYPE> distribution_w(0.0, sigma);
+    for (uint i = 0; i < weight->getShape().rowCnt; ++ i) {
+        for (uint j = 0; j < weight->getShape().colCnt; ++ j) {
+            (*weight)[i][j] = distribution_w(generator_w);
+        }
+    }
 }
