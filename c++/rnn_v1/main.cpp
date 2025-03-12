@@ -91,16 +91,39 @@ void test_print_progress() {
     }
 }
 
+void gen_matrix_labels(const std::string &content, uint offset, uint len, Matrix * &input, std::vector<uint> &labels) {
+    assert(offset + len < content.size());
+    input = allocTmpMatrix(Shape(INPUT_NUM, len));
+    for (uint i = 0; i < len; i++) {
+        uint pos = offset + i;
+        char ch = content[pos];
+        char next_ch = content[pos+1];
+        assert((ch >= 'a' && ch <= 'z') || ch == ' ');
+        (*input)[to_index(ch)][i] = 1;
+        labels.push_back(to_index(next_ch));
+    }
+}
+
 int gen_batch(
+    int start,
     autograd::DataLoader &loader,
     uint num_steps,
     uint batch_size,
     std::vector<autograd::Node *> &inputs,
     std::vector<uint> &whole_labels) {
     
-    
-
-    return 0;
+    int cur_batch_size = std::min(batch_size, (int)loader.content.size() - start - num_steps);
+    if (cur_batch_size <= 0) {
+        return 0;
+    }
+    for (int i = 0; i < cur_batch_size; i++) {
+        Matrix *input = nullptr;
+        std::vector<uint> labels;
+        gen_matrix_labels(loader.content, start+i, num_steps, input, labels);    
+        inputs.push_back(autograd::allocNode(input));
+        whole_labels.insert(whole_labels.end(), labels.begin(), labels.end());
+    }
+    return cur_batch_size;
 }
 
 void train(const std::string &corpus, const std::string &checkpoint, uint epochs) {
@@ -128,18 +151,14 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
         int i = 0;
         int loops = 0;
         while (1) {
-            
-
             std::vector<autograd::Node *> inputs;
             std::vector<uint> whole_labels;
-
-            int ret = gen_batch(loader, num_steps, BATCH_SIZE, inputs, whole_labels);
+            int ret = gen_batch(i, loader, num_steps, BATCH_SIZE, inputs, whole_labels);
             if (ret == 0){
                 break;
             }
             i += ret;
             loops++;
-
             auto loss = lm.forward(inputs)->CrossEntropy(whole_labels);
             assert(loss->getShape().rowCnt == 1);
             assert(loss->getShape().colCnt == 1);
