@@ -40,7 +40,25 @@ pushd ./rnn
 make clean
 make
 if [ $? -ne 0 ]; then
-    echo "v0 build failed"
+    echo "rnn build failed"
+    exit 1
+fi
+popd
+
+pushd ./lstm
+make clean
+make
+if [ $? -ne 0 ]; then
+    echo "lstm build failed"
+    exit 1
+fi
+popd
+
+pushd ./matrix_bench
+make clean
+make
+if [ $? -ne 0 ]; then
+    echo "matrix_bench build failed"
     exit 1
 fi
 popd
