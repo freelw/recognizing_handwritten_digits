@@ -34,17 +34,6 @@ MLP::MLP(uint _input, const std::vector<uint> &_outputs) {
     Pb1 = new Parameters(b1);
     PW2 = new Parameters(W2);
     Pb2 = new Parameters(b2);
-
-
-    // W1 = new Parameters(allocNode(mW1));
-    // b1 = new Parameters(allocNode(mb1));
-    // W2 = new Parameters(allocNode(mW2));
-    // b2 = new Parameters(allocNode(mb2));
-
-    // W1 = new Parameters(allocMatrix(Shape(_outputs[0], _input)));
-    // b1 = new Parameters(allocMatrix(Shape(_outputs[0], 1)));
-    // W2 = new Parameters(allocMatrix(Shape(_outputs[1], _outputs[0])));
-    // b2 = new Parameters(allocMatrix(Shape(_outputs[1], 1)));
 }
 
 MLP::~MLP() {
