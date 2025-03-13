@@ -92,6 +92,7 @@ Matrix *sigmoid_prime(const Matrix &m);
 Matrix *allocTmpMatrix(Matrix *m);
 Matrix *allocTmpMatrix(const Matrix &m);
 Matrix *allocTmpMatrix(const Shape & shape);
+std::string tmpMatricsStats();
 void freeTmpMatrix();
 void init_weight(Matrix *weight, DATATYPE sigma);
 
