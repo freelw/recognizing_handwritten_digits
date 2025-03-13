@@ -194,7 +194,8 @@ namespace autograd {
             (*m)[token_ids[i]][0] = 1;
             inputs.push_back(autograd::allocNode(m));
         }
-        std::vector<Node *> hiddens = rnn->forward(inputs, nullptr);
+        std::vector<Node *> embs = embedding->forward(inputs);
+        std::vector<Node *> hiddens = rnn->forward(embs, nullptr);
         auto size = hiddens.size();
         assert(token_ids.size() == size);
         Node *hidden = hiddens[size - 1];
@@ -209,7 +210,8 @@ namespace autograd {
             Matrix *m = allocTmpMatrix(Shape(vocab_size, 1));
             (*m)[max_index][0] = 1;
             Node *input = autograd::allocNode(m);
-            hiddens = rnn->forward({input}, hidden);
+            Node *emb = embedding->forward({input})[0];
+            hiddens = rnn->forward({emb}, hidden);
             assert(hiddens.size() == 1);
             hidden = hiddens[0];
         }
