@@ -148,9 +148,9 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
         while (1) {
             std::vector<std::vector<uint>> inputs;
             std::vector<uint> whole_labels;
-            std::cout << "tmpMatricsStats 0 : " << autograd::stats() << std::endl;
+            // std::cout << "tmpMatricsStats 0 : " << autograd::stats() << std::endl;
             int ret = gen_batch(i, loader, num_steps, BATCH_SIZE, inputs, whole_labels);
-            std::cout << "tmpMatricsStats 1 : " << autograd::stats() << std::endl;
+            // std::cout << "tmpMatricsStats 1 : " << autograd::stats() << std::endl;
             if (ret == 0){
                 break;
             }
@@ -163,9 +163,9 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
             // }
             // cout << "whole_labels : " << whole_labels.capacity() << endl;
             loops++;
-            std::cout << "tmpMatricsStats 1.5 : " << autograd::stats() << std::endl;
+            // std::cout << "tmpMatricsStats 1.5 : " << autograd::stats() << std::endl;
             auto loss = lm.forward(inputs)->CrossEntropy(whole_labels);
-            std::cout << "tmpMatricsStats 2 : " << autograd::stats() << std::endl;
+            // std::cout << "tmpMatricsStats 2 : " << autograd::stats() << std::endl;
             assert(loss->getShape().rowCnt == 1);
             assert(loss->getShape().colCnt == 1);
             loss_sum += (*loss->get_weight())[0][0];
