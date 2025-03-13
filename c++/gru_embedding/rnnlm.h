@@ -10,14 +10,14 @@ namespace autograd {
         public:
             Embedding(uint vocab_size, uint hidden_num);
             ~Embedding();
-            std::vector<Node *> forward(const std::vector<Node *> &inputs);
+            std::vector<Node *> forward(const std::vector<std::vector<uint>> &inputs);
             std::vector<Parameters *> get_parameters();
         private:
             uint vocab_size;
             uint hidden_num;
-            Matrix *mW;
-            Node *W;
-            Parameters *PW;
+            std::vector<Matrix *> mW;
+            std::vector<Node *> W;
+            std::vector<Parameters *> PW;
     };
 
     class GRU {
@@ -64,7 +64,7 @@ namespace autograd {
         public:
             RnnLM(GRU *_rnn, Embedding *_embedding, uint vocab_size);
             ~RnnLM();
-            Node *forward(const std::vector<Node *> &inputs);
+            Node *forward(const std::vector<std::vector<uint>> &inputs);
             Node *output_layer(Node *hidden);
             std::vector<uint> predict(const std::vector<uint> &token_ids, uint num_preds);
             std::vector<Parameters *> get_parameters();

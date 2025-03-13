@@ -4,30 +4,48 @@
 namespace autograd {
 
     Embedding::Embedding(uint _vocab_size, uint _hidden_num) : vocab_size(_vocab_size), hidden_num(_hidden_num) {
-        mW = new Matrix(Shape(hidden_num, vocab_size));
-        init_weight(mW, 0.02);
-        W = new Node(mW, true);
-        W->require_grad();
-        PW = new Parameters(W);
+
+        for (uint i = 0; i < vocab_size; i++) {
+            Matrix *m = new Matrix(Shape(hidden_num, 1));
+            init_weight(m, 0.02);
+            mW.push_back(m);
+            Node *n = new Node(m, true);
+            n->require_grad();
+            W.push_back(n);
+            PW.push_back(new Parameters(n));
+        }
+        
     }
 
     Embedding::~Embedding() {
-        delete mW;
-        delete W;
-        delete PW;
+        for (auto m : mW) {
+            delete m;
+        }
+        for (auto n : W) {
+            delete n;
+        }
+        for (auto p : PW) {
+            delete p;
+        }
     }
 
-    std::vector<Node *> Embedding::forward(const std::vector<Node *> &inputs) {
+    std::vector<Node *> Embedding::forward(const std::vector<std::vector<uint>> &inputs) {
         std::vector<Node *> res;
         for (auto input : inputs) {
-            res.push_back(W->at(input));
+            std::vector<Node *> tmp;
+            for (auto i : input) {
+                tmp.push_back(W[i]);
+            }
+            res.push_back(cat(tmp));
         }
         return res;
     }
 
     std::vector<Parameters *> Embedding::get_parameters() {
         std::vector<Parameters *> res;
-        res.push_back(PW);
+        for (auto p : PW) {
+            res.push_back(p);
+        }
         return res;
     }
 
@@ -167,9 +185,8 @@ namespace autograd {
         delete Pb;
     }
 
-    Node *RnnLM::forward(const std::vector<Node *> &inputs) {
+    Node *RnnLM::forward(const std::vector<std::vector<uint>> &inputs) {
         assert(inputs.size() > 0);
-        Shape shape = inputs[0]->get_weight()->getShape();
         std::vector<Node *> embs = embedding->forward(inputs);
         std::vector<Node *> hiddens = rnn->forward(embs, nullptr);
         std::vector<Node *> outputs;
@@ -177,8 +194,8 @@ namespace autograd {
             outputs.push_back(output_layer(hidden));
         }
         Node *res = cat(outputs);
-        assert(res->get_weight()->getShape().rowCnt == shape.rowCnt);
-        assert(res->get_weight()->getShape().colCnt == shape.colCnt*outputs.size());
+        assert(res->get_weight()->getShape().rowCnt == vocab_size);
+        assert(res->get_weight()->getShape().colCnt == inputs[0].size()*outputs.size());
         return res;
     }
 
@@ -188,12 +205,9 @@ namespace autograd {
 
     std::vector<uint> RnnLM::predict(const std::vector<uint> &token_ids, uint num_preds) {
         assert(token_ids.size() > 0);
-        std::vector<Node *> inputs;
-        for (uint i = 0; i < token_ids.size(); i++) {
-            Matrix *m = allocTmpMatrix(Shape(vocab_size, 1));
-            (*m)[token_ids[i]][0] = 1;
-            inputs.push_back(autograd::allocNode(m));
-        }
+        std::vector<std::vector<uint>> inputs;
+        inputs.push_back(token_ids);
+        
         std::vector<Node *> embs = embedding->forward(inputs);
         std::vector<Node *> hiddens = rnn->forward(embs, nullptr);
         auto size = hiddens.size();
@@ -207,9 +221,8 @@ namespace autograd {
             assert(v_max.size() == 1);
             auto max_index = v_max[0];
             res.push_back(max_index);
-            Matrix *m = allocTmpMatrix(Shape(vocab_size, 1));
-            (*m)[max_index][0] = 1;
-            Node *input = autograd::allocNode(m);
+            std::vector<uint> input;
+            input.push_back(max_index);
             Node *emb = embedding->forward({input})[0];
             hiddens = rnn->forward({emb}, hidden);
             assert(hiddens.size() == 1);

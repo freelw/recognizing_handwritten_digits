@@ -77,13 +77,13 @@ void test_print_progress() {
     }
 }
 
-void gen_matrix_labels(gru::DataLoader &loader, uint offset, uint len, Matrix * &input, std::vector<uint> &labels) {
+void gen_matrix_labels(gru::DataLoader &loader, uint offset, uint len, std::vector<uint> &input, std::vector<uint> &labels) {
     assert(offset + len < loader.size());
-    input = allocTmpMatrix(Shape(loader.vocab_size(), len));
+    input.reserve(len);
     for (uint i = 0; i < len; i++) {
         uint pos = offset + i;
         uint token_id = loader.get_token_id(pos);
-        (*input)[token_id][i] = 1;
+        input.push_back(token_id);
         uint next_token_id = loader.get_token_id(pos+1);
         labels.push_back(next_token_id);
     }
@@ -94,7 +94,7 @@ int gen_batch(
     gru::DataLoader &loader,
     uint num_steps,
     uint batch_size,
-    std::vector<autograd::Node *> &inputs,
+    std::vector<std::vector<uint>> &inputs,
     std::vector<uint> &whole_labels) {
     /*
         这里第二个参数不能+1，因为还有留一个label
@@ -103,16 +103,17 @@ int gen_batch(
         这样即便用batch=1，最后一个元素也获取不到label
     */
     int cur_batch_size = std::min(batch_size, (int)loader.size() - start - num_steps); 
-    
     if (cur_batch_size <= 0) {
         return 0;
     }
+    
+    inputs.reserve(num_steps);
     for (uint i = 0; i < num_steps; i++) {
-        Matrix *input = nullptr;
+        std::vector<uint> input;
         std::vector<uint> labels;
         gen_matrix_labels(loader, start+i, cur_batch_size, input, labels);
-        assert(input->getShape().colCnt == (uint)cur_batch_size);
-        inputs.push_back(autograd::allocNode(input));
+        inputs.push_back(input);
+        assert(input.size() == (uint)cur_batch_size);
         whole_labels.insert(whole_labels.end(), labels.begin(), labels.end());
     }
     return cur_batch_size;
@@ -134,7 +135,7 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
         cout << "loaded from checkpoint" << endl;
     }
     auto parameters = lm.get_parameters();
-    assert(parameters.size() == 12);
+    assert(parameters.size() == 11 + loader.vocab_size());
     
     autograd::Adam adam(parameters, 0.001);
     std::string checkpoint_prefix = "checkpoint" + generateDateTimeSuffix();
@@ -144,7 +145,7 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
         int i = 0;
         int loops = 0;
         while (1) {
-            std::vector<autograd::Node *> inputs;
+            std::vector<std::vector<uint>> inputs;
             std::vector<uint> whole_labels;
             int ret = gen_batch(i, loader, num_steps, BATCH_SIZE, inputs, whole_labels);
             if (ret == 0){
