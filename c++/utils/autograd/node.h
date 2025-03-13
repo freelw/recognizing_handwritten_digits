@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "matrix/matrix.h"
+#include "stats/stats.h"
 
 namespace autograd {
     class Edge;
@@ -326,6 +327,8 @@ namespace autograd {
     Node *allocNode(Matrix *w);
     void freeAllNodes();
     void freeAllEdges();
+    TmpNodesStats tmpNodesStats();
+    TmpEdgesStats tmpEdgesStats();
 } // namespace autograd
 
 #endif

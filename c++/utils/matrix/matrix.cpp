@@ -7,6 +7,7 @@
 #include <omp.h> // Include OpenMP header
 #include <random>
 #include <chrono>
+#include "stats/stats.h"
 
 Matrix::Matrix(Shape _shape)
         : initialized(false),
@@ -444,13 +445,17 @@ Matrix *allocTmpMatrix(const Shape & shape) {
     return res;
 }
 
-std::string tmpMatricsStats() {
+autograd::TmpMatricsStats tmpMatricsStats() {
+    autograd::TmpMatricsStats stats;
+
     uint size = tmpMatrics.size();
     uint bytes = 0;
     for (auto p : tmpMatrics) {
         bytes += p->getShape().size() * sizeof(DATATYPE);
     }
-    return "tmpMatrics size : " + std::to_string(size) + " bytes : " + std::to_string(bytes);
+    stats.size = size;
+    stats.bytes = bytes;
+    return stats;
 }
 
 void freeTmpMatrix() {

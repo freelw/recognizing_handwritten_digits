@@ -2,6 +2,8 @@
 #include <assert.h>
 #include <iostream>
 
+#include "stats/stats.h"
+
 namespace autograd {
 
     Matrix *CrossEntropyLoss(Matrix *input, const std::vector<uint> &labels, std::vector<CrosEntropyInfo> &info) { 
@@ -204,5 +206,23 @@ namespace autograd {
             delete edge;
         }
         edges.clear();
+    }
+
+    TmpNodesStats tmpNodesStats() {
+        TmpNodesStats stats;
+        uint size = nodes.size();
+        uint bytes = size * sizeof(Node);
+        stats.size = size;
+        stats.bytes = bytes;
+        return stats;
+    }
+
+    TmpEdgesStats tmpEdgesStats() {
+        TmpEdgesStats stats;
+        uint size = edges.size();
+        uint bytes = size * sizeof(Edge);
+        stats.size = size;
+        stats.bytes = bytes;
+        return stats;
     }
 } // namespace autograd

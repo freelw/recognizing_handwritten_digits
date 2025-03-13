@@ -8,6 +8,7 @@
 #include "rnnlm.h"
 #include "getopt.h"
 #include <unistd.h>
+#include "stats/stats.h"
 
 #define EMBEDDING_SIZE 32
 // #pragma message("warning: shutdown is true")
@@ -147,27 +148,30 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
         while (1) {
             std::vector<std::vector<uint>> inputs;
             std::vector<uint> whole_labels;
-            std::cout << "tmpMatricsStats 0 : " << tmpMatricsStats() << std::endl;
+            std::cout << "tmpMatricsStats 0 : " << autograd::stats() << std::endl;
             int ret = gen_batch(i, loader, num_steps, BATCH_SIZE, inputs, whole_labels);
-            std::cout << "tmpMatricsStats 1 : " << tmpMatricsStats() << std::endl;
+            std::cout << "tmpMatricsStats 1 : " << autograd::stats() << std::endl;
             if (ret == 0){
                 break;
             }
             i += ret;
+            assert(inputs.size() == num_steps);
+            assert(inputs[0].size() == (uint)ret);
+            std::cout << "cur batch size : " << ret << std::endl;
             loops++;
             auto loss = lm.forward(inputs)->CrossEntropy(whole_labels);
-            std::cout << "tmpMatricsStats 2 : " << tmpMatricsStats() << std::endl;
+            std::cout << "tmpMatricsStats 2 : " << autograd::stats() << std::endl;
             assert(loss->getShape().rowCnt == 1);
             assert(loss->getShape().colCnt == 1);
             loss_sum += (*loss->get_weight())[0][0];
             adam.zero_grad();
             loss->backward();
-            std::cout << "tmpMatricsStats 3 : " << tmpMatricsStats() << std::endl;
+            std::cout << "tmpMatricsStats 3 : " << autograd::stats() << std::endl;
             if (adam.clip_grad(1)) {
                 emit_clip++;
             }
             adam.step();
-            std::cout << "tmpMatricsStats 4 : " << tmpMatricsStats() << std::endl;
+            std::cout << "tmpMatricsStats 4 : " << autograd::stats() << std::endl;
             autograd::freeAllNodes();
             autograd::freeAllEdges();
             freeTmpMatrix();

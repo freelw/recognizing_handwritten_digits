@@ -6,6 +6,7 @@ CFLAGS = -g -Wall $(DIR_INC) $(DIR_LIB) -fsanitize=address -fopenmp
 LDFLAGS += -lstdc++ -fopenmp
 SRCDIR+= ../utils/matrix
 SRCDIR+= ../utils/autograd
+SRCDIR+= ../utils/stats
 SRCS := $(wildcard *.cpp) $(wildcard $(addsuffix /*.cpp, $(SRCDIR)))
 OBJECTS := $(patsubst %.c,%.o,$(SRCS))
 RELEASE_MSG="[warning!!!!!] Compiling with debug flags"
