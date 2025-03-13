@@ -96,6 +96,7 @@ namespace autograd {
             Node *z = (*(Wxz->at(input)) + Whz->at(hidden))->expand_add(Bz)->Sigmoid();
             Node *h_tilde = (*(Wxh->at(input)) + Whh->at(*r * hidden))->expand_add(Bh)->Tanh();
             hidden = *(*z * hidden) + *(1 - *z) * h_tilde;
+            res.push_back(hidden);
         }
         return res;
     }
