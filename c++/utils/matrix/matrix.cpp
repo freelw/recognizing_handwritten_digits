@@ -185,6 +185,16 @@ Matrix *Matrix::operator-(const Matrix &m) {
     return res;
 }
 
+Matrix *Matrix::operator-= (const Matrix &m) {
+    checkShape(m);
+    for (uint i = 0; i < shape.rowCnt; ++i) {
+        for (uint j = 0; j < shape.colCnt; ++j) {
+            (*this)[i][j] -= m[i][j];
+        }
+    }
+    return this;
+}
+
 Matrix *Matrix::operator*(const Matrix &m) {
     checkShape(m);
     Matrix *res = allocTmpMatrix(this);

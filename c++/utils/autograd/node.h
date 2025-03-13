@@ -14,6 +14,7 @@ namespace autograd {
 
     enum OpType {
         Add,
+        Minus,
         ExpandAdd,
         Mul,
         Sub,
@@ -82,7 +83,7 @@ namespace autograd {
             // Node *operator/(Node &rhs);
             // Node *operator-(Node &rhs);
             // Node *operator-();
-            // friend Node *operator-(DATATYPE, Node &rhs);
+            friend Node *operator-(DATATYPE, Node &rhs);
             friend Node *cat(const std::vector<Node *> &nodes);
         private:
             Matrix *w;
@@ -122,6 +123,22 @@ namespace autograd {
             void backward(Matrix *grad) override {
                 assert(node->is_require_grad());
                 *node->get_grad() += *grad;
+            }
+    };
+
+    class MinusEdge: public Edge {
+        public:
+            static Edge* create(Node *_node) {
+                Edge *edge = new MinusEdge(_node);
+                edges.push_back(edge);
+                return edge;
+            }
+            MinusEdge(Node *_node)
+                : Edge(Minus, _node) {}
+            virtual ~MinusEdge() {}
+            void backward(Matrix *grad) override {
+                assert(node->is_require_grad());
+                *node->get_grad() -= *grad;
             }
     };
 

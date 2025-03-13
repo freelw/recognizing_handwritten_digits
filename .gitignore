@@ -10,3 +10,4 @@ c++/v3/autogradtest
 c++/v3/c.log
 c++/rnn_v1/rnn
 c++/lstm_v1/lstm_v1
+c++/gru/gru

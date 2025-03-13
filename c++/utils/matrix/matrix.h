@@ -45,6 +45,7 @@ public:
     Matrix *operator-(DATATYPE dt);
     Matrix *operator-();
     Matrix *operator-(const Matrix &m);
+    Matrix *operator-=(const Matrix &m);
     Matrix *operator*(const Matrix &m);
     Matrix *operator*(DATATYPE);
     Matrix *operator*=(DATATYPE);
