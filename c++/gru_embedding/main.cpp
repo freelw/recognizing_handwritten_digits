@@ -157,11 +157,11 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
             i += ret;
             assert(inputs.size() == num_steps);
             assert(inputs[0].size() == (uint)ret);
-            std::cout << "cur batch size : " << ret << std::endl;
-            for (uint j = 0; j < inputs.size(); j++) {
-                cout << "inputs[" << j << "] : " << inputs[j].capacity() << endl;
-            }
-            cout << "whole_labels : " << whole_labels.capacity() << endl;
+            // std::cout << "cur batch size : " << ret << std::endl;
+            // for (uint j = 0; j < inputs.size(); j++) {
+            //     cout << "inputs[" << j << "] : " << inputs[j].capacity() << endl;
+            // }
+            // cout << "whole_labels : " << whole_labels.capacity() << endl;
             loops++;
             std::cout << "tmpMatricsStats 1.5 : " << autograd::stats() << std::endl;
             auto loss = lm.forward(inputs)->CrossEntropy(whole_labels);
@@ -171,12 +171,12 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
             loss_sum += (*loss->get_weight())[0][0];
             adam.zero_grad();
             loss->backward();
-            std::cout << "tmpMatricsStats 3 : " << autograd::stats() << std::endl;
+            // std::cout << "tmpMatricsStats 3 : " << autograd::stats() << std::endl;
             if (adam.clip_grad(1)) {
                 emit_clip++;
             }
             adam.step();
-            std::cout << "tmpMatricsStats 4 : " << autograd::stats() << std::endl;
+            // std::cout << "tmpMatricsStats 4 : " << autograd::stats() << std::endl;
             autograd::freeAllNodes();
             autograd::freeAllEdges();
             freeTmpMatrix();
