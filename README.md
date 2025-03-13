@@ -16,3 +16,4 @@
 * [rnn c++ 自动构建计算图版本](https://github.com/freelw/recognizing_handwritten_digits/tree/main/c++/rnn_v1)
 * [lstm c++ 版本](https://github.com/freelw/recognizing_handwritten_digits/tree/main/c++/lstm)
 * [lstm c++ 自动构建计算图版本](https://github.com/freelw/recognizing_handwritten_digits/tree/main/c++/lstm_v1)
+* [gru c++ 自动构建计算图版本](https://github.com/freelw/recognizing_handwritten_digits/tree/main/c++/gru)
