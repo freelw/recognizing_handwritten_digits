@@ -57,6 +57,9 @@ namespace gru {
             std::string to_word(uint index) {
                 return vocab.to_word(index);
             }
+            uint get_token_id(uint index) {
+                return token_ids[index];
+            }
         private:
             Vocab vocab;
             std::vector<uint> token_ids;

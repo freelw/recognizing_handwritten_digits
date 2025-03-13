@@ -69,8 +69,8 @@ namespace autograd {
             std::string predict(const std::string &prefix, uint num_preds);
             std::vector<Parameters *> get_parameters();
         private:
-            Embedding *embedding;
             GRU *rnn;
+            Embedding *embedding;
             uint vocab_size;
             
             Matrix *mW;

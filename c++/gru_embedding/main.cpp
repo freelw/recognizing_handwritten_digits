@@ -77,16 +77,15 @@ void test_print_progress() {
     }
 }
 
-void gen_matrix_labels(const std::string &content, uint offset, uint len, Matrix * &input, std::vector<uint> &labels) {
-    assert(offset + len < content.size());
-    input = allocTmpMatrix(Shape(INPUT_NUM, len));
+void gen_matrix_labels(gru::DataLoader &loader, uint offset, uint len, Matrix * &input, std::vector<uint> &labels) {
+    assert(offset + len < loader.size());
+    input = allocTmpMatrix(Shape(loader.vocab_size(), len));
     for (uint i = 0; i < len; i++) {
         uint pos = offset + i;
-        char ch = content[pos];
-        char next_ch = content[pos+1];
-        assert((ch >= 'a' && ch <= 'z') || ch == ' ');
-        (*input)[to_index(ch)][i] = 1;
-        labels.push_back(to_index(next_ch));
+        uint token_id = loader.get_token_id(pos);
+        (*input)[token_id][i] = 1;
+        uint next_token_id = loader.get_token_id(pos+1);
+        labels.push_back(next_token_id);
     }
 }
 
@@ -111,7 +110,7 @@ int gen_batch(
     for (uint i = 0; i < num_steps; i++) {
         Matrix *input = nullptr;
         std::vector<uint> labels;
-        gen_matrix_labels(loader.content, start+i, cur_batch_size, input, labels);
+        gen_matrix_labels(loader, start+i, cur_batch_size, input, labels);
         assert(input->getShape().colCnt == (uint)cur_batch_size);
         inputs.push_back(autograd::allocNode(input));
         whole_labels.insert(whole_labels.end(), labels.begin(), labels.end());
@@ -170,7 +169,7 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
                 save_checkpoint(checkpoint_prefix, epoch, lm);
                 exit(0);
             }
-            print_progress(i, loader.content.length() - num_steps);
+            print_progress(i, loader.size() - num_steps);
         }
         save_checkpoint(checkpoint_prefix, epoch, lm);
         std::cout.precision(14);
