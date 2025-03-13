@@ -130,6 +130,15 @@ namespace autograd {
         return node;
     }
 
+    Node *operator-(DATATYPE v, Node &rhs) {
+        auto node = allocNode(v - *(rhs.get_weight()));
+        if (rhs.is_require_grad()) {
+            node->require_grad();
+            node->edges.push_back(MinusEdge::create(&rhs));
+        }
+        return node;
+    }
+
     Node *cat(const std::vector<Node *> &nodes) {
         assert(nodes.size() > 0);
         Shape shape = nodes[0]->get_weight()->getShape();
