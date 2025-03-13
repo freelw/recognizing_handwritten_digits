@@ -36,8 +36,10 @@ namespace autograd {
                 assert(magic);
             }
             void require_grad() {
+                if (!requires_grad) {
+                    grad = allocTmpMatrix(w->getShape());
+                }
                 requires_grad = true;
-                grad = allocTmpMatrix(w->getShape());
             }
             bool is_require_grad() const {
                 return requires_grad;

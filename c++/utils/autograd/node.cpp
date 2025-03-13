@@ -150,6 +150,7 @@ namespace autograd {
         }
         Matrix *m = allocTmpMatrix(Shape(shape.rowCnt, shape.colCnt * nodes.size()));
         Node *node = allocNode(m);
+        
         for (uint i = 0; i < nodes.size(); ++ i) {
             for (uint j = 0; j < shape.colCnt; ++ j) {
                 for (uint k = 0; k < shape.rowCnt; ++ k) {
