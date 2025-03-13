@@ -4,6 +4,9 @@
 namespace autograd {
     void Adam::step() {
         for (auto p : parameters) {
+            if (!p->require_grad()) {
+                continue;
+            }
             p->inc_t();
             auto t = p->get_t();
             Matrix *weight = p->get_weight();
@@ -32,6 +35,9 @@ namespace autograd {
 
     void Adam::zero_grad() {
         for (auto p : parameters) {
+            if (!p->require_grad()) {
+                continue;
+            }
             p->zero_grad();
         }
     }
@@ -40,6 +46,9 @@ namespace autograd {
         DATATYPE norm = 0;
         
         for (auto param : parameters) {
+            if (!param->require_grad()) {
+                continue;
+            }
             auto grad = param->get_grad();
             Shape shape = grad->getShape();
             for (uint i = 0; i < shape.rowCnt; ++ i) {
@@ -51,6 +60,9 @@ namespace autograd {
         norm = sqrt(norm);
         if (norm > grad_clip_val) {
             for (auto param : parameters) {
+                if (!param->require_grad()) {
+                    continue;
+                }
                 auto grad = param->get_grad();
                 *grad *= grad_clip_val / norm;
             }

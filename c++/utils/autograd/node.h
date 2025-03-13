@@ -64,7 +64,9 @@ namespace autograd {
             }
 
             void zero_grad() {
-                grad = allocTmpMatrix(w->getShape());                
+                if (requires_grad) {
+                    grad = allocTmpMatrix(w->getShape());                
+                }
             }
 
             void checkShape(const Shape &shape) {

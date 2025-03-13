@@ -20,6 +20,7 @@ namespace autograd {
             DATATYPE sum = 0;
             auto target = labels[j];
             DATATYPE zt = (*input)[target][j];
+            #pragma omp parallel for num_threads(OMP_THREADS)
             for (uint i = 0; i < input->getShape().rowCnt; ++ i) {
                 DATATYPE e = (*input)[i][j];
                 e = std::exp(e-max);
