@@ -103,7 +103,7 @@ int gen_batch(
         start = 0, num_steps = 2
         这样即便用batch=1，最后一个元素也获取不到label
     */
-    int cur_batch_size = std::min(batch_size, (int)loader.content.size() - start - num_steps); 
+    int cur_batch_size = std::min(batch_size, (int)loader.size() - start - num_steps); 
     
     if (cur_batch_size <= 0) {
         return 0;

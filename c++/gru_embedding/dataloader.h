@@ -35,9 +35,12 @@ namespace gru {
             std::map<std::string, uint> word2index;
             std::vector<std::string> index2word;
     };
+
     class DataLoader {
         public:
-            DataLoader(const std::string &filename, const std::string &vacab_name) : vocab(vacab_name) {
+            DataLoader(
+                const std::string &filename,
+                const std::string &vacab_name) : vocab(vacab_name) {
                 std::ifstream ifs(filename);
                 std::string token;
                 while (ifs >> token) {
@@ -54,8 +57,7 @@ namespace gru {
             std::string to_word(uint index) {
                 return vocab.to_word(index);
             }
-        public:
-            std::string content;
+        private:
             Vocab vocab;
             std::vector<uint> token_ids;
     };
