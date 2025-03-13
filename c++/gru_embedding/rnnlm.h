@@ -66,7 +66,7 @@ namespace autograd {
             ~RnnLM();
             Node *forward(const std::vector<Node *> &inputs);
             Node *output_layer(Node *hidden);
-            std::string predict(const std::string &prefix, uint num_preds);
+            std::vector<uint> predict(const std::vector<uint> &token_ids, uint num_preds);
             std::vector<Parameters *> get_parameters();
         private:
             GRU *rnn;

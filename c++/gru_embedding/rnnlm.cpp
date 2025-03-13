@@ -169,9 +169,8 @@ namespace autograd {
 
     Node *RnnLM::forward(const std::vector<Node *> &inputs) {
         assert(inputs.size() > 0);
-        
+        Shape shape = inputs[0]->get_weight()->getShape();
         std::vector<Node *> embs = embedding->forward(inputs);
-        Shape shape = embs[0]->get_weight()->getShape();
         std::vector<Node *> hiddens = rnn->forward(embs, nullptr);
         std::vector<Node *> outputs;
         for (auto hidden : hiddens) {
@@ -187,26 +186,26 @@ namespace autograd {
         return W->at(hidden)->expand_add(b);
     }
 
-    std::string RnnLM::predict(const std::string &prefix, uint num_preds) {
-        assert(prefix.length() > 0);
+    std::vector<uint> RnnLM::predict(const std::vector<uint> &token_ids, uint num_preds) {
+        assert(token_ids.size() > 0);
         std::vector<Node *> inputs;
-        for (uint i = 0; i < prefix.size(); i++) {
+        for (uint i = 0; i < token_ids.size(); i++) {
             Matrix *m = allocTmpMatrix(Shape(vocab_size, 1));
-            (*m)[to_index(prefix[i])][0] = 1;
+            (*m)[token_ids[i]][0] = 1;
             inputs.push_back(autograd::allocNode(m));
         }
         std::vector<Node *> hiddens = rnn->forward(inputs, nullptr);
         auto size = hiddens.size();
-        assert(prefix.length() == size);
+        assert(token_ids.size() == size);
         Node *hidden = hiddens[size - 1];
         assert(hidden->getShape().colCnt == 1);
-        std::string ret = "";
+        std::vector<uint> res;
         for (uint i = 0; i < num_preds; ++ i) {
             auto output = output_layer(hidden);
             std::vector<uint> v_max = output->get_weight()->argMax();
             assert(v_max.size() == 1);
             auto max_index = v_max[0];
-            ret += to_char(max_index);
+            res.push_back(max_index);
             Matrix *m = allocTmpMatrix(Shape(vocab_size, 1));
             (*m)[max_index][0] = 1;
             Node *input = autograd::allocNode(m);
@@ -214,7 +213,7 @@ namespace autograd {
             assert(hiddens.size() == 1);
             hidden = hiddens[0];
         }
-        return ret;
+        return res;
     }
 
     std::vector<Parameters *> RnnLM::get_parameters() {

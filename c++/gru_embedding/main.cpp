@@ -127,7 +127,7 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
     uint hidden_num = 32;
     autograd::GRU *rnn = new autograd::GRU(EMBEDDING_SIZE, hidden_num, 0.01);
     autograd::Embedding *embedding = new autograd::Embedding(loader.vocab_size(), EMBEDDING_SIZE);
-    autograd::RnnLM lm(rnn, embedding, EMBEDDING_SIZE);
+    autograd::RnnLM lm(rnn, embedding, loader.vocab_size());
     if (!checkpoint.empty()) {
         cout << "loading from checkpoint : " << checkpoint << endl;
         loadfrom_checkpoint(lm, checkpoint);
@@ -192,8 +192,12 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
         "and the still",
     };
     for (auto prefix : prefixs) {
-        std::string predicted = lm.predict(prefix, 30);
+        std::vector<uint> res = lm.predict(loader.to_token_ids(prefix), 30);
         std::cout << "prefix : " << prefix << std::endl;
+        std::string predicted;
+        for (auto token_id : res) {
+            predicted += loader.to_word(token_id) + " ";
+        }
         std::cout << "predicted : " << predicted << std::endl;
     }
     delete embedding;

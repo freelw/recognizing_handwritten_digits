@@ -60,6 +60,15 @@ namespace gru {
             uint get_token_id(uint index) {
                 return token_ids[index];
             }
+            std::vector<uint> to_token_ids(const std::string &sentence) {
+                std::vector<uint> res;
+                std::string token;
+                std::istringstream iss(sentence);
+                while (iss >> token) {
+                    res.push_back(vocab.to_index(token));
+                }
+                return res;
+            }
         private:
             Vocab vocab;
             std::vector<uint> token_ids;
