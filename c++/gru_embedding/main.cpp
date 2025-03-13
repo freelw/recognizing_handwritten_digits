@@ -158,7 +158,12 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
             assert(inputs.size() == num_steps);
             assert(inputs[0].size() == (uint)ret);
             std::cout << "cur batch size : " << ret << std::endl;
+            for (uint j = 0; j < inputs.size(); j++) {
+                cout << "inputs[" << j << "] : " << inputs[j].capacity() << endl;
+            }
+            cout << "whole_labels : " << whole_labels.capacity() << endl;
             loops++;
+            std::cout << "tmpMatricsStats 1.5 : " << autograd::stats() << std::endl;
             auto loss = lm.forward(inputs)->CrossEntropy(whole_labels);
             std::cout << "tmpMatricsStats 2 : " << autograd::stats() << std::endl;
             assert(loss->getShape().rowCnt == 1);
