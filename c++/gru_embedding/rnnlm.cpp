@@ -31,7 +31,7 @@ namespace autograd {
 
     std::vector<Node *> Embedding::forward(const std::vector<std::vector<uint>> &inputs) {
         std::vector<Node *> res;
-        for (auto input : inputs) {
+        for (auto &input : inputs) {
             std::vector<Node *> tmp;
             for (auto i : input) {
                 tmp.push_back(W[i]);
