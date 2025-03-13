@@ -2,6 +2,35 @@
 #include "lmcommon/common.h"
 
 namespace autograd {
+
+    Embedding::Embedding(uint _vocab_size, uint _hidden_num) : vocab_size(_vocab_size), hidden_num(_hidden_num) {
+        mW = new Matrix(Shape(hidden_num, vocab_size));
+        init_weight(mW, 0.02);
+        W = new Node(mW, true);
+        W->require_grad();
+        PW = new Parameters(W);
+    }
+
+    Embedding::~Embedding() {
+        delete mW;
+        delete W;
+        delete PW;
+    }
+
+    std::vector<Node *> Embedding::forward(const std::vector<Node *> &inputs) {
+        std::vector<Node *> res;
+        for (auto input : inputs) {
+            res.push_back(W->at(input));
+        }
+        return res;
+    }
+
+    std::vector<Parameters *> Embedding::get_parameters() {
+        std::vector<Parameters *> res;
+        res.push_back(PW);
+        return res;
+    }
+
     GRU::GRU(uint input_num, uint _hidden_num, DATATYPE sigma) : hidden_num(_hidden_num) {
         mWxr = new Matrix(Shape(hidden_num, input_num));
         mWhr = new Matrix(Shape(hidden_num, hidden_num));
@@ -115,7 +144,8 @@ namespace autograd {
         return res;
     }
 
-    RnnLM::RnnLM(GRU *_rnn, uint _vocab_size) : rnn(_rnn), vocab_size(_vocab_size) {
+    RnnLM::RnnLM(GRU *_rnn, Embedding *_embedding, uint _vocab_size) 
+        : rnn(_rnn), embedding(_embedding), vocab_size(_vocab_size) {
         mW = new Matrix(Shape(vocab_size, rnn->get_hidden_num()));
         mb = new Matrix(Shape(vocab_size, 1));
         init_weight(mW, 0.02);
@@ -137,10 +167,12 @@ namespace autograd {
         delete Pb;
     }
 
-    Node *RnnLM::forward(std::vector<Node *> inputs) {
+    Node *RnnLM::forward(const std::vector<Node *> &inputs) {
         assert(inputs.size() > 0);
-        Shape shape = inputs[0]->get_weight()->getShape();
-        std::vector<Node *> hiddens = rnn->forward(inputs, nullptr);
+        
+        std::vector<Node *> embs = embedding->forward(inputs);
+        Shape shape = embs[0]->get_weight()->getShape();
+        std::vector<Node *> hiddens = rnn->forward(embs, nullptr);
         std::vector<Node *> outputs;
         for (auto hidden : hiddens) {
             outputs.push_back(output_layer(hidden));
@@ -189,6 +221,8 @@ namespace autograd {
         std::vector<Parameters *> res;
         res.push_back(PW);
         res.push_back(Pb);
+        auto embedding_params = embedding->get_parameters();
+        res.insert(res.end(), embedding_params.begin(), embedding_params.end());
         auto rnn_params = rnn->get_parameters();
         res.insert(res.end(), rnn_params.begin(), rnn_params.end());
         return res;

@@ -3,12 +3,13 @@
 #include <chrono>
 #include <sstream>
 #include <iomanip>
-#include "autograd/dataloader.h"
+#include "dataloader.h"
 #include "autograd/optimizers.h"
 #include "rnnlm.h"
 #include "getopt.h"
 #include <unistd.h>
 
+#define EMBEDDING_SIZE 32
 // #pragma message("warning: shutdown is true")
 // bool shutdown = true; // fixme
 bool shutdown = false;
@@ -91,7 +92,7 @@ void gen_matrix_labels(const std::string &content, uint offset, uint len, Matrix
 
 int gen_batch(
     int start,
-    autograd::DataLoader &loader,
+    gru::DataLoader &loader,
     uint num_steps,
     uint batch_size,
     std::vector<autograd::Node *> &inputs,
@@ -121,19 +122,20 @@ int gen_batch(
 void train(const std::string &corpus, const std::string &checkpoint, uint epochs) {
     std::cout << "train by " << corpus << std::endl;
     std::cout << "epochs : " << epochs << std::endl;
-    autograd::DataLoader loader(corpus);
+    gru::DataLoader loader(corpus, VOCAB_NAME);
     std::cout << "Data loaded" << std::endl;
     uint num_steps = 32;
     uint hidden_num = 32;
-    autograd::GRU *rnn = new autograd::GRU(INPUT_NUM, hidden_num, 0.01);
-    autograd::RnnLM lm(rnn, INPUT_NUM);
+    autograd::GRU *rnn = new autograd::GRU(EMBEDDING_SIZE, hidden_num, 0.01);
+    autograd::Embedding *embedding = new autograd::Embedding(loader.vocab_size(), EMBEDDING_SIZE);
+    autograd::RnnLM lm(rnn, embedding, EMBEDDING_SIZE);
     if (!checkpoint.empty()) {
         cout << "loading from checkpoint : " << checkpoint << endl;
         loadfrom_checkpoint(lm, checkpoint);
         cout << "loaded from checkpoint" << endl;
     }
     auto parameters = lm.get_parameters();
-    assert(parameters.size() == 11);
+    assert(parameters.size() == 12);
     
     autograd::Adam adam(parameters, 0.001);
     std::string checkpoint_prefix = "checkpoint" + generateDateTimeSuffix();
@@ -195,6 +197,7 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
         std::cout << "prefix : " << prefix << std::endl;
         std::cout << "predicted : " << predicted << std::endl;
     }
+    delete embedding;
     delete rnn;
     autograd::freeAllNodes();
     autograd::freeAllEdges();
