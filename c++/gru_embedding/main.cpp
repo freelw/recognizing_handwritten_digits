@@ -153,50 +153,26 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
         while (1) {
             std::vector<std::vector<uint>> inputs;
             std::vector<uint> whole_labels;
-            // std::cout << "tmpMatricsStats 0 : " << autograd::stats() << std::endl;
             int ret = gen_batch(i, loader, num_steps, BATCH_SIZE, inputs, whole_labels);
-            // std::cout << "tmpMatricsStats 1 : " << autograd::stats() << std::endl;
             if (ret == 0){
                 break;
             }
             i += ret;
             assert(inputs.size() == num_steps);
             assert(inputs[0].size() == (uint)ret);
-            // // print inputs
-            // std::cout << "inputs : " << std::endl;
-            // for (auto input : inputs) {
-            //     for (auto token_id : input) {
-            //         std::cout << loader.to_word(token_id) << " ";
-            //     }
-            //     std::cout << std::endl;
-            // }
-            // // print whole_labels
-            // std::cout << "whole_labels : " << std::endl;
-            // for (auto token_id : whole_labels) {
-            //     std::cout << loader.to_word(token_id) << " ";
-            // }
-            // std::cout << std::endl;
             loops++;
-            // std::cout << "tmpMatricsStats 1.5 : " << autograd::stats() << std::endl;
             auto loss = lm.forward(inputs)->CrossEntropy(whole_labels);
             std::cout << "loss done" << std::endl;
             std::cout << "stats : " << autograd::stats() << std::endl;
-            // std::cout << "tmpMatricsStats 2 : " << autograd::stats() << std::endl;
             assert(loss->getShape().rowCnt == 1);
             assert(loss->getShape().colCnt == 1);
             loss_sum += (*loss->get_weight())[0][0];
             adam.zero_grad();
             loss->backward();
-            std::cout << "backward done" << std::endl;
-            std::cout << "stats : " << autograd::stats() << std::endl;
-            // std::cout << "tmpMatricsStats 3 : " << autograd::stats() << std::endl;
             if (adam.clip_grad(1)) {
                 emit_clip++;
             }
             adam.step();
-            std::cout << "step done" << std::endl;
-            std::cout << "stats : " << autograd::stats() << std::endl;
-            // std::cout << "tmpMatricsStats 4 : " << autograd::stats() << std::endl;
             autograd::freeAllNodes();
             autograd::freeAllEdges();
             freeTmpMatrix();
