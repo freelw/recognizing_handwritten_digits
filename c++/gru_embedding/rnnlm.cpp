@@ -206,7 +206,11 @@ namespace autograd {
     std::vector<uint> RnnLM::predict(const std::vector<uint> &token_ids, uint num_preds) {
         assert(token_ids.size() > 0);
         std::vector<std::vector<uint>> inputs;
-        inputs.push_back(token_ids);
+        for (auto token_id : token_ids) {
+            std::vector<uint> input;
+            input.push_back(token_id);
+            inputs.push_back(input);
+        }
         
         std::vector<Node *> embs = embedding->forward(inputs);
         std::vector<Node *> hiddens = rnn->forward(embs, nullptr);
