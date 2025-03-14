@@ -201,18 +201,20 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
         std::cout << "serving mode" << std::endl;
     }
     std::vector<std::string> prefixs = {
-        "time traveller",
-        "the time machine",
-        "expounding a recondite",
-        " traveller for so",
-        "it has",
-        "so most people",
-        "is simply ",
-        " we cannot move about",
-        "and the still",
+        // "time traveller",
+        // "the time machine",
+        // "expounding a recondite",
+        // " traveller for so",
+        // "it has",
+        // "so most people",
+        // "is simply ",
+        // " we cannot move about",
+        // "and the still",
+        // "ask you to accept anything",
+        "the time",
     };
     for (auto prefix : prefixs) {
-        std::vector<uint> res = lm.predict(loader.to_token_ids(prefix), 30);
+        std::vector<uint> res = lm.predict(loader.to_token_ids(prefix), 1);
         std::cout << "prefix : " << prefix << std::endl;
         std::string predicted;
         for (auto token_id : res) {

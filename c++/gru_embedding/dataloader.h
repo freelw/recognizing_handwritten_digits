@@ -13,7 +13,8 @@ namespace gru {
             Vocab(const std::string &filename) {
                 std::ifstream ifs(filename);
                 std::string line;
-                uint index = 0;
+                index2word.push_back("<unk>");
+                uint index = 1; // 0 is <unk>
                 while (std::getline(ifs, line)) {
                     word2index[line] = index;
                     index2word.push_back(line);
@@ -22,10 +23,13 @@ namespace gru {
             }
             ~Vocab() {}
             uint size() {
-                return word2index.size();
+                return word2index.size() + 1; // 0 is <unk>
             }
-            uint to_index(const std::string &word){
-                return word2index[word];
+            uint to_index(const std::string &word) const {
+                if (word2index.find(word) == word2index.end()) {
+                    return 0; // 0 is <unk>
+                }
+                return word2index.find(word)->second;
             }
             std::string to_word(uint index) {
                 assert(index < index2word.size());

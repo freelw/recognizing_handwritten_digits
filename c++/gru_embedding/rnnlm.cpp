@@ -221,6 +221,7 @@ namespace autograd {
         std::vector<uint> res;
         for (uint i = 0; i < num_preds; ++ i) {
             auto output = output_layer(hidden);
+            std::cout << "hidden : " << *hidden->get_weight() << std::endl;
             std::vector<uint> v_max = output->get_weight()->argMax();
             assert(v_max.size() == 1);
             auto max_index = v_max[0];
