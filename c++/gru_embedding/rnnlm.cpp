@@ -4,7 +4,6 @@
 namespace autograd {
 
     Embedding::Embedding(uint _vocab_size, uint _hidden_num) : vocab_size(_vocab_size), hidden_num(_hidden_num) {
-
         for (uint i = 0; i < vocab_size; i++) {
             Matrix *m = new Matrix(Shape(hidden_num, 1));
             init_weight(m, 0.02);
@@ -14,7 +13,6 @@ namespace autograd {
             W.push_back(n);
             PW.push_back(new Parameters(n));
         }
-        
     }
 
     Embedding::~Embedding() {
@@ -221,7 +219,6 @@ namespace autograd {
         std::vector<uint> res;
         for (uint i = 0; i < num_preds; ++ i) {
             auto output = output_layer(hidden);
-            // std::cout << "hidden : " << *hidden->get_weight() << std::endl;
             std::vector<uint> v_max = output->get_weight()->argMax();
             assert(v_max.size() == 1);
             auto max_index = v_max[0];

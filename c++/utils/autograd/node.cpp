@@ -32,8 +32,6 @@ namespace autograd {
             p.max = max;
             info.push_back(p);
             loss_value += -(zt - max - log(sum));
-            // std::cout << "loss_value : " << loss_value << std::endl;
-            // std::cout << "zt : " << zt << " max : " << max << " sum : " << sum << std::endl;
         }
         (*loss)[0][0] = loss_value/labels.size();
         return loss;
