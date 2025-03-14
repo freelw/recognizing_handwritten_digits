@@ -162,8 +162,6 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
             assert(inputs[0].size() == (uint)ret);
             loops++;
             auto loss = lm.forward(inputs)->CrossEntropy(whole_labels);
-            std::cout << "loss done" << std::endl;
-            std::cout << "stats : " << autograd::stats() << std::endl;
             assert(loss->getShape().rowCnt == 1);
             assert(loss->getShape().colCnt == 1);
             loss_sum += (*loss->get_weight())[0][0];
@@ -176,8 +174,6 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
             autograd::freeAllNodes();
             autograd::freeAllEdges();
             freeTmpMatrix();
-            std::cout << "free done" << std::endl;
-            std::cout << "stats : " << autograd::stats() << std::endl;
             if (shutdown) {
                 save_checkpoint(checkpoint_prefix, epoch, lm);
                 exit(0);
@@ -192,29 +188,29 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
         // pass
     } else {
         std::cout << "serving mode" << std::endl;
-    }
-    std::vector<std::string> prefixs = {
-        "time traveller",
-        "the time machine",
-        "expounding a recondite",
-        " traveller for so",
-        "it has",
-        "so most people",
-        "is simply ",
-        " we cannot move about",
-        "and the still",
-        "ask you to accept anything",
-        "the time",
-        "the time machine by h g wells i the time traveller for so it will be convenient to speak of him was expounding a recondite matter to us his grey eyes shone",
-    };
-    for (auto prefix : prefixs) {
-        std::vector<uint> res = lm.predict(loader.to_token_ids(prefix), 5);
-        std::cout << "prefix : " << prefix << std::endl;
-        std::string predicted;
-        for (auto token_id : res) {
-            predicted += loader.to_word(token_id) + " ";
+        std::vector<std::string> prefixs = {
+            "time traveller",
+            "the time machine",
+            "expounding a recondite",
+            " traveller for so",
+            "it has",
+            "so most people",
+            "is simply ",
+            " we cannot move about",
+            "and the still",
+            "ask you to accept anything",
+            "the time",
+            "the time machine by h g wells i the time traveller for so it will be convenient to speak of him was expounding a recondite matter to us his grey eyes shone",
+        };
+        for (auto prefix : prefixs) {
+            std::vector<uint> res = lm.predict(loader.to_token_ids(prefix), 5);
+            std::cout << "prefix : " << prefix << std::endl;
+            std::string predicted;
+            for (auto token_id : res) {
+                predicted += loader.to_word(token_id) + " ";
+            }
+            std::cout << "predicted : " << predicted << std::endl;
         }
-        std::cout << "predicted : " << predicted << std::endl;
     }
     delete embedding;
     delete rnn;
