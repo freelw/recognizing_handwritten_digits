@@ -11,6 +11,9 @@ namespace autograd {
         assert(info.size() == 0);
         Matrix *loss = allocTmpMatrix(Shape(1,1));
         DATATYPE loss_value = 0;
+        info.resize(input->getShape().colCnt);
+
+        #pragma omp parallel for reduction(+:loss_value)
         for (uint j = 0; j < input->getShape().colCnt; ++ j) {
             DATATYPE max = (*input)[0][j];
             for (uint i = 0; i < input->getShape().rowCnt; ++ i) {
@@ -27,10 +30,9 @@ namespace autograd {
                 e = std::exp(e-max);
                 sum += e;
             }
-            CrosEntropyInfo p;
+            CrosEntropyInfo &p = info[j];
             p.sum = sum;
             p.max = max;
-            info.push_back(p);
             loss_value += -(zt - max - log(sum));
         }
         (*loss)[0][0] = loss_value/labels.size();

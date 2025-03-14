@@ -251,11 +251,12 @@ namespace autograd {
             virtual ~CrossEntropyEdge() {}
             void backward(Matrix *) override {
                 assert(node->is_require_grad());
-                for (uint i = 0; i < labels.size(); ++ i) {
+                #pragma omp parallel for
+                for (uint i = 0; i < labels.size(); ++i) {
                     auto target = labels[i];
                     DATATYPE max = info[i].max;
                     DATATYPE sum = info[i].sum;
-                    for (uint j = 0; j < node->get_weight()->getShape().rowCnt; ++ j) {
+                    for (uint j = 0; j < node->get_weight()->getShape().rowCnt; ++j) {
                         if (j == target) {
                             continue;
                         }
