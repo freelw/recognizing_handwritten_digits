@@ -185,13 +185,18 @@ namespace autograd {
 
     Node *RnnLM::forward(const std::vector<std::vector<uint>> &inputs) {
         assert(inputs.size() > 0);
+        std::cout << "start embedding" << std::endl;
         std::vector<Node *> embs = embedding->forward(inputs);
+        std::cout << "embedding done" << std::endl;
         std::vector<Node *> hiddens = rnn->forward(embs, nullptr);
+        std::cout << "rnn->forward done" << std::endl;
         std::vector<Node *> outputs;
         for (auto hidden : hiddens) {
             outputs.push_back(output_layer(hidden));
         }
+        std::cout << "output_layer done" << std::endl;
         Node *res = cat(outputs);
+        std::cout << "cat done" << std::endl;
         assert(res->get_weight()->getShape().rowCnt == vocab_size);
         assert(res->get_weight()->getShape().colCnt == inputs[0].size()*outputs.size());
         return res;

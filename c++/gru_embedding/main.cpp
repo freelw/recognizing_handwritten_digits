@@ -179,21 +179,29 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
             loops++;
             // std::cout << "tmpMatricsStats 1.5 : " << autograd::stats() << std::endl;
             auto loss = lm.forward(inputs)->CrossEntropy(whole_labels);
+            std::cout << "loss done" << std::endl;
+            std::cout << "stats : " << autograd::stats() << std::endl;
             // std::cout << "tmpMatricsStats 2 : " << autograd::stats() << std::endl;
             assert(loss->getShape().rowCnt == 1);
             assert(loss->getShape().colCnt == 1);
             loss_sum += (*loss->get_weight())[0][0];
             adam.zero_grad();
             loss->backward();
+            std::cout << "backward done" << std::endl;
+            std::cout << "stats : " << autograd::stats() << std::endl;
             // std::cout << "tmpMatricsStats 3 : " << autograd::stats() << std::endl;
             if (adam.clip_grad(1)) {
                 emit_clip++;
             }
             adam.step();
+            std::cout << "step done" << std::endl;
+            std::cout << "stats : " << autograd::stats() << std::endl;
             // std::cout << "tmpMatricsStats 4 : " << autograd::stats() << std::endl;
             autograd::freeAllNodes();
             autograd::freeAllEdges();
             freeTmpMatrix();
+            std::cout << "free done" << std::endl;
+            std::cout << "stats : " << autograd::stats() << std::endl;
             if (shutdown) {
                 save_checkpoint(checkpoint_prefix, epoch, lm);
                 exit(0);
