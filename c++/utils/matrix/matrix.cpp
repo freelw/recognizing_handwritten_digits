@@ -7,6 +7,7 @@
 #include <omp.h> // Include OpenMP header
 #include <random>
 #include <chrono>
+#include "stats/stats.h"
 
 Matrix::Matrix(Shape _shape)
         : initialized(false),
@@ -109,6 +110,7 @@ Matrix *Matrix::operator+=(const Matrix &m) {
     DATATYPE *this_data = this->getData();
 
     const uint blockSize = 16; // Block size for cache optimization
+    #pragma omp parallel for num_threads(OMP_THREADS)
     for (uint i = 0; i < shape.rowCnt; i += blockSize) {
         for (uint j = 0; j < shape.colCnt; j += blockSize) {
             for (uint ii = i; ii < std::min(i + blockSize, shape.rowCnt); ++ii) {
@@ -318,7 +320,7 @@ Matrix *Matrix::at(const Matrix &m) {
 
 Matrix *Matrix::transpose() {
     Matrix *res = allocTmpMatrix(Shape(shape.colCnt, shape.rowCnt));
-    #pragma omp parallel for num_threads(4)
+    #pragma omp parallel for num_threads(OMP_THREADS)
     for (uint i = 0; i < shape.colCnt; ++ i) {
         DATATYPE *data = (*res)[i];
         for (uint j = 0; j < shape.rowCnt; ++ j) {
@@ -441,6 +443,19 @@ Matrix *allocTmpMatrix(const Shape & shape) {
     res->zero();
     tmpMatrics.push_back(res);
     return res;
+}
+
+autograd::TmpMatricsStats tmpMatricsStats() {
+    autograd::TmpMatricsStats stats;
+
+    uint size = tmpMatrics.size();
+    uint bytes = 0;
+    for (auto p : tmpMatrics) {
+        bytes += p->getShape().size() * sizeof(DATATYPE);
+    }
+    stats.size = size;
+    stats.bytes = bytes;
+    return stats;
 }
 
 void freeTmpMatrix() {

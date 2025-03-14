@@ -1,6 +1,15 @@
 #!/bin/bash
 export RELEASE=1
 
+pushd ./gru_embedding
+make clean
+make
+if [ $? -ne 0 ]; then
+    echo "gru_embedding build failed"
+    exit 1
+fi
+popd
+
 pushd ./gru
 make clean
 make

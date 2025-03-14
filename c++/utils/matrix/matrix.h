@@ -4,6 +4,7 @@
 #include <ostream>
 #include <math.h>
 #include <vector>
+#include "stats/stats.h"
 
 using namespace std;
 
@@ -92,6 +93,7 @@ Matrix *sigmoid_prime(const Matrix &m);
 Matrix *allocTmpMatrix(Matrix *m);
 Matrix *allocTmpMatrix(const Matrix &m);
 Matrix *allocTmpMatrix(const Shape & shape);
+autograd::TmpMatricsStats tmpMatricsStats();
 void freeTmpMatrix();
 void init_weight(Matrix *weight, DATATYPE sigma);
 

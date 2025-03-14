@@ -119,4 +119,8 @@ namespace autograd {
         offset += data_size;
         memcpy(v->getData(), buffer + offset, data_size);
     }
+
+    bool Parameters::require_grad() {
+        return w->is_require_grad();
+    }
 } // namespace autograd

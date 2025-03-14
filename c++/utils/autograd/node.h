@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "matrix/matrix.h"
+#include "stats/stats.h"
 
 namespace autograd {
     class Edge;
@@ -35,8 +36,10 @@ namespace autograd {
                 assert(magic);
             }
             void require_grad() {
+                if (!requires_grad) {
+                    grad = allocTmpMatrix(w->getShape());
+                }
                 requires_grad = true;
-                grad = allocTmpMatrix(w->getShape());
             }
             bool is_require_grad() const {
                 return requires_grad;
@@ -64,7 +67,9 @@ namespace autograd {
             }
 
             void zero_grad() {
-                grad = allocTmpMatrix(w->getShape());                
+                if (requires_grad) {
+                    grad = allocTmpMatrix(w->getShape());                
+                }
             }
 
             void checkShape(const Shape &shape) {
@@ -246,11 +251,12 @@ namespace autograd {
             virtual ~CrossEntropyEdge() {}
             void backward(Matrix *) override {
                 assert(node->is_require_grad());
-                for (uint i = 0; i < labels.size(); ++ i) {
+                #pragma omp parallel for
+                for (uint i = 0; i < labels.size(); ++i) {
                     auto target = labels[i];
                     DATATYPE max = info[i].max;
                     DATATYPE sum = info[i].sum;
-                    for (uint j = 0; j < node->get_weight()->getShape().rowCnt; ++ j) {
+                    for (uint j = 0; j < node->get_weight()->getShape().rowCnt; ++j) {
                         if (j == target) {
                             continue;
                         }
@@ -324,6 +330,8 @@ namespace autograd {
     Node *allocNode(Matrix *w);
     void freeAllNodes();
     void freeAllEdges();
+    TmpNodesStats tmpNodesStats();
+    TmpEdgesStats tmpEdgesStats();
 } // namespace autograd
 
 #endif

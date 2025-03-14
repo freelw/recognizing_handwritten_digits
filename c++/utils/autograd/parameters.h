@@ -17,6 +17,7 @@ namespace autograd {
             void inc_t();
             std::string serialize();
             void deserialize(char *buffer);
+            bool require_grad();
         private:
             Node *w;
             Matrix *m;

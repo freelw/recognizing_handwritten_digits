@@ -1,6 +1,8 @@
 #include "node.h"
 #include <assert.h>
 #include <iostream>
+#include <string.h>
+#include "stats/stats.h"
 
 namespace autograd {
 
@@ -9,6 +11,9 @@ namespace autograd {
         assert(info.size() == 0);
         Matrix *loss = allocTmpMatrix(Shape(1,1));
         DATATYPE loss_value = 0;
+        info.resize(input->getShape().colCnt);
+
+        #pragma omp parallel for reduction(+:loss_value)
         for (uint j = 0; j < input->getShape().colCnt; ++ j) {
             DATATYPE max = (*input)[0][j];
             for (uint i = 0; i < input->getShape().rowCnt; ++ i) {
@@ -25,10 +30,9 @@ namespace autograd {
                 e = std::exp(e-max);
                 sum += e;
             }
-            CrosEntropyInfo p;
+            CrosEntropyInfo &p = info[j];
             p.sum = sum;
             p.max = max;
-            info.push_back(p);
             loss_value += -(zt - max - log(sum));
         }
         (*loss)[0][0] = loss_value/labels.size();
@@ -147,12 +151,58 @@ namespace autograd {
         }
         Matrix *m = allocTmpMatrix(Shape(shape.rowCnt, shape.colCnt * nodes.size()));
         Node *node = allocNode(m);
+        
+        auto m_buffer = m->getData();
+        auto m_shape = m->getShape();
+        
         for (uint i = 0; i < nodes.size(); ++ i) {
-            for (uint j = 0; j < shape.colCnt; ++ j) {
-                for (uint k = 0; k < shape.rowCnt; ++ k) {
-                    (*m)[k][i*shape.colCnt+j] = (*nodes[i]->get_weight())[k][j];
+            auto node_i_buffer = nodes[i]->get_weight()->getData();
+            
+            uint k = 0;
+
+            for (; k < shape.rowCnt - 7; k += 8) {
+
+                DATATYPE *m_buffer_0 = m_buffer + k*m_shape.colCnt+i*shape.colCnt;
+                DATATYPE *m_buffer_1 = m_buffer + (k+1)*m_shape.colCnt+i*shape.colCnt;
+                DATATYPE *m_buffer_2 = m_buffer + (k+2)*m_shape.colCnt+i*shape.colCnt;
+                DATATYPE *m_buffer_3 = m_buffer + (k+3)*m_shape.colCnt+i*shape.colCnt;
+                DATATYPE *m_buffer_4 = m_buffer + (k+4)*m_shape.colCnt+i*shape.colCnt;
+                DATATYPE *m_buffer_5 = m_buffer + (k+5)*m_shape.colCnt+i*shape.colCnt;
+                DATATYPE *m_buffer_6 = m_buffer + (k+6)*m_shape.colCnt+i*shape.colCnt;
+                DATATYPE *m_buffer_7 = m_buffer + (k+7)*m_shape.colCnt+i*shape.colCnt;
+
+                DATATYPE *node_i_buffer_0 = node_i_buffer + k*shape.colCnt;
+                DATATYPE *node_i_buffer_1 = node_i_buffer + (k+1)*shape.colCnt;
+                DATATYPE *node_i_buffer_2 = node_i_buffer + (k+2)*shape.colCnt;
+                DATATYPE *node_i_buffer_3 = node_i_buffer + (k+3)*shape.colCnt;
+                DATATYPE *node_i_buffer_4 = node_i_buffer + (k+4)*shape.colCnt;
+                DATATYPE *node_i_buffer_5 = node_i_buffer + (k+5)*shape.colCnt;
+                DATATYPE *node_i_buffer_6 = node_i_buffer + (k+6)*shape.colCnt;
+                DATATYPE *node_i_buffer_7 = node_i_buffer + (k+7)*shape.colCnt;
+
+                DATATYPE *m_buffers[8] = {
+                    m_buffer_0, m_buffer_1, m_buffer_2, m_buffer_3,
+                    m_buffer_4, m_buffer_5, m_buffer_6, m_buffer_7
+                };
+
+                DATATYPE *node_i_buffers[8] = {
+                    node_i_buffer_0, node_i_buffer_1, node_i_buffer_2, node_i_buffer_3,
+                    node_i_buffer_4, node_i_buffer_5, node_i_buffer_6, node_i_buffer_7
+                };
+
+                #pragma omp parallel for num_threads(8)
+                for (uint j = 0; j < 8; ++ j) {
+                    memcpy(m_buffers[j], node_i_buffers[j], shape.colCnt * sizeof(DATATYPE));
                 }
             }
+            for (; k < shape.rowCnt; ++ k) {
+                for (uint j = 0; j < shape.colCnt; ++ j) {
+                    m_buffer[k*m_shape.colCnt+i*shape.colCnt+j] = node_i_buffer[k*shape.colCnt+j];
+                    // (*m)[k][i*shape.colCnt+j] = (*nodes[i]->get_weight())[k][j];
+                }
+            }
+        }
+        for (uint i = 0; i < nodes.size(); ++ i) {
             if (nodes[i]->is_require_grad()) {
                 node->require_grad();
                 node->edges.push_back(CatEdge::create(nodes[i], i*shape.colCnt));
@@ -203,5 +253,23 @@ namespace autograd {
             delete edge;
         }
         edges.clear();
+    }
+
+    TmpNodesStats tmpNodesStats() {
+        TmpNodesStats stats;
+        uint size = nodes.size();
+        uint bytes = size * sizeof(Node);
+        stats.size = size;
+        stats.bytes = bytes;
+        return stats;
+    }
+
+    TmpEdgesStats tmpEdgesStats() {
+        TmpEdgesStats stats;
+        uint size = edges.size();
+        uint bytes = size * sizeof(Edge);
+        stats.size = size;
+        stats.bytes = bytes;
+        return stats;
     }
 } // namespace autograd

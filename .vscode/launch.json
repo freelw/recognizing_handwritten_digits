@@ -191,6 +191,41 @@
                     "ignoreFailures": true
                 }
             ]
+        },
+        {
+            "name": "(gdb) Launch gru embedding",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "/home/cs/project/recognizing_handwritten_digits/c++/gru_embedding/gru",
+            "args1": [
+                "-e",
+                "1",
+                "-f",
+                "/home/cs/project/recognizing_handwritten_digits/resources/timemachine_small.txt"
+            ],
+            "args": [
+                "-e",
+                "0",
+                "-c",
+                "/home/cs/project/recognizing_handwritten_digits/c++/gru_embedding/checkpoints/checkpoint_20250314_085845_0.bin"
+            ],
+            "stopAtEntry": false,
+            "cwd": "/home/cs/project/recognizing_handwritten_digits/c++/lstm/",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Set Disassembly Flavor to Intel",
+                    "text": "-gdb-set disassembly-flavor intel",
+                    "ignoreFailures": true
+                }
+            ]
         }
     ]
 }
