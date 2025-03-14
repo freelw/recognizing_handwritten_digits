@@ -130,7 +130,7 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
     std::cout << "epochs : " << epochs << std::endl;
     gru::DataLoader loader(corpus, VOCAB_NAME);
     std::cout << "Data loaded" << std::endl;
-    uint num_steps = 32;
+    uint num_steps = 9;
     uint hidden_num = 32;
     autograd::GRU *rnn = new autograd::GRU(EMBEDDING_SIZE, hidden_num, 0.01);
     autograd::Embedding *embedding = new autograd::Embedding(loader.vocab_size(), EMBEDDING_SIZE);
