@@ -52,7 +52,12 @@ void save_checkpoint(const std::string & prefix, int epoch, autograd::RnnLM &lm)
 void loadfrom_checkpoint(autograd::RnnLM &lm, const std::string &filename) {
     std::ifstream in(filename
         , std::ios::in | std::ios::binary);
-    int num_params;
+    // check file exsit
+    if (!in) {
+        std::cerr << "file not found : " << filename << std::endl;
+        exit(1);
+    }
+    int num_params = 0;    
     in.read((char *)&num_params, sizeof(num_params));
     for (int i = 0; i < num_params; i++) {
         int size;

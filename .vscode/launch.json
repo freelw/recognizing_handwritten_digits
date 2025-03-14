@@ -207,7 +207,7 @@
                 "-e",
                 "0",
                 "-c",
-                "/home/cs/project/recognizing_handwritten_digits/c++/gru_embedding/gru/checkpoints/checkpoint_20250314_085845_0.bin"
+                "/home/cs/project/recognizing_handwritten_digits/c++/gru_embedding/checkpoints/checkpoint_20250314_085845_0.bin"
             ],
             "stopAtEntry": false,
             "cwd": "/home/cs/project/recognizing_handwritten_digits/c++/lstm/",
