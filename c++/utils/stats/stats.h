@@ -4,16 +4,16 @@
 #include <iostream>
 namespace autograd {
     struct TmpMatricsStats {
-        uint size;
-        uint bytes;
+        unsigned long long size;
+        unsigned long long bytes;
     };
     struct TmpNodesStats {
-        uint size;
-        uint bytes;
+        unsigned long long size;
+        unsigned long long bytes;
     };
     struct TmpEdgesStats {
-        uint size;
-        uint bytes;
+        unsigned long long size;
+        unsigned long long bytes;
     };
     std::string stats();
 } // namespace autograd
