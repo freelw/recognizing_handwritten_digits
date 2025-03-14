@@ -162,11 +162,20 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
             i += ret;
             assert(inputs.size() == num_steps);
             assert(inputs[0].size() == (uint)ret);
-            // std::cout << "cur batch size : " << ret << std::endl;
-            // for (uint j = 0; j < inputs.size(); j++) {
-            //     cout << "inputs[" << j << "] : " << inputs[j].capacity() << endl;
+            // // print inputs
+            // std::cout << "inputs : " << std::endl;
+            // for (auto input : inputs) {
+            //     for (auto token_id : input) {
+            //         std::cout << loader.to_word(token_id) << " ";
+            //     }
+            //     std::cout << std::endl;
             // }
-            // cout << "whole_labels : " << whole_labels.capacity() << endl;
+            // // print whole_labels
+            // std::cout << "whole_labels : " << std::endl;
+            // for (auto token_id : whole_labels) {
+            //     std::cout << loader.to_word(token_id) << " ";
+            // }
+            // std::cout << std::endl;
             loops++;
             // std::cout << "tmpMatricsStats 1.5 : " << autograd::stats() << std::endl;
             auto loss = lm.forward(inputs)->CrossEntropy(whole_labels);
@@ -214,7 +223,7 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
         "the time",
     };
     for (auto prefix : prefixs) {
-        std::vector<uint> res = lm.predict(loader.to_token_ids(prefix), 1);
+        std::vector<uint> res = lm.predict(loader.to_token_ids(prefix), 5);
         std::cout << "prefix : " << prefix << std::endl;
         std::string predicted;
         for (auto token_id : res) {
