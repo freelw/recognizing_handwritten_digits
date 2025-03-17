@@ -226,6 +226,35 @@
                     "ignoreFailures": true
                 }
             ]
+        },
+        {
+            "name": "(gdb) Launch deep gru",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "/home/cs/project/recognizing_handwritten_digits/c++/deep_gru/deep_gru",
+            "args": [
+                "-e",
+                "1",
+                "-f",
+                "/home/cs/project/recognizing_handwritten_digits/resources/timemachine_small.txt"
+            ],
+            "stopAtEntry": false,
+            "cwd": "/home/cs/project/recognizing_handwritten_digits/c++/lstm/",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Set Disassembly Flavor to Intel",
+                    "text": "-gdb-set disassembly-flavor intel",
+                    "ignoreFailures": true
+                }
+            ]
         }
     ]
 }

@@ -3,6 +3,30 @@
 
 namespace autograd {
 
+    Dropout::Dropout(DATATYPE _dropout) : dropout(_dropout) {
+        assert(dropout > 0);
+        unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+        gen = std::mt19937(seed);
+        dis = std::uniform_real_distribution<>(0, 1);
+    }
+
+    std::vector<Node *> Dropout::forward(const std::vector<Node *> &inputs) {
+        std::vector<Node *> res;
+        res.resize(inputs.size());
+        for (uint j = 0; j < inputs.size(); j++) {
+            auto &input = inputs[j];
+            Matrix *mask = allocTmpMatrix(input->get_weight()->getShape());
+            auto buffer = mask->getData();
+            #pragma omp parallel for
+            for (uint i = 0; i < mask->getShape().size(); i++) {
+                buffer[i] = dis(gen) > dropout ? 1 : 0;
+            }
+            Node *n = allocNode(mask);
+            res[j] = *input * n;
+        }
+        return res;
+    }
+
     Embedding::Embedding(uint _vocab_size, uint _hidden_num) : vocab_size(_vocab_size), hidden_num(_hidden_num) {
         for (uint i = 0; i < vocab_size; i++) {
             Matrix *m = new Matrix(Shape(hidden_num, 1));
@@ -47,7 +71,11 @@ namespace autograd {
         return res;
     }
 
-    GRU::GRU(uint input_num, uint _hidden_num, DATATYPE sigma) : hidden_num(_hidden_num) {
+    GRULayer::GRULayer(
+        uint input_num,
+        uint _hidden_num,
+        DATATYPE sigma) : hidden_num(_hidden_num) {
+
         mWxr = new Matrix(Shape(hidden_num, input_num));
         mWhr = new Matrix(Shape(hidden_num, hidden_num));
         mBr = new Matrix(Shape(hidden_num, 1));
@@ -95,7 +123,7 @@ namespace autograd {
         PBh = new Parameters(Bh);
     }
 
-    GRU::~GRU() {
+    GRULayer::~GRULayer() {
         delete mWxr;
         delete mWhr;
         delete mBr;
@@ -125,17 +153,17 @@ namespace autograd {
         delete PBh;
     }
 
-    std::vector< Node*> GRU::forward(const std::vector<Node *> &inputs, Node *prev_hidden) {
+    std::vector<Node *> GRULayer::forward(
+        const std::vector<Node *> &inputs,
+        Node *hidden) {
+        
         assert(inputs.size() > 0);
         uint batch_size = inputs[0]->get_weight()->getShape().colCnt;
-        Node *hidden = nullptr;
-        if (prev_hidden == nullptr) {
+        if (hidden == nullptr) {
             hidden = allocNode(allocTmpMatrix(Shape(hidden_num, batch_size)));
-        } else {
-            hidden = prev_hidden;
         }
+
         std::vector<Node *> res;
-        
         for (auto input : inputs) {
             Node *r = (*(Wxr->at(input)) + Whr->at(hidden))->expand_add(Br)->Sigmoid();
             Node *z = (*(Wxz->at(input)) + Whz->at(hidden))->expand_add(Bz)->Sigmoid();
@@ -143,10 +171,11 @@ namespace autograd {
             hidden = *(*z * hidden) + *(1 - *z) * h_tilde;
             res.push_back(hidden);
         }
+
         return res;
     }
 
-    std::vector<Parameters *> GRU::get_parameters() {
+    std::vector<Parameters *> GRULayer::get_parameters() {
         std::vector<Parameters *> res;
         res.push_back(PWxr);
         res.push_back(PWhr);
@@ -157,6 +186,57 @@ namespace autograd {
         res.push_back(PWxh);
         res.push_back(PWhh);
         res.push_back(PBh);
+        return res;
+    }
+
+    GRU::GRU(
+        uint input_num, uint _hidden_num, uint _layer_num,
+        DATATYPE sigma, DATATYPE _dropout
+    ) : hidden_num(_hidden_num), layer_num(_layer_num), dropout(_dropout), training(true) {
+
+        assert(layer_num > 0);
+        layers.push_back(new GRULayer(input_num, hidden_num, sigma));
+        for (uint i = 1; i < layer_num; i++) {
+            layers.push_back(new GRULayer(hidden_num, hidden_num, sigma));
+        }
+    }
+
+    GRU::~GRU() {
+        for (auto layer : layers) {
+            delete layer;
+        }
+    }
+
+    std::vector<std::vector<Node*>> GRU::forward(
+        const std::vector<Node *> &inputs,
+        const std::vector<Node *> &hiddens) {
+
+        assert(inputs.size() > 0);
+        assert(hiddens.size() == layer_num);
+        std::vector<std::vector<Node*>> res;
+
+        for (uint i = 0; i < layer_num; i++) {
+            std::vector<Node *> hidden;
+            if (i == 0) {
+                hidden = layers[i]->forward(inputs, hiddens[i]);
+            } else {
+                hidden = layers[i]->forward(res[i - 1], hiddens[i]);
+            }
+            if (training && dropout > 0 && i < layer_num - 1) {
+                Dropout dropout_layer(dropout);
+                hidden = dropout_layer.forward(hidden);
+            }
+            res.push_back(hidden);
+        }
+        return res;
+    }
+
+    std::vector<Parameters *> GRU::get_parameters() {
+        std::vector<Parameters *> res;
+        for (auto layer : layers) {
+            auto params = layer->get_parameters();
+            res.insert(res.end(), params.begin(), params.end());
+        }
         return res;
     }
 
@@ -186,9 +266,15 @@ namespace autograd {
     Node *RnnLM::forward(const std::vector<std::vector<uint>> &inputs) {
         assert(inputs.size() > 0);
         std::vector<Node *> embs = embedding->forward(inputs);
-        std::vector<Node *> hiddens = rnn->forward(embs, nullptr);
+        uint layer_num = rnn->get_layer_num();
+        std::vector<Node *> input_hiddens;
+        for (uint i = 0; i < layer_num; i++) {
+            input_hiddens.push_back(nullptr);
+        }
+        std::vector<std::vector<Node *>> hiddens = rnn->forward(embs, input_hiddens);
+        assert(hiddens.size() == layer_num);
         std::vector<Node *> outputs;
-        for (auto hidden : hiddens) {
+        for (auto hidden : hiddens[layer_num - 1]) {
             outputs.push_back(output_layer(hidden));
         }
         Node *res = cat(outputs);
@@ -203,22 +289,26 @@ namespace autograd {
 
     std::vector<uint> RnnLM::predict(const std::vector<uint> &token_ids, uint num_preds) {
         assert(token_ids.size() > 0);
+        assert(rnn->is_training() == false);
         std::vector<std::vector<uint>> inputs;
         for (auto token_id : token_ids) {
             std::vector<uint> input;
             input.push_back(token_id);
             inputs.push_back(input);
         }
-        
         std::vector<Node *> embs = embedding->forward(inputs);
-        std::vector<Node *> hiddens = rnn->forward(embs, nullptr);
-        auto size = hiddens.size();
-        assert(token_ids.size() == size);
-        Node *hidden = hiddens[size - 1];
-        assert(hidden->getShape().colCnt == 1);
+        uint layer_num = rnn->get_layer_num();
+        std::vector<Node *> input_hiddens;
+        for (uint i = 0; i < layer_num; i++) {
+            input_hiddens.push_back(nullptr);
+        }
+        std::vector<std::vector<Node *>> hiddens = rnn->forward(embs, input_hiddens);
+        std::vector<Node *> hidden = hiddens[layer_num - 1];
         std::vector<uint> res;
+        assert(hidden.size() == token_ids.size());
         for (uint i = 0; i < num_preds; ++ i) {
-            auto output = output_layer(hidden);
+            uint size = hidden.size();
+            auto output = output_layer(hidden[size-1]);
             std::vector<uint> v_max = output->get_weight()->argMax();
             assert(v_max.size() == 1);
             auto max_index = v_max[0];
@@ -226,9 +316,14 @@ namespace autograd {
             std::vector<uint> input;
             input.push_back(max_index);
             Node *emb = embedding->forward({input})[0];
-            hiddens = rnn->forward({emb}, hidden);
-            assert(hiddens.size() == 1);
-            hidden = hiddens[0];
+            input_hiddens.clear();
+            for (uint i = 0; i < layer_num; i++) {
+                input_hiddens.push_back(hiddens[i][size-1]);
+            }
+            hiddens = rnn->forward({emb}, input_hiddens);
+            assert(hiddens.size() == layer_num);
+            assert(hiddens[layer_num - 1].size() == 1);
+            hidden = hiddens[layer_num - 1];
         }
         return res;
     }

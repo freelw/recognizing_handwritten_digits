@@ -22,3 +22,4 @@
 * [lstm c++ 自动构建计算图版本](https://github.com/freelw/recognizing_handwritten_digits/tree/main/c++/lstm_v1)
 * [gru c++ 自动构建计算图版本](https://github.com/freelw/recognizing_handwritten_digits/tree/main/c++/gru)
 * [gru & embedding c++ 自动构建计算图版本](https://github.com/freelw/recognizing_handwritten_digits/tree/main/c++/gru_embedding)
+* [gru deep dropout](https://github.com/freelw/recognizing_handwritten_digits/tree/main/c++/deep_gru)
