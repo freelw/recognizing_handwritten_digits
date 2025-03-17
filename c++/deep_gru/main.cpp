@@ -133,7 +133,8 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
     uint num_steps = 9;
     uint hidden_num = 32;
     uint layer_num = 2;
-    autograd::GRU *rnn = new autograd::GRU(EMBEDDING_SIZE, hidden_num, layer_num, 0.01, 0);
+    autograd::GRU *rnn = new autograd::GRU(EMBEDDING_SIZE, hidden_num, layer_num, 0.01, 0.2);
+    rnn->train(true);
     autograd::Embedding *embedding = new autograd::Embedding(loader.vocab_size(), EMBEDDING_SIZE);
     autograd::RnnLM lm(rnn, embedding, loader.vocab_size());
     if (!checkpoint.empty()) {
@@ -189,6 +190,7 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
         // pass
     } else {
         std::cout << "serving mode" << std::endl;
+        rnn->train(false);
         std::vector<std::string> prefixs = {
             "time traveller",
             "the time machine",

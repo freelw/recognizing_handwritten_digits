@@ -3,6 +3,30 @@
 
 namespace autograd {
 
+    Dropout::Dropout(DATATYPE _dropout) : dropout(_dropout) {
+        assert(dropout > 0);
+        unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+        gen = std::mt19937(seed);
+        dis = std::uniform_real_distribution<>(0, 1);
+    }
+
+    std::vector<Node *> Dropout::forward(const std::vector<Node *> &inputs) {
+        std::vector<Node *> res;
+        res.resize(inputs.size());
+        for (uint j = 0; j < inputs.size(); j++) {
+            auto &input = inputs[j];
+            Matrix *mask = allocTmpMatrix(input->get_weight()->getShape());
+            auto buffer = mask->getData();
+            #pragma omp parallel for
+            for (uint i = 0; i < mask->getShape().size(); i++) {
+                buffer[i] = dis(gen) > dropout ? 1 : 0;
+            }
+            Node *n = allocNode(mask);
+            res[j] = *input * n;
+        }
+        return res;
+    }
+
     Embedding::Embedding(uint _vocab_size, uint _hidden_num) : vocab_size(_vocab_size), hidden_num(_hidden_num) {
         for (uint i = 0; i < vocab_size; i++) {
             Matrix *m = new Matrix(Shape(hidden_num, 1));
@@ -168,7 +192,7 @@ namespace autograd {
     GRU::GRU(
         uint input_num, uint _hidden_num, uint _layer_num,
         DATATYPE sigma, DATATYPE _dropout
-    ) : hidden_num(_hidden_num), layer_num(_layer_num), dropout(_dropout) {
+    ) : hidden_num(_hidden_num), layer_num(_layer_num), dropout(_dropout), training(true) {
 
         assert(layer_num > 0);
         layers.push_back(new GRULayer(input_num, hidden_num, sigma));
@@ -197,6 +221,10 @@ namespace autograd {
                 hidden = layers[i]->forward(inputs, hiddens[i]);
             } else {
                 hidden = layers[i]->forward(res[i - 1], hiddens[i]);
+            }
+            if (training && dropout > 0 && i < layer_num - 1) {
+                Dropout dropout_layer(dropout);
+                hidden = dropout_layer.forward(hidden);
             }
             res.push_back(hidden);
         }
@@ -261,6 +289,7 @@ namespace autograd {
 
     std::vector<uint> RnnLM::predict(const std::vector<uint> &token_ids, uint num_preds) {
         assert(token_ids.size() > 0);
+        assert(rnn->is_training() == false);
         std::vector<std::vector<uint>> inputs;
         for (auto token_id : token_ids) {
             std::vector<uint> input;
