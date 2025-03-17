@@ -1,5 +1,22 @@
 # deep gru
 
+### 训练效果
+
+带dropout的deep rnn收敛速度明显提高
+```
+(base) cs@cs-desktop:~/project/recognizing_handwritten_digits/c++/deep_gru$ time ./deep_gru -e 200
+OMP_THREADS: 8
+epochs : 200
+train by ../../resources/timemachine_preprocessed.txt
+epochs : 200
+Data loaded
+[32766/32766]checkpoint saved : ./checkpoints/checkpoint_20250317_192601_0.bin
+epoch 0 loss : 8.3838348388672 emit_clip : 0
+[32766/32766]checkpoint saved : ./checkpoints/checkpoint_20250317_192601_1.bin
+epoch 1 loss : 7.5107927322388 emit_clip : 0
+[32766/32766]checkpoint saved : ./checkpoints/checkpoint_20250317_192601_2.bin
+epoch 2 loss : 6.6416187286377 emit_clip : 0
+```
 ### dropout = 0
 
 ```
