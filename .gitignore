@@ -13,3 +13,4 @@ c++/lstm_v1/lstm_v1
 c++/gru/gru
 c++/vocab_builder/builder
 c++/gru_embedding/gru
+c++/deep_gru/deep_gru
