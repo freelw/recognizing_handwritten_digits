@@ -142,7 +142,7 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
         cout << "loaded from checkpoint" << endl;
     }
     auto parameters = lm.get_parameters();
-    assert(parameters.size() == 11 + loader.vocab_size());
+    assert(parameters.size() == 2 + layer_num*9 + loader.vocab_size());
     
     autograd::Adam adam(parameters, 0.001);
     std::string checkpoint_prefix = "checkpoint" + generateDateTimeSuffix();
