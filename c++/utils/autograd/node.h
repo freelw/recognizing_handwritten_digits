@@ -23,7 +23,8 @@ namespace autograd {
         MatMulL,
         MatMulR,
         Tanh,
-        Cat,
+        Cat0,
+        Cat1,
         Sigmoid,
         Relu,
         CrossEntropy,
@@ -305,16 +306,16 @@ namespace autograd {
             }
     };
 
-    class CatEdge: public Edge {
+    class CatEdge0: public Edge {
         public:
             static Edge* create(Node *_node, uint _offset) {
-                Edge *edge = new CatEdge(_node, _offset);
+                Edge *edge = new CatEdge0(_node, _offset);
                 edges.push_back(edge);
                 return edge;
             }
-            CatEdge(Node *_node, uint _offset)
-                : Edge(OpType::Cat, _node), offset(_offset){}
-            virtual ~CatEdge() {}
+            CatEdge0(Node *_node, uint _offset)
+                : Edge(OpType::Cat0, _node), offset(_offset){}
+            virtual ~CatEdge0() {}
             void backward(Matrix *grad) override {
                 assert(node->is_require_grad());
                 Shape shape = node->get_weight()->getShape();
@@ -322,6 +323,30 @@ namespace autograd {
                     for (uint j = 0; j < shape.colCnt; ++ j) {
                         (*node->get_grad())[i][j] += (*grad)[i][j+offset];
                     }
+                }
+            }
+        private:
+            uint offset;
+    };
+
+    class CatEdge1: public Edge {
+        public:
+            static Edge* create(Node *_node, uint _offset) {
+                Edge *edge = new CatEdge1(_node, _offset);
+                edges.push_back(edge);
+                return edge;
+            }
+            CatEdge1(Node *_node, uint _offset)
+                : Edge(OpType::Cat1, _node), offset(_offset){}
+            virtual ~CatEdge1() {}
+            void backward(Matrix *grad) override {
+                assert(node->is_require_grad());
+                assert(grad->getShape().colCnt == node->getShape().colCnt);
+                Shape shape = node->get_weight()->getShape();
+                DATATYPE *m_buffer = node->get_weight()->getData() + offset;
+                DATATYPE *grad_buffer = grad->getData();
+                for (uint i = 0; i < shape.size(); ++ i) {
+                    m_buffer[i] += grad_buffer[i];
                 }
             }
         private:
