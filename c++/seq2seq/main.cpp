@@ -64,6 +64,8 @@ void test_encoder() {
     for (auto hidden : hiddens) {
         assert(hidden->get_weight()->getShape().rowCnt == hidden_num);
         assert(hidden->get_weight()->getShape().colCnt == batch_size);
+
+        std::cout << "hidden : " << hidden->getShape() << std::endl;
     }
     freeTmpMatrix();
     autograd::freeAllNodes();
