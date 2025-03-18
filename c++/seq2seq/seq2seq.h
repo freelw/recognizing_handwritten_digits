@@ -112,7 +112,7 @@ namespace autograd {
             );
             ~Seq2SeqEncoder();
             std::vector<std::vector<Node*>> forward(
-                const std::vector<uint> &token_ids
+                const std::vector<std::vector<uint>> &token_ids
             );
             std::vector<Parameters *> get_parameters();
             uint get_hidden_num() { return hidden_num; }

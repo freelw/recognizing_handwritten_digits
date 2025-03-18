@@ -263,7 +263,7 @@ namespace autograd {
     }
 
     std::vector<std::vector<Node*>> Seq2SeqEncoder::forward(
-        const std::vector<uint> &token_ids) {
+        const std::vector<std::vector<uint>> &token_ids) {
 
         assert(token_ids.size() > 0);
         std::vector<Node *> inputs = embedding->forward({token_ids});
