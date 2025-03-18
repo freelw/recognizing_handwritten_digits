@@ -20,7 +20,7 @@ epoch 2 loss : 6.6416187286377 emit_clip : 0
 ### dropout = 0
 
 ```
-base) cs@cs-desktop:~/project/recognizing_handwritten_digits/c++/deep_gru$ ./deep_gru -e 0 -c ./checkpoints/checkpoint_20250317_183919_999.bin
+(base) cs@cs-desktop:~/project/recognizing_handwritten_digits/c++/deep_gru$ ./deep_gru -e 0 -c ./checkpoints/checkpoint_20250317_183919_999.bin
 OMP_THREADS: 8
 epochs : 0
 train by ../../resources/timemachine_preprocessed.txt
