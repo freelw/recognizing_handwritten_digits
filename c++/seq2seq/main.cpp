@@ -12,7 +12,6 @@
 #include <unistd.h>
 #include "stats/stats.h"
 
-#define EMBEDDING_SIZE 32
 // #pragma message("warning: shutdown is true")
 // bool shutdown = true; // fixme
 bool shutdown = false;
