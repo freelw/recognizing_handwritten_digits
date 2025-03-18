@@ -43,29 +43,28 @@ void test_encoder_decoder() {
         enc_vocab_size, enc_embed_size, hidden_num, layer_num, sigma, dropout
     );
     
-    std::vector<std::vector<uint>> token_ids;
-    token_ids.push_back({0, 1, 2, 3}); // step 1
-    token_ids.push_back({4, 5, 6, 7}); // step 2
-    token_ids.push_back({8, 9, 10, 11}); // step 3
-    for (uint i = 0; i < token_ids.size(); i++) {
-        for (uint j = 0; j < token_ids[i].size(); j++) {
-            assert(token_ids[i][j] < enc_vocab_size);
+    std::vector<std::vector<uint>> src_token_ids;
+    src_token_ids.push_back({0, 1, 2, 3}); // step 1
+    src_token_ids.push_back({4, 5, 6, 7}); // step 2
+    src_token_ids.push_back({8, 9, 10, 11}); // step 3
+    for (uint i = 0; i < src_token_ids.size(); i++) {
+        for (uint j = 0; j < src_token_ids[i].size(); j++) {
+            assert(src_token_ids[i][j] < enc_vocab_size);
         }
     }
     std::vector<autograd::Node *> encoder_states;
-    auto hiddens = encoder->forward(token_ids, encoder_states);
+    auto hiddens = encoder->forward(src_token_ids, encoder_states);
     assert(encoder_states.size() == layer_num);
     assert(encoder_states[0]->getShape().rowCnt == hidden_num);
-    assert(encoder_states[0]->getShape().colCnt == token_ids[0].size());
+    assert(encoder_states[0]->getShape().colCnt == src_token_ids[0].size());
 
-    assert(hiddens.size() == token_ids.size());
-    assert(token_ids[0].size() > 0);
-    uint batch_size = token_ids[0].size();
+    assert(hiddens.size() == src_token_ids.size());
+    assert(src_token_ids[0].size() > 0);
+    uint batch_size = src_token_ids[0].size();
     for (auto hidden : hiddens) {
         assert(hidden->get_weight()->getShape().rowCnt == hidden_num);
         assert(hidden->get_weight()->getShape().colCnt == batch_size);
-
-        std::cout << "hidden : " << hidden->getShape() << std::endl;
+        // std::cout << "hidden : " << hidden->getShape() << std::endl;
     }
     uint dec_vocab_size = 28;
     uint dec_embed_size = 8;
@@ -95,8 +94,53 @@ void test_encoder_decoder() {
     delete encoder;
 }
 
+void test_encoder_decoder1() {
+
+    std::vector<std::vector<uint>> src_token_ids;
+    src_token_ids.push_back({0, 1, 2, 3}); // step 1
+    src_token_ids.push_back({4, 5, 6, 7}); // step 2
+    src_token_ids.push_back({8, 9, 10, 11}); // step 3
+
+    std::vector<std::vector<uint>> tgt_token_ids;
+    tgt_token_ids.push_back({12, 13, 14, 15}); // step 1
+    tgt_token_ids.push_back({17, 18, 19, 20}); // step 2
+    tgt_token_ids.push_back({22, 23, 24, 25}); // step 3
+
+    uint enc_vocab_size = 20;
+    uint enc_embed_size = 8;
+    uint hidden_num = 16;
+    uint layer_num = 2;
+    DATATYPE sigma = 0.01;
+    DATATYPE dropout = 0.2;
+    auto encoder = new autograd::Seq2SeqEncoder(
+        enc_vocab_size, enc_embed_size, hidden_num, layer_num, sigma, dropout
+    );
+    uint dec_vocab_size = 28;
+    uint dec_embed_size = 8;
+    auto decoder = new autograd::Seq2SeqDecoder(
+        dec_vocab_size, dec_embed_size, hidden_num, layer_num, sigma, dropout
+    );
+
+    auto encoder_decoder = new autograd::Seq2SeqEncoderDecoder(encoder, decoder);
+    auto dec_outputs = encoder_decoder->forward(src_token_ids, tgt_token_ids);
+    assert(dec_outputs.size() == tgt_token_ids.size());
+
+    for (auto dec_output : dec_outputs) {
+        assert(dec_output->getShape().rowCnt == dec_vocab_size);
+        assert(dec_output->getShape().colCnt == src_token_ids[0].size());
+    }
+
+    freeTmpMatrix();
+    autograd::freeAllNodes();
+    autograd::freeAllEdges();
+    delete encoder_decoder;
+    delete decoder;
+    delete encoder;
+}
+
 int main(int argc, char *argv[]) {
     test_encoder_decoder();
+    test_encoder_decoder1();
     return 0;
     cout << "OMP_THREADS: " << OMP_THREADS << endl;
     // register signal SIGINT and signal handler

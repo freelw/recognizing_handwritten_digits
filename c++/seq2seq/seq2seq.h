@@ -182,11 +182,19 @@ namespace autograd {
 
     class Seq2SeqEncoderDecoder {
         public:
-            Seq2SeqEncoderDecoder() {}
+            Seq2SeqEncoderDecoder(
+                Seq2SeqEncoder *_encoder,
+                Seq2SeqDecoder *_decoder
+            ) : encoder(_encoder), decoder(_decoder) {}
             ~Seq2SeqEncoderDecoder() {}
-            std::vector<std::vector<Node*>> forward(const std::vector<Node *> &inputs);
+            std::vector<Node*> forward(
+                const std::vector<std::vector<uint>> &src_token_ids,
+                const std::vector<std::vector<uint>> &tgt_token_ids
+            );
             std::vector<Parameters *> get_parameters();
         private:
+            Seq2SeqEncoder *encoder;
+            Seq2SeqDecoder *decoder;
     };
 
     

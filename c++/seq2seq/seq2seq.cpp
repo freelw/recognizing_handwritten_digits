@@ -304,6 +304,7 @@ namespace autograd {
             input_hiddens.push_back(nullptr);
         }
         std::vector<std::vector<Node*>> res = rnn->forward(inputs, input_hiddens);
+        encoder_states.reserve(layer_num);
         for (uint i = 0; i < layer_num; i++) {
             encoder_states.push_back(res[i].back());
         }
@@ -380,12 +381,23 @@ namespace autograd {
         return res;
     }
 
-    std::vector<std::vector<Node*>> Seq2SeqEncoderDecoder::forward( const std::vector<Node *> &inputs) {
-        
+    std::vector<Node*> Seq2SeqEncoderDecoder::forward(
+        const std::vector<std::vector<uint>> &src_token_ids,
+        const std::vector<std::vector<uint>> &tgt_token_ids ) {
+        std::vector<Node *> encoder_states;
+        auto hiddens = encoder->forward(src_token_ids, encoder_states);
+        assert(encoder_states.size() == decoder->get_layer_num());
+        assert(encoder_states[0]->getShape().rowCnt == decoder->get_hidden_num());
+        auto dec_outputs = decoder->forward(tgt_token_ids, hiddens.back(), encoder_states);
+        return dec_outputs;
     }
 
     std::vector<Parameters *> Seq2SeqEncoderDecoder::get_parameters() {
         std::vector<Parameters *> res;
+        std::vector<Parameters *> encoder_params = encoder->get_parameters();
+        res.insert(res.end(), encoder_params.begin(), encoder_params.end());
+        std::vector<Parameters *> decoder_params = decoder->get_parameters();
+        res.insert(res.end(), decoder_params.begin(), decoder_params.end());
         return res;
     }
 } // namespace autograd
