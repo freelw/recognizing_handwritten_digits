@@ -5,8 +5,8 @@
 #include "seq2seq.h"
 
 namespace autograd {
-    void save_checkpoint(const std::string & prefix, int epoch, autograd::RnnLM &lm);
-    void loadfrom_checkpoint(autograd::RnnLM &lm, const std::string &filename);
+    void save_checkpoint(const std::string & prefix, int epoch, autograd::Seq2SeqEncoderDecoder &lm);
+    void loadfrom_checkpoint(autograd::Seq2SeqEncoderDecoder &lm, const std::string &filename);
 } // namespace autograd
 
 #endif

@@ -19,7 +19,7 @@ namespace autograd {
         return oss.str();
     }
 
-    void save_checkpoint(const std::string & prefix, int epoch, autograd::RnnLM &lm) {
+    void save_checkpoint(const std::string & prefix, int epoch, autograd::Seq2SeqEncoderDecoder &lm) {
         std::ostringstream oss;
         oss << prefix << "_" << epoch << ".bin";
         std::string checkpoint_name = oss.str();
@@ -38,7 +38,7 @@ namespace autograd {
         std::cout << "checkpoint saved : " << path << std::endl;
     }
 
-    void loadfrom_checkpoint(autograd::RnnLM &lm, const std::string &filename) {
+    void loadfrom_checkpoint(autograd::Seq2SeqEncoderDecoder &lm, const std::string &filename) {
         std::ifstream in(filename
             , std::ios::in | std::ios::binary);
         // check file exsit

@@ -100,25 +100,49 @@ namespace autograd {
             bool training;
     };
 
-    class RnnLM {
+    class Seq2SeqEncoder {
         public:
-            RnnLM(GRU *_rnn, Embedding *_embedding, uint vocab_size);
-            ~RnnLM();
-            Node *forward(const std::vector<std::vector<uint>> &inputs);
-            Node *output_layer(Node *hidden);
-            std::vector<uint> predict(const std::vector<uint> &token_ids, uint num_preds);
+            Seq2SeqEncoder(
+                uint input_num,
+                uint _hidden_num,
+                uint _layer_num,
+                DATATYPE sigma,
+                DATATYPE _dropout
+            );
+            ~Seq2SeqEncoder();
+            std::vector<std::vector<Node*>> forward(
+                const std::vector<Node *> &inputs
+            );
             std::vector<Parameters *> get_parameters();
+            uint get_hidden_num() { return hidden_num; }
+            uint get_layer_num() { return layer_num; }
+            void train(bool _training) { training = _training; }
+            bool is_training() { return training; }
         private:
-            GRU *rnn;
-            Embedding *embedding;
-            uint vocab_size;
-            
-            Matrix *mW;
-            Matrix *mb;
-            Node *W;
-            Node *b;
-            Parameters *PW;
-            Parameters *Pb;
+            uint hidden_num;
+            uint layer_num;
+            DATATYPE dropout;
+            std::vector<GRULayer *> layers;
+            bool training;
     };
+
+
+    class Seq2SeqDecoder {};
+
+
+    class Seq2SeqEncoderDecoder {
+        public:
+            Seq2SeqEncoderDecoder() {}
+            ~Seq2SeqEncoderDecoder() {}
+            std::vector<std::vector<Node*>> forward(
+                const std::vector<Node *> &inputs
+            );
+            std::vector<Parameters *> get_parameters();
+            
+        private:
+            
+    };
+
+    
 } // namespace autograd
 #endif

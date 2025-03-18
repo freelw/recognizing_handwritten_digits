@@ -239,103 +239,57 @@ namespace autograd {
         return res;
     }
 
-    RnnLM::RnnLM(GRU *_rnn, Embedding *_embedding, uint _vocab_size) 
-        : rnn(_rnn), embedding(_embedding), vocab_size(_vocab_size) {
-        mW = new Matrix(Shape(vocab_size, rnn->get_hidden_num()));
-        mb = new Matrix(Shape(vocab_size, 1));
-        init_weight(mW, 0.02);
-        init_weight(mb, 0.02);
-        W = new Node(mW, true);
-        b = new Node(mb, true);
-        W->require_grad();
-        b->require_grad();
-        PW = new Parameters(W);
-        Pb = new Parameters(b);
+    Seq2SeqEncoder::Seq2SeqEncoder(
+        uint input_num, uint _hidden_num, uint _layer_num,
+        DATATYPE sigma, DATATYPE _dropout
+    ) : hidden_num(_hidden_num), layer_num(_layer_num), dropout(_dropout), training(true) {
+
+        assert(layer_num > 0);
+        layers.push_back(new GRULayer(input_num, hidden_num, sigma));
+        for (uint i = 1; i < layer_num; i++) {
+            layers.push_back(new GRULayer(hidden_num, hidden_num, sigma));
+        }
     }
 
-    RnnLM::~RnnLM() {
-        delete mW;
-        delete mb;
-        delete W;
-        delete b;
-        delete PW;
-        delete Pb;
+    Seq2SeqEncoder::~Seq2SeqEncoder() {
+        for (auto layer : layers) {
+            delete layer;
+        }
     }
 
-    Node *RnnLM::forward(const std::vector<std::vector<uint>> &inputs) {
+    std::vector<std::vector<Node*>> Seq2SeqEncoder::forward(
+        const std::vector<Node *> &inputs) {
+
         assert(inputs.size() > 0);
-        std::vector<Node *> embs = embedding->forward(inputs);
-        uint layer_num = rnn->get_layer_num();
-        std::vector<Node *> input_hiddens;
-        for (uint i = 0; i < layer_num; i++) {
-            input_hiddens.push_back(nullptr);
-        }
-        std::vector<std::vector<Node *>> hiddens = rnn->forward(embs, input_hiddens);
-        assert(hiddens.size() == layer_num);
-        std::vector<Node *> outputs;
-        for (auto hidden : hiddens[layer_num - 1]) {
-            outputs.push_back(output_layer(hidden));
-        }
-        Node *res = cat(outputs);
-        assert(res->get_weight()->getShape().rowCnt == vocab_size);
-        assert(res->get_weight()->getShape().colCnt == inputs[0].size()*outputs.size());
-        return res;
-    }
+        std::vector<std::vector<Node*>> res;
 
-    Node *RnnLM::output_layer(Node *hidden) {
-        return W->at(hidden)->expand_add(b);
-    }
-
-    std::vector<uint> RnnLM::predict(const std::vector<uint> &token_ids, uint num_preds) {
-        assert(token_ids.size() > 0);
-        assert(rnn->is_training() == false);
-        std::vector<std::vector<uint>> inputs;
-        for (auto token_id : token_ids) {
-            std::vector<uint> input;
-            input.push_back(token_id);
-            inputs.push_back(input);
-        }
-        std::vector<Node *> embs = embedding->forward(inputs);
-        uint layer_num = rnn->get_layer_num();
-        std::vector<Node *> input_hiddens;
         for (uint i = 0; i < layer_num; i++) {
-            input_hiddens.push_back(nullptr);
-        }
-        std::vector<std::vector<Node *>> hiddens = rnn->forward(embs, input_hiddens);
-        std::vector<Node *> hidden = hiddens[layer_num - 1];
-        std::vector<uint> res;
-        assert(hidden.size() == token_ids.size());
-        for (uint i = 0; i < num_preds; ++ i) {
-            uint size = hidden.size();
-            auto output = output_layer(hidden[size-1]);
-            std::vector<uint> v_max = output->get_weight()->argMax();
-            assert(v_max.size() == 1);
-            auto max_index = v_max[0];
-            res.push_back(max_index);
-            std::vector<uint> input;
-            input.push_back(max_index);
-            Node *emb = embedding->forward({input})[0];
-            input_hiddens.clear();
-            for (uint i = 0; i < layer_num; i++) {
-                input_hiddens.push_back(hiddens[i][size-1]);
+            std::vector<Node *> hidden;
+            if (i == 0) {
+                hidden = layers[i]->forward(inputs, nullptr);
+            } else {
+                hidden = layers[i]->forward(res[i - 1], nullptr);
             }
-            hiddens = rnn->forward({emb}, input_hiddens);
-            assert(hiddens.size() == layer_num);
-            assert(hiddens[layer_num - 1].size() == 1);
-            hidden = hiddens[layer_num - 1];
+            if (training && dropout > 0 && i < layer_num - 1) {
+                Dropout dropout_layer(dropout);
+                hidden = dropout_layer.forward(hidden);
+            }
+            res.push_back(hidden);
         }
         return res;
     }
 
-    std::vector<Parameters *> RnnLM::get_parameters() {
+    std::vector<Parameters *> Seq2SeqEncoder::get_parameters() {
         std::vector<Parameters *> res;
-        res.push_back(PW);
-        res.push_back(Pb);
-        auto embedding_params = embedding->get_parameters();
-        res.insert(res.end(), embedding_params.begin(), embedding_params.end());
-        auto rnn_params = rnn->get_parameters();
-        res.insert(res.end(), rnn_params.begin(), rnn_params.end());
+        for (auto layer : layers) {
+            auto params = layer->get_parameters();
+            res.insert(res.end(), params.begin(), params.end());
+        }
         return res;
     }
 
+    std::vector<Parameters *> Seq2SeqEncoderDecoder::get_parameters() {
+        std::vector<Parameters *> res;
+        return res;
+    }
 } // namespace autograd
