@@ -211,6 +211,7 @@ namespace autograd {
     }
 
     Node *cat1(const std::vector<Node *> &nodes) {
+        std::cerr << "cat1" << std::endl;
         return nullptr;
     }
 
