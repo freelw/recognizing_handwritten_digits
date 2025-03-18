@@ -277,53 +277,43 @@ namespace autograd {
         uint _embed_size,
         uint _hidden_num, uint _layer_num,
         DATATYPE sigma, DATATYPE _dropout
-    ) : vocab_size(_vocab_size), embed_size(_embed_size), hidden_num(_hidden_num), layer_num(_layer_num), dropout(_dropout), training(true) {
-
+    ) : vocab_size(_vocab_size),
+        embed_size(_embed_size),
+        hidden_num(_hidden_num),
+        layer_num(_layer_num),
+        dropout(_dropout),
+        training(true) {
         assert(layer_num > 0);
-
         embedding = new Embedding(vocab_size, embed_size);
-        layers.push_back(new GRULayer(embed_size, hidden_num, sigma));
-        for (uint i = 1; i < layer_num; i++) {
-            layers.push_back(new GRULayer(hidden_num, hidden_num, sigma));
-        }
+        rnn = new GRU(embed_size, hidden_num, layer_num, sigma, dropout);
     }
 
     Seq2SeqEncoder::~Seq2SeqEncoder() {
-        for (auto layer : layers) {
-            delete layer;
-        }
+        delete rnn;
         delete embedding;
     }
 
-    std::vector<std::vector<Node*>> Seq2SeqEncoder::forward(
+    std::vector<Node*> Seq2SeqEncoder::forward(
         const std::vector<std::vector<uint>> &token_ids) {
         assert(token_ids.size() > 0);
         std::vector<Node *> inputs = embedding->forward({token_ids});
-        std::vector<std::vector<Node*>> res;
+
+        std::vector<Node *> input_hiddens;
         for (uint i = 0; i < layer_num; i++) {
-            std::vector<Node *> hidden;
-            if (i == 0) {
-                hidden = layers[i]->forward(inputs, nullptr);
-            } else {
-                hidden = layers[i]->forward(res[i - 1], nullptr);
-            }
-            if (training && dropout > 0 && i < layer_num - 1) {
-                Dropout dropout_layer(dropout);
-                hidden = dropout_layer.forward(hidden);
-            }
-            res.push_back(hidden);
+            input_hiddens.push_back(nullptr);
         }
-        return res;
+        
+        std::vector<std::vector<Node*>> res = rnn->forward(inputs, input_hiddens);
+        assert(res.size() == layer_num);
+        return res[layer_num - 1];
     }
 
     std::vector<Parameters *> Seq2SeqEncoder::get_parameters() {
         std::vector<Parameters *> res;
         std::vector<Parameters *> embedding_params = embedding->get_parameters();
         res.insert(res.end(), embedding_params.begin(), embedding_params.end());
-        for (auto layer : layers) {
-            auto params = layer->get_parameters();
-            res.insert(res.end(), params.begin(), params.end());
-        }
+        std::vector<Parameters *> rnn_params = rnn->get_parameters();
+        res.insert(res.end(), rnn_params.begin(), rnn_params.end());
         return res;
     }
 
@@ -342,40 +332,45 @@ namespace autograd {
         assert(layer_num > 0);
 
         embedding = new Embedding(vocab_size, embed_size);
-        layers.push_back(new GRULayer(embed_size+hidden_num, hidden_num, sigma));
-        for (uint i = 1; i < layer_num; i++) {
-            layers.push_back(new GRULayer(hidden_num, hidden_num, sigma));
-        }
+
+        rnn = new GRU(embed_size + hidden_num, hidden_num, layer_num, sigma, dropout);
         output_layer = new Liner(hidden_num, vocab_size, sigma);
     }
 
     Seq2SeqDecoder::~Seq2SeqDecoder() {
-        delete embedding;
-        for (auto layer : layers) {
-            delete layer;
-        }
         delete output_layer;
+        delete rnn;
+        delete embedding;
     }
 
-    std::vector<std::vector<Node*>> Seq2SeqDecoder::forward(
+    std::vector<Node*> Seq2SeqDecoder::forward(
         const std::vector<std::vector<uint>> &token_ids,
-        const std::vector<Node *> &enc_state) {
+        Node *enc_hiddne_state) {
 
         assert(token_ids.size() > 0);
-        std::vector<Node *> inputs = embedding->forward({token_ids});
-        std::vector<std::vector<Node*>> res;
 
         // def forward(self, X, state):
         // # X shape: (batch_size, num_steps)
         // # embs shape: (num_steps, batch_size, embed_size)
         // embs = self.embedding(X.t().type(torch.int32))
         // enc_output, hidden_state = state
+
+        std::vector<Node *> inputs = embedding->forward({token_ids});
+        std::vector<std::vector<Node*>> res;
+
+        
+
+
         // # context shape: (batch_size, num_hiddens)
         // context = enc_output[-1]
         // # Broadcast context to (num_steps, batch_size, num_hiddens)
         // context = context.repeat(embs.shape[0], 1, 1)
         // # Concat at the feature dimension
         // embs_and_context = torch.cat((embs, context), -1)
+
+
+
+
         // outputs, hidden_state = self.rnn(embs_and_context, hidden_state)
         // outputs = self.dense(outputs).swapaxes(0, 1)
         // # outputs shape: (batch_size, num_steps, vocab_size)
@@ -389,10 +384,8 @@ namespace autograd {
         std::vector<Parameters *> res;
         std::vector<Parameters *> embedding_params = embedding->get_parameters();
         res.insert(res.end(), embedding_params.begin(), embedding_params.end());
-        for (auto layer : layers) {
-            auto params = layer->get_parameters();
-            res.insert(res.end(), params.begin(), params.end());
-        }
+        std::vector<Parameters *> rnn_params = rnn->get_parameters();
+        res.insert(res.end(), rnn_params.begin(), rnn_params.end());
         std::vector<Parameters *> output_params = output_layer->get_parameters();
         res.insert(res.end(), output_params.begin(), output_params.end());
         return res;

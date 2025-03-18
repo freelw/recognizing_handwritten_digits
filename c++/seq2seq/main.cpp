@@ -38,7 +38,7 @@ void test_encoder() {
 // X = torch.zeros((batch_size, num_steps))
 // enc_outputs, enc_state = encoder(X)
 // d2l.check_shape(enc_outputs, (num_steps, batch_size, num_hiddens))
-    uint vocab_size = 10;
+    uint vocab_size = 20;
     uint embed_size = 8;
     uint hidden_num = 16;
     uint layer_num = 2;
@@ -48,15 +48,22 @@ void test_encoder() {
         vocab_size, embed_size, hidden_num, layer_num, sigma, dropout
     );
     std::vector<std::vector<uint>> token_ids;
-    token_ids.push_back({0, 1, 2, 3});
-    token_ids.push_back({4, 5, 6, 7});
-    auto res = encoder->forward(token_ids);
-    auto size = res.size();
-    assert(size == layer_num);
-    auto hiddens = res[size - 1];
+    token_ids.push_back({0, 1, 2, 3}); // step 1
+    token_ids.push_back({4, 5, 6, 7}); // step 2
+    token_ids.push_back({8, 9, 10, 11}); // step 3
+    for (uint i = 0; i < token_ids.size(); i++) {
+        for (uint j = 0; j < token_ids[i].size(); j++) {
+            assert(token_ids[i][j] < vocab_size);
+        }
+    }
+    auto hiddens = encoder->forward(token_ids);
+
     assert(hiddens.size() == token_ids.size());
+    assert(token_ids[0].size() > 0);
+    uint batch_size = token_ids[0].size();
     for (auto hidden : hiddens) {
-        std::cout << "hidden : " << hidden->getShape() << std::endl;
+        assert(hidden->get_weight()->getShape().rowCnt == hidden_num);
+        assert(hidden->get_weight()->getShape().colCnt == batch_size);
     }
     freeTmpMatrix();
     autograd::freeAllNodes();

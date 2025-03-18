@@ -126,7 +126,7 @@ namespace autograd {
                 DATATYPE _dropout
             );
             ~Seq2SeqEncoder();
-            std::vector<std::vector<Node*>> forward(
+            std::vector<Node*> forward(
                 const std::vector<std::vector<uint>> &token_ids
             );
             std::vector<Parameters *> get_parameters();
@@ -140,11 +140,10 @@ namespace autograd {
             uint hidden_num;
             uint layer_num;
             DATATYPE dropout;
-            std::vector<GRULayer *> layers;
+            GRU *rnn;
             bool training;
             Embedding *embedding;
     };
-
 
     class Seq2SeqDecoder {
         public:
@@ -157,9 +156,9 @@ namespace autograd {
                 DATATYPE _dropout
             );
             ~Seq2SeqDecoder();
-            std::vector<std::vector<Node*>> forward(
+            std::vector<Node*> forward(
                 const std::vector<std::vector<uint>> &token_ids,
-                const std::vector<Node *> &enc_state
+                Node *enc_hiddne_state
             );
             std::vector<Parameters *> get_parameters();
             uint get_hidden_num() { return hidden_num; }
@@ -172,7 +171,7 @@ namespace autograd {
             uint hidden_num;
             uint layer_num;
             DATATYPE dropout;
-            std::vector<GRULayer *> layers;
+            GRU *rnn;
             bool training;
             Embedding *embedding;
             Liner *output_layer;
