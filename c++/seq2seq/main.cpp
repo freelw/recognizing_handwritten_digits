@@ -16,13 +16,12 @@
 // bool shutdown = true; // fixme
 bool shutdown = false;
 
-#define RESOURCE_NAME "../../resources/timemachine_preprocessed.txt"
-#define VOCAB_NAME "../vocab_builder/vocab.txt"
-#define BATCH_SIZE 1024
+#define RESOURCE_NAME "../../resources/fra_preprocessed.txt"
+#define SRC_VOCAB_NAME "../fra_vocab_builder/fra_src_vocab.txt"
+#define TGT_VOCAB_NAME "../fra_vocab_builder/fra_tgt_vocab.txt"
+#define BATCH_SIZE 128
 
 void signal_callback_handler(int signum);
-
-
 
 void print_progress(uint i, uint tot) {
     std::cout << "\r[" << i << "/" << tot << "]" << std::flush;
@@ -58,7 +57,5 @@ int main(int argc, char *argv[]) {
                 return 1;
         }
     }
-
-    
     return 0;
 }
