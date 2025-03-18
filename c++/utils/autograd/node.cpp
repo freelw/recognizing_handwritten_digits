@@ -143,8 +143,7 @@ namespace autograd {
         return node;
     }
 
-    Node *cat(const std::vector<Node *> &nodes) {
-        assert(nodes.size() > 0);
+    Node *cat0(const std::vector<Node *> &nodes) {
         Shape shape = nodes[0]->get_weight()->getShape();
         for (uint i = 0; i < nodes.size(); ++ i) {
             nodes[i]->checkShape(shape);
@@ -209,6 +208,21 @@ namespace autograd {
             }
         }
         return node;
+    }
+
+    Node *cat1(const std::vector<Node *> &nodes) {
+        return nullptr;
+    }
+
+    Node *cat(const std::vector<Node *> &nodes, uint dim) {
+        assert(dim == 0 || dim == 1);
+        assert(nodes.size() > 0);
+        if (dim == 0) {
+            return cat0(nodes);
+        } else if (dim == 1) {
+            return cat1(nodes);
+        }
+        return nullptr;
     }
 
     void Node::backward() {

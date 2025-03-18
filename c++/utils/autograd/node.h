@@ -89,7 +89,9 @@ namespace autograd {
             // Node *operator-(Node &rhs);
             // Node *operator-();
             friend Node *operator-(DATATYPE, Node &rhs);
-            friend Node *cat(const std::vector<Node *> &nodes);
+            friend Node *cat(const std::vector<Node *> &nodes, uint);
+            friend Node *cat0(const std::vector<Node *> &nodes);
+            friend Node *cat1(const std::vector<Node *> &nodes);
         private:
             Matrix *w;
             Matrix *grad;
@@ -326,7 +328,9 @@ namespace autograd {
             uint offset;
     };
 
-    Node *cat(const std::vector<Node *> &nodes);
+    Node *cat(const std::vector<Node *> &nodes, uint dim = 0);
+    Node *cat0(const std::vector<Node *> &nodes);
+    Node *cat1(const std::vector<Node *> &nodes);
     Node *allocNode(Matrix *w);
     void freeAllNodes();
     void freeAllEdges();

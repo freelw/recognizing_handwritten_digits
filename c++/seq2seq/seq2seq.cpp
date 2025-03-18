@@ -297,12 +297,10 @@ namespace autograd {
         const std::vector<std::vector<uint>> &token_ids) {
         assert(token_ids.size() > 0);
         std::vector<Node *> inputs = embedding->forward({token_ids});
-
         std::vector<Node *> input_hiddens;
         for (uint i = 0; i < layer_num; i++) {
             input_hiddens.push_back(nullptr);
         }
-        
         std::vector<std::vector<Node*>> res = rnn->forward(inputs, input_hiddens);
         assert(res.size() == layer_num);
         return res[layer_num - 1];
@@ -328,11 +326,8 @@ namespace autograd {
         layer_num(_layer_num),
         dropout(_dropout),
         training(true) {
-
         assert(layer_num > 0);
-
         embedding = new Embedding(vocab_size, embed_size);
-
         rnn = new GRU(embed_size + hidden_num, hidden_num, layer_num, sigma, dropout);
         output_layer = new Liner(hidden_num, vocab_size, sigma);
     }
@@ -346,8 +341,10 @@ namespace autograd {
     std::vector<Node*> Seq2SeqDecoder::forward(
         const std::vector<std::vector<uint>> &token_ids,
         Node *enc_hiddne_state) {
-
+        assert(enc_hiddne_state != nullptr);
+        assert(enc_hiddne_state->getShape().rowCnt == hidden_num);
         assert(token_ids.size() > 0);
+        assert(enc_hiddne_state->getShape().colCnt == token_ids[0].size());
 
         // def forward(self, X, state):
         // # X shape: (batch_size, num_steps)
@@ -355,7 +352,10 @@ namespace autograd {
         // embs = self.embedding(X.t().type(torch.int32))
         // enc_output, hidden_state = state
 
-        std::vector<Node *> inputs = embedding->forward({token_ids});
+        std::vector<Node *> inputs = embedding->forward(token_ids);
+        assert(inputs.size() == enc_hiddne_state->getShape().colCnt);
+
+        // std::vector<Node *> embs_and_context = cat({inputs, enc_hiddne_state});
         std::vector<std::vector<Node*>> res;
 
         

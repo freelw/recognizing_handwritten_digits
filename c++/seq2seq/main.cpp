@@ -32,12 +32,6 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
 }
 
 void test_encoder() {
-// vocab_size, embed_size, num_hiddens, num_layers = 10, 8, 16, 2
-// batch_size, num_steps = 4, 9
-// encoder = Seq2SeqEncoder(vocab_size, embed_size, num_hiddens, num_layers)
-// X = torch.zeros((batch_size, num_steps))
-// enc_outputs, enc_state = encoder(X)
-// d2l.check_shape(enc_outputs, (num_steps, batch_size, num_hiddens))
     uint vocab_size = 20;
     uint embed_size = 8;
     uint hidden_num = 16;
