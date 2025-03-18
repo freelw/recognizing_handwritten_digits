@@ -294,7 +294,9 @@ namespace autograd {
     }
 
     std::vector<Node*> Seq2SeqEncoder::forward(
-        const std::vector<std::vector<uint>> &token_ids) {
+        const std::vector<std::vector<uint>> &token_ids,
+        std::vector<Node *> &encoder_states) {
+        assert(encoder_states.size() == 0);
         assert(token_ids.size() > 0);
         std::vector<Node *> inputs = embedding->forward({token_ids});
         std::vector<Node *> input_hiddens;
@@ -302,6 +304,9 @@ namespace autograd {
             input_hiddens.push_back(nullptr);
         }
         std::vector<std::vector<Node*>> res = rnn->forward(inputs, input_hiddens);
+        for (uint i = 0; i < layer_num; i++) {
+            encoder_states.push_back(res[i].back());
+        }
         assert(res.size() == layer_num);
         return res[layer_num - 1];
     }
@@ -340,44 +345,28 @@ namespace autograd {
 
     std::vector<Node*> Seq2SeqDecoder::forward(
         const std::vector<std::vector<uint>> &token_ids,
-        Node *enc_hiddne_state) {
-        assert(enc_hiddne_state != nullptr);
-        assert(enc_hiddne_state->getShape().rowCnt == hidden_num);
+        Node *ctx,
+        const std::vector<Node *> &encoder_states) {
+        assert(ctx != nullptr);
+        assert(ctx->getShape().rowCnt == hidden_num);
         assert(token_ids.size() > 0);
-        assert(enc_hiddne_state->getShape().colCnt == token_ids[0].size());
-
-        // def forward(self, X, state):
-        // # X shape: (batch_size, num_steps)
-        // # embs shape: (num_steps, batch_size, embed_size)
-        // embs = self.embedding(X.t().type(torch.int32))
-        // enc_output, hidden_state = state
-
+        assert(ctx->getShape().colCnt == token_ids[0].size());
+        assert(encoder_states.size() == layer_num);
         std::vector<Node *> inputs = embedding->forward(token_ids);
-        assert(inputs.size() == enc_hiddne_state->getShape().colCnt);
-
-        // std::vector<Node *> embs_and_context = cat({inputs, enc_hiddne_state});
+        std::vector<Node *> embs_and_context;
+        embs_and_context.reserve(inputs.size());
+        for (uint i = 0; i < inputs.size(); i++) {
+            assert(inputs[i]->getShape().colCnt == ctx->getShape().colCnt);
+            embs_and_context.push_back(cat({inputs[i], ctx}, 1));
+        }
         std::vector<std::vector<Node*>> res;
-
-        
-
-
-        // # context shape: (batch_size, num_hiddens)
-        // context = enc_output[-1]
-        // # Broadcast context to (num_steps, batch_size, num_hiddens)
-        // context = context.repeat(embs.shape[0], 1, 1)
-        // # Concat at the feature dimension
-        // embs_and_context = torch.cat((embs, context), -1)
-
-
-
-
-        // outputs, hidden_state = self.rnn(embs_and_context, hidden_state)
-        // outputs = self.dense(outputs).swapaxes(0, 1)
-        // # outputs shape: (batch_size, num_steps, vocab_size)
-        // # hidden_state shape: (num_layers, batch_size, num_hiddens)
-        // return outputs, [enc_output, hidden_state]
-
-        
+        res = rnn->forward(embs_and_context, encoder_states);
+        assert(res.size() == layer_num);
+        std::vector<Node *> outputs;
+        for (auto r : res[layer_num - 1]) {
+            outputs.push_back(output_layer->forward(r));
+        }
+        return outputs;        
     }
 
     std::vector<Parameters *> Seq2SeqDecoder::get_parameters() {

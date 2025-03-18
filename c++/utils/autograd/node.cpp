@@ -211,53 +211,23 @@ namespace autograd {
 
     Node *cat1(const std::vector<Node *> &nodes) {
         Shape shape = nodes[0]->get_weight()->getShape();
+        uint rowCntSum = 0;
         for (uint i = 0; i < nodes.size(); ++ i) {
-            nodes[i]->checkShape(shape);
+            // nodes[i]->checkShape(shape);
+            assert(nodes[i]->getShape().colCnt == shape.colCnt);
+            rowCntSum += nodes[i]->getShape().rowCnt;
         }
-        Matrix *m = allocTmpMatrix(Shape(shape.rowCnt * nodes.size(), shape.colCnt));
+        Matrix *m = allocTmpMatrix(Shape(rowCntSum, shape.colCnt));
         Node *node = allocNode(m);
         auto m_buffer = m->getData();
-        uint i = 0;
-        auto size = shape.size();
-        for (; i < nodes.size() - 7; i += 8) {
-            DATATYPE * m_buffer_0 = m_buffer + i*size;
-            DATATYPE * m_buffer_1 = m_buffer + (i+1)*size;
-            DATATYPE * m_buffer_2 = m_buffer + (i+2)*size;
-            DATATYPE * m_buffer_3 = m_buffer + (i+3)*size;
-            DATATYPE * m_buffer_4 = m_buffer + (i+4)*size;
-            DATATYPE * m_buffer_5 = m_buffer + (i+5)*size;
-            DATATYPE * m_buffer_6 = m_buffer + (i+6)*size;
-            DATATYPE * m_buffer_7 = m_buffer + (i+7)*size;
-            DATATYPE * node_i_buffer_0 = nodes[i]->get_weight()->getData();
-            DATATYPE * node_i_buffer_1 = nodes[i+1]->get_weight()->getData();
-            DATATYPE * node_i_buffer_2 = nodes[i+2]->get_weight()->getData();
-            DATATYPE * node_i_buffer_3 = nodes[i+3]->get_weight()->getData();
-            DATATYPE * node_i_buffer_4 = nodes[i+4]->get_weight()->getData();
-            DATATYPE * node_i_buffer_5 = nodes[i+5]->get_weight()->getData();
-            DATATYPE * node_i_buffer_6 = nodes[i+6]->get_weight()->getData();
-            DATATYPE * node_i_buffer_7 = nodes[i+7]->get_weight()->getData();
-            DATATYPE *m_buffers[8] = {
-                m_buffer_0, m_buffer_1, m_buffer_2, m_buffer_3,
-                m_buffer_4, m_buffer_5, m_buffer_6, m_buffer_7
-            };
-            DATATYPE *node_i_buffers[8] = {
-                node_i_buffer_0, node_i_buffer_1, node_i_buffer_2, node_i_buffer_3,
-                node_i_buffer_4, node_i_buffer_5, node_i_buffer_6, node_i_buffer_7
-            };
-            #pragma omp parallel for
-            for (uint j = 0; j < 8; ++ j) {
-                memcpy(m_buffers[j], node_i_buffers[j], size * sizeof(DATATYPE));
-            }
-        }
-        for (; i < nodes.size(); ++ i) {
+        uint offset = 0;
+        for (uint i = 0; i < nodes.size(); ++ i) {
             auto node_i_buffer = nodes[i]->get_weight()->getData();
-            memcpy(m_buffer + i*size, node_i_buffer, size * sizeof(DATATYPE));
-        }
-
-        for (i = 0; i < nodes.size(); ++ i) {
+            memcpy(m_buffer + offset, node_i_buffer, nodes[i]->getShape().size() * sizeof(DATATYPE));
+            offset += nodes[i]->getShape().size();
             if (nodes[i]->is_require_grad()) {
                 node->require_grad();
-                node->edges.push_back(CatEdge1::create(nodes[i], i*size));
+                node->edges.push_back(CatEdge1::create(nodes[i], offset));
             }
         }
         return node;
