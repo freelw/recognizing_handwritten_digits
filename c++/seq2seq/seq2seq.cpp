@@ -240,12 +240,16 @@ namespace autograd {
     }
 
     Seq2SeqEncoder::Seq2SeqEncoder(
-        uint input_num, uint _hidden_num, uint _layer_num,
+        uint _vocab_size,
+        uint _embed_size,
+        uint _hidden_num, uint _layer_num,
         DATATYPE sigma, DATATYPE _dropout
-    ) : hidden_num(_hidden_num), layer_num(_layer_num), dropout(_dropout), training(true) {
+    ) : vocab_size(_vocab_size), embed_size(_embed_size), hidden_num(_hidden_num), layer_num(_layer_num), dropout(_dropout), training(true) {
 
         assert(layer_num > 0);
-        layers.push_back(new GRULayer(input_num, hidden_num, sigma));
+
+        embedding = new Embedding(vocab_size, embed_size);
+        layers.push_back(new GRULayer(embed_size, hidden_num, sigma));
         for (uint i = 1; i < layer_num; i++) {
             layers.push_back(new GRULayer(hidden_num, hidden_num, sigma));
         }
@@ -255,14 +259,15 @@ namespace autograd {
         for (auto layer : layers) {
             delete layer;
         }
+        delete embedding;
     }
 
     std::vector<std::vector<Node*>> Seq2SeqEncoder::forward(
-        const std::vector<Node *> &inputs) {
+        const std::vector<uint> &token_ids) {
 
-        assert(inputs.size() > 0);
+        assert(token_ids.size() > 0);
+        std::vector<Node *> inputs = embedding->forward({token_ids});
         std::vector<std::vector<Node*>> res;
-
         for (uint i = 0; i < layer_num; i++) {
             std::vector<Node *> hidden;
             if (i == 0) {

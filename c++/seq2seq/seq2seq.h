@@ -103,7 +103,8 @@ namespace autograd {
     class Seq2SeqEncoder {
         public:
             Seq2SeqEncoder(
-                uint input_num,
+                uint _vocab_size,
+                uint _embed_size,
                 uint _hidden_num,
                 uint _layer_num,
                 DATATYPE sigma,
@@ -111,7 +112,7 @@ namespace autograd {
             );
             ~Seq2SeqEncoder();
             std::vector<std::vector<Node*>> forward(
-                const std::vector<Node *> &inputs
+                const std::vector<uint> &token_ids
             );
             std::vector<Parameters *> get_parameters();
             uint get_hidden_num() { return hidden_num; }
@@ -119,11 +120,14 @@ namespace autograd {
             void train(bool _training) { training = _training; }
             bool is_training() { return training; }
         private:
+            uint vocab_size;
+            uint embed_size;
             uint hidden_num;
             uint layer_num;
             DATATYPE dropout;
             std::vector<GRULayer *> layers;
             bool training;
+            Embedding *embedding;
     };
 
 

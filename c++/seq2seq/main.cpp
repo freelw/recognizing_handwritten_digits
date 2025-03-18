@@ -31,7 +31,37 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
    
 }
 
+void test_encoder() {
+
+// vocab_size, embed_size, num_hiddens, num_layers = 10, 8, 16, 2
+// batch_size, num_steps = 4, 9
+// encoder = Seq2SeqEncoder(vocab_size, embed_size, num_hiddens, num_layers)
+// X = torch.zeros((batch_size, num_steps))
+// enc_outputs, enc_state = encoder(X)
+// d2l.check_shape(enc_outputs, (num_steps, batch_size, num_hiddens))
+
+    uint vocab_size = 10;
+    uint embed_size = 8;
+    uint hidden_num = 16;
+    uint layer_num = 2;
+    DATATYPE sigma = 0.01;
+    DATATYPE dropout = 0.2;
+
+    auto encoder = new autograd::Seq2SeqEncoder(
+        vocab_size, embed_size, hidden_num, layer_num, sigma, dropout
+    );
+
+
+    freeTmpMatrix();
+    autograd::freeAllNodes();
+    autograd::freeAllEdges();
+    delete encoder;
+}
+
 int main(int argc, char *argv[]) {
+
+    test_encoder();
+    return 0;
     cout << "OMP_THREADS: " << OMP_THREADS << endl;
     // register signal SIGINT and signal handler
     signal(SIGINT, signal_callback_handler);
