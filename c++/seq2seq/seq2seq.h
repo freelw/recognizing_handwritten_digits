@@ -32,6 +32,21 @@ namespace autograd {
             std::vector<Parameters *> PW;
     };
 
+    class Liner {
+        public:
+            Liner(uint input_num, uint output_num, DATATYPE sigma);
+            ~Liner();
+            Node *forward(Node *input);
+            std::vector<Parameters *> get_parameters();
+        private:
+            Matrix *mW;
+            Matrix *mb;
+            Node *W;
+            Node *b;
+            Parameters *PW;
+            Parameters *Pb;
+    };
+
     class GRULayer {
         public:
             GRULayer(uint input_num, uint _hidden_num, DATATYPE sigma);
@@ -131,20 +146,46 @@ namespace autograd {
     };
 
 
-    class Seq2SeqDecoder {};
+    class Seq2SeqDecoder {
+        public:
+            Seq2SeqDecoder(
+                uint _vocab_size,
+                uint _embed_size,
+                uint _hidden_num,
+                uint _layer_num,
+                DATATYPE sigma,
+                DATATYPE _dropout
+            );
+            ~Seq2SeqDecoder();
+            std::vector<std::vector<Node*>> forward(
+                const std::vector<std::vector<uint>> &token_ids,
+                const std::vector<Node *> &enc_state
+            );
+            std::vector<Parameters *> get_parameters();
+            uint get_hidden_num() { return hidden_num; }
+            uint get_layer_num() { return layer_num; }
+            void train(bool _training) { training = _training; }
+            bool is_training() { return training; } 
+        private:
+            uint vocab_size;
+            uint embed_size;
+            uint hidden_num;
+            uint layer_num;
+            DATATYPE dropout;
+            std::vector<GRULayer *> layers;
+            bool training;
+            Embedding *embedding;
+            Liner *output_layer;
+    };
 
 
     class Seq2SeqEncoderDecoder {
         public:
             Seq2SeqEncoderDecoder() {}
             ~Seq2SeqEncoderDecoder() {}
-            std::vector<std::vector<Node*>> forward(
-                const std::vector<Node *> &inputs
-            );
+            std::vector<std::vector<Node*>> forward(const std::vector<Node *> &inputs);
             std::vector<Parameters *> get_parameters();
-            
         private:
-            
     };
 
     

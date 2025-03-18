@@ -70,6 +70,39 @@ namespace autograd {
         return res;
     }
 
+    Liner::Liner(uint input_num, uint output_num, DATATYPE sigma) {
+        mW = new Matrix(Shape(output_num, input_num));
+        mb = new Matrix(Shape(output_num, 1));
+        init_weight(mW, sigma);
+        init_weight(mb, sigma);
+        W = new Node(mW, true);
+        b = new Node(mb, true);
+        W->require_grad();
+        b->require_grad();
+        PW = new Parameters(W);
+        Pb = new Parameters(b);
+    }
+
+    Liner::~Liner() {
+        delete mW;
+        delete mb;
+        delete W;
+        delete b;
+        delete PW;
+        delete Pb;
+    }
+
+    Node *Liner::forward(Node *input) {
+        return W->at(input)->expand_add(b);
+    }
+
+    std::vector<Parameters *> Liner::get_parameters() {
+        std::vector<Parameters *> res;
+        res.push_back(PW);
+        res.push_back(Pb);
+        return res;
+    }
+
     GRULayer::GRULayer(
         uint input_num,
         uint _hidden_num,
@@ -264,7 +297,6 @@ namespace autograd {
 
     std::vector<std::vector<Node*>> Seq2SeqEncoder::forward(
         const std::vector<std::vector<uint>> &token_ids) {
-
         assert(token_ids.size() > 0);
         std::vector<Node *> inputs = embedding->forward({token_ids});
         std::vector<std::vector<Node*>> res;
@@ -286,11 +318,88 @@ namespace autograd {
 
     std::vector<Parameters *> Seq2SeqEncoder::get_parameters() {
         std::vector<Parameters *> res;
+        std::vector<Parameters *> embedding_params = embedding->get_parameters();
+        res.insert(res.end(), embedding_params.begin(), embedding_params.end());
         for (auto layer : layers) {
             auto params = layer->get_parameters();
             res.insert(res.end(), params.begin(), params.end());
         }
         return res;
+    }
+
+    Seq2SeqDecoder::Seq2SeqDecoder(
+        uint _vocab_size,
+        uint _embed_size,
+        uint _hidden_num, uint _layer_num,
+        DATATYPE sigma, DATATYPE _dropout
+    ) : vocab_size(_vocab_size),
+        embed_size(_embed_size),
+        hidden_num(_hidden_num),
+        layer_num(_layer_num),
+        dropout(_dropout),
+        training(true) {
+
+        assert(layer_num > 0);
+
+        embedding = new Embedding(vocab_size, embed_size);
+        layers.push_back(new GRULayer(embed_size+hidden_num, hidden_num, sigma));
+        for (uint i = 1; i < layer_num; i++) {
+            layers.push_back(new GRULayer(hidden_num, hidden_num, sigma));
+        }
+        output_layer = new Liner(hidden_num, vocab_size, sigma);
+    }
+
+    Seq2SeqDecoder::~Seq2SeqDecoder() {
+        delete embedding;
+        for (auto layer : layers) {
+            delete layer;
+        }
+        delete output_layer;
+    }
+
+    std::vector<std::vector<Node*>> Seq2SeqDecoder::forward(
+        const std::vector<std::vector<uint>> &token_ids,
+        const std::vector<Node *> &enc_state) {
+
+        assert(token_ids.size() > 0);
+        std::vector<Node *> inputs = embedding->forward({token_ids});
+        std::vector<std::vector<Node*>> res;
+
+        // def forward(self, X, state):
+        // # X shape: (batch_size, num_steps)
+        // # embs shape: (num_steps, batch_size, embed_size)
+        // embs = self.embedding(X.t().type(torch.int32))
+        // enc_output, hidden_state = state
+        // # context shape: (batch_size, num_hiddens)
+        // context = enc_output[-1]
+        // # Broadcast context to (num_steps, batch_size, num_hiddens)
+        // context = context.repeat(embs.shape[0], 1, 1)
+        // # Concat at the feature dimension
+        // embs_and_context = torch.cat((embs, context), -1)
+        // outputs, hidden_state = self.rnn(embs_and_context, hidden_state)
+        // outputs = self.dense(outputs).swapaxes(0, 1)
+        // # outputs shape: (batch_size, num_steps, vocab_size)
+        // # hidden_state shape: (num_layers, batch_size, num_hiddens)
+        // return outputs, [enc_output, hidden_state]
+
+        
+    }
+
+    std::vector<Parameters *> Seq2SeqDecoder::get_parameters() {
+        std::vector<Parameters *> res;
+        std::vector<Parameters *> embedding_params = embedding->get_parameters();
+        res.insert(res.end(), embedding_params.begin(), embedding_params.end());
+        for (auto layer : layers) {
+            auto params = layer->get_parameters();
+            res.insert(res.end(), params.begin(), params.end());
+        }
+        std::vector<Parameters *> output_params = output_layer->get_parameters();
+        res.insert(res.end(), output_params.begin(), output_params.end());
+        return res;
+    }
+
+    std::vector<std::vector<Node*>> Seq2SeqEncoderDecoder::forward( const std::vector<Node *> &inputs) {
+        
     }
 
     std::vector<Parameters *> Seq2SeqEncoderDecoder::get_parameters() {
