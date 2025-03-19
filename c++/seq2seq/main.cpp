@@ -64,8 +64,13 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
         dec_vocab_size, dec_embed_size, hidden_num, layer_num, sigma, dropout
     );
     auto encoder_decoder = new autograd::Seq2SeqEncoderDecoder(encoder, decoder);
-    auto parameters = encoder_decoder->get_parameters();
+    if (!checkpoint.empty()) {
+        cout << "loading from checkpoint : " << checkpoint << endl;
+        loadfrom_checkpoint(*encoder_decoder, checkpoint);
+        cout << "loaded from checkpoint" << endl;
+    }
 
+    auto parameters = encoder_decoder->get_parameters();
     assert(parameters.size() == 
         enc_vocab_size + dec_vocab_size // vocab embeddings
             + layer_num * (
