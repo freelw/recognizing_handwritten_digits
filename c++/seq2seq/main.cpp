@@ -164,11 +164,12 @@ void test_encoder_decoder() {
     assert(ctx->getShape().rowCnt == hidden_num);
     assert(ctx->getShape().colCnt == batch_size);
     auto dec_outputs = decoder->forward(tgt_token_ids, ctx, encoder_states);
-    assert(dec_outputs.size() == tgt_token_ids.size());
-    for (auto dec_output : dec_outputs) {
-        assert(dec_output->getShape().rowCnt == dec_vocab_size);
-        assert(dec_output->getShape().colCnt == batch_size);
-    }
+    dec_outputs->checkShape(Shape(dec_vocab_size, tgt_token_ids.size() * tgt_token_ids[0].size()));
+    // assert(dec_outputs.size() == tgt_token_ids.size());
+    // for (auto dec_output : dec_outputs) {
+    //     assert(dec_output->getShape().rowCnt == dec_vocab_size);
+    //     assert(dec_output->getShape().colCnt == batch_size);
+    // }
     freeTmpMatrix();
     autograd::freeAllNodes();
     autograd::freeAllEdges();
@@ -201,11 +202,12 @@ void test_encoder_decoder1() {
     );
     auto encoder_decoder = new autograd::Seq2SeqEncoderDecoder(encoder, decoder);
     auto dec_outputs = encoder_decoder->forward(src_token_ids, tgt_token_ids);
-    assert(dec_outputs.size() == tgt_token_ids.size());
-    for (auto dec_output : dec_outputs) {
-        assert(dec_output->getShape().rowCnt == dec_vocab_size);
-        assert(dec_output->getShape().colCnt == src_token_ids[0].size());
-    }
+    dec_outputs->checkShape(Shape(dec_vocab_size, tgt_token_ids.size() * tgt_token_ids[0].size()));
+    // assert(dec_outputs.size() == tgt_token_ids.size());
+    // for (auto dec_output : dec_outputs) {
+    //     assert(dec_output->getShape().rowCnt == dec_vocab_size);
+    //     assert(dec_output->getShape().colCnt == src_token_ids[0].size());
+    // }
     freeTmpMatrix();
     autograd::freeAllNodes();
     autograd::freeAllEdges();
@@ -321,11 +323,11 @@ void test_dataloader() {
 }
 
 int main(int argc, char *argv[]) {
-    // test_encoder_decoder();
-    // test_encoder_decoder1();
-    // test_crossentropy_mask();
-    // test_dataloader();
-    // return 0;
+    test_encoder_decoder();
+    test_encoder_decoder1();
+    test_crossentropy_mask();
+    test_dataloader();
+    return 0;
     cout << "OMP_THREADS: " << OMP_THREADS << endl;
     // register signal SIGINT and signal handler
     signal(SIGINT, signal_callback_handler);

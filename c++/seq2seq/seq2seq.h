@@ -157,7 +157,7 @@ namespace autograd {
                 DATATYPE _dropout
             );
             ~Seq2SeqDecoder();
-            std::vector<Node*> forward(
+            Node* forward(
                 const std::vector<std::vector<uint>> &token_ids,
                 Node *ctx,
                 const std::vector<Node *> &encoder_states
@@ -187,7 +187,7 @@ namespace autograd {
                 Seq2SeqDecoder *_decoder
             ) : encoder(_encoder), decoder(_decoder) {}
             ~Seq2SeqEncoderDecoder() {}
-            std::vector<Node*> forward(
+            Node* forward(
                 const std::vector<std::vector<uint>> &src_token_ids,
                 const std::vector<std::vector<uint>> &tgt_token_ids
             );

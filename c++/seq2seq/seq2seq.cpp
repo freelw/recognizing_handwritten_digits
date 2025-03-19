@@ -344,7 +344,7 @@ namespace autograd {
         delete embedding;
     }
 
-    std::vector<Node*> Seq2SeqDecoder::forward(
+    Node* Seq2SeqDecoder::forward(
         const std::vector<std::vector<uint>> &token_ids,
         Node *ctx,
         const std::vector<Node *> &encoder_states) {
@@ -367,7 +367,7 @@ namespace autograd {
         for (auto r : res[layer_num - 1]) {
             outputs.push_back(output_layer->forward(r));
         }
-        return outputs;        
+        return cat(outputs);
     }
 
     std::vector<Parameters *> Seq2SeqDecoder::get_parameters() {
@@ -381,7 +381,7 @@ namespace autograd {
         return res;
     }
 
-    std::vector<Node*> Seq2SeqEncoderDecoder::forward(
+    Node* Seq2SeqEncoderDecoder::forward(
         const std::vector<std::vector<uint>> &src_token_ids,
         const std::vector<std::vector<uint>> &tgt_token_ids ) {
         std::vector<Node *> encoder_states;
