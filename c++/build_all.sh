@@ -1,6 +1,15 @@
 #!/bin/bash
 export RELEASE=1
 
+pushd ./seq2seq
+make clean
+make
+if [ $? -ne 0 ]; then
+    echo "seq2seq build failed"
+    exit 1
+fi
+popd
+
 pushd ./deep_gru
 make clean
 make
