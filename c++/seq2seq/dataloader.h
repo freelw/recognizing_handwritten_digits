@@ -38,6 +38,7 @@ namespace seq2seq {
             std::string get_tgt_token(uint token_id);
             uint src_pad_id();
             uint tgt_pad_id();
+            uint tgt_bos_id();
             uint src_vocab_size();
             uint tgt_vocab_size();
         private:

@@ -15,8 +15,6 @@
 #include "checkpoint.h"
 #include <algorithm>
 
-// #pragma message("warning: shutdown is true")
-// bool shutdown = true; // fixme
 bool shutdown = false;
 
 #define RESOURCE_NAME "../../resources/fra_preprocessed.txt"
@@ -37,6 +35,12 @@ std::vector<uint> trim_or_padding(const std::vector<uint> &src, uint max_len, ui
     } else {
         res.resize(max_len, pad_id);
     }
+    return res;
+}
+
+std::vector<uint> add_bos(const std::vector<uint> &src, uint bos_id) {
+    std::vector<uint> res = src;
+    res.insert(res.begin(), bos_id);
     return res;
 }
 
@@ -93,8 +97,11 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
             }
             for (uint j = i; j < end; j++) {
                 inputs.push_back(trim_or_padding(src_token_ids[j], num_steps, loader.src_pad_id()));
-                targets.push_back(trim_or_padding(tgt_token_ids[j], num_steps, loader.tgt_pad_id()));   
+                targets.push_back(trim_or_padding(add_bos(tgt_token_ids[j], loader.tgt_bos_id()), num_steps, loader.tgt_pad_id()));   
             }
+
+            auto dec_outputs = encoder_decoder->forward(inputs, targets);
+            // dec_outputs->cross_entropy_mask(targets, loader.tgt_pad_id());
             print_progress(end, src_token_ids.size());
         }
         autograd::save_checkpoint(checkpoint_prefix, epoch, *encoder_decoder);

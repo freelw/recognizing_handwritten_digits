@@ -76,7 +76,6 @@ namespace seq2seq {
                 src_token_id.push_back(src_vocab.get_token_id(token));
             }
             src_token_id.push_back(src_vocab.get_token_id("<eos>"));
-            tgt_token_id.push_back(tgt_vocab.get_token_id("<bos>"));
             while (tgt_iss >> token) {
                 tgt_token_id.push_back(tgt_vocab.get_token_id(token));
             }
@@ -100,6 +99,10 @@ namespace seq2seq {
 
     uint DataLoader::tgt_pad_id() {
         return tgt_vocab.get_token_id("<pad>");
+    }
+
+    uint DataLoader::tgt_bos_id() {
+        return tgt_vocab.get_token_id("<bos>");
     }
 
     uint DataLoader::src_vocab_size() {
