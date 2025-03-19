@@ -104,7 +104,8 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
             // dec_outputs->cross_entropy_mask(targets, loader.tgt_pad_id());
             print_progress(end, src_token_ids.size());
             if (shutdown) {
-                break;
+                save_checkpoint(checkpoint_prefix, epoch, *encoder_decoder);
+                exit(0);
             }
         }
         autograd::save_checkpoint(checkpoint_prefix, epoch, *encoder_decoder);
