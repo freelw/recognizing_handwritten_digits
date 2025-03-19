@@ -396,9 +396,9 @@ namespace autograd {
             void backward(Matrix *grad) override {
                 assert(node->is_require_grad());
                 assert(grad->getShape().colCnt == node->getShape().colCnt);
-                Shape shape = node->get_weight()->getShape();
-                DATATYPE *m_buffer = node->get_weight()->getData() + offset;
-                DATATYPE *grad_buffer = grad->getData();
+                Shape shape = node->getShape();
+                DATATYPE *m_buffer = node->get_weight()->getData();
+                DATATYPE *grad_buffer = grad->getData() + offset;
                 for (uint i = 0; i < shape.size(); ++ i) {
                     m_buffer[i] += grad_buffer[i];
                 }

@@ -289,11 +289,11 @@ namespace autograd {
         for (uint i = 0; i < nodes.size(); ++ i) {
             auto node_i_buffer = nodes[i]->get_weight()->getData();
             memcpy(m_buffer + offset, node_i_buffer, nodes[i]->getShape().size() * sizeof(DATATYPE));
-            offset += nodes[i]->getShape().size();
             if (nodes[i]->is_require_grad()) {
                 node->require_grad();
                 node->edges.push_back(CatEdge1::create(nodes[i], offset));
             }
+            offset += nodes[i]->getShape().size();
         }
         return node;
     }
