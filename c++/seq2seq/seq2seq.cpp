@@ -374,6 +374,49 @@ namespace autograd {
         return cat(outputs);
     }
 
+    std::vector<uint> Seq2SeqDecoder::predict(
+                Node *ctx,
+                const std::vector<Node *> &encoder_states,
+                uint max_len,
+                uint bos_id,
+                uint eos_id
+            ) {
+        assert(ctx != nullptr);
+        assert(ctx->getShape().rowCnt == hidden_num);
+        assert(encoder_states.size() == layer_num);
+        std::vector<uint> res;
+        std::vector<uint> input = {bos_id};
+        std::vector<Node *> input_hiddens = encoder_states;
+
+        for (uint i = 0; i < max_len; i++) {
+            std::vector<std::vector<uint>> token_ids = {input};
+            std::vector<Node *> inputs = embedding->forward(token_ids);
+            std::vector<Node *> embs_and_context;
+            assert(inputs.size() == 1);
+            assert(inputs[0]->getShape().colCnt == 1);
+            embs_and_context.push_back(cat({inputs[0], ctx}, 1));
+            
+            std::vector<std::vector<Node*>> hiddens;
+            hiddens = rnn->forward(embs_and_context, input_hiddens);
+            assert(hiddens.size() == layer_num);
+            assert(hiddens[layer_num - 1].size() == 1);
+            auto output = output_layer->forward(hiddens[layer_num - 1][0]);
+            
+            assert(output->getShape().colCnt == 1);
+            uint token_id = output->get_weight()->argMax()[0];
+            res.push_back(token_id);
+            if (token_id == eos_id) {
+                break;
+            }
+            input = {token_id};
+            input_hiddens.clear();
+            for (auto hidden : hiddens) {
+                input_hiddens.push_back(hidden[0]);
+            }
+        }
+        return res;
+    }
+
     std::vector<Parameters *> Seq2SeqDecoder::get_parameters() {
         std::vector<Parameters *> res;
         std::vector<Parameters *> embedding_params = embedding->get_parameters();
@@ -394,6 +437,21 @@ namespace autograd {
         assert(encoder_states[0]->getShape().rowCnt == decoder->get_hidden_num());
         auto dec_outputs = decoder->forward(tgt_token_ids, hiddens.back(), encoder_states);
         return dec_outputs;
+    }
+
+    std::vector<uint> Seq2SeqEncoderDecoder::predict(
+        const std::vector<uint> &src_token_ids,
+        uint max_len) {
+        std::vector<std::vector<uint>> inputs;
+        for (auto token_id : src_token_ids) {
+            inputs.push_back({token_id});
+        }
+        std::vector<Node *> encoder_states;
+        auto hiddens = encoder->forward(inputs, encoder_states);
+        assert(encoder_states.size() == decoder->get_layer_num());
+        assert(encoder_states[0]->getShape().rowCnt == decoder->get_hidden_num());
+        assert(encoder_states[0]->getShape().colCnt == 1);
+        return decoder->predict(hiddens.back(), encoder_states, max_len, bos_id, eos_id);
     }
 
     std::vector<Parameters *> Seq2SeqEncoderDecoder::get_parameters() {

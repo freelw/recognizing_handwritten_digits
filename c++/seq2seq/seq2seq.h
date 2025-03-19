@@ -163,6 +163,13 @@ namespace autograd {
                 Node *ctx,
                 const std::vector<Node *> &encoder_states
             );
+            std::vector<uint> predict(
+                Node *ctx,
+                const std::vector<Node *> &encoder_states,
+                uint max_len,
+                uint bos_id,
+                uint eos_id
+            );
             std::vector<Parameters *> get_parameters();
             uint get_hidden_num() { return hidden_num; }
             uint get_layer_num() { return layer_num; }
@@ -185,17 +192,30 @@ namespace autograd {
         public:
             Seq2SeqEncoderDecoder(
                 Seq2SeqEncoder *_encoder,
-                Seq2SeqDecoder *_decoder
-            ) : encoder(_encoder), decoder(_decoder) {}
+                Seq2SeqDecoder *_decoder,
+                uint _bos_id,
+                uint _eos_id
+            ) : encoder(_encoder), decoder(_decoder),
+                bos_id(_bos_id), eos_id(_eos_id) {}
             ~Seq2SeqEncoderDecoder() {}
             Node* forward(
                 const std::vector<std::vector<uint>> &src_token_ids,
                 const std::vector<std::vector<uint>> &tgt_token_ids
             );
+            std::vector<uint> predict(
+                const std::vector<uint> &src_token_ids,
+                uint max_len
+            );
             std::vector<Parameters *> get_parameters();
+            void train(bool _training) {
+                encoder->train(_training);
+                decoder->train(_training);
+            }
         private:
             Seq2SeqEncoder *encoder;
             Seq2SeqDecoder *decoder;
+            uint bos_id;
+            uint eos_id;
     };
 
     

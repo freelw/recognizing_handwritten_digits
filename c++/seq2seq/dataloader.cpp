@@ -105,12 +105,27 @@ namespace seq2seq {
         return tgt_vocab.get_token_id("<bos>");
     }
 
+    uint DataLoader::tgt_eos_id() {
+        return tgt_vocab.get_token_id("<eos>");
+    }
+
     uint DataLoader::src_vocab_size() {
         return src_vocab.size();
     }
 
     uint DataLoader::tgt_vocab_size() {
         return tgt_vocab.size();
+    }
+
+    std::vector<uint> DataLoader::to_src_token_ids(const std::string &sentence) {
+        std::vector<uint> token_ids;
+        std::istringstream iss(sentence);
+        std::string token;
+        while (iss >> token) {
+            token_ids.push_back(src_vocab.get_token_id(token));
+        }
+        token_ids.push_back(src_vocab.get_token_id("<eos>"));
+        return token_ids;
     }
 
 } // namespace seq2seq
