@@ -38,6 +38,58 @@ namespace autograd {
         (*loss)[0][0] = loss_value/labels.size();
         return loss;
     }
+
+    Matrix *CrossEntropyLossMask(
+        Matrix *input,
+        const std::vector<uint> &labels,
+        std::vector<CrosEntropyInfo> &info,
+        const std::vector<bool> &mask) {
+
+        assert(input->getShape().colCnt == labels.size());
+        assert(input->getShape().colCnt == mask.size());
+        assert(info.size() == 0);
+
+        Matrix *loss = allocTmpMatrix(Shape(1,1));
+        DATATYPE loss_value = 0;
+        info.resize(input->getShape().colCnt);
+        uint mask_cnt = 0;
+        #pragma omp parallel for reduction(+:mask_cnt)
+        for (uint i = 0; i < mask.size(); ++ i) {
+            mask_cnt += mask[i];
+        }
+        if (mask_cnt == 0) {
+            (*loss)[0][0] = 0;
+            return loss;
+        }
+
+        #pragma omp parallel for reduction(+:loss_value)
+        for (uint j = 0; j < input->getShape().colCnt; ++ j) {
+            if (!mask[j]) {
+                continue;
+            }
+            DATATYPE max = (*input)[0][j];
+            for (uint i = 0; i < input->getShape().rowCnt; ++ i) {
+                auto e = (*input)[i][j];
+                if (max < e) {
+                    max = e;
+                }
+            }
+            DATATYPE sum = 0;
+            auto target = labels[j];
+            DATATYPE zt = (*input)[target][j];
+            for (uint i = 0; i < input->getShape().rowCnt; ++ i) {
+                DATATYPE e = (*input)[i][j];
+                e = std::exp(e-max);
+                sum += e;
+            }
+            CrosEntropyInfo &p = info[j];
+            p.sum = sum;
+            p.max = max;
+            loss_value += -(zt - max - log(sum));
+        }
+        (*loss)[0][0] = loss_value/mask_cnt;
+        return loss;
+    }
  
     Node *Node::operator+(Node *rhs) {
         auto *node = allocNode(*w + *(rhs->w));
@@ -112,6 +164,19 @@ namespace autograd {
         if (is_require_grad()) {
             node->require_grad();
             node->edges.push_back(CrossEntropyEdge::create(this, labels, info));
+        }
+        return node;
+    }
+
+    Node *Node::CrossEntropyMask(const std::vector<uint> &labels, const std::vector<bool> &mask) {
+        assert(w->getShape().colCnt == labels.size());
+        assert(w->getShape().colCnt == mask.size());
+        std::vector<CrosEntropyInfo> info;
+        auto *node = allocNode(::autograd::CrossEntropyLossMask(w, labels, info, mask));
+        assert(info.size() == w->getShape().colCnt);
+        if (is_require_grad()) {
+            node->require_grad();
+            node->edges.push_back(CrossEntropyMaskEdge::create(this, labels, mask, info));
         }
         return node;
     }

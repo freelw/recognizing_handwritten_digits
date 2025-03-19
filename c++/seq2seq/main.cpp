@@ -126,9 +126,83 @@ void test_encoder_decoder1() {
     delete encoder;
 }
 
+void test_crossentropy_mask() {
+
+    Matrix *input = allocTmpMatrix(Shape(3, 4));
+    input->fill(0.1);
+    (*input)[0][0] = 0.2;
+    std::vector<uint> labels = {0, 1, 2, 2};
+    Matrix *input1 = allocTmpMatrix(Shape(3, 5));
+    input1->fill(0.1);
+    (*input1)[0][0] = 0.2;
+    std::vector<uint> labels1 = {0, 1, 2, 2, 2};
+
+    Matrix *inputMask = allocTmpMatrix(Shape(3, 5));
+    inputMask->fill(0.1);
+    (*inputMask)[0][0] = 0.2;
+    std::vector<uint> labelsMask = {0, 1, 2, 2, 2};
+    
+    std::vector<bool> mask = {true, true, true, true, false};
+
+    autograd::Node *node = autograd::allocNode(input);
+    node->require_grad();
+    autograd::Parameters *p = new autograd::Parameters(node);
+    
+    autograd::Node *node1 = autograd::allocNode(input1);
+    node1->require_grad();
+    autograd::Parameters *p1 = new autograd::Parameters(node1);
+
+    autograd::Node *node_mask = autograd::allocNode(inputMask);
+    node_mask->require_grad();
+    autograd::Parameters *p_mask = new autograd::Parameters(node_mask);
+    
+    auto loss = node->CrossEntropy(labels);
+    auto loss1 = node1->CrossEntropy(labels1);
+    auto loss_mask = node_mask->CrossEntropyMask(labelsMask, mask);
+
+    std::cout << "loss : " << (*loss->get_weight())[0][0] << std::endl;
+    std::cout << "loss1 : " << (*loss1->get_weight())[0][0] << std::endl;
+    std::cout << "loss_mask : " << (*loss_mask->get_weight())[0][0] << std::endl;
+
+
+    autograd::Adam optimizer({p}, 0.01);
+    autograd::Adam optimizer1({p1}, 0.01);
+    autograd::Adam optimizer_mask({p_mask}, 0.01);
+
+    optimizer.zero_grad();
+    optimizer1.zero_grad();
+    optimizer_mask.zero_grad();
+
+    loss->backward();
+    loss1->backward();
+    loss_mask->backward();
+
+    optimizer.step();
+    optimizer1.step();
+    optimizer_mask.step();
+
+    std::cout << "node : " << *(node->get_weight()) << std::endl;
+    std::cout << "node grad : " << *(node->get_grad()) << std::endl;
+
+    std::cout << "node1 : " << *(node1->get_weight()) << std::endl;
+    std::cout << "node1 grad : " << *(node1->get_grad()) << std::endl;
+
+    std::cout << "node_mask : " << *(node_mask->get_weight()) << std::endl;
+    std::cout << "node_mask grad : " << *(node_mask->get_grad()) << std::endl;
+
+    delete p_mask;
+    delete p1;
+    delete p;
+    
+    freeTmpMatrix();
+    autograd::freeAllNodes();
+    autograd::freeAllEdges();
+}
+
 int main(int argc, char *argv[]) {
     test_encoder_decoder();
     test_encoder_decoder1();
+    test_crossentropy_mask();
     return 0;
     cout << "OMP_THREADS: " << OMP_THREADS << endl;
     // register signal SIGINT and signal handler

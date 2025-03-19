@@ -28,6 +28,7 @@ namespace autograd {
         Sigmoid,
         Relu,
         CrossEntropy,
+        CrossEntropyMask,
     };
     class Node {
         public:
@@ -83,6 +84,7 @@ namespace autograd {
             Node *at(Node *rhs);
             Node *Relu();
             Node *CrossEntropy(const std::vector<uint> &labels);
+            Node *CrossEntropyMask(const std::vector<uint> &labels, const std::vector<bool> &mask);
             Node *Tanh();
             Node *Sigmoid();
             // Node *operator*(Node &rhs);
@@ -271,6 +273,58 @@ namespace autograd {
             }
         private:
             std::vector<uint> labels;
+            std::vector<CrosEntropyInfo> info;
+    };
+
+    class CrossEntropyMaskEdge: public Edge {
+        public:
+            static Edge* create(
+                Node *_node,
+                const std::vector<uint> &_labels,
+                const std::vector<bool> &_mask,
+                const std::vector<CrosEntropyInfo> &_info) {
+                Edge *edge = new CrossEntropyMaskEdge(_node, _labels, _mask, _info);
+                edges.push_back(edge);
+                return edge;
+            }
+            CrossEntropyMaskEdge(
+                Node *_node,
+                const std::vector<uint> &_labels,
+                const std::vector<bool> &_mask,
+                const std::vector<CrosEntropyInfo> &_info
+            ): Edge(CrossEntropyMask, _node), labels(_labels), mask(_mask), info(_info) {}
+            virtual ~CrossEntropyMaskEdge() {}
+            void backward(Matrix *) override {
+                assert(node->is_require_grad());
+                uint mask_cnt = 0;
+                #pragma omp parallel for reduction(+:mask_cnt)
+                for (uint i = 0; i < mask.size(); ++ i) {
+                    mask_cnt += mask[i];
+                }
+                if (mask_cnt == 0) {
+                    return;
+                }
+                #pragma omp parallel for
+                for (uint j = 0; j < node->get_weight()->getShape().colCnt; ++ j) {
+                    if (!mask[j]) {
+                        continue;
+                    }
+                    auto target = labels[j];
+                    DATATYPE max = info[j].max;
+                    DATATYPE sum = info[j].sum;
+                    for (uint i = 0; i < node->get_weight()->getShape().rowCnt; ++ i) {
+                        if (i == target) {
+                            continue;
+                        }
+                        auto &_grad = (*node->get_grad())[i][j];
+                        _grad = std::exp((*node->get_weight())[i][j] - max) / sum / mask_cnt;
+                    }
+                    (*node->get_grad())[target][j] = (std::exp((*node->get_weight())[target][j] - max) / sum - 1) / mask_cnt;
+                }
+            }
+        private:
+            std::vector<uint> labels;
+            std::vector<bool> mask;
             std::vector<CrosEntropyInfo> info;
     };
 
