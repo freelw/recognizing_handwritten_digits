@@ -99,7 +99,7 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
                 end = src_token_ids.size();
             }
             auto cur_batch_size = end - i;
-            std::cout << "prepare input" << std::endl;
+            // std::cout << "prepare input" << std::endl;
             for (uint j = i; j < end; j++) {
                 input_sentences.push_back(trim_or_padding(src_token_ids[j], num_steps, loader.src_pad_id()));
                 target_sentences.push_back(trim_or_padding(add_bos(tgt_token_ids[j], loader.tgt_bos_id()), num_steps, loader.tgt_pad_id()));
@@ -146,9 +146,9 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
             //     std::cout << std::endl;
             // }
             // std::cout << std::endl;
-            std::cout << "prepare input done" << std::endl;
+            // std::cout << "prepare input done" << std::endl;
             auto dec_outputs = encoder_decoder->forward(inputs, targets);
-            std::cout << "forward done" << std::endl;
+            // std::cout << "forward done" << std::endl;
             dec_outputs->checkShape(Shape(dec_vocab_size, cur_batch_size * num_steps));
 
             auto loss = dec_outputs->CrossEntropyMask(labels, mask);
@@ -158,7 +158,9 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
 
             adam.zero_grad();
             loss->backward();
-            adam.clip_grad(1);
+            if (adam.clip_grad(1)) {
+                emit_clip++;
+            }
             adam.step();
             // dec_outputs->cross_entropy_mask(targets, loader.tgt_pad_id());
             print_progress(end, src_token_ids.size());
