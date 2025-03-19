@@ -230,11 +230,15 @@ namespace autograd {
         for (uint i = 1; i < layer_num; i++) {
             layers.push_back(new GRULayer(hidden_num, hidden_num, sigma));
         }
-        dropout_layer = new Dropout(dropout);
+        if (dropout > 0) {
+            dropout_layer = new Dropout(dropout);
+        }
     }
 
     GRU::~GRU() {
-        delete dropout_layer;
+        if (dropout > 0 && dropout_layer != nullptr) {
+            delete dropout_layer;
+        }
         for (auto layer : layers) {
             delete layer;
         }

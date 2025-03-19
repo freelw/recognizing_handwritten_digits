@@ -45,7 +45,11 @@ std::vector<uint> add_bos(const std::vector<uint> &src, uint bos_id) {
     return res;
 }
 
-void train(const std::string &corpus, const std::string &checkpoint, uint epochs) {
+void train(
+    const std::string &corpus,
+    const std::string &checkpoint,
+    uint epochs,
+    DATATYPE dropout) {
    
     uint num_steps = 9;
     seq2seq::DataLoader loader(corpus, SRC_VOCAB_NAME, TGT_VOCAB_NAME, TEST_FILE);
@@ -55,7 +59,6 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
     uint hidden_num = 256;
     uint layer_num = 2;
     DATATYPE sigma = 0.01;
-    DATATYPE dropout = 0.2;
     auto encoder = new autograd::Seq2SeqEncoder(
         enc_vocab_size, enc_embed_size, hidden_num, layer_num, sigma, dropout
     );
@@ -430,7 +433,8 @@ int main(int argc, char *argv[]) {
     std::string checkpoint;
     int opt;
     uint epochs = 30;
-    while ((opt = getopt(argc, argv, "f:c:e:")) != -1) {
+    DATATYPE dropout = 0.2;
+    while ((opt = getopt(argc, argv, "f:c:e:d:")) != -1) {
         switch (opt) {
             case 'f':
                 corpus = optarg;
@@ -439,8 +443,11 @@ int main(int argc, char *argv[]) {
                 checkpoint = optarg;
                 break;
             case 'e':
-                std::cout << "epochs : " << optarg << std::endl;
+                
                 epochs = atoi(optarg);
+                break;
+            case 'd':
+                dropout = atof(optarg);
                 break;
             default:
                 std::cerr << "Usage: " << argv[0] << " -f <corpus> -c <checpoint> -e <epochs>" << std::endl;
@@ -451,8 +458,8 @@ int main(int argc, char *argv[]) {
     if (corpus.empty()) {
         corpus = RESOURCE_NAME;
     }
-
-    train(corpus, checkpoint, epochs);
-
+    std::cout << "epochs : " << epochs << std::endl;
+    std::cout << "dropout : " << dropout << std::endl;
+    train(corpus, checkpoint, epochs, dropout);
     return 0;
 }
