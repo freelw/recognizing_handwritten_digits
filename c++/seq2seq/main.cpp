@@ -84,8 +84,7 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
     for (uint epoch = 0; epoch < epochs; epoch++) {
         DATATYPE loss_sum = 0;
         int emit_clip = 0;
-
-        for (uint i = 0; i < src_token_ids.size() - BATCH_SIZE + 1; i += BATCH_SIZE) {
+        for (uint i = 0; i < src_token_ids.size(); i += BATCH_SIZE) {
             std::vector<std::vector<uint>> inputs;
             std::vector<std::vector<uint>> targets;
             auto end = i + BATCH_SIZE;
@@ -96,9 +95,11 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
                 inputs.push_back(trim_or_padding(src_token_ids[j], num_steps, loader.src_pad_id()));
                 targets.push_back(trim_or_padding(tgt_token_ids[j], num_steps, loader.tgt_pad_id()));   
             }
+            print_progress(end, src_token_ids.size());
         }
+        autograd::save_checkpoint(checkpoint_prefix, epoch, *encoder_decoder);
+        std::cout << "epoch " << epoch << " loss : " << loss_sum << " emit_clip : " << emit_clip << std::endl;
     }
-
     delete encoder_decoder;
     delete decoder;
     delete encoder;
