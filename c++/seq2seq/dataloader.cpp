@@ -77,9 +77,12 @@ namespace seq2seq {
             while (src_iss >> token) {
                 src_token_id.push_back(src_vocab.get_token_id(token));
             }
+            src_token_id.push_back(src_vocab.get_token_id("<eos>"));
+            tgt_token_id.push_back(tgt_vocab.get_token_id("<bos>"));
             while (tgt_iss >> token) {
                 tgt_token_id.push_back(tgt_vocab.get_token_id(token));
             }
+            tgt_token_id.push_back(tgt_vocab.get_token_id("<eos>"));
             src_token_ids.push_back(src_token_id);
             tgt_token_ids.push_back(tgt_token_id);
         }
