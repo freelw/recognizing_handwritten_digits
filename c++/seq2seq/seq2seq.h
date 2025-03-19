@@ -113,6 +113,7 @@ namespace autograd {
             DATATYPE dropout;
             std::vector<GRULayer *> layers;
             bool training;
+            Dropout *dropout_layer;
     };
 
     class Seq2SeqEncoder {

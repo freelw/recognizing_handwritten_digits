@@ -48,6 +48,7 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
    
     uint num_steps = 9;
     seq2seq::DataLoader loader(corpus, SRC_VOCAB_NAME, TGT_VOCAB_NAME);
+    std::cout << "data loaded" << std::endl;
     uint enc_vocab_size = loader.src_vocab_size();
     uint enc_embed_size = 256;
     uint hidden_num = 256;
@@ -94,13 +95,15 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
             if (end > src_token_ids.size()) {
                 end = src_token_ids.size();
             }
+            std::cout << "prepare input" << std::endl;
             for (uint j = i; j < end; j++) {
                 inputs.push_back(trim_or_padding(src_token_ids[j], num_steps, loader.src_pad_id()));
                 targets.push_back(trim_or_padding(add_bos(tgt_token_ids[j], loader.tgt_bos_id()), num_steps, loader.tgt_pad_id()));   
             }
-
+            std::cout << "prepare input done" << std::endl;
             auto dec_outputs = encoder_decoder->forward(inputs, targets);
-            dec_outputs->checkShape(Shape(dec_vocab_size, BATCH_SIZE * num_steps));
+            std::cout << "forward done" << std::endl;
+            dec_outputs->checkShape(Shape(dec_vocab_size, (end-i) * num_steps));
             // dec_outputs->cross_entropy_mask(targets, loader.tgt_pad_id());
             print_progress(end, src_token_ids.size());
             if (shutdown) {

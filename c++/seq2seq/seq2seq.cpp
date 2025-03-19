@@ -16,7 +16,6 @@ namespace autograd {
             auto &input = inputs[j];
             Matrix *mask = allocTmpMatrix(input->get_weight()->getShape());
             auto buffer = mask->getData();
-            #pragma omp parallel for
             for (uint i = 0; i < mask->getShape().size(); i++) {
                 buffer[i] = dis(gen) > dropout ? 1 : 0;
             }
@@ -231,9 +230,11 @@ namespace autograd {
         for (uint i = 1; i < layer_num; i++) {
             layers.push_back(new GRULayer(hidden_num, hidden_num, sigma));
         }
+        dropout_layer = new Dropout(dropout);
     }
 
     GRU::~GRU() {
+        delete dropout_layer;
         for (auto layer : layers) {
             delete layer;
         }
@@ -255,8 +256,7 @@ namespace autograd {
                 hidden = layers[i]->forward(res[i - 1], hiddens[i]);
             }
             if (training && dropout > 0 && i < layer_num - 1) {
-                Dropout dropout_layer(dropout);
-                hidden = dropout_layer.forward(hidden);
+                hidden = dropout_layer->forward(hidden);
             }
             res.push_back(hidden);
         }

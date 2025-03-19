@@ -261,7 +261,12 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "/home/cs/project/recognizing_handwritten_digits/c++/seq2seq/seq2seq",
-            "args": [],
+            "args": [
+                "-e",
+                "1",
+                "-f",
+                "/home/cs/project/recognizing_handwritten_digits/resources/fra_tiny.txt"
+            ],
             "stopAtEntry": false,
             "cwd": "/home/cs/project/recognizing_handwritten_digits/c++/lstm/",
             "environment": [],
