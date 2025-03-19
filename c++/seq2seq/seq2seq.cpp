@@ -298,6 +298,8 @@ namespace autograd {
         std::vector<Node *> &encoder_states) {
         assert(encoder_states.size() == 0);
         assert(token_ids.size() > 0);
+        auto batch_size = token_ids[0].size();
+        auto num_steps = token_ids.size();
         std::vector<Node *> inputs = embedding->forward({token_ids});
         std::vector<Node *> input_hiddens;
         for (uint i = 0; i < layer_num; i++) {
@@ -309,6 +311,8 @@ namespace autograd {
             encoder_states.push_back(res[i].back());
         }
         assert(res.size() == layer_num);
+        assert(res[layer_num - 1].size() == num_steps);
+        assert(res[layer_num - 1][0]->getShape().colCnt == batch_size);
         return res[layer_num - 1];
     }
 

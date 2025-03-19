@@ -117,23 +117,23 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
                 targets.push_back(target);
             }
 
-            assert(inputs.size() == targets.size());
             assert(inputs.size() == num_steps);
+            assert(targets.size() == num_steps);
             
-            for (auto & input : inputs) {
-                for (auto token : input) {
-                    std::cout << loader.get_src_token(token) << " ";
-                }
-                std::cout << std::endl;
-            }
+            // for (auto & input : inputs) {
+            //     for (auto token : input) {
+            //         std::cout << loader.get_src_token(token) << " ";
+            //     }
+            //     std::cout << std::endl;
+            // }
 
-            for (auto & target : targets) {
-                for (auto token : target) {
-                    std::cout << loader.get_tgt_token(token) << " ";
-                }
-                std::cout << std::endl;
-            }
-            std::cout << std::endl;
+            // for (auto & target : targets) {
+            //     for (auto token : target) {
+            //         std::cout << loader.get_tgt_token(token) << " ";
+            //     }
+            //     std::cout << std::endl;
+            // }
+            // std::cout << std::endl;
             std::cout << "prepare input done" << std::endl;
             auto dec_outputs = encoder_decoder->forward(inputs, targets);
             std::cout << "forward done" << std::endl;
