@@ -46,12 +46,20 @@ namespace seq2seq {
     DataLoader::DataLoader(
         const std::string &_corpus_path,
         const std::string &_src_vocab_path,
-        const std::string &_tgt_vocab_path
+        const std::string &_tgt_vocab_path,
+        const std::string &_test_file
     ) : corpus_path(_corpus_path),
         src_vocab_path(_src_vocab_path),
         tgt_vocab_path(_tgt_vocab_path),
+        test_file(_test_file),
         src_vocab(_src_vocab_path),
-        tgt_vocab(_tgt_vocab_path) {}
+        tgt_vocab(_tgt_vocab_path) {
+        std::ifstream ifs(test_file);
+        std::string line;
+        while (std::getline(ifs, line)) {
+            test_sentences.push_back(line);
+        }
+    }
     
     DataLoader::~DataLoader() {}
     void DataLoader::get_token_ids(
@@ -126,6 +134,10 @@ namespace seq2seq {
         }
         token_ids.push_back(src_vocab.get_token_id("<eos>"));
         return token_ids;
+    }
+
+    std::vector<std::string> DataLoader::get_test_sentences() {
+        return test_sentences;
     }
 
 } // namespace seq2seq

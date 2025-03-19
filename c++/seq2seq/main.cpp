@@ -20,6 +20,7 @@ bool shutdown = false;
 #define RESOURCE_NAME "../../resources/fra_preprocessed.txt"
 #define SRC_VOCAB_NAME "../fra_vocab_builder/vocab_en.txt"
 #define TGT_VOCAB_NAME "../fra_vocab_builder/vocab_fr.txt"
+#define TEST_FILE "./test.txt"
 #define BATCH_SIZE 128
 
 void signal_callback_handler(int signum);
@@ -47,7 +48,7 @@ std::vector<uint> add_bos(const std::vector<uint> &src, uint bos_id) {
 void train(const std::string &corpus, const std::string &checkpoint, uint epochs) {
    
     uint num_steps = 9;
-    seq2seq::DataLoader loader(corpus, SRC_VOCAB_NAME, TGT_VOCAB_NAME);
+    seq2seq::DataLoader loader(corpus, SRC_VOCAB_NAME, TGT_VOCAB_NAME, TEST_FILE);
     std::cout << "data loaded" << std::endl;
     uint enc_vocab_size = loader.src_vocab_size();
     uint enc_embed_size = 256;
@@ -187,10 +188,7 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
     } else {
         std::cout << "serving mode" << std::endl;
         encoder_decoder->train(false);
-        std::vector<std::string> src_sentences = {
-            "i jumped .",
-            "i am fat ."
-        };
+        std::vector<std::string> src_sentences = loader.get_test_sentences();
         // ./seq2seq -e 0 -c ./checkpoints/checkpoint_20250319_180713_9.bin
         for (auto & sentence : src_sentences) {
             std::vector<uint> src_token_ids = loader.to_src_token_ids(sentence);
@@ -389,7 +387,7 @@ void test_dataloader() {
     std::string corpus = RESOURCE_NAME;
     std::string src_vocab = SRC_VOCAB_NAME;
     std::string tgt_vocab = TGT_VOCAB_NAME;
-    seq2seq::DataLoader dataloader(corpus, src_vocab, tgt_vocab);
+    seq2seq::DataLoader dataloader(corpus, src_vocab, tgt_vocab, TEST_FILE);
     std::vector<std::vector<uint>> src_token_ids;
     std::vector<std::vector<uint>> tgt_token_ids;
     dataloader.get_token_ids(src_token_ids, tgt_token_ids);
