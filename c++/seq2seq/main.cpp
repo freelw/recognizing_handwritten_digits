@@ -11,14 +11,15 @@
 #include "getopt.h"
 #include <unistd.h>
 #include "stats/stats.h"
+#include "dataloader.h"
 
 // #pragma message("warning: shutdown is true")
 // bool shutdown = true; // fixme
 bool shutdown = false;
 
 #define RESOURCE_NAME "../../resources/fra_preprocessed.txt"
-#define SRC_VOCAB_NAME "../fra_vocab_builder/fra_src_vocab.txt"
-#define TGT_VOCAB_NAME "../fra_vocab_builder/fra_tgt_vocab.txt"
+#define SRC_VOCAB_NAME "../fra_vocab_builder/vocab_en.txt"
+#define TGT_VOCAB_NAME "../fra_vocab_builder/vocab_fr.txt"
 #define BATCH_SIZE 128
 
 void signal_callback_handler(int signum);
@@ -199,10 +200,45 @@ void test_crossentropy_mask() {
     autograd::freeAllEdges();
 }
 
+void test_dataloader() {
+    std::string corpus = RESOURCE_NAME;
+    std::string src_vocab = SRC_VOCAB_NAME;
+    std::string tgt_vocab = TGT_VOCAB_NAME;
+    uint batch_size = BATCH_SIZE;
+    seq2seq::DataLoader dataloader(corpus, src_vocab, tgt_vocab, batch_size);
+    std::vector<std::vector<uint>> src_token_ids;
+    std::vector<std::vector<uint>> tgt_token_ids;
+    dataloader.get_token_ids(src_token_ids, tgt_token_ids);
+    
+    std::cout << "src_token_ids.size() : " << src_token_ids.size() << std::endl;
+    std::cout << "tgt_token_ids.size() : " << tgt_token_ids.size() << std::endl;
+
+    std::cout << "src back : " << std::endl;
+    for (auto &token : src_token_ids.back()) {
+        std::cout << token << " ";
+    }
+    std::cout << std::endl;
+    for (auto &token : src_token_ids.back()) {
+        std::cout << dataloader.get_src_token(token) << " ";
+    }
+    std::cout << std::endl;
+
+    std::cout<< "tgt back : " << std::endl;
+    for (auto &token : tgt_token_ids.back()) {
+        std::cout << token << " ";
+    }
+    std::cout << std::endl;
+    for (auto &token : tgt_token_ids.back()) {
+        std::cout << dataloader.get_tgt_token(token) << " ";
+    }
+    std::cout << std::endl;
+}
+
 int main(int argc, char *argv[]) {
     test_encoder_decoder();
     test_encoder_decoder1();
     test_crossentropy_mask();
+    test_dataloader();
     return 0;
     cout << "OMP_THREADS: " << OMP_THREADS << endl;
     // register signal SIGINT and signal handler
