@@ -57,7 +57,7 @@ void train(
     std::cout << "data loaded" << std::endl;
     uint enc_vocab_size = loader.src_vocab_size();
     uint enc_embed_size = 32;
-    uint hidden_num = 32;
+    uint hidden_num = 64;
     uint layer_num = 2;
     DATATYPE sigma = 0.01;
     auto encoder = new autograd::Seq2SeqEncoder(
