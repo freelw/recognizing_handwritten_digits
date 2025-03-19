@@ -49,14 +49,15 @@ void train(
     const std::string &corpus,
     const std::string &checkpoint,
     uint epochs,
-    DATATYPE dropout) {
+    DATATYPE dropout,
+    DATATYPE lr) {
    
     uint num_steps = 9;
     seq2seq::DataLoader loader(corpus, SRC_VOCAB_NAME, TGT_VOCAB_NAME, TEST_FILE);
     std::cout << "data loaded" << std::endl;
     uint enc_vocab_size = loader.src_vocab_size();
-    uint enc_embed_size = 256;
-    uint hidden_num = 256;
+    uint enc_embed_size = 32;
+    uint hidden_num = 32;
     uint layer_num = 2;
     DATATYPE sigma = 0.01;
     auto encoder = new autograd::Seq2SeqEncoder(
@@ -89,7 +90,7 @@ void train(
             ) + 2 // output wx + b
         );
     
-    auto adam = autograd::Adam(parameters, 0.005);
+    auto adam = autograd::Adam(parameters, lr);
     std::string checkpoint_prefix = "checkpoint" + autograd::generateDateTimeSuffix();
 
     std::vector<std::vector<uint>> src_token_ids;
@@ -434,7 +435,8 @@ int main(int argc, char *argv[]) {
     int opt;
     uint epochs = 30;
     DATATYPE dropout = 0.2;
-    while ((opt = getopt(argc, argv, "f:c:e:d:")) != -1) {
+    DATATYPE lr = 0.005;
+    while ((opt = getopt(argc, argv, "f:c:e:d:l:")) != -1) {
         switch (opt) {
             case 'f':
                 corpus = optarg;
@@ -443,11 +445,13 @@ int main(int argc, char *argv[]) {
                 checkpoint = optarg;
                 break;
             case 'e':
-                
                 epochs = atoi(optarg);
                 break;
             case 'd':
                 dropout = atof(optarg);
+                break;
+            case 'l':
+                lr = atof(optarg);
                 break;
             default:
                 std::cerr << "Usage: " << argv[0] << " -f <corpus> -c <checpoint> -e <epochs>" << std::endl;
@@ -460,6 +464,7 @@ int main(int argc, char *argv[]) {
     }
     std::cout << "epochs : " << epochs << std::endl;
     std::cout << "dropout : " << dropout << std::endl;
-    train(corpus, checkpoint, epochs, dropout);
+    std::cout << "lr : " << lr << std::endl;
+    train(corpus, checkpoint, epochs, dropout, lr);
     return 0;
 }
