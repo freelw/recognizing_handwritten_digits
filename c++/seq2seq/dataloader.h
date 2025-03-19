@@ -27,8 +27,7 @@ namespace seq2seq {
             DataLoader(
                 const std::string &_corpus_path,
                 const std::string &_src_vocab_path,
-                const std::string &_tgt_vocab_path,
-                uint batch_size
+                const std::string &_tgt_vocab_path
             );
             ~DataLoader();
             void get_token_ids(
@@ -37,11 +36,14 @@ namespace seq2seq {
             );
             std::string get_src_token(uint token_id);
             std::string get_tgt_token(uint token_id);
+            uint src_pad_id();
+            uint tgt_pad_id();
+            uint src_vocab_size();
+            uint tgt_vocab_size();
         private:
             std::string corpus_path;
             std::string src_vocab_path;
             std::string tgt_vocab_path;
-            uint batch_size;
             Vocab src_vocab;
             Vocab tgt_vocab;
     };

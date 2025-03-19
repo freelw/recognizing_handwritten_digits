@@ -46,12 +46,10 @@ namespace seq2seq {
     DataLoader::DataLoader(
         const std::string &_corpus_path,
         const std::string &_src_vocab_path,
-        const std::string &_tgt_vocab_path,
-        uint _batch_size
+        const std::string &_tgt_vocab_path
     ) : corpus_path(_corpus_path),
         src_vocab_path(_src_vocab_path),
         tgt_vocab_path(_tgt_vocab_path),
-        batch_size(_batch_size),
         src_vocab(_src_vocab_path),
         tgt_vocab(_tgt_vocab_path) {}
     
@@ -94,6 +92,22 @@ namespace seq2seq {
 
     std::string DataLoader::get_tgt_token(uint token_id) {
         return tgt_vocab.get_token(token_id);
+    }
+
+    uint DataLoader::src_pad_id() {
+        return src_vocab.get_token_id("<pad>");
+    }
+
+    uint DataLoader::tgt_pad_id() {
+        return tgt_vocab.get_token_id("<pad>");
+    }
+
+    uint DataLoader::src_vocab_size() {
+        return src_vocab.size();
+    }
+
+    uint DataLoader::tgt_vocab_size() {
+        return tgt_vocab.size();
     }
 
 } // namespace seq2seq

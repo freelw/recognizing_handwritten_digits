@@ -12,6 +12,8 @@
 #include <unistd.h>
 #include "stats/stats.h"
 #include "dataloader.h"
+#include "checkpoint.h"
+#include <algorithm>
 
 // #pragma message("warning: shutdown is true")
 // bool shutdown = true; // fixme
@@ -28,8 +30,81 @@ void print_progress(uint i, uint tot) {
     std::cout << "\r[" << i << "/" << tot << "]" << std::flush;
 }
 
+std::vector<uint> trim_or_padding(const std::vector<uint> &src, uint max_len, uint pad_id) {
+    std::vector<uint> res = src;
+    if (src.size() > max_len) {
+        res.resize(max_len);
+    } else {
+        res.resize(max_len, pad_id);
+    }
+    return res;
+}
+
 void train(const std::string &corpus, const std::string &checkpoint, uint epochs) {
    
+    uint num_steps = 9;
+    seq2seq::DataLoader loader(corpus, SRC_VOCAB_NAME, TGT_VOCAB_NAME);
+    uint enc_vocab_size = loader.src_vocab_size();
+    uint enc_embed_size = 256;
+    uint hidden_num = 256;
+    uint layer_num = 2;
+    DATATYPE sigma = 0.01;
+    DATATYPE dropout = 0.2;
+    auto encoder = new autograd::Seq2SeqEncoder(
+        enc_vocab_size, enc_embed_size, hidden_num, layer_num, sigma, dropout
+    );
+    uint dec_vocab_size = loader.tgt_vocab_size();
+    uint dec_embed_size = enc_embed_size;
+    auto decoder = new autograd::Seq2SeqDecoder(
+        dec_vocab_size, dec_embed_size, hidden_num, layer_num, sigma, dropout
+    );
+    auto encoder_decoder = new autograd::Seq2SeqEncoderDecoder(encoder, decoder);
+
+    auto parameters = encoder_decoder->get_parameters();
+
+    assert(parameters.size() == 
+        enc_vocab_size + dec_vocab_size // vocab embeddings
+            + layer_num * (
+                3 // encoder wxh + whh + b
+                + 3 // encoder wxr + whr + b
+                + 3 // encoder wxz + whz + b
+                + 3 // decoder wxh + whh + b
+                + 3 // decoder wxr + whr + b
+                + 3 // decoder wxz + whz + b
+            ) + 2 // output wx + b
+        );
+    
+    auto adam = autograd::Adam(parameters, 0.005);
+    std::string checkpoint_prefix = "checkpoint" + autograd::generateDateTimeSuffix();
+
+    std::vector<std::vector<uint>> src_token_ids;
+    std::vector<std::vector<uint>> tgt_token_ids;
+    loader.get_token_ids(src_token_ids, tgt_token_ids);
+    assert(src_token_ids.size() == tgt_token_ids.size());
+    for (uint epoch = 0; epoch < epochs; epoch++) {
+        DATATYPE loss_sum = 0;
+        int emit_clip = 0;
+
+        for (uint i = 0; i < src_token_ids.size() - BATCH_SIZE + 1; i += BATCH_SIZE) {
+            std::vector<std::vector<uint>> inputs;
+            std::vector<std::vector<uint>> targets;
+            auto end = i + BATCH_SIZE;
+            if (end > src_token_ids.size()) {
+                end = src_token_ids.size();
+            }
+            for (uint j = i; j < end; j++) {
+                inputs.push_back(trim_or_padding(src_token_ids[j], num_steps, loader.src_pad_id()));
+                targets.push_back(trim_or_padding(tgt_token_ids[j], num_steps, loader.tgt_pad_id()));   
+            }
+        }
+    }
+
+    delete encoder_decoder;
+    delete decoder;
+    delete encoder;
+    freeTmpMatrix();
+    autograd::freeAllNodes();
+    autograd::freeAllEdges();
 }
 
 void test_encoder_decoder() {
@@ -204,8 +279,7 @@ void test_dataloader() {
     std::string corpus = RESOURCE_NAME;
     std::string src_vocab = SRC_VOCAB_NAME;
     std::string tgt_vocab = TGT_VOCAB_NAME;
-    uint batch_size = BATCH_SIZE;
-    seq2seq::DataLoader dataloader(corpus, src_vocab, tgt_vocab, batch_size);
+    seq2seq::DataLoader dataloader(corpus, src_vocab, tgt_vocab);
     std::vector<std::vector<uint>> src_token_ids;
     std::vector<std::vector<uint>> tgt_token_ids;
     dataloader.get_token_ids(src_token_ids, tgt_token_ids);
@@ -235,11 +309,11 @@ void test_dataloader() {
 }
 
 int main(int argc, char *argv[]) {
-    test_encoder_decoder();
-    test_encoder_decoder1();
-    test_crossentropy_mask();
-    test_dataloader();
-    return 0;
+    // test_encoder_decoder();
+    // test_encoder_decoder1();
+    // test_crossentropy_mask();
+    // test_dataloader();
+    // return 0;
     cout << "OMP_THREADS: " << OMP_THREADS << endl;
     // register signal SIGINT and signal handler
     signal(SIGINT, signal_callback_handler);
@@ -265,5 +339,12 @@ int main(int argc, char *argv[]) {
                 return 1;
         }
     }
+
+    if (corpus.empty()) {
+        corpus = RESOURCE_NAME;
+    }
+
+    train(corpus, checkpoint, epochs);
+
     return 0;
 }
