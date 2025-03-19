@@ -63,7 +63,6 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
         dec_vocab_size, dec_embed_size, hidden_num, layer_num, sigma, dropout
     );
     auto encoder_decoder = new autograd::Seq2SeqEncoderDecoder(encoder, decoder);
-
     auto parameters = encoder_decoder->get_parameters();
 
     assert(parameters.size() == 
@@ -101,6 +100,7 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
             }
 
             auto dec_outputs = encoder_decoder->forward(inputs, targets);
+            dec_outputs->checkShape(Shape(dec_vocab_size, BATCH_SIZE * num_steps));
             // dec_outputs->cross_entropy_mask(targets, loader.tgt_pad_id());
             print_progress(end, src_token_ids.size());
             if (shutdown) {
@@ -323,11 +323,11 @@ void test_dataloader() {
 }
 
 int main(int argc, char *argv[]) {
-    test_encoder_decoder();
-    test_encoder_decoder1();
-    test_crossentropy_mask();
-    test_dataloader();
-    return 0;
+    // test_encoder_decoder();
+    // test_encoder_decoder1();
+    // test_crossentropy_mask();
+    // test_dataloader();
+    // return 0;
     cout << "OMP_THREADS: " << OMP_THREADS << endl;
     // register signal SIGINT and signal handler
     signal(SIGINT, signal_callback_handler);
