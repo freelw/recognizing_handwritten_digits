@@ -98,6 +98,9 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
             print_progress(end, src_token_ids.size());
         }
         autograd::save_checkpoint(checkpoint_prefix, epoch, *encoder_decoder);
+        if (shutdown) {
+            break;
+        }
         std::cout << "epoch " << epoch << " loss : " << loss_sum << " emit_clip : " << emit_clip << std::endl;
     }
     delete encoder_decoder;
