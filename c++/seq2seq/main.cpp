@@ -91,7 +91,9 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
         for (uint i = 0; i < src_token_ids.size(); i += BATCH_SIZE) {
             std::vector<std::vector<uint>> input_sentences;
             std::vector<std::vector<uint>> target_sentences;
+            std::vector<std::vector<uint>> target_labels;
             std::vector<uint> labels;
+            std::vector<bool> mask;
             auto end = i + BATCH_SIZE;
             if (end > src_token_ids.size()) {
                 end = src_token_ids.size();
@@ -100,7 +102,8 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
             std::cout << "prepare input" << std::endl;
             for (uint j = i; j < end; j++) {
                 input_sentences.push_back(trim_or_padding(src_token_ids[j], num_steps, loader.src_pad_id()));
-                target_sentences.push_back(trim_or_padding(add_bos(tgt_token_ids[j], loader.tgt_bos_id()), num_steps, loader.tgt_pad_id()));   
+                target_sentences.push_back(trim_or_padding(add_bos(tgt_token_ids[j], loader.tgt_bos_id()), num_steps, loader.tgt_pad_id()));
+                target_labels.push_back(trim_or_padding(tgt_token_ids[j], num_steps, loader.tgt_pad_id()));
             }
 
             std::vector<std::vector<uint>> inputs;
@@ -115,6 +118,15 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
                 }
                 inputs.push_back(input);
                 targets.push_back(target);
+            }
+
+            labels.reserve(cur_batch_size * num_steps);
+            mask.reserve(cur_batch_size * num_steps);
+            for (auto &target_label : target_labels) {
+                for (auto token : target_label) {
+                    labels.push_back(token);
+                    mask.push_back(token != loader.tgt_pad_id());
+                }
             }
 
             assert(inputs.size() == num_steps);
@@ -138,6 +150,16 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
             auto dec_outputs = encoder_decoder->forward(inputs, targets);
             std::cout << "forward done" << std::endl;
             dec_outputs->checkShape(Shape(dec_vocab_size, cur_batch_size * num_steps));
+
+            auto loss = dec_outputs->CrossEntropyMask(labels, mask);
+            assert(loss->get_weight()->getShape().rowCnt == 1);
+            assert(loss->get_weight()->getShape().colCnt == 1);
+            loss_sum += (*loss->get_weight())[0][0];
+
+            adam.zero_grad();
+            loss->backward();
+            adam.clip_grad(1);
+            adam.step();
             // dec_outputs->cross_entropy_mask(targets, loader.tgt_pad_id());
             print_progress(end, src_token_ids.size());
             if (shutdown) {
