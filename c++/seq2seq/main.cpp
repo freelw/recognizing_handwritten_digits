@@ -89,21 +89,55 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
         DATATYPE loss_sum = 0;
         int emit_clip = 0;
         for (uint i = 0; i < src_token_ids.size(); i += BATCH_SIZE) {
-            std::vector<std::vector<uint>> inputs;
-            std::vector<std::vector<uint>> targets;
+            std::vector<std::vector<uint>> input_sentences;
+            std::vector<std::vector<uint>> target_sentences;
+            std::vector<uint> labels;
             auto end = i + BATCH_SIZE;
             if (end > src_token_ids.size()) {
                 end = src_token_ids.size();
             }
+            auto cur_batch_size = end - i;
             std::cout << "prepare input" << std::endl;
             for (uint j = i; j < end; j++) {
-                inputs.push_back(trim_or_padding(src_token_ids[j], num_steps, loader.src_pad_id()));
-                targets.push_back(trim_or_padding(add_bos(tgt_token_ids[j], loader.tgt_bos_id()), num_steps, loader.tgt_pad_id()));   
+                input_sentences.push_back(trim_or_padding(src_token_ids[j], num_steps, loader.src_pad_id()));
+                target_sentences.push_back(trim_or_padding(add_bos(tgt_token_ids[j], loader.tgt_bos_id()), num_steps, loader.tgt_pad_id()));   
             }
+
+            std::vector<std::vector<uint>> inputs;
+            std::vector<std::vector<uint>> targets;
+
+            for (uint j = 0; j < num_steps; j++) {
+                std::vector<uint> input;
+                std::vector<uint> target;
+                for (uint k = 0; k < cur_batch_size; k++) {
+                    input.push_back(input_sentences[k][j]);
+                    target.push_back(target_sentences[k][j]);
+                }
+                inputs.push_back(input);
+                targets.push_back(target);
+            }
+
+            assert(inputs.size() == targets.size());
+            assert(inputs.size() == num_steps);
+            
+            for (auto & input : inputs) {
+                for (auto token : input) {
+                    std::cout << loader.get_src_token(token) << " ";
+                }
+                std::cout << std::endl;
+            }
+
+            for (auto & target : targets) {
+                for (auto token : target) {
+                    std::cout << loader.get_tgt_token(token) << " ";
+                }
+                std::cout << std::endl;
+            }
+            std::cout << std::endl;
             std::cout << "prepare input done" << std::endl;
             auto dec_outputs = encoder_decoder->forward(inputs, targets);
             std::cout << "forward done" << std::endl;
-            dec_outputs->checkShape(Shape(dec_vocab_size, (end-i) * num_steps));
+            dec_outputs->checkShape(Shape(dec_vocab_size, cur_batch_size * num_steps));
             // dec_outputs->cross_entropy_mask(targets, loader.tgt_pad_id());
             print_progress(end, src_token_ids.size());
             if (shutdown) {
