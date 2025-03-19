@@ -38,6 +38,58 @@ namespace autograd {
         (*loss)[0][0] = loss_value/labels.size();
         return loss;
     }
+
+    Matrix *CrossEntropyLossMask(
+        Matrix *input,
+        const std::vector<uint> &labels,
+        std::vector<CrosEntropyInfo> &info,
+        const std::vector<bool> &mask) {
+
+        assert(input->getShape().colCnt == labels.size());
+        assert(input->getShape().colCnt == mask.size());
+        assert(info.size() == 0);
+
+        Matrix *loss = allocTmpMatrix(Shape(1,1));
+        DATATYPE loss_value = 0;
+        info.resize(input->getShape().colCnt);
+        uint mask_cnt = 0;
+        #pragma omp parallel for reduction(+:mask_cnt)
+        for (uint i = 0; i < mask.size(); ++ i) {
+            mask_cnt += mask[i];
+        }
+        if (mask_cnt == 0) {
+            (*loss)[0][0] = 0;
+            return loss;
+        }
+
+        #pragma omp parallel for reduction(+:loss_value)
+        for (uint j = 0; j < input->getShape().colCnt; ++ j) {
+            if (!mask[j]) {
+                continue;
+            }
+            DATATYPE max = (*input)[0][j];
+            for (uint i = 0; i < input->getShape().rowCnt; ++ i) {
+                auto e = (*input)[i][j];
+                if (max < e) {
+                    max = e;
+                }
+            }
+            DATATYPE sum = 0;
+            auto target = labels[j];
+            DATATYPE zt = (*input)[target][j];
+            for (uint i = 0; i < input->getShape().rowCnt; ++ i) {
+                DATATYPE e = (*input)[i][j];
+                e = std::exp(e-max);
+                sum += e;
+            }
+            CrosEntropyInfo &p = info[j];
+            p.sum = sum;
+            p.max = max;
+            loss_value += -(zt - max - log(sum));
+        }
+        (*loss)[0][0] = loss_value/mask_cnt;
+        return loss;
+    }
  
     Node *Node::operator+(Node *rhs) {
         auto *node = allocNode(*w + *(rhs->w));
@@ -116,6 +168,19 @@ namespace autograd {
         return node;
     }
 
+    Node *Node::CrossEntropyMask(const std::vector<uint> &labels, const std::vector<bool> &mask) {
+        assert(w->getShape().colCnt == labels.size());
+        assert(w->getShape().colCnt == mask.size());
+        std::vector<CrosEntropyInfo> info;
+        auto *node = allocNode(::autograd::CrossEntropyLossMask(w, labels, info, mask));
+        assert(info.size() == w->getShape().colCnt);
+        if (is_require_grad()) {
+            node->require_grad();
+            node->edges.push_back(CrossEntropyMaskEdge::create(this, labels, mask, info));
+        }
+        return node;
+    }
+
     Node *Node::Tanh() {
         auto *node = allocNode(w->tanh());
         if (is_require_grad()) {
@@ -143,8 +208,7 @@ namespace autograd {
         return node;
     }
 
-    Node *cat(const std::vector<Node *> &nodes) {
-        assert(nodes.size() > 0);
+    Node *cat0(const std::vector<Node *> &nodes) {
         Shape shape = nodes[0]->get_weight()->getShape();
         for (uint i = 0; i < nodes.size(); ++ i) {
             nodes[i]->checkShape(shape);
@@ -198,17 +262,51 @@ namespace autograd {
             for (; k < shape.rowCnt; ++ k) {
                 for (uint j = 0; j < shape.colCnt; ++ j) {
                     m_buffer[k*m_shape.colCnt+i*shape.colCnt+j] = node_i_buffer[k*shape.colCnt+j];
-                    // (*m)[k][i*shape.colCnt+j] = (*nodes[i]->get_weight())[k][j];
                 }
             }
         }
         for (uint i = 0; i < nodes.size(); ++ i) {
             if (nodes[i]->is_require_grad()) {
                 node->require_grad();
-                node->edges.push_back(CatEdge::create(nodes[i], i*shape.colCnt));
+                node->edges.push_back(CatEdge0::create(nodes[i], i*shape.colCnt));
             }
         }
         return node;
+    }
+
+    Node *cat1(const std::vector<Node *> &nodes) {
+        Shape shape = nodes[0]->get_weight()->getShape();
+        uint rowCntSum = 0;
+        for (uint i = 0; i < nodes.size(); ++ i) {
+            // nodes[i]->checkShape(shape);
+            assert(nodes[i]->getShape().colCnt == shape.colCnt);
+            rowCntSum += nodes[i]->getShape().rowCnt;
+        }
+        Matrix *m = allocTmpMatrix(Shape(rowCntSum, shape.colCnt));
+        Node *node = allocNode(m);
+        auto m_buffer = m->getData();
+        uint offset = 0;
+        for (uint i = 0; i < nodes.size(); ++ i) {
+            auto node_i_buffer = nodes[i]->get_weight()->getData();
+            memcpy(m_buffer + offset, node_i_buffer, nodes[i]->getShape().size() * sizeof(DATATYPE));
+            if (nodes[i]->is_require_grad()) {
+                node->require_grad();
+                node->edges.push_back(CatEdge1::create(nodes[i], offset));
+            }
+            offset += nodes[i]->getShape().size();
+        }
+        return node;
+    }
+
+    Node *cat(const std::vector<Node *> &nodes, uint dim) {
+        assert(dim == 0 || dim == 1);
+        assert(nodes.size() > 0);
+        if (dim == 0) {
+            return cat0(nodes);
+        } else if (dim == 1) {
+            return cat1(nodes);
+        }
+        return nullptr;
     }
 
     void Node::backward() {

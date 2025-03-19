@@ -23,10 +23,12 @@ namespace autograd {
         MatMulL,
         MatMulR,
         Tanh,
-        Cat,
+        Cat0,
+        Cat1,
         Sigmoid,
         Relu,
         CrossEntropy,
+        CrossEntropyMask,
     };
     class Node {
         public:
@@ -82,6 +84,7 @@ namespace autograd {
             Node *at(Node *rhs);
             Node *Relu();
             Node *CrossEntropy(const std::vector<uint> &labels);
+            Node *CrossEntropyMask(const std::vector<uint> &labels, const std::vector<bool> &mask);
             Node *Tanh();
             Node *Sigmoid();
             // Node *operator*(Node &rhs);
@@ -89,7 +92,9 @@ namespace autograd {
             // Node *operator-(Node &rhs);
             // Node *operator-();
             friend Node *operator-(DATATYPE, Node &rhs);
-            friend Node *cat(const std::vector<Node *> &nodes);
+            friend Node *cat(const std::vector<Node *> &nodes, uint);
+            friend Node *cat0(const std::vector<Node *> &nodes);
+            friend Node *cat1(const std::vector<Node *> &nodes);
         private:
             Matrix *w;
             Matrix *grad;
@@ -271,6 +276,58 @@ namespace autograd {
             std::vector<CrosEntropyInfo> info;
     };
 
+    class CrossEntropyMaskEdge: public Edge {
+        public:
+            static Edge* create(
+                Node *_node,
+                const std::vector<uint> &_labels,
+                const std::vector<bool> &_mask,
+                const std::vector<CrosEntropyInfo> &_info) {
+                Edge *edge = new CrossEntropyMaskEdge(_node, _labels, _mask, _info);
+                edges.push_back(edge);
+                return edge;
+            }
+            CrossEntropyMaskEdge(
+                Node *_node,
+                const std::vector<uint> &_labels,
+                const std::vector<bool> &_mask,
+                const std::vector<CrosEntropyInfo> &_info
+            ): Edge(CrossEntropyMask, _node), labels(_labels), mask(_mask), info(_info) {}
+            virtual ~CrossEntropyMaskEdge() {}
+            void backward(Matrix *) override {
+                assert(node->is_require_grad());
+                uint mask_cnt = 0;
+                #pragma omp parallel for reduction(+:mask_cnt)
+                for (uint i = 0; i < mask.size(); ++ i) {
+                    mask_cnt += mask[i];
+                }
+                if (mask_cnt == 0) {
+                    return;
+                }
+                #pragma omp parallel for
+                for (uint j = 0; j < node->get_weight()->getShape().colCnt; ++ j) {
+                    if (!mask[j]) {
+                        continue;
+                    }
+                    auto target = labels[j];
+                    DATATYPE max = info[j].max;
+                    DATATYPE sum = info[j].sum;
+                    for (uint i = 0; i < node->get_weight()->getShape().rowCnt; ++ i) {
+                        if (i == target) {
+                            continue;
+                        }
+                        auto &_grad = (*node->get_grad())[i][j];
+                        _grad = std::exp((*node->get_weight())[i][j] - max) / sum / mask_cnt;
+                    }
+                    (*node->get_grad())[target][j] = (std::exp((*node->get_weight())[target][j] - max) / sum - 1) / mask_cnt;
+                }
+            }
+        private:
+            std::vector<uint> labels;
+            std::vector<bool> mask;
+            std::vector<CrosEntropyInfo> info;
+    };
+
     class TanhEdge : public Edge {
         public:
             static Edge* create(Node *_node) {
@@ -303,16 +360,16 @@ namespace autograd {
             }
     };
 
-    class CatEdge: public Edge {
+    class CatEdge0: public Edge {
         public:
             static Edge* create(Node *_node, uint _offset) {
-                Edge *edge = new CatEdge(_node, _offset);
+                Edge *edge = new CatEdge0(_node, _offset);
                 edges.push_back(edge);
                 return edge;
             }
-            CatEdge(Node *_node, uint _offset)
-                : Edge(OpType::Cat, _node), offset(_offset){}
-            virtual ~CatEdge() {}
+            CatEdge0(Node *_node, uint _offset)
+                : Edge(OpType::Cat0, _node), offset(_offset){}
+            virtual ~CatEdge0() {}
             void backward(Matrix *grad) override {
                 assert(node->is_require_grad());
                 Shape shape = node->get_weight()->getShape();
@@ -326,7 +383,33 @@ namespace autograd {
             uint offset;
     };
 
-    Node *cat(const std::vector<Node *> &nodes);
+    class CatEdge1: public Edge {
+        public:
+            static Edge* create(Node *_node, uint _offset) {
+                Edge *edge = new CatEdge1(_node, _offset);
+                edges.push_back(edge);
+                return edge;
+            }
+            CatEdge1(Node *_node, uint _offset)
+                : Edge(OpType::Cat1, _node), offset(_offset){}
+            virtual ~CatEdge1() {}
+            void backward(Matrix *grad) override {
+                assert(node->is_require_grad());
+                assert(grad->getShape().colCnt == node->getShape().colCnt);
+                Shape shape = node->getShape();
+                DATATYPE *m_buffer = node->get_weight()->getData();
+                DATATYPE *grad_buffer = grad->getData() + offset;
+                for (uint i = 0; i < shape.size(); ++ i) {
+                    m_buffer[i] += grad_buffer[i];
+                }
+            }
+        private:
+            uint offset;
+    };
+
+    Node *cat(const std::vector<Node *> &nodes, uint dim = 0);
+    Node *cat0(const std::vector<Node *> &nodes);
+    Node *cat1(const std::vector<Node *> &nodes);
     Node *allocNode(Matrix *w);
     void freeAllNodes();
     void freeAllEdges();
