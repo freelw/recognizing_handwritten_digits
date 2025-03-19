@@ -103,11 +103,11 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
             auto dec_outputs = encoder_decoder->forward(inputs, targets);
             // dec_outputs->cross_entropy_mask(targets, loader.tgt_pad_id());
             print_progress(end, src_token_ids.size());
+            if (shutdown) {
+                break;
+            }
         }
         autograd::save_checkpoint(checkpoint_prefix, epoch, *encoder_decoder);
-        if (shutdown) {
-            break;
-        }
         std::cout << "epoch " << epoch << " loss : " << loss_sum << " emit_clip : " << emit_clip << std::endl;
     }
     delete encoder_decoder;
