@@ -168,6 +168,9 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
                 save_checkpoint(checkpoint_prefix, epoch, *encoder_decoder);
                 exit(0);
             }
+            freeTmpMatrix();
+            autograd::freeAllNodes();
+            autograd::freeAllEdges();
         }
         autograd::save_checkpoint(checkpoint_prefix, epoch, *encoder_decoder);
         std::cout << "epoch " << epoch << " loss : " << loss_sum << " emit_clip : " << emit_clip << std::endl;
