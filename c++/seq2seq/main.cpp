@@ -63,7 +63,9 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
     auto decoder = new autograd::Seq2SeqDecoder(
         dec_vocab_size, dec_embed_size, hidden_num, layer_num, sigma, dropout
     );
-    auto encoder_decoder = new autograd::Seq2SeqEncoderDecoder(encoder, decoder);
+    auto encoder_decoder = new autograd::Seq2SeqEncoderDecoder(
+        encoder, decoder, loader.tgt_bos_id(), loader.tgt_eos_id()
+    );
     if (!checkpoint.empty()) {
         cout << "loading from checkpoint : " << checkpoint << endl;
         loadfrom_checkpoint(*encoder_decoder, checkpoint);
@@ -180,6 +182,31 @@ void train(const std::string &corpus, const std::string &checkpoint, uint epochs
         autograd::save_checkpoint(checkpoint_prefix, epoch, *encoder_decoder);
         std::cout << "epoch " << epoch << " loss : " << loss_sum << " emit_clip : " << emit_clip << std::endl;
     }
+    if (epochs > 0) {
+        // pass
+    } else {
+        std::cout << "serving mode" << std::endl;
+        encoder_decoder->train(false);
+        std::vector<std::string> src_sentences = {
+            "i jumped .",
+            "i am fat ."
+        };
+        // ./seq2seq -e 0 -c ./checkpoints/checkpoint_20250319_180713_9.bin
+        for (auto & sentence : src_sentences) {
+            std::vector<uint> src_token_ids = loader.to_src_token_ids(sentence);
+            for (auto &token_id : src_token_ids) {
+                std::cout << loader.get_src_token(token_id) << " ";
+            }
+            std::cout << std::endl;
+
+            std::vector<uint> tgt_token_ids = encoder_decoder->predict(src_token_ids, 20);
+            std::cout << "translate res : ";
+            for (auto &token_id : tgt_token_ids) {
+                std::cout << loader.get_tgt_token(token_id) << " ";
+            }
+            std::cout << std::endl;
+        }
+    }
     delete encoder_decoder;
     delete decoder;
     delete encoder;
@@ -269,7 +296,7 @@ void test_encoder_decoder1() {
     auto decoder = new autograd::Seq2SeqDecoder(
         dec_vocab_size, dec_embed_size, hidden_num, layer_num, sigma, dropout
     );
-    auto encoder_decoder = new autograd::Seq2SeqEncoderDecoder(encoder, decoder);
+    auto encoder_decoder = new autograd::Seq2SeqEncoderDecoder(encoder, decoder, 3, 1);
     auto dec_outputs = encoder_decoder->forward(src_token_ids, tgt_token_ids);
     dec_outputs->checkShape(Shape(dec_vocab_size, tgt_token_ids.size() * tgt_token_ids[0].size()));
     // assert(dec_outputs.size() == tgt_token_ids.size());

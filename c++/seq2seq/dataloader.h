@@ -39,8 +39,10 @@ namespace seq2seq {
             uint src_pad_id();
             uint tgt_pad_id();
             uint tgt_bos_id();
+            uint tgt_eos_id();
             uint src_vocab_size();
             uint tgt_vocab_size();
+            std::vector<uint> to_src_token_ids(const std::string &sentence);
         private:
             std::string corpus_path;
             std::string src_vocab_path;
