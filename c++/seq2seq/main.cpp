@@ -158,32 +158,32 @@ void train(
             assert(inputs.size() == num_steps);
             assert(targets.size() == num_steps);
             
-            for (auto & input : inputs) {
-                for (auto token : input) {
-                    std::cout << loader.get_src_token(token) << " ";
-                }
-                std::cout << std::endl;
-            }
+            // for (auto & input : inputs) {
+            //     for (auto token : input) {
+            //         std::cout << loader.get_src_token(token) << " ";
+            //     }
+            //     std::cout << std::endl;
+            // }
 
-            for (auto & target : targets) {
-                for (auto token : target) {
-                    std::cout << loader.get_tgt_token(token) << " ";
-                }
-                std::cout << std::endl;
-            }
-            std::cout << std::endl;
+            // for (auto & target : targets) {
+            //     for (auto token : target) {
+            //         std::cout << loader.get_tgt_token(token) << " ";
+            //     }
+            //     std::cout << std::endl;
+            // }
+            // std::cout << std::endl;
 
-            // print labels
-            for (auto & label : labels) {
-                std::cout << loader.get_tgt_token(label) << " ";
-            }
-            std::cout << std::endl;
+            // // print labels
+            // for (auto & label : labels) {
+            //     std::cout << loader.get_tgt_token(label) << " ";
+            // }
+            // std::cout << std::endl;
 
-            // print mask
-            for (auto m : mask) {
-                std::cout << m << " ";
-            }
-            std::cout << std::endl;
+            // // print mask
+            // for (auto m : mask) {
+            //     std::cout << m << " ";
+            // }
+            // std::cout << std::endl;
             
             // std::cout << "prepare input done" << std::endl;
             auto dec_outputs = encoder_decoder->forward(inputs, targets);
