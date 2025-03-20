@@ -44,6 +44,7 @@ translate res : j'essaye . <eos>
     这时loss依然能够有一定程度的下降，因为反向传播在decoder还工作，但是在cat encoder的ctx和tgt的embedding时断掉了
 2. encoder forward token参数传递错误
     这时不能通过全部数据进行调整，所以loss下降到一定程度就不下降了
+3. labels的顺序弄错了, 应该是每个step中的token紧挨着，而不是每个句子中的token紧挨着
 
 ### 关于loss
 
