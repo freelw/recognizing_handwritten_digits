@@ -20,6 +20,13 @@ bool shutdown = false;
 #define RESOURCE_NAME "../../resources/fra_preprocessed.txt"
 #define SRC_VOCAB_NAME "../fra_vocab_builder/vocab_en.txt"
 #define TGT_VOCAB_NAME "../fra_vocab_builder/vocab_fr.txt"
+#define SRC_VOCAB_TINY_NAME "../fra_vocab_builder/vocab_en_tiny.txt"
+#define TGT_VOCAB_TINY_NAME "../fra_vocab_builder/vocab_fr_tiny.txt"
+#define HIDDEN_SIZE 32
+#define EMBED_SIZE 32
+#define TINY_HIDDEN_SIZE 2
+#define TINY_EMBED_SIZE 2
+
 #define TEST_FILE "./test.txt"
 #define BATCH_SIZE 128
 
@@ -50,14 +57,19 @@ void train(
     const std::string &checkpoint,
     uint epochs,
     DATATYPE dropout,
-    DATATYPE lr) {
+    DATATYPE lr,
+    bool tiny) {
    
     uint num_steps = 4;
-    seq2seq::DataLoader loader(corpus, SRC_VOCAB_NAME, TGT_VOCAB_NAME, TEST_FILE);
+    std::string src_vocab_name = tiny ? SRC_VOCAB_TINY_NAME : SRC_VOCAB_NAME;
+    std::string tgt_vocab_name = tiny ? TGT_VOCAB_TINY_NAME : TGT_VOCAB_NAME;
+    seq2seq::DataLoader loader(corpus, src_vocab_name, tgt_vocab_name, TEST_FILE);
     std::cout << "data loaded" << std::endl;
     uint enc_vocab_size = loader.src_vocab_size();
-    uint enc_embed_size = 32;
-    uint hidden_num = 32;
+    // uint enc_embed_size = 32;
+    // uint hidden_num = 32;
+    uint enc_embed_size = tiny ? TINY_EMBED_SIZE : EMBED_SIZE;
+    uint hidden_num = tiny ? TINY_HIDDEN_SIZE : HIDDEN_SIZE;
     uint layer_num = 2;
     DATATYPE sigma = 0.01;
     auto encoder = new autograd::Seq2SeqEncoder(
@@ -178,8 +190,8 @@ void train(
 
             // std::cout << "dec_outputs : " << *(dec_outputs->get_weight()) << std::endl;
             // std::cout << "dec_outputs shape : " << dec_outputs->getShape() << std::endl;
-            auto loss = dec_outputs->CrossEntropyMask(labels, mask);
-            // auto loss = dec_outputs->CrossEntropy(labels);
+            // auto loss = dec_outputs->CrossEntropyMask(labels, mask);
+            auto loss = dec_outputs->CrossEntropy(labels);
             assert(loss->get_weight()->getShape().rowCnt == 1);
             assert(loss->get_weight()->getShape().colCnt == 1);
             loss_sum += (*loss->get_weight())[0][0];
@@ -196,6 +208,11 @@ void train(
                 save_checkpoint(checkpoint_prefix, epoch, *encoder_decoder);
                 exit(0);
             }
+            // print all parameters grad
+            for (auto &p : parameters) {
+                std::cout << "param : " << p->get_weight()->getShape() << std::endl;
+                std::cout << "grad : " << *(p->get_grad()) << std::endl;
+            }
             freeTmpMatrix();
             autograd::freeAllNodes();
             autograd::freeAllEdges();
@@ -205,6 +222,7 @@ void train(
         }
         std::cout << "epoch " << epoch << " loss : " << loss_sum << " emit_clip : " << emit_clip << std::endl;
     }
+    
     if (epochs > 0) {
         // pass
     } else {
@@ -530,6 +548,8 @@ void test_cat1_2() {
     std::cout << "node1 grad : " << *(node1->get_grad()) << std::endl;
     std::cout << "node2 : " << *(node2->get_weight()) << std::endl;
     std::cout << "node2 grad : " << *(node2->get_grad()) << std::endl;
+    std::cout << "cat_node : " << *(cat_node->get_weight()) << std::endl;
+    std::cout << "cat_node grad : " << *(cat_node->get_grad()) << std::endl;
 
     delete p2;
     delete p1;
@@ -591,9 +611,9 @@ int main(int argc, char *argv[]) {
     // test_encoder_decoder1();
     // test_crossentropy_mask();
     // test_dataloader();
-    test_cat1_2();
+    // test_cat1_2();
     // test_cat0();
-    return 0;
+    // return 0;
     cout << "OMP_THREADS: " << OMP_THREADS << endl;
     // register signal SIGINT and signal handler
     signal(SIGINT, signal_callback_handler);
@@ -604,7 +624,8 @@ int main(int argc, char *argv[]) {
     uint epochs = 30;
     DATATYPE dropout = 0.2;
     DATATYPE lr = 0.005;
-    while ((opt = getopt(argc, argv, "f:c:e:d:l:")) != -1) {
+    bool tiny = false;
+    while ((opt = getopt(argc, argv, "f:c:e:d:l:t:")) != -1) {
         switch (opt) {
             case 'f':
                 corpus = optarg;
@@ -621,6 +642,9 @@ int main(int argc, char *argv[]) {
             case 'l':
                 lr = atof(optarg);
                 break;
+            case 't':
+                tiny = atoi(optarg) == 1;
+                break;
             default:
                 std::cerr << "Usage: " << argv[0] << " -f <corpus> -c <checpoint> -e <epochs>" << std::endl;
                 return 1;
@@ -633,6 +657,7 @@ int main(int argc, char *argv[]) {
     std::cout << "epochs : " << epochs << std::endl;
     std::cout << "dropout : " << dropout << std::endl;
     std::cout << "lr : " << lr << std::endl;
-    train(corpus, checkpoint, epochs, dropout, lr);
+    std::cout << "tiny : " << tiny << std::endl;
+    train(corpus, checkpoint, epochs, dropout, lr, tiny);
     return 0;
 }
