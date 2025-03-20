@@ -66,8 +66,6 @@ void train(
     seq2seq::DataLoader loader(corpus, src_vocab_name, tgt_vocab_name, TEST_FILE);
     std::cout << "data loaded" << std::endl;
     uint enc_vocab_size = loader.src_vocab_size();
-    // uint enc_embed_size = 32;
-    // uint hidden_num = 32;
     uint enc_embed_size = tiny ? TINY_EMBED_SIZE : EMBED_SIZE;
     uint hidden_num = tiny ? TINY_HIDDEN_SIZE : HIDDEN_SIZE;
     uint layer_num = 2;
@@ -112,7 +110,9 @@ void train(
     for (uint epoch = 0; epoch < epochs; epoch++) {
         DATATYPE loss_sum = 0;
         int emit_clip = 0;
+        int cnt = 0;
         for (uint i = 0; i < src_token_ids.size(); i += BATCH_SIZE) {
+            cnt ++;
             std::vector<std::vector<uint>> input_sentences;
             std::vector<std::vector<uint>> target_sentences;
             std::vector<std::vector<uint>> target_labels;
@@ -123,16 +123,13 @@ void train(
                 end = src_token_ids.size();
             }
             auto cur_batch_size = end - i;
-            // std::cout << "prepare input" << std::endl;
             for (uint j = i; j < end; j++) {
                 input_sentences.push_back(trim_or_padding(src_token_ids[j], num_steps, loader.src_pad_id()));
                 target_sentences.push_back(trim_or_padding(add_bos(tgt_token_ids[j], loader.tgt_bos_id()), num_steps, loader.tgt_pad_id()));
                 target_labels.push_back(trim_or_padding(tgt_token_ids[j], num_steps, loader.tgt_pad_id()));
             }
-
             std::vector<std::vector<uint>> inputs;
             std::vector<std::vector<uint>> targets;
-
             for (uint j = 0; j < num_steps; j++) {
                 std::vector<uint> input;
                 std::vector<uint> target;
@@ -157,43 +154,9 @@ void train(
 
             assert(inputs.size() == num_steps);
             assert(targets.size() == num_steps);
-            
-            // for (auto & input : inputs) {
-            //     for (auto token : input) {
-            //         std::cout << loader.get_src_token(token) << " ";
-            //     }
-            //     std::cout << std::endl;
-            // }
-
-            // for (auto & target : targets) {
-            //     for (auto token : target) {
-            //         std::cout << loader.get_tgt_token(token) << " ";
-            //     }
-            //     std::cout << std::endl;
-            // }
-            // std::cout << std::endl;
-
-            // // print labels
-            // for (auto & label : labels) {
-            //     std::cout << loader.get_tgt_token(label) << " ";
-            // }
-            // std::cout << std::endl;
-
-            // // print mask
-            // for (auto m : mask) {
-            //     std::cout << m << " ";
-            // }
-            // std::cout << std::endl;
-            
-            // std::cout << "prepare input done" << std::endl;
             auto dec_outputs = encoder_decoder->forward(inputs, targets);
-            // std::cout << "forward done" << std::endl;
             dec_outputs->checkShape(Shape(dec_vocab_size, cur_batch_size * num_steps));
-
-            // std::cout << "dec_outputs : " << *(dec_outputs->get_weight()) << std::endl;
-            // std::cout << "dec_outputs shape : " << dec_outputs->getShape() << std::endl;
             auto loss = dec_outputs->CrossEntropyMask(labels, mask);
-            // auto loss = dec_outputs->CrossEntropy(labels);
             assert(loss->get_weight()->getShape().rowCnt == 1);
             assert(loss->get_weight()->getShape().colCnt == 1);
             loss_sum += (*loss->get_weight())[0][0];
@@ -204,17 +167,11 @@ void train(
                 emit_clip++;
             }
             adam.step();
-            // dec_outputs->cross_entropy_mask(targets, loader.tgt_pad_id());
             print_progress(end, src_token_ids.size());
             if (shutdown) {
                 save_checkpoint(checkpoint_prefix, epoch, *encoder_decoder);
                 exit(0);
             }
-            // print all parameters grad
-            // for (auto &p : parameters) {
-            //     std::cout << "param : " << p->get_weight()->getShape() << std::endl;
-            //     std::cout << "grad : " << *(p->get_grad()) << std::endl;
-            // }
             freeTmpMatrix();
             autograd::freeAllNodes();
             autograd::freeAllEdges();
@@ -222,7 +179,7 @@ void train(
         if (epoch % 10 == 0 || epoch == epochs - 1) {
             save_checkpoint(checkpoint_prefix, epoch, *encoder_decoder);
         }
-        std::cout << "epoch " << epoch << " loss : " << loss_sum << " emit_clip : " << emit_clip << std::endl;
+        std::cout << "epoch " << epoch << " loss : " << loss_sum/cnt << " emit_clip : " << emit_clip << std::endl;
     }
     
     if (epochs > 0) {
