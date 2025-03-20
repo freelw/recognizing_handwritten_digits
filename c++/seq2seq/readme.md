@@ -45,6 +45,7 @@ translate res : j'essaye . <eos>
 2. encoder forward token参数传递错误
     这时不能通过全部数据进行调整，所以loss下降到一定程度就不下降了
 3. labels的顺序弄错了, 应该是每个step中的token紧挨着，而不是每个句子中的token紧挨着
+4. 擅自把hidden和embedding减少到32的效果：模型不易收敛，看起来是表达能力不足，256收敛比较快
 
 ### 关于loss
 
@@ -57,5 +58,5 @@ loss=1 是，判断正确的概率是 1/e 约为 36%
 ### 关于参数初始化
 
 由于引入了deep rnn，梯度的问题变得明显
-
 需要用xavier方法初始化weight，针对tanh和sigmoid之前的层初始化的标准差有区别，见代码
+
