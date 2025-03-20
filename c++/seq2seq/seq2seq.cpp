@@ -2,6 +2,22 @@
 
 namespace autograd {
 
+    DATATYPE xavier_init_tanh(uint input_num, uint output_num) {
+        return sqrt(2.0 / (input_num + output_num)) * 4;
+    }
+
+    DATATYPE xavier_init_sigmoid(uint input_num, uint output_num) {
+        return sqrt(2.0 / (input_num + output_num));
+    }
+
+    DATATYPE xavier_init_tanh(Matrix *m) {
+        return xavier_init_tanh(m->getShape().colCnt, m->getShape().rowCnt);
+    }
+
+    DATATYPE xavier_init_sigmoid(Matrix *m) {
+        return xavier_init_sigmoid(m->getShape().colCnt, m->getShape().rowCnt);
+    }
+
     Dropout::Dropout(DATATYPE _dropout) : dropout(_dropout) {
         assert(dropout > 0);
         unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
@@ -28,7 +44,7 @@ namespace autograd {
     Embedding::Embedding(uint _vocab_size, uint _hidden_num) : vocab_size(_vocab_size), hidden_num(_hidden_num) {
         for (uint i = 0; i < vocab_size; i++) {
             Matrix *m = new Matrix(Shape(hidden_num, 1));
-            init_weight(m, 0.02);
+            init_weight_uniform(m, sqrt(1.0/hidden_num));
             mW.push_back(m);
             Node *n = new Node(m, true);
             n->require_grad();
@@ -72,8 +88,8 @@ namespace autograd {
     Liner::Liner(uint input_num, uint output_num, DATATYPE sigma) {
         mW = new Matrix(Shape(output_num, input_num));
         mb = new Matrix(Shape(output_num, 1));
-        init_weight(mW, sigma);
-        init_weight(mb, sigma);
+        init_weight(mW, xavier_init_sigmoid(mW));
+        mb->zero();
         W = new Node(mW, true);
         b = new Node(mb, true);
         W->require_grad();
@@ -116,15 +132,15 @@ namespace autograd {
         mWxh = new Matrix(Shape(hidden_num, input_num));
         mWhh = new Matrix(Shape(hidden_num, hidden_num));
         mBh = new Matrix(Shape(hidden_num, 1));
-        init_weight(mWxr, sigma);
-        init_weight(mWhr, sigma);
-        init_weight(mBr, sigma);
-        init_weight(mWxz, sigma);
-        init_weight(mWhz, sigma);
-        init_weight(mBz, sigma);
-        init_weight(mWxh, sigma);
-        init_weight(mWhh, sigma);
-        init_weight(mBh, sigma);
+        init_weight(mWxr, xavier_init_sigmoid(mWxr));
+        init_weight(mWhr, xavier_init_sigmoid(mWhr));
+        mBr->zero();
+        init_weight(mWxz, xavier_init_sigmoid(mWxz));
+        init_weight(mWhz, xavier_init_sigmoid(mWhz));
+        mBz->zero();
+        init_weight(mWxh, xavier_init_tanh(mWxh));
+        init_weight(mWhh, xavier_init_tanh(mWhh));
+        mBh->zero();
         Wxr = new Node(mWxr, true);
         Whr = new Node(mWhr, true);
         Br = new Node(mBr, true);

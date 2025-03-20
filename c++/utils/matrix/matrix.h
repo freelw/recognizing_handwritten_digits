@@ -96,5 +96,6 @@ Matrix *allocTmpMatrix(const Shape & shape);
 autograd::TmpMatricsStats tmpMatricsStats();
 void freeTmpMatrix();
 void init_weight(Matrix *weight, DATATYPE sigma);
+void init_weight_uniform(Matrix *weight, DATATYPE sigma);
 
 #endif
