@@ -53,7 +53,7 @@ namespace autograd {
         DATATYPE loss_value = 0;
         info.resize(input->getShape().colCnt);
         uint mask_cnt = 0;
-        #pragma omp parallel for reduction(+:mask_cnt)
+        // #pragma omp parallel for reduction(+:mask_cnt)
         for (uint i = 0; i < mask.size(); ++ i) {
             mask_cnt += mask[i];
         }
@@ -62,7 +62,7 @@ namespace autograd {
             return loss;
         }
 
-        #pragma omp parallel for reduction(+:loss_value)
+        // #pragma omp parallel for reduction(+:loss_value)
         for (uint j = 0; j < input->getShape().colCnt; ++ j) {
             if (!mask[j]) {
                 continue;
@@ -222,9 +222,9 @@ namespace autograd {
         for (uint i = 0; i < nodes.size(); ++ i) {
             auto node_i_buffer = nodes[i]->get_weight()->getData();
             
-            uint k = 0;
+            int k = 0;
 
-            for (; k < shape.rowCnt - 7; k += 8) {
+            for (; k < (int)shape.rowCnt - 7; k += 8) {
 
                 DATATYPE *m_buffer_0 = m_buffer + k*m_shape.colCnt+i*shape.colCnt;
                 DATATYPE *m_buffer_1 = m_buffer + (k+1)*m_shape.colCnt+i*shape.colCnt;
@@ -259,7 +259,7 @@ namespace autograd {
                     memcpy(m_buffers[j], node_i_buffers[j], shape.colCnt * sizeof(DATATYPE));
                 }
             }
-            for (; k < shape.rowCnt; ++ k) {
+            for (; k < (int)shape.rowCnt; ++ k) {
                 for (uint j = 0; j < shape.colCnt; ++ j) {
                     m_buffer[k*m_shape.colCnt+i*shape.colCnt+j] = node_i_buffer[k*shape.colCnt+j];
                 }

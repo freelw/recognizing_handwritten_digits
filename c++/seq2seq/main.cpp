@@ -52,12 +52,12 @@ void train(
     DATATYPE dropout,
     DATATYPE lr) {
    
-    uint num_steps = 9;
+    uint num_steps = 4;
     seq2seq::DataLoader loader(corpus, SRC_VOCAB_NAME, TGT_VOCAB_NAME, TEST_FILE);
     std::cout << "data loaded" << std::endl;
     uint enc_vocab_size = loader.src_vocab_size();
     uint enc_embed_size = 32;
-    uint hidden_num = 64;
+    uint hidden_num = 32;
     uint layer_num = 2;
     DATATYPE sigma = 0.01;
     auto encoder = new autograd::Seq2SeqEncoder(
@@ -158,12 +158,28 @@ void train(
             //     std::cout << std::endl;
             // }
             // std::cout << std::endl;
-            // std::cout << "prepare input done" << std::endl;
+
+            // // print labels
+            // for (auto & label : labels) {
+            //     std::cout << loader.get_tgt_token(label) << " ";
+            // }
+            // std::cout << std::endl;
+
+            // // print mask
+            // for (auto m : mask) {
+            //     std::cout << m << " ";
+            // }
+            // std::cout << std::endl;
+            
+            std::cout << "prepare input done" << std::endl;
             auto dec_outputs = encoder_decoder->forward(inputs, targets);
             // std::cout << "forward done" << std::endl;
             dec_outputs->checkShape(Shape(dec_vocab_size, cur_batch_size * num_steps));
 
+            // std::cout << "dec_outputs : " << *(dec_outputs->get_weight()) << std::endl;
+            // std::cout << "dec_outputs shape : " << dec_outputs->getShape() << std::endl;
             auto loss = dec_outputs->CrossEntropyMask(labels, mask);
+            // auto loss = dec_outputs->CrossEntropy(labels);
             assert(loss->get_weight()->getShape().rowCnt == 1);
             assert(loss->get_weight()->getShape().colCnt == 1);
             loss_sum += (*loss->get_weight())[0][0];
@@ -184,7 +200,9 @@ void train(
             autograd::freeAllNodes();
             autograd::freeAllEdges();
         }
-        autograd::save_checkpoint(checkpoint_prefix, epoch, *encoder_decoder);
+        if (epoch % 10 == 0 || epoch == epochs - 1) {
+            save_checkpoint(checkpoint_prefix, epoch, *encoder_decoder);
+        }
         std::cout << "epoch " << epoch << " loss : " << loss_sum << " emit_clip : " << emit_clip << std::endl;
     }
     if (epochs > 0) {
@@ -420,12 +438,162 @@ void test_dataloader() {
     std::cout << std::endl;
 }
 
+void test_cat1_1() {
+    Matrix *m1 = allocTmpMatrix(Shape(3, 1));
+    Matrix *c1 = allocTmpMatrix(Shape(4, 1));
+
+    m1->fill(0.1);
+    c1->fill(0.2);
+
+    (*m1)[0][0] = 0.5;
+    (*c1)[0][0] = 0.5;
+
+    autograd::Node *node1 = autograd::allocNode(m1);
+    autograd::Node *node2 = autograd::allocNode(c1);
+
+    node1->require_grad();
+    node2->require_grad();
+
+    autograd::Parameters *p1 = new autograd::Parameters(node1);
+    autograd::Parameters *p2 = new autograd::Parameters(node2);
+
+    std::vector<uint> labels_m = {0};
+    std::vector<uint> labels_c = {0};
+
+    auto loss_m = node1->CrossEntropy(labels_m);
+    auto loss_c = node2->CrossEntropy(labels_c);
+
+    std::cout << "loss_m : " << (*loss_m->get_weight())[0][0] << std::endl;
+    std::cout << "loss_c : " << (*loss_c->get_weight())[0][0] << std::endl;
+
+    autograd::Adam optimizer_m({p1}, 0.01);
+    autograd::Adam optimizer_c({p2}, 0.01);
+
+    optimizer_m.zero_grad();
+    optimizer_c.zero_grad();
+
+    loss_m->backward();
+    loss_c->backward();
+
+    optimizer_m.step();
+    optimizer_c.step();
+
+    std::cout << "node1 : " << *(node1->get_weight()) << std::endl;
+    std::cout << "node1 grad : " << *(node1->get_grad()) << std::endl;
+    std::cout << "node2 : " << *(node2->get_weight()) << std::endl;
+    std::cout << "node2 grad : " << *(node2->get_grad()) << std::endl;
+
+    delete p2;
+    delete p1;
+    freeTmpMatrix();
+    autograd::freeAllNodes();
+    autograd::freeAllEdges();
+}
+
+void test_cat1_2() {
+
+    Matrix *m1 = allocTmpMatrix(Shape(3, 1));
+    Matrix *c1 = allocTmpMatrix(Shape(4, 1));
+
+    m1->fill(0.1);
+    c1->fill(0.2);
+
+    (*m1)[0][0] = 0.5;
+    (*c1)[0][0] = 0.5;
+
+    autograd::Node *node1 = autograd::allocNode(m1);
+    autograd::Node *node2 = autograd::allocNode(c1);
+
+    node1->require_grad();
+    node2->require_grad();
+
+    autograd::Parameters *p1 = new autograd::Parameters(node1);
+    autograd::Parameters *p2 = new autograd::Parameters(node2);
+
+    std::vector<uint> labels = {0};
+
+    auto cat_node = autograd::cat({node1, node2}, 1);
+
+    auto loss = cat_node->CrossEntropy(labels);
+
+    std::cout << "loss : " << (*loss->get_weight())[0][0] << std::endl;
+
+    autograd::Adam optimizer({p1, p2}, 0.01);
+
+    optimizer.zero_grad();
+
+    loss->backward();
+
+    optimizer.step();
+
+    std::cout << "node1 : " << *(node1->get_weight()) << std::endl;
+    std::cout << "node1 grad : " << *(node1->get_grad()) << std::endl;
+    std::cout << "node2 : " << *(node2->get_weight()) << std::endl;
+    std::cout << "node2 grad : " << *(node2->get_grad()) << std::endl;
+
+    delete p2;
+    delete p1;
+    freeTmpMatrix();
+    autograd::freeAllNodes();
+    autograd::freeAllEdges();
+}
+
+void test_cat0() {
+
+    Matrix *m1 = allocTmpMatrix(Shape(3, 1));
+    Matrix *c1 = allocTmpMatrix(Shape(3, 1));
+
+    m1->fill(0.1);
+    c1->fill(0.2);
+
+    (*m1)[0][0] = 0.5;
+    (*c1)[0][0] = 0.5;
+
+    autograd::Node *node1 = autograd::allocNode(m1);
+    autograd::Node *node2 = autograd::allocNode(c1);
+
+    node1->require_grad();
+    node2->require_grad();
+
+    autograd::Parameters *p1 = new autograd::Parameters(node1);
+    autograd::Parameters *p2 = new autograd::Parameters(node2);
+
+    std::vector<uint> labels = {0, 0};
+
+    auto cat_node = autograd::cat({node1, node2}, 0);
+
+    auto loss = cat_node->CrossEntropy(labels);
+
+    std::cout << "loss : " << (*loss->get_weight())[0][0] << std::endl;
+
+    autograd::Adam optimizer({p1, p2}, 0.01);
+
+    optimizer.zero_grad();
+
+    loss->backward();
+
+    optimizer.step();
+
+    std::cout << "node1 : " << *(node1->get_weight()) << std::endl;
+    std::cout << "node1 grad : " << *(node1->get_grad()) << std::endl;
+    std::cout << "node2 : " << *(node2->get_weight()) << std::endl;
+    std::cout << "node2 grad : " << *(node2->get_grad()) << std::endl;
+
+    delete p2;
+    delete p1;
+    freeTmpMatrix();
+    autograd::freeAllNodes();
+    autograd::freeAllEdges();
+}
+
 int main(int argc, char *argv[]) {
     // test_encoder_decoder();
     // test_encoder_decoder1();
     // test_crossentropy_mask();
     // test_dataloader();
-    // return 0;
+    test_cat1_2();
+    // test_cat0();
+    return 0;
     cout << "OMP_THREADS: " << OMP_THREADS << endl;
     // register signal SIGINT and signal handler
     signal(SIGINT, signal_callback_handler);
