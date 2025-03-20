@@ -1,5 +1,3 @@
 go
 .
-hi
-run
-!
+now
