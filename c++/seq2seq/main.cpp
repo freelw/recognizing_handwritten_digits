@@ -22,8 +22,8 @@ bool shutdown = false;
 #define TGT_VOCAB_NAME "../fra_vocab_builder/vocab_fr.txt"
 #define SRC_VOCAB_TINY_NAME "../fra_vocab_builder/vocab_en_tiny.txt"
 #define TGT_VOCAB_TINY_NAME "../fra_vocab_builder/vocab_fr_tiny.txt"
-#define HIDDEN_SIZE 32
-#define EMBED_SIZE 32
+#define HIDDEN_SIZE 256
+#define EMBED_SIZE 256
 #define TINY_HIDDEN_SIZE 2
 #define TINY_EMBED_SIZE 2
 
@@ -60,7 +60,7 @@ void train(
     DATATYPE lr,
     bool tiny) {
    
-    uint num_steps = 4;
+    uint num_steps = 9;
     std::string src_vocab_name = tiny ? SRC_VOCAB_TINY_NAME : SRC_VOCAB_NAME;
     std::string tgt_vocab_name = tiny ? TGT_VOCAB_TINY_NAME : TGT_VOCAB_NAME;
     seq2seq::DataLoader loader(corpus, src_vocab_name, tgt_vocab_name, TEST_FILE);
@@ -146,42 +146,44 @@ void train(
 
             labels.reserve(cur_batch_size * num_steps);
             mask.reserve(cur_batch_size * num_steps);
-            for (auto &target_label : target_labels) {
-                for (auto token : target_label) {
-                    labels.push_back(token);
-                    mask.push_back(token != loader.tgt_pad_id());
+            assert(cur_batch_size == target_labels.size());
+            assert(num_steps == target_labels[0].size());
+            for (uint j = 0; j < num_steps; j++) {
+                for (uint k = 0; k < cur_batch_size; k++) {
+                    labels.push_back(target_labels[k][j]);
+                    mask.push_back(target_labels[k][j] != loader.tgt_pad_id());
                 }
             }
 
             assert(inputs.size() == num_steps);
             assert(targets.size() == num_steps);
             
-            // for (auto & input : inputs) {
-            //     for (auto token : input) {
-            //         std::cout << loader.get_src_token(token) << " ";
-            //     }
-            //     std::cout << std::endl;
-            // }
+            for (auto & input : inputs) {
+                for (auto token : input) {
+                    std::cout << loader.get_src_token(token) << " ";
+                }
+                std::cout << std::endl;
+            }
 
-            // for (auto & target : targets) {
-            //     for (auto token : target) {
-            //         std::cout << loader.get_tgt_token(token) << " ";
-            //     }
-            //     std::cout << std::endl;
-            // }
-            // std::cout << std::endl;
+            for (auto & target : targets) {
+                for (auto token : target) {
+                    std::cout << loader.get_tgt_token(token) << " ";
+                }
+                std::cout << std::endl;
+            }
+            std::cout << std::endl;
 
-            // // print labels
-            // for (auto & label : labels) {
-            //     std::cout << loader.get_tgt_token(label) << " ";
-            // }
-            // std::cout << std::endl;
+            // print labels
+            for (auto & label : labels) {
+                std::cout << loader.get_tgt_token(label) << " ";
+            }
+            std::cout << std::endl;
 
-            // // print mask
-            // for (auto m : mask) {
-            //     std::cout << m << " ";
-            // }
-            // std::cout << std::endl;
+            // print mask
+            for (auto m : mask) {
+                std::cout << m << " ";
+            }
+            std::cout << std::endl;
             
             // std::cout << "prepare input done" << std::endl;
             auto dec_outputs = encoder_decoder->forward(inputs, targets);
