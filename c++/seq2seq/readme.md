@@ -24,3 +24,8 @@ epoch 4 loss : 11.6869 emit_clip : 3
     这时loss依然能够有一定程度的下降，因为反向传播在decoder还工作，但是在cat encoder的ctx和tgt的embedding时断掉了
 2. encoder forward token参数传递错误
     这时不能通过全部数据进行调整，所以loss下降到一定程度就不下降了
+
+### 关于loss
+
+loss=1 是，判断正确的概率是 1/e 约为 36%
+想要判断一个token的正确率在50%以上，需要loss下降到 -ln(0.5)以下，也就是0.69以下
