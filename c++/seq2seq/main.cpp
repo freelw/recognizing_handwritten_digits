@@ -190,8 +190,8 @@ void train(
 
             // std::cout << "dec_outputs : " << *(dec_outputs->get_weight()) << std::endl;
             // std::cout << "dec_outputs shape : " << dec_outputs->getShape() << std::endl;
-            // auto loss = dec_outputs->CrossEntropyMask(labels, mask);
-            auto loss = dec_outputs->CrossEntropy(labels);
+            auto loss = dec_outputs->CrossEntropyMask(labels, mask);
+            // auto loss = dec_outputs->CrossEntropy(labels);
             assert(loss->get_weight()->getShape().rowCnt == 1);
             assert(loss->get_weight()->getShape().colCnt == 1);
             loss_sum += (*loss->get_weight())[0][0];
@@ -209,10 +209,10 @@ void train(
                 exit(0);
             }
             // print all parameters grad
-            for (auto &p : parameters) {
-                std::cout << "param : " << p->get_weight()->getShape() << std::endl;
-                std::cout << "grad : " << *(p->get_grad()) << std::endl;
-            }
+            // for (auto &p : parameters) {
+            //     std::cout << "param : " << p->get_weight()->getShape() << std::endl;
+            //     std::cout << "grad : " << *(p->get_grad()) << std::endl;
+            // }
             freeTmpMatrix();
             autograd::freeAllNodes();
             autograd::freeAllEdges();

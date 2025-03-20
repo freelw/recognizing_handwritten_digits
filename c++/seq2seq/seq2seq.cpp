@@ -304,7 +304,7 @@ namespace autograd {
         assert(token_ids.size() > 0);
         auto batch_size = token_ids[0].size();
         auto num_steps = token_ids.size();
-        std::vector<Node *> inputs = embedding->forward({token_ids});
+        std::vector<Node *> inputs = embedding->forward(token_ids);
         std::vector<Node *> input_hiddens;
         for (uint i = 0; i < layer_num; i++) {
             input_hiddens.push_back(nullptr);
