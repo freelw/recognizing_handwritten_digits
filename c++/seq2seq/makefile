@@ -2,7 +2,7 @@ DIR_INC = -I./
 DIR_INC += -I../utils/
 DIR_LIB = -L./
 TARGET	= seq2seq
-CFLAGS = -g -Wall $(DIR_INC) $(DIR_LIB) -fsanitize=address -fopenmp
+CFLAGS = -g -Wall $(DIR_INC) $(DIR_LIB) -fsanitize=address -fopenmp -fno-omit-frame-pointer
 LDFLAGS += -lstdc++ -fopenmp
 SRCDIR+= ../utils/matrix
 SRCDIR+= ../utils/autograd
