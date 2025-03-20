@@ -183,7 +183,7 @@ void train(
             // }
             // std::cout << std::endl;
             
-            std::cout << "prepare input done" << std::endl;
+            // std::cout << "prepare input done" << std::endl;
             auto dec_outputs = encoder_decoder->forward(inputs, targets);
             // std::cout << "forward done" << std::endl;
             dec_outputs->checkShape(Shape(dec_vocab_size, cur_batch_size * num_steps));
