@@ -121,3 +121,6 @@ loss=1 是，判断正确的概率是 1/e 约为 36%
 由于引入了deep rnn，梯度的问题变得明显
 需要用xavier方法初始化weight，针对tanh和sigmoid之前的层初始化的标准差有区别，见代码
 
+### perf
+
+![alt text](p_1441917.svg)
