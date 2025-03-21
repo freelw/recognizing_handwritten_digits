@@ -107,6 +107,7 @@ translate res : j'ai sauté . <eos>
     这时不能通过全部数据进行调整，所以loss下降到一定程度就不下降了
 3. labels的顺序弄错了, 应该是每个step中的token紧挨着，而不是每个句子中的token紧挨着
 4. 擅自把hidden和embedding减少到32的效果：模型不易收敛，看起来是表达能力不足，256收敛比较快
+5. loss_sum 没有除以次数，fixed
 
 ### 关于loss
 
