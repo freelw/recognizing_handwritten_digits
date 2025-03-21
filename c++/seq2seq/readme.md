@@ -127,3 +127,7 @@ loss=1 是，判断正确的概率是 1/e 约为 36%
 计算瓶颈在矩阵乘法
 
 ![alt text](p_1473505.svg)
+
+### checkpoint
+
+./checkpoints/checkpoint_20250321_073021_5.bin
