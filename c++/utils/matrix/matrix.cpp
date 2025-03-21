@@ -301,19 +301,32 @@ Matrix *Matrix::at(const Matrix &m) {
     assert(m.shape.rowCnt == shape.colCnt);
     Matrix *res = allocTmpMatrix(Shape(shape.rowCnt, m.shape.colCnt));
 
-    DATATYPE *data = res->getData();
-    DATATYPE *m_data = m.getData();
-    DATATYPE *this_data = this->getData();
+    // DATATYPE *data = res->getData();
+    // DATATYPE *m_data = m.getData();
+    // DATATYPE *this_data = this->getData();
 
-    // use openmp for parallelization
-    #pragma omp parallel for collapse(2) num_threads(OMP_THREADS)
+    // // use openmp for parallelization
+    // #pragma omp parallel for collapse(2) num_threads(OMP_THREADS)
+    // for (uint i = 0; i < shape.rowCnt; ++i) {
+    //     for (uint j = 0; j < m.shape.colCnt; ++j) {
+    //         DATATYPE sum = 0;
+    //         for (uint k = 0; k < shape.colCnt; ++k) {
+    //             sum += this_data[i * shape.colCnt + k] * m_data[k * m.shape.colCnt + j];
+    //         }
+    //         data[i * m.shape.colCnt + j] = sum;
+    //     }
+    // }
+
+    DATATYPE *A = this->getData();
+    DATATYPE *B = m.getData();
+    DATATYPE *C = res->getData();
+
+    #pragma omp parallel for num_threads(OMP_THREADS)
     for (uint i = 0; i < shape.rowCnt; ++i) {
-        for (uint j = 0; j < m.shape.colCnt; ++j) {
-            DATATYPE sum = 0;
-            for (uint k = 0; k < shape.colCnt; ++k) {
-                sum += this_data[i * shape.colCnt + k] * m_data[k * m.shape.colCnt + j];
+        for (uint k = 0; k < shape.colCnt; ++k) {
+            for (uint j = 0; j < m.shape.colCnt; ++j) {
+                C[i * m.shape.colCnt + j] += A[i * shape.colCnt + k] * B[k * m.shape.colCnt + j];
             }
-            data[i * m.shape.colCnt + j] = sum;
         }
     }
 
