@@ -16,3 +16,4 @@ c++/gru_embedding/gru
 c++/deep_gru/deep_gru
 c++/seq2seq/seq2seq
 c++/bmm_bench/bmm_bench
+c++/cblas_bench/bench
