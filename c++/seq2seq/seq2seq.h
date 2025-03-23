@@ -134,8 +134,10 @@ namespace autograd {
             std::vector<Parameters *> get_parameters();
             uint get_hidden_num() { return hidden_num; }
             uint get_layer_num() { return layer_num; }
-            void train(bool _training) { training = _training; }
-            bool is_training() { return training; }
+            void train(bool _training) {
+                rnn->train(_training);
+            }
+            
         private:
             uint vocab_size;
             uint embed_size;
@@ -143,7 +145,6 @@ namespace autograd {
             uint layer_num;
             DATATYPE dropout;
             GRU *rnn;
-            bool training;
             Embedding *embedding;
     };
 
@@ -173,8 +174,9 @@ namespace autograd {
             std::vector<Parameters *> get_parameters();
             uint get_hidden_num() { return hidden_num; }
             uint get_layer_num() { return layer_num; }
-            void train(bool _training) { training = _training; }
-            bool is_training() { return training; } 
+            void train(bool _training) { 
+                rnn->train(_training);    
+            }
         private:
             uint vocab_size;
             uint embed_size;
@@ -182,7 +184,6 @@ namespace autograd {
             uint layer_num;
             DATATYPE dropout;
             GRU *rnn;
-            bool training;
             Embedding *embedding;
             Liner *output_layer;
     };

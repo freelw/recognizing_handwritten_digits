@@ -1,103 +1,68 @@
 # seq2seq
 
 ### training
-loss 可以收敛
+
 ```
-(base) cs@cs-desktop:~/project/recognizing_handwritten_digits/c++/seq2seq$ ./seq2seq -e 50 -f ../../resources/fra_tiny.txt
+(base) cs@cs-desktop:~/project/recognizing_handwritten_digits/c++/seq2seq$ time ./seq2seq -e 50 -c ./checkpoints/checkpoint_20250321_174358_9.bin
 OMP_THREADS: 8
 epochs : 50
 dropout : 0.2
 lr : 0.005
 tiny : 0
 data loaded
-[300/300]checkpoint saved : ./checkpoints/checkpoint_20250320_193342_0.bin
-epoch 0 loss : 26.5325 emit_clip : 3
-[300/300]epoch 1 loss : 14.8607 emit_clip : 3
-[300/300]epoch 2 loss : 11.229 emit_clip : 2
-[300/300]epoch 3 loss : 10.6477 emit_clip : 3
-[300/300]epoch 4 loss : 9.92667 emit_clip : 3
-[300/300]epoch 5 loss : 9.48985 emit_clip : 2
-[300/300]epoch 6 loss : 9.09302 emit_clip : 1
-[300/300]epoch 7 loss : 8.65971 emit_clip : 0
-[300/300]epoch 8 loss : 8.18512 emit_clip : 1
-[300/300]epoch 9 loss : 7.68966 emit_clip : 1
-[300/300]checkpoint saved : ./checkpoints/checkpoint_20250320_193342_10.bin
-epoch 10 loss : 7.41994 emit_clip : 2
-[300/300]epoch 11 loss : 6.89339 emit_clip : 2
-[300/300]epoch 12 loss : 6.3686 emit_clip : 1
-[300/300]epoch 13 loss : 5.91972 emit_clip : 0
-[300/300]epoch 14 loss : 5.56511 emit_clip : 0
-[300/300]epoch 15 loss : 5.10425 emit_clip : 0
-[300/300]epoch 16 loss : 4.72185 emit_clip : 0
-[300/300]epoch 17 loss : 4.35154 emit_clip : 0
-[300/300]epoch 18 loss : 4.02221 emit_clip : 0
-[300/300]epoch 19 loss : 3.72563 emit_clip : 1
-[300/300]checkpoint saved : ./checkpoints/checkpoint_20250320_193342_20.bin
-epoch 20 loss : 3.46813 emit_clip : 0
-[300/300]epoch 21 loss : 3.23506 emit_clip : 0
-[300/300]epoch 22 loss : 3.01653 emit_clip : 0
-[300/300]epoch 23 loss : 2.77449 emit_clip : 0
-[300/300]epoch 24 loss : 2.58028 emit_clip : 0
-[300/300]epoch 25 loss : 2.46159 emit_clip : 0
-[300/300]epoch 26 loss : 2.27011 emit_clip : 0
-[300/300]epoch 27 loss : 2.11092 emit_clip : 0
-[300/300]epoch 28 loss : 1.98888 emit_clip : 0
-[300/300]epoch 29 loss : 1.85581 emit_clip : 0
-[300/300]checkpoint saved : ./checkpoints/checkpoint_20250320_193342_30.bin
-epoch 30 loss : 1.75573 emit_clip : 0
-[300/300]epoch 31 loss : 1.63409 emit_clip : 0
-[300/300]epoch 32 loss : 1.53708 emit_clip : 0
-[300/300]epoch 33 loss : 1.44564 emit_clip : 0
-[300/300]epoch 34 loss : 1.37688 emit_clip : 0
-[300/300]epoch 35 loss : 1.29316 emit_clip : 0
-[300/300]epoch 36 loss : 1.22886 emit_clip : 0
-[300/300]epoch 37 loss : 1.16061 emit_clip : 0
-[300/300]epoch 38 loss : 1.12776 emit_clip : 0
-[300/300]epoch 39 loss : 1.0924 emit_clip : 0
-[300/300]checkpoint saved : ./checkpoints/checkpoint_20250320_193342_40.bin
-epoch 40 loss : 1.04192 emit_clip : 0
-[300/300]epoch 41 loss : 0.99512 emit_clip : 0
-[300/300]epoch 42 loss : 0.978948 emit_clip : 0
-[300/300]epoch 43 loss : 0.953686 emit_clip : 0
-[300/300]epoch 44 loss : 0.928535 emit_clip : 0
-[300/300]epoch 45 loss : 0.908949 emit_clip : 0
-[300/300]epoch 46 loss : 0.870018 emit_clip : 0
-[300/300]epoch 47 loss : 0.860464 emit_clip : 0
-[300/300]epoch 48 loss : 0.851943 emit_clip : 0
-[300/300]checkpoint saved : ./checkpoints/checkpoint_20250320_193342_49.bin
-epoch 49 loss : 0.830455 emit_clip : 0
+loading from checkpoint : ./checkpoints/checkpoint_20250321_174358_9.bin
+loaded from checkpoint
+[167130/167130]checkpoint saved : ./checkpoints/checkpoint_20250322_085920_0.bin
+epoch 0 loss : 1.21077 emit_clip : 0
+[167130/167130]epoch 1 loss : 1.21596 emit_clip : 3
+[167130/167130]epoch 2 loss : 1.20476 emit_clip : 2
+[167130/167130]epoch 3 loss : 1.19928 emit_clip : 3
+[167130/167130]epoch 4 loss : 1.19412 emit_clip : 3
+[167130/167130]epoch 5 loss : 1.1944 emit_clip : 3
+[167130/167130]epoch 6 loss : 1.18376 emit_clip : 3
+[167130/167130]epoch 7 loss : 1.1833 emit_clip : 3
+[167130/167130]epoch 8 loss : 1.18186 emit_clip : 3
+[167130/167130]epoch 9 loss : 1.17589 emit_clip : 3
+[167130/167130]checkpoint saved : ./checkpoints/checkpoint_20250322_085920_10.bin
+epoch 10 loss : 1.17234 emit_clip : 3
+[167130/167130]epoch 11 loss : 1.17417 emit_clip : 4
+[167130/167130]epoch 12 loss : 1.16851 emit_clip : 4
+[167130/167130]epoch 13 loss : 1.17347 emit_clip : 2
+[50048/167130]
 ```
 
 ### 推理
 ```
-(base) cs@cs-desktop:~/project/recognizing_handwritten_digits/c++/seq2seq$ ./seq2seq -e 0 -c  ./checkpoints/checkpoint_20250320_193342_49.bin
+(base) cs@cs-desktop:~/project/recognizing_handwritten_digits/c++/seq2seq$ ./seq2seq -e 0 -c ./checkpoints/checkpoint_20250322_085920_10.bin
 OMP_THREADS: 8
 epochs : 0
 dropout : 0.2
 lr : 0.005
 tiny : 0
 data loaded
-loading from checkpoint : ./checkpoints/checkpoint_20250320_193342_49.bin
+loading from checkpoint : ./checkpoints/checkpoint_20250322_085920_10.bin
 loaded from checkpoint
 serving mode
 go now . <eos>
-translate res : allez-y . <eos>
+translate res : allez-y maintenant , maintenant , avant que partiez ! <eos>
 i try . <eos>
-translate res : j'essaye . <eos>
+translate res : j'essaie de <unk> régulier , essayons de me dérober autour de ce que j'ai essayé de la facture . <eos>
 cheers ! <eos>
-translate res : santé ! <eos>
+translate res : félicitations ! <eos>
 get up . <eos>
-translate res : lève-toi . <eos>
+translate res : lève-toi là-haut ! <eos>
 hug me . <eos>
-translate res : serre-moi serre-moi tes tes tes tes tes maison <eos>
+translate res : serre-moi me <unk> dans ton bras de la chambre ! <eos>
 i know . <eos>
-translate res : sais . <eos>
+translate res : je sais que je <unk> de la civilisation , je ne veux pas te faire . <eos>
 no way ! <eos>
-translate res : en pas ! <eos>
+translate res : <unk> ! <eos>
 be nice . <eos>
-translate res : sois salut refasse avec pompiers pompiers pompiers cervelle farine violemment accorde-moi violemment violemment violemment violemment violemment mondiale mondiale cervelle cervelle
+translate res : soyez gentils ! <eos>
 i jumped . <eos>
-translate res : j'ai sauté . <eos>
+translate res : j'ai sauté sauté par la dent <unk> . <eos>
+congratulations ! <eos>
+translate res : félicitations de manière félicitations ! <eos>
 ```
 
 ### bug 现象记录

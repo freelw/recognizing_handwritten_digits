@@ -263,13 +263,18 @@
             "program": "/home/cs/project/recognizing_handwritten_digits/c++/seq2seq/seq2seq",
             "args": [
                 "-e",
-                "1",
-                "-f",
-                "/home/cs/project/recognizing_handwritten_digits/resources/fra_tiny.txt"
+                "0",
+                "-c",
+                "/home/cs/project/recognizing_handwritten_digits/c++/seq2seq/checkpoints/checkpoint_20250322_085920_10.bin"
             ],
             "stopAtEntry": false,
-            "cwd": "/home/cs/project/recognizing_handwritten_digits/c++/lstm/",
-            "environment": [],
+            "cwd": "/home/cs/project/recognizing_handwritten_digits/c++/seq2seq/",
+            "environment": [
+                {
+                    "name": "LSAN_OPTIONS1",
+                    "value": "verbosity=1:log_threads=1"
+                }
+            ],
             "externalConsole": false,
             "MIMode": "gdb",
             "setupCommands": [

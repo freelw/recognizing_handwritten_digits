@@ -301,8 +301,7 @@ namespace autograd {
         embed_size(_embed_size),
         hidden_num(_hidden_num),
         layer_num(_layer_num),
-        dropout(_dropout),
-        training(true) {
+        dropout(_dropout) {
         assert(layer_num > 0);
         embedding = new Embedding(vocab_size, embed_size);
         rnn = new GRU(embed_size, hidden_num, layer_num, sigma, dropout);
@@ -354,8 +353,7 @@ namespace autograd {
         embed_size(_embed_size),
         hidden_num(_hidden_num),
         layer_num(_layer_num),
-        dropout(_dropout),
-        training(true) {
+        dropout(_dropout) {
         assert(layer_num > 0);
         embedding = new Embedding(vocab_size, embed_size);
         rnn = new GRU(embed_size + hidden_num, hidden_num, layer_num, sigma, dropout);
