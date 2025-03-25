@@ -40,3 +40,16 @@ St’对应目标端的一个token，Ht t从1～T一共有T个，对应源端T�
 ### lstm resnet attention are talking about the same topic
 
 都是在把前面层次的参数尽量和输出纠缠起来，反向传播时loss可以尽可能影响到前面层次的参数
+
+### Transformer 中的attention在表达什么
+
+同样从embedding的角度去理解
+source端自注意力：表示观测每个token两两之间的相似度，通过相似度线性组合出新的state，也可以看成是经过魔改的token
+target端自注意力：同上，只不过有mask
+encoder-decoder注意力：表示一个target魔改后的token应该注意哪个source魔改后的token
+
+我们假设输出的最终token和训练目标差异大，也就是交叉熵大，那么意味着什么呢？
+
+1. decoder 当前关注的 encoder 的权重错了，就是告诉模型，你的关注点不对，要调整。怎么调整呢？要让原来相似度达的魔改后的source token和target token的距离变大，于是传播到embedding端，对应的维度的值按照导数反方向调整
+2. source端自注意力错了，就是告诉模型，你原来认为这两个token关系比较大，其实他们并不相似，同样最终结果反映为调整embedding
+3. decoder端自注意力，同上
