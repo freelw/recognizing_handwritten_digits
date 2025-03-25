@@ -53,6 +53,36 @@ $x_4=Z_i-max({{Z}_i})$
 故 $\frac{\partial L}{\partial {Z}_i}=\frac{c1e^{x_4}}{x_1x_2^2}=\frac{e^{Z_i-max({{Z}_i})}}{\sum_{i=1}^n e^{Z_i-max({{Z}_i})}}$
 
 
-```math
-\frac{\partial L}{\partial {Z}_{target}}
-```
+当 $i = target$
+
+分母部分的导数同上$\frac{e^{Z_{target}-max({{Z}_i})}}{\sum_{i=1}^n e^{Z_{target}-max({{Z}_i})}}$
+
+下面计算分子部分p
+
+令 $g_1(x_1) = -log(x_1)$
+
+令 $x_1 = g_2(x_2) = \frac{x_2}{sum}$
+
+令 $x_2 = g_3(x_3) = e^{x_3}$
+
+令 $x_3 = g_4(Z_{target})=Z_{target}-max({{Z}_i})$
+
+$p=\frac{\partial g_1(x_1)}{\partial x_1}\frac{\partial g_2(x_2)}{\partial x_2}\frac{\partial g_3(x_1)}{\partial x_3}\frac{\partial g_4(Z_{target})}{\partial Z_{target}}$
+
+$\frac{\partial g_1(x_1)}{\partial x_1}=-\frac{1}{x_1}$
+
+$\frac{\partial g_2(x_2)}{\partial x_2}=\frac{1}{sum}$
+
+$\frac{\partial g_3(x_3)}{\partial x_3}=e^{x_3}$
+
+$\frac{\partial g_4(Z_{target})}{\partial Z_{target}}=1$
+
+故 $p=-\frac{e^{x_3}}{x_1sum}$
+
+$x_3=Z_{target}-max({{Z}_i})$
+
+$x_1=\frac{e^{Z_{target}-max({{Z}_i})}}{sum}$
+
+故 $p=-1$
+
+故整体的导数为 $\frac{e^{Z_{target}-max({{Z}_i})}}{\sum_{i=1}^n e^{Z_{target}-max({{Z}_i})}}-1$
