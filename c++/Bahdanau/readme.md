@@ -36,3 +36,7 @@ St’对应目标端的一个token，Ht t从1～T一共有T个，对应源端T�
 所以可以感觉出来，attention机制在反向传播中调整的一个可以被直觉理解的角度是调整token在空间中的距离
 这个距离可以理解成不同语言中两个词的意思相似程度。
 通过attention，实际上模型学习到了词含义的相似性。
+
+### lstm resnet attention are talking about the same theme
+
+都是在把前面层次的参数尽量和输出纠缠起来，反向传播时loss可以尽可能影响到前面层次的参数
