@@ -4,6 +4,6 @@
 
 ### forward 
 
-$crossentropy=\frac{1}{n}\log q(x)$
+$crossentropy=-\log\frac{e^{Z_target-max({{Z}_i})}}{\sum_i e^{Z_i-max({{Z}_i})}}$
 
 ### backward
