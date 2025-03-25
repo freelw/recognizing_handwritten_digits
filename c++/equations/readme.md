@@ -1,3 +1,9 @@
-#
+# 各种导数
 
-$f(x)=\frac{P(x)}{Q(x)}$
+## 交叉熵
+
+### forward 
+
+$crossentropy=\frac{1}{n}\log q(x)$
+
+### backward
