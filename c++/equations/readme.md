@@ -4,7 +4,9 @@
 
 ### forward 
 
-$crossentropy=-\log\frac{e^{Z_{target}-max({{Z}_i})}}{\sum_{i=1}^n e^{Z_i-max({{Z}_i})}}$
+```math
+crossentropy=-\log\frac{e^{Z_{target}-max({{Z}_i})}}{\sum_{i=1}^n e^{Z_i-max({{Z}_i})}}
+```
 
 ### backward
 
