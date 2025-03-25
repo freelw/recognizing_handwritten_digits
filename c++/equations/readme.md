@@ -9,6 +9,8 @@ crossentropy=-\log\frac{e^{Z_{target}-max({{Z}_i})}}{\sum_{i=1}^n e^{Z_i-max({{Z
 ```
 
 ### backward
-
-$\frac{\partial L}{\partial {Z}_i}$
-$\frac{\partial L}{\partial {Z}_{target}}$
+```math
+\frac{\partial L}{\partial {Z}_i}
+\\
+\frac{\partial L}{\partial {Z}_{target}}
+```
