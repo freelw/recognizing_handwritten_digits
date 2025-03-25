@@ -93,6 +93,53 @@ loss=1 是，判断正确的概率是 1/e 约为 36%
 
 ![alt text](p_1473505.svg)
 
-### checkpoint
 
-./checkpoints/checkpoint_20250321_073021_5.bin
+### 切割checkpiont
+
+```
+split -b $(($(stat -c%s ./cp_loss_1_149.bin)/2)) cp_loss_1_149.bin cp_loss_1_149_part_
+```
+
+### 恢复checkpoint
+
+```
+cat cp_loss_1_149_part_aa cp_loss_1_149_part_ab > cp_loss_1_149_restored.bin
+```
+
+### 使用恢复对checkpoint
+
+```
+./seq2seq -e 0 -c ./cp_loss_1_149_restored.bin 
+```
+
+```
+OMP_THREADS: 8
+epochs : 0
+dropout : 0.2
+lr : 0.005
+tiny : 0
+data loaded
+loading from checkpoint : ./cp_loss_1_149_restored.bin
+loaded from checkpoint
+serving mode
+go now . <eos> 
+translate res : pars maintenant , allez faire . <eos> 
+i try . <eos> 
+translate res : j'essaie de ce que je suis libre . <eos> 
+cheers ! <eos> 
+translate res : <unk> ! <eos> 
+get up . <eos> 
+translate res : lève-toi à l'abri ! <eos> 
+hug me . <eos> 
+translate res : <unk> dans le bras . <eos> 
+i know . <eos> 
+translate res : je sais que je suis en mesure de coopérer . <eos> 
+no way ! <eos> 
+translate res : ne le <unk> pas ! <eos> 
+be nice . <eos> 
+translate res : sois gentille ! <eos> 
+i jumped . <eos> 
+translate res : j'ai sauté de la dent . <eos> 
+congratulations ! <eos> 
+translate res : félicitations ! <eos> 
+```
