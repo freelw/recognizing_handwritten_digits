@@ -9,9 +9,50 @@ crossentropy=-\log\frac{e^{Z_{target}-max({{Z}_i})}}{\sum_{i=1}^n e^{Z_i-max({{Z
 ```
 
 ### backward
-```math
-\frac{\partial L}{\partial {Z}_i}
-```
+
+这里我们关注Zi变化对Loss的影响，可以看出，当i不等于target时，Zi只作用于分母
+反之则同时作用于分子分母，导数为作用于分子和分母的导数之和
+
+
+当 $i \neq target$
+
+令 $L=g_1(x_1)=-log(x_1)$
+
+令 $x_1=g_2(x_2)=\frac{c1}{x_2}$
+
+$c1=e^{Z_{target}-max({{Z}_i})}$
+
+令 $x_2=g_3(x_3)=x_3+c2$
+
+c2为常量
+
+令 $x_3=g_4(x_4)=e^{x_4}$
+
+令 $x_4=g_5(Z_i)=Z_i-max({{Z}_i})$
+
+令 $sum=\sum_{i=1}^n e^{Z_i-max({{Z}_i})}$
+
+故 $\frac{\partial L}{\partial {Z}_i}=\frac{\partial g_1(x_1)}{\partial x_1}\frac{\partial g_2(x_2)}{\partial x_2}\frac{\partial g_3(x_3)}{\partial x_3}\frac{\partial g_4(x_4)}{\partial x_4}\frac{\partial g_5(Z_i)}{\partial Z_i}$
+
+$\frac{\partial g_1(x_1)}{\partial x_1}=-\frac{1}{x1}$
+
+$\frac{\partial g_2(x_2)}{\partial x_2}=-\frac{c1}{x_2^2}$
+
+$\frac{\partial g_3(x_3)}{\partial x_3}=1$
+
+$\frac{\partial g_4(x_4)}{\partial x_4}=e^{x_4}$
+
+$\frac{\partial g_5(Z_i)}{\partial Z_i}=1$
+
+$x1=\frac{c1}{sum}$
+
+$x2=sum$
+
+$x_4=Z_i-max({{Z}_i})$
+
+故 $\frac{\partial L}{\partial {Z}_i}=\frac{c1e^{x_4}}{x_1x_2^2}=\frac{e^{Z_i-max({{Z}_i})}}{\sum_{i=1}^n e^{Z_i-max({{Z}_i})}}$
+
+
 ```math
 \frac{\partial L}{\partial {Z}_{target}}
 ```
