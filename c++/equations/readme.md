@@ -57,7 +57,9 @@ $\frac{\partial L}{\partial {Z}_i}=\frac{c1e^{x_4}}{x_1x_2^2}=\frac{e^{Z_i-max({
 
 当 $i = target$
 
-分母部分的导数同上$\frac{e^{Z_{target}-max({{Z}_i})}}{sum}$
+分母部分的导数同上
+
+$\frac{e^{Z_{target}-max({{Z}_i})}}{sum}$
 
 下面计算分子部分p
 
