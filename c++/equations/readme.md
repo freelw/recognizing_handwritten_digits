@@ -50,7 +50,9 @@ $x2=sum$
 
 $x_4=Z_i-max({{Z}_i})$
 
-故 $\frac{\partial L}{\partial {Z}_i}=\frac{c1e^{x_4}}{x_1x_2^2}=\frac{e^{Z_i-max({{Z}_i})}}{\sum_{i=1}^n e^{Z_i-max({{Z}_i})}}$
+故
+
+$\frac{\partial L}{\partial {Z}_i}=\frac{c1e^{x_4}}{x_1x_2^2}=\frac{e^{Z_i-max({{Z}_i})}}{\sum_{i=1}^n e^{Z_i-max({{Z}_i})}}$
 
 
 当 $i = target$
