@@ -4,6 +4,9 @@
 
 ### forward 
 
-$crossentropy=-\log\frac{e^{Z_target-max({{Z}_i})}}{\sum_i e^{Z_i-max({{Z}_i})}}$
+$$crossentropy=-\log\frac{e^{Z_{target}-max({{Z}_i})}}{\sum_i e^{Z_i-max({{Z}_i})}}$$
 
 ### backward
+
+$$\frac{\partial L}{\partial {Z}_i}$$
+$$\frac{\partial L}{\partial {Z}_{target}}$$
