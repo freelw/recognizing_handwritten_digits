@@ -56,7 +56,7 @@ $\frac{\partial L}{\partial {Z}_i}=$
 
 $\frac{c1e^{x_4}}{x_1x_2^2}=$
 
-$\frac{e^{Z_i-max({{Z}_i})}}{\sum_{i=1}^n e^{Z_i-max({{Z}_i})}}$
+$\frac{e^{Z_i-max({{Z}_i})}}{sum}$
 
 
 当 $i = target$
@@ -91,4 +91,4 @@ $x_1=\frac{e^{Z_{target}-max({{Z}_i})}}{sum}$
 
 故 $p=-1$
 
-故整体的导数为 $\frac{e^{Z_{target}-max({{Z}_i})}}{\sum_{i=1}^n e^{Z_{target}-max({{Z}_i})}}-1$
+故整体的导数为 $\frac{e^{Z_{target}-max({{Z}_i})}}{sum}-1$
