@@ -91,9 +91,7 @@ $x_1=\frac{e^{Z_{target}-max({{Z}_i})}}{sum}$
 
 故整体的导数为 $\frac{e^{Z_{target}-max({{Z}_i})}}{sum}-1$
 
-$\frac{\partial ce}{\partial Z_i}=
-\begin{cases}
-\frac{e^{Z_i-max({{Z}_i})}}{sum}, & \text{if } i \neq target \\
+$\frac{\partial ce}{\partial Z_i}=\begin{cases}\frac{e^{Z_i-max({{Z}_i})}}{sum}, & \text{if } i \neq target \\
 \frac{e^{Z_{target}-max({{Z}_i})}}{sum}-1, & \text{if } i = target
 \end{cases}$
 
