@@ -103,14 +103,65 @@ $x_1=\frac{e^{Z_{target}-max({{Z}_i})}}{sum}$
 
 $softmax(Z_i)=\frac{e^{Z_i}}{\sum_{j=1}^ne^{Z_j}}$
 
+### backward
+
 令 $softmax(Z_i) = g_1(x_1, x_2) = \frac{x_1}{x_2}$
+
+令 $sum=\sum_{j=1}^ne^{Z_j}$
 
 $\frac{\partial softmax(Z_i)}{\partial Z_i}=\frac{\partial g_1(x_1, x_2)}{\partial x_1}\frac{\partial x_1}{\partial Z_i}+\frac{\partial g_1(x_1, x_2)}{\partial x_2}\frac{\partial x_2}{\partial Z_i}$
 
 同样考虑 i 是否等于 target的两种情况
 
-当i=target
+当$i=target$
 
-### backward
+$\frac{\partial g_1(x_1, x_2)}{\partial x_1}=\frac{1}{x_2}$
+
+$\frac{\partial g_1(x_1, x_2)}{\partial x_2}=-\frac{x_1}{x_2^2}$
+
+下面计算$\frac{\partial x_1}{\partial Z_i}$
+
+令 $x_1=g_2(x_3)=e^{x_3}$
+
+令 $x_3=g_3(Z_i)=Z_i-max({{Z}_i})$
+
+$\frac{\partial x_1}{\partial Z_i}=\frac{\partial g_2(x_3)}{\partial x_3}\frac{\partial g_3(Z_i)}{\partial Z_i}=e^{x_3}\cdot1=e^{Z_i-max({{Z}_i})}$
+
+下面计算$\frac{\partial x_2}{\partial Z_i}
+
+令$x_2=g_4(x_4)=x_4+c_1$ 其中$c_1$为常数
+
+令$x_4=g_5(x_5)=e^{x_5}$
+
+令$x_5=g_6(Z_i)=Z_i-max({{Z}_i})$
+
+
+$\frac{\partial x_2}{\partial Z_i}=\frac{\partial g_4(x_4)}{\partial x_4}\frac{\partial g_5(x_5)}{\partial x_5}\frac{\partial g_6(z_t)}{\partial Z_i}$
+
+$\frac{\partial g_4(x_4)}{\partial x_4}=1$
+
+$\frac{\partial g_5(x_5)}{\partial x_5}=e^{x_5}=e^{Z_i-max({{Z}_i})}$
+
+$\frac{\partial g_6(z_t)}{\partial Z_i}=1$
+
+
+$\frac{\partial x_2}{\partial Z_i}=e^{Z_i-max({{Z}_i})}$
+
+故$\frac{\partial softmax(Z_i)}{\partial Z_i}=\frac{1}{x_2}\cdot e^{Z_i-max({{Z}_i})}+(-\frac{x_1}{x_2^2})\cdot e^{Z_i-max({{Z}_i})}$
+
+其中
+
+$x_1=e^{Z_i-max({{Z}_i})}$
+
+$x_2=sum$
+
+故$\frac{\partial softmax(Z_i)}{\partial Z_i}=\frac{e^{Z_i-max({{Z}_i})}}{sum}\cdot (1-\frac{e^{Z_i-max({{Z}_i})}}{sum})$
+
+又因为$softmax(Z_i)=\frac{e^{Z_i}}{sum}$
+
+故
+$\frac{\partial softmax(Z_i)}{\partial Z_i}=softmax(Z_i)\cdot (1-softmax(Z_i))$
+
+
 
 ## layernorm
