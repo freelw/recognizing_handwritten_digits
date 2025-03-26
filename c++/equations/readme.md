@@ -103,6 +103,14 @@ $x_1=\frac{e^{Z_{target}-max({{Z}_i})}}{sum}$
 
 $softmax(Z_i)=\frac{e^{Z_i}}{\sum_{j=1}^ne^{Z_j}}$
 
+同样考虑 i 是否等于 target的两种情况
+
+当i=target
+
+令 $softmax(Z_i) = g_1(x_1, x_2) = \frac{x_1}{x_2}$
+
+$\frac{\partial softmax(Z_i)}{\partial Z_i}=\frac{\partial g_1(x_1, x_2)}{\partial x_1}\frac{\partial x_1}{\partial Z_i}+\frac{\partial g_1(x_1, x_2)}{\partial x_2}\frac{\partial x_2}{\partial Z_i}$
+
 ### backward
 
 ## layernorm
