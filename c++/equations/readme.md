@@ -113,7 +113,7 @@ $\frac{\partial softmax(Z_i)}{\partial Z_i}=\frac{\partial g_1(x_1, x_2)}{\parti
 
 同样考虑 i 是否等于 target的两种情况
 
-当$i=target$
+当 $i=target$
 
 $\frac{\partial g_1(x_1, x_2)}{\partial x_1}=\frac{1}{x_2}$
 
