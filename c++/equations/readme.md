@@ -163,5 +163,34 @@ $x_2=sum$
 故 $\frac{\partial softmax(Z_i)}{\partial Z_i}=softmax(Z_i)\cdot (1-softmax(Z_i))$
 
 
+当 $i \neq target$
+
+令 $softmax(Z_{target})=g_1(x_1) = \frac{e^{Z_{target}-max({{Z}_i})}}{x_1} $
+
+令 $x_1=g_2(x_2)=x_2+c_1$ 其中 $c_1$ 为常数
+
+令 $x_2=g_3(x_3)=e^{x_3}$
+
+令 $x_3=g_4(Z_i)=Z_i-max({{Z}_i})$
+
+$\frac{\partial softmax(Z_{target})}{\partial Z_i}=\frac{\partial g_1(x_1)}{x_1}\frac{\partial g_2(x_2)}{\partial x_2}\frac{\partial g_3(x_3)}{\partial x_3}\frac{\partial g_4(Z_i)}{\partial Z_i}$
+
+$\frac{\partial g_1(x_1)}{x_1}=-\frac{e^{Z_{target}-max({{Z}_i})}}{sum^2}$
+
+$\frac{\partial g_2(x_2)}{\partial x_2}=1$
+
+$\frac{\partial g_3(x_3)}{\partial x_3}=e^{x_3}=e^{Z_i-max({{Z}_i})}$
+
+$\frac{\partial g_4(Z_i)}{\partial Z_i}=1$
+
+故 $\frac{\partial softmax(Z_{target})}{\partial Z_i}=-\frac{e^{Z_{target}-max({{Z}_i})}}{sum}\cdot \frac{e^{Z_i-max({{Z}_i})}}{sum}=-softmax(Z_{target})\cdot softmax(Z_i)$
+
+最终整理
+
+```math
+\frac{\partial softmax(Z_{target})}{\partial Z_i}=\begin{cases}-softmax(Z_{target})\cdot softmax(Z_i), & \text{if } i \neq target \\
+softmax(Z_i)\cdot (1-softmax(Z_i)), & \text{if } i = target
+\end{cases}
+```
 
 ## layernorm
