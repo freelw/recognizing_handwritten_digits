@@ -1,6 +1,6 @@
 # 各种导数
 
-## 交叉熵
+## softmax交叉熵
 
 ### forward 
 
@@ -71,7 +71,7 @@ $\frac{e^{Z_{target}-max({{Z}_i})}}{sum}$
 
 令 $x_3 = g_4(Z_{target})=Z_{target}-max({{Z}_i})$
 
-$p=\frac{\partial g_1(x_1)}{\partial x_1}\frac{\partial g_2(x_2)}{\partial x_2}\frac{\partial g_3(x_1)}{\partial x_3}\frac{\partial g_4(Z_{target})}{\partial Z_{target}}$
+$p=\frac{\partial g_1(x_1)}{\partial x_1}\frac{\partial g_2(x_2)}{\partial x_2}\frac{\partial g_3(x_3)}{\partial x_3}\frac{\partial g_4(Z_{target})}{\partial Z_{target}}$
 
 $\frac{\partial g_1(x_1)}{\partial x_1}=-\frac{1}{x_1}$
 
@@ -90,3 +90,19 @@ $x_1=\frac{e^{Z_{target}-max({{Z}_i})}}{sum}$
 故 $p=-1$
 
 故整体的导数为 $\frac{e^{Z_{target}-max({{Z}_i})}}{sum}-1$
+
+$\frac{\partial ce}{\partial Z_i}=
+\begin{cases}
+\frac{e^{Z_i-max({{Z}_i})}}{sum}, & \text{if } i \neq target \\
+\frac{e^{Z_{target}-max({{Z}_i})}}{sum}-1, & \text{if } i = target
+\end{cases}$
+
+## softmax
+
+### forward
+
+$softmax(Z_i)=\frac{e^{Z_i}}{\sum_{j=1}^ne^{Z_j}}$
+
+### backward
+
+## layernorm
