@@ -119,7 +119,7 @@ $\frac{\partial g_1(x_1, x_2)}{\partial x_1}=\frac{1}{x_2}$
 
 $\frac{\partial g_1(x_1, x_2)}{\partial x_2}=-\frac{x_1}{x_2^2}$
 
-下面计算$\frac{\partial x_1}{\partial Z_i}$
+下面计算 $\frac{\partial x_1}{\partial Z_i}$
 
 令 $x_1=g_2(x_3)=e^{x_3}$
 
@@ -127,24 +127,15 @@ $\frac{\partial g_1(x_1, x_2)}{\partial x_2}=-\frac{x_1}{x_2^2}$
 
 $\frac{\partial x_1}{\partial Z_i}=\frac{\partial g_2(x_3)}{\partial x_3}\frac{\partial g_3(Z_i)}{\partial Z_i}=e^{x_3}\cdot1=e^{Z_i-max({{Z}_i})}$
 
-下面计算
+下面计算 $\frac{\partial x_2}{\partial Z_i}
 
-$\frac{\partial x_2}{\partial Z_i}
+令 $x_2=g_4(x_4)=x_4+c_1$
 
-令
+其中 $c_1$ 为常数
 
-$x_2=g_4(x_4)=x_4+c_1$
+令 $x_4=g_5(x_5)=e^{x_5}$
 
-其中$c_1$为常数
-
-令
-
-$x_4=g_5(x_5)=e^{x_5}$
-
-令
-
-$x_5=g_6(Z_i)=Z_i-max({{Z}_i})$
-
+令 $x_5=g_6(Z_i)=Z_i-max({{Z}_i})$
 
 $\frac{\partial x_2}{\partial Z_i}=\frac{\partial g_4(x_4)}{\partial x_4}\frac{\partial g_5(x_5)}{\partial x_5}\frac{\partial g_6(z_t)}{\partial Z_i}$
 
