@@ -158,7 +158,7 @@ $x_2=sum$
 
 故 $\frac{\partial softmax(Z_i)}{\partial Z_i}=\frac{e^{Z_i-max({{Z}_i})}}{sum}\cdot (1-\frac{e^{Z_i-max({{Z}_i})}}{sum})$
 
-又因为$softmax(Z_i)=\frac{e^{Z_i}}{sum}$
+又因为 $softmax(Z_i)=\frac{e^{Z_i}}{sum}$
 
 故 $\frac{\partial softmax(Z_i)}{\partial Z_i}=softmax(Z_i)\cdot (1-softmax(Z_i))$
 
