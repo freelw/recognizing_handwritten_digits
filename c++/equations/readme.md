@@ -185,7 +185,9 @@ $\frac{\partial g_4(Z_i)}{\partial Z_i}=1$
 
 故
 
-$\frac{\partial softmax(Z_{target})}{\partial Z_i}=-\frac{e^{Z_{target}-max({{Z}_i})}}{sum}\cdot \frac{e^{Z_i-max({{Z}_i})}}{sum}=-softmax(Z_{target})\cdot softmax(Z_i)$
+```math
+\frac{\partial softmax(Z_{target})}{\partial Z_i}=-\frac{e^{Z_{target}-max({{Z}_i})}}{sum}\cdot \frac{e^{Z_i-max({{Z}_i})}}{sum}=-softmax(Z_{target})\cdot softmax(Z_i)
+```
 
 最终整理
 
