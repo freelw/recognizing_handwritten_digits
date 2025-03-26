@@ -127,7 +127,7 @@ $\frac{\partial g_1(x_1, x_2)}{\partial x_2}=-\frac{x_1}{x_2^2}$
 
 $\frac{\partial x_1}{\partial Z_i}=\frac{\partial g_2(x_3)}{\partial x_3}\frac{\partial g_3(Z_i)}{\partial Z_i}=e^{x_3}\cdot1=e^{Z_i-max({{Z}_i})}$
 
-下面计算 $\frac{\partial x_2}{\partial Z_i}
+下面计算 $\frac{\partial x_2}{\partial Z_i}$
 
 令 $x_2=g_4(x_4)=x_4+c_1$
 
@@ -148,7 +148,7 @@ $\frac{\partial g_6(z_t)}{\partial Z_i}=1$
 
 $\frac{\partial x_2}{\partial Z_i}=e^{Z_i-max({{Z}_i})}$
 
-故$\frac{\partial softmax(Z_i)}{\partial Z_i}=\frac{1}{x_2}\cdot e^{Z_i-max({{Z}_i})}+(-\frac{x_1}{x_2^2})\cdot e^{Z_i-max({{Z}_i})}$
+故 $\frac{\partial softmax(Z_i)}{\partial Z_i}=\frac{1}{x_2}\cdot e^{Z_i-max({{Z}_i})}+(-\frac{x_1}{x_2^2})\cdot e^{Z_i-max({{Z}_i})}$
 
 其中
 
@@ -156,12 +156,11 @@ $x_1=e^{Z_i-max({{Z}_i})}$
 
 $x_2=sum$
 
-故$\frac{\partial softmax(Z_i)}{\partial Z_i}=\frac{e^{Z_i-max({{Z}_i})}}{sum}\cdot (1-\frac{e^{Z_i-max({{Z}_i})}}{sum})$
+故 $\frac{\partial softmax(Z_i)}{\partial Z_i}=\frac{e^{Z_i-max({{Z}_i})}}{sum}\cdot (1-\frac{e^{Z_i-max({{Z}_i})}}{sum})$
 
 又因为$softmax(Z_i)=\frac{e^{Z_i}}{sum}$
 
-故
-$\frac{\partial softmax(Z_i)}{\partial Z_i}=softmax(Z_i)\cdot (1-softmax(Z_i))$
+故 $\frac{\partial softmax(Z_i)}{\partial Z_i}=softmax(Z_i)\cdot (1-softmax(Z_i))$
 
 
 
