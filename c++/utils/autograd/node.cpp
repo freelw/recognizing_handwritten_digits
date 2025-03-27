@@ -90,6 +90,26 @@ namespace autograd {
         (*loss)[0][0] = loss_value/mask_cnt;
         return loss;
     }
+
+    Node *Node::Norm() {
+        // auto *node = allocNode(w->Norm());
+        auto *tmp = allocTmpMatrix(w);
+        std::vector<DATATYPE> avg_res = w->avg();
+        std::vector<DATATYPE> var_res = w->var();
+        Shape shape = tmp->getShape();
+        for (uint i = 0; i < shape.rowCnt; ++ i) {
+            for (uint j = 0; j < shape.colCnt; ++ j) {
+                (*tmp)[i][j] = ((*w)[i][j] - avg_res[j]) / sqrt(var_res[j] + 1e-5);
+            }
+        }
+        
+        auto *node = allocNode(tmp);
+        if (is_require_grad()) {
+            // node->require_grad();
+            // node->edges.push_back(NormEdge::create(this));
+        }
+        return node;
+    }
  
     Node *Node::operator+(Node *rhs) {
         auto *node = allocNode(*w + *(rhs->w));

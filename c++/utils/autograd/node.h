@@ -29,6 +29,7 @@ namespace autograd {
         Relu,
         CrossEntropy,
         CrossEntropyMask,
+        Norm,
     };
     class Node {
         public:
@@ -87,6 +88,7 @@ namespace autograd {
             Node *CrossEntropyMask(const std::vector<uint> &labels, const std::vector<bool> &mask);
             Node *Tanh();
             Node *Sigmoid();
+            Node *Norm();
             // Node *operator*(Node &rhs);
             // Node *operator/(Node &rhs);
             // Node *operator-(Node &rhs);
