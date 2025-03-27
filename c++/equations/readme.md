@@ -198,3 +198,5 @@ softmax(Z_i)\cdot (1-softmax(Z_i)), & \text{if } i = target
 ```
 
 ## layernorm
+
+参考 [https://zhuanlan.zhihu.com/p/634644501](https://zhuanlan.zhihu.com/p/634644501)
