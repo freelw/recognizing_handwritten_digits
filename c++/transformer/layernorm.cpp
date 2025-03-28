@@ -1,11 +1,12 @@
 #include "layernorm.h"
 
-
 LayerNorm::LayerNorm(uint dim) {
     mgamma = new Matrix(Shape(dim, 1));
     mbeta = new Matrix(Shape(dim, 1));
     gamma = new autograd::Node(mgamma, true);
     beta = new autograd::Node(mbeta, true);
+    gamma->require_grad();
+    beta->require_grad();
     pgamma = new autograd::Parameters(gamma);
     pbeta = new autograd::Parameters(beta);
 }
