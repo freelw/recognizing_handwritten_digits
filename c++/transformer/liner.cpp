@@ -60,5 +60,10 @@ namespace autograd {
         }
         return liner->forward(input);
     }
+
+    std::vector<Parameters *> LazyLiner::get_parameters() {
+        assert(liner != nullptr); // adam 必须在每一轮结束获取一次参数
+        return liner->get_parameters();
+    }
     
 } // namespace autograd

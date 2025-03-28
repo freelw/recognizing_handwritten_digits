@@ -26,6 +26,7 @@ namespace autograd {
             LazyLiner(uint _output_num, bool _bias = true);
             ~LazyLiner();
             Node *forward(Node *input);
+            std::vector<Parameters *> get_parameters();
         private:
             uint output_num;
             bool bias;
