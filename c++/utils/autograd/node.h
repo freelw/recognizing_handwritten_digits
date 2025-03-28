@@ -105,6 +105,15 @@ namespace autograd {
             int ref_cnt;
     };
 
+    Node *cat(const std::vector<Node *> &nodes, uint dim = 0);
+    Node *cat0(const std::vector<Node *> &nodes);
+    Node *cat1(const std::vector<Node *> &nodes);
+    Node *allocNode(Matrix *w);
+    void freeAllNodes();
+    void freeAllEdges();
+    TmpNodesStats tmpNodesStats();
+    TmpEdgesStats tmpEdgesStats();
+
     class Edge {
         public:
             Edge(
@@ -409,14 +418,51 @@ namespace autograd {
             uint offset;
     };
 
-    Node *cat(const std::vector<Node *> &nodes, uint dim = 0);
-    Node *cat0(const std::vector<Node *> &nodes);
-    Node *cat1(const std::vector<Node *> &nodes);
-    Node *allocNode(Matrix *w);
-    void freeAllNodes();
-    void freeAllEdges();
-    TmpNodesStats tmpNodesStats();
-    TmpEdgesStats tmpEdgesStats();
+    class NormEdge: public Edge {
+        public:
+            static Edge* create(
+                Node *_node,
+                Matrix *w_hat,
+                const std::vector<DATATYPE> &_avg_res, const std::vector<DATATYPE> &_var_res) {
+                Edge *edge = new NormEdge(_node, w_hat, _avg_res, _var_res);
+                edges.push_back(edge);
+                return edge;
+            }
+            NormEdge(
+                Node *_node,
+                Matrix *_w_hat,
+                const std::vector<DATATYPE> &_avg_res,
+                const std::vector<DATATYPE> &_var_res
+            ) : Edge(OpType::Norm, _node),
+                w_hat(_w_hat),
+                avg_res(_avg_res),
+                var_res(_var_res) {}
+            virtual ~NormEdge() {}
+            void backward(Matrix *grad) override {
+                assert(node->is_require_grad());
+                std::vector<Node *> v_w;
+                for (uint k = 0; k < grad->getShape().colCnt; k++) {
+                    uint rowCnt = grad->getShape().rowCnt;
+                    Matrix *mw = allocTmpMatrix(Shape(rowCnt, rowCnt));
+                    for (uint i = 0; i < rowCnt; i++) {
+                        for (uint j = 0; j < rowCnt; j++) {
+                            int eq = i == j;
+                            auto sigma = std::sqrt(var_res[k] + 1e-5);
+                            auto x_hat_i = (*w_hat)[i][k];
+                            auto x_hat_j = (*w_hat)[j][k];
+                            (*mw)[i][j] = (eq - 1.0 / rowCnt - 1.0 / rowCnt * x_hat_i * x_hat_j) / sigma;
+                        }
+                    }
+                    v_w.push_back(allocNode(mw));
+                }
+                *node->get_grad() += *(cat(v_w, 0)->get_weight());
+            }
+        private:
+            Matrix *w_hat;
+            std::vector<DATATYPE> avg_res;
+            std::vector<DATATYPE> var_res;
+
+    };
 } // namespace autograd
 
 #endif

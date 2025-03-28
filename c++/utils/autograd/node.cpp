@@ -92,7 +92,6 @@ namespace autograd {
     }
 
     Node *Node::Norm() {
-        // auto *node = allocNode(w->Norm());
         auto *tmp = allocTmpMatrix(w);
         std::vector<DATATYPE> avg_res = w->avg();
         std::vector<DATATYPE> var_res = w->var();
