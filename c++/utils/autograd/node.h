@@ -96,8 +96,9 @@ namespace autograd {
             Node *Softmax();
             Node *Transpose();
             Node *Div(DATATYPE v);
-            std::vector<Node *> split(uint dim);
+            std::vector<Node *> split(uint dim, uint step = 1);
             std::vector<Node *> split0();
+            std::vector<Node *> split1(uint step);
             // Node *operator*(Node &rhs);
             // Node *operator/(Node &rhs);
             // Node *operator-(Node &rhs);

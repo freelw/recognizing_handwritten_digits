@@ -369,7 +369,7 @@ namespace autograd {
     Node *cat(const std::vector<Node *> &nodes, uint dim) {
         assert(dim == 0 || dim == 1);
         assert(nodes.size() > 0);
-        if (dim == 0) {
+        if (dim == 0) { // 这里似乎反了，将错就错，dim == 0 时我们拼接行，split也要这样实现
             return cat0(nodes);
         } else if (dim == 1) {
             return cat1(nodes);
@@ -396,14 +396,36 @@ namespace autograd {
         return res;
     }
 
-    std::vector<Node *> Node::split(uint dim) {
+    std::vector<Node *> Node::split1(uint step) {
+        Shape shape = this->get_weight()->getShape();
+        uint colCnt = shape.colCnt;
+        uint rowCnt = shape.rowCnt;
+        assert(step > 0 && rowCnt % step == 0);
+        std::vector<Node *> res;
+        for (uint i = 0; i < rowCnt; i += step) {
+            Matrix *m = allocTmpMatrix(Shape(step, colCnt));
+            Node *n = allocNode(m);
+            if (is_require_grad()) {
+                n->require_grad();
+            }
+            for (uint j = 0; j < step; ++ j) {
+                for (uint k = 0; k < colCnt; ++ k) {
+                    (*m)[j][k] = (*this->get_weight())[i+j][k];
+                }
+            }
+            res.push_back(n);
+        }
+        return res;
+    }
+
+    std::vector<Node *> Node::split(uint dim, uint step) {
         assert(dim == 0 || dim == 1);
-        if (dim == 0) {
+        if (dim == 0) { // 将错就错，dim == 0 时我们切割行，cat也要这样实现
+            assert(step == 1);
             return split0();
             
         } else if (dim == 1) {
-            assert(false);
-            return {};
+            return split1(step);
         }
         return {};
     }
