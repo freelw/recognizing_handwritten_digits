@@ -492,11 +492,6 @@ namespace autograd {
                 : Edge(Softmax, _node), res(_res) {}
             virtual ~SoftmaxEdge() {}
             void backward(Matrix *grad) override {
-                std::cout << "SoftmaxEdge input grad : " << endl;
-                std::cout << *grad << endl;
-
-                std::cout << "SoftmaxEdge res : " << endl;
-                std::cout << *res->get_weight() << endl;
                 assert(grad->getShape().colCnt == node->getShape().colCnt);
                 assert(node->is_require_grad());
                 Matrix *softmax_grad = allocTmpMatrix(grad->getShape());
@@ -513,8 +508,6 @@ namespace autograd {
                         }
                     }
                 }
-                std::cout << "softmax_grad : " << std::endl;
-                std::cout << *softmax_grad << std::endl;
                 assert(softmax_grad->checkShape(grad->getShape()));
                 *node->get_grad() += *softmax_grad;
             }
