@@ -2,36 +2,45 @@
 #include "xavier.h"
 
 namespace autograd {
-    Liner::Liner(uint input_num, uint output_num) {
+    Liner::Liner(uint input_num, uint output_num, bool _bias) 
+        : bias(_bias) {
         mW = new Matrix(Shape(output_num, input_num));
-        mb = new Matrix(Shape(output_num, 1));
         init_weight(mW, xavier_init_sigmoid(mW));
-        mb->zero();
         W = new Node(mW, true);
-        b = new Node(mb, true);
         W->require_grad();
-        b->require_grad();
         PW = new Parameters(W);
-        Pb = new Parameters(b);
+
+        if (bias) {
+            mb = new Matrix(Shape(output_num, 1));
+            mb->zero();
+            b = new Node(mb, true);
+            b->require_grad();
+            Pb = new Parameters(b);
+        }
     }
 
     Liner::~Liner() {
         delete mW;
-        delete mb;
         delete W;
-        delete b;
         delete PW;
-        delete Pb;
+        if (bias) {
+            delete mb;
+            delete b;
+            delete Pb;
+        }
     }
 
     Node *Liner::forward(Node *input) {
-        return W->at(input)->expand_add(b);
+        auto node = W->at(input);
+        return bias ? node->expand_add(b) : node;
     }
 
     std::vector<Parameters *> Liner::get_parameters() {
         std::vector<Parameters *> res;
         res.push_back(PW);
-        res.push_back(Pb);
+        if (bias) {
+            res.push_back(Pb);
+        }
         return res;
     }
     
