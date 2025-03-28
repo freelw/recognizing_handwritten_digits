@@ -30,3 +30,10 @@ autograd::Node* LayerNorm::forward(autograd::Node* x) {
     autograd::Node *gammas = autograd::cat(v_gamma, 0);
     return (*gammas * x->Norm())->expand_add(beta);
 }
+
+std::vector<autograd::Parameters*> LayerNorm::parameters() {
+    std::vector<autograd::Parameters*> res;
+    res.push_back(pgamma);
+    res.push_back(pbeta);
+    return res;
+}
