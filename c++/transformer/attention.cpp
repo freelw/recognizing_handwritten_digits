@@ -14,10 +14,19 @@ DotProductAttetion::~DotProductAttetion() {
     }
 }
 
+void mask(autograd::Node *node, uint valid_len) {
+    for (uint i = valid_len; i < node->get_weight()->getShape().rowCnt; i++) {
+        for (uint j = 0; j < node->get_weight()->getShape().colCnt; j++) {
+            (*node->get_weight())[i][j] = -1e6;
+        }
+    }
+}
+
 std::vector<autograd::Node *> DotProductAttetion::forward(
     const std::vector<autograd::Node *> &Q,
     const std::vector<autograd::Node *> &K,
-    const std::vector<autograd::Node *> &V
+    const std::vector<autograd::Node *> &V,
+    const std::vector<uint> &valid_lens
 ) {
     assert (K.size() == V.size());
     std::vector<autograd::Node *> res;
@@ -27,6 +36,7 @@ std::vector<autograd::Node *> DotProductAttetion::forward(
         autograd::Node *k = K[i];
         autograd::Node *score = q->Transpose()->at(k)->Transpose();
         score = score->Div(sqrt(k->getShape().rowCnt));
+        mask(score, valid_lens[i]);
         score = score->Softmax();
         scores.push_back(score);
     }

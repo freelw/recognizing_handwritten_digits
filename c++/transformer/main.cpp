@@ -71,7 +71,7 @@ void test_softmax() {
     autograd::freeAllEdges();
 }
 
-void test_attention() {
+void test_attention(const std::vector<uint> &valid_lens) {
 
     std::vector<autograd::Node *> queries;
 
@@ -184,7 +184,7 @@ void test_attention() {
 
     DotProductAttetion attention(0);
 
-    std::vector<autograd::Node *> res = attention.forward(queries, keys, values);
+    std::vector<autograd::Node *> res = attention.forward(queries, keys, values, valid_lens);
 
     std::vector<uint> labels = {2, 3};
 
@@ -220,9 +220,24 @@ void test_attention() {
     autograd::freeAllEdges();
 }
 
+void test_attention_without_mask() {
+
+    std::vector<uint> valid_lens = {5, 5}; // all valid
+
+    test_attention(valid_lens);
+}
+
+void test_attention_with_mask() {
+
+    std::vector<uint> valid_lens = {2, 4}; // 3 valid for the first query
+
+    test_attention(valid_lens);
+}
+
 int main() {
     // test_layernorm();
     // test_softmax();
-    test_attention();
+    // test_attention_without_mask();
+    test_attention_with_mask();
     return 0;
 }
