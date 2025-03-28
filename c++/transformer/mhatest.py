@@ -179,7 +179,7 @@ def test(valid_lens):
     print("res:", res)
 
 def test_mha():
-    valid_lens = torch.tensor([2, 4])
+    valid_lens = torch.tensor([5, 5])
     test(valid_lens)
 
 if '__main__' == __name__:

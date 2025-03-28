@@ -52,7 +52,7 @@ namespace autograd {
     }
 
     LazyLiner::LazyLiner(uint _output_num, bool _bias) 
-        : output_num(_output_num), bias(_bias) {
+        : output_num(_output_num), bias(_bias), liner(nullptr) {
     }
 
     LazyLiner::~LazyLiner() {
