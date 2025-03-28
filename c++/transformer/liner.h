@@ -7,7 +7,7 @@
 namespace autograd {
     class Liner {
         public:
-            Liner(uint input_num, uint output_num, DATATYPE sigma);
+            Liner(uint input_num, uint output_num);
             ~Liner();
             Node *forward(Node *input);
             std::vector<Parameters *> get_parameters();

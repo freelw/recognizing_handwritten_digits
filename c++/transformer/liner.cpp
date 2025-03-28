@@ -2,7 +2,7 @@
 #include "xavier.h"
 
 namespace autograd {
-    Liner::Liner(uint input_num, uint output_num, DATATYPE sigma) {
+    Liner::Liner(uint input_num, uint output_num) {
         mW = new Matrix(Shape(output_num, input_num));
         mb = new Matrix(Shape(output_num, 1));
         init_weight(mW, xavier_init_sigmoid(mW));
