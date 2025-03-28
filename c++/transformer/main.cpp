@@ -186,10 +186,34 @@ void test_attention() {
 
     std::vector<autograd::Node *> res = attention.forward(queries, keys, values);
 
+    std::vector<uint> labels = {2, 3};
+
+    autograd::Node *loss = autograd::cat(res, 0)->CrossEntropy(labels);
+
     cout << "res: " << endl;
     for (auto r : res) {
         cout << *r->get_weight() << endl;
     }
+
+    cout << "loss: " << endl;
+    cout << *loss->get_weight() << endl;
+
+    loss->backward();
+
+    cout << "q1 grad: " << endl;
+    cout << *q1->get_grad() << endl;
+    cout << "q2 grad: " << endl;
+    cout << *q2->get_grad() << endl;
+
+    cout << "k1 grad: " << endl;
+    cout << *k1->get_grad() << endl;
+    cout << "k2 grad: " << endl;
+    cout << *k2->get_grad() << endl;
+
+    cout << "v1 grad: " << endl;
+    cout << *v1->get_grad() << endl;
+    cout << "v2 grad: " << endl;
+    cout << *v2->get_grad() << endl;
 
     freeTmpMatrix();
     autograd::freeAllNodes();

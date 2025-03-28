@@ -92,6 +92,11 @@ def test_atttion():
     ]
 
     values = torch.tensor(values, dtype=torch.float32)
+
+    queries.requires_grad = True
+    keys.requires_grad = True
+    values.requires_grad = True
+
     valid_lens = torch.tensor([5, 5])
 
     attention = DotProductAttention(dropout=0)
@@ -99,6 +104,31 @@ def test_atttion():
     res = attention(queries, keys, values, valid_lens)
 
     print("res:", res)
+
+    labels = [2, 3]
+
+    #convert labels to tensor
+
+    labels = torch.tensor(labels, dtype=torch.long)
+
+    loss = nn.CrossEntropyLoss()
+
+    res = res.reshape(-1, res.shape[-1])
+
+    # print res again
+
+    print("Reshaped res:", res)
+
+    loss_value = loss(res, labels)
+
+    print("loss_value:", loss_value)
+
+    loss_value.backward()
+
+    print("queries.grad:", queries.grad)
+    print("keys.grad:", keys.grad)
+    print("values.grad:", values.grad)
+
 
 if '__main__' == __name__:
     test_atttion()
