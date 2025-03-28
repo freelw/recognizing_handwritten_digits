@@ -18,7 +18,10 @@ print("Gamma (weight):", layer_norm.weight)
 print("Beta (bias):", layer_norm.bias)
 
 # 构造输入特征 x
-x = [0, 1, 2, 3, 4, 5]
+x = [
+    [0, 1, 2, 3, 4, 5],
+    [1, 2, 3, 4, 5, 6],
+]
 
 # 将输入特征 x 转换为张量
 
@@ -42,10 +45,10 @@ print("LayerNorm 层的输出的均值：", y.mean())
 
 print("LayerNorm 层的输出的方差：", y.var())
 
-labels = [2]
+labels = [2, 3]
 
 # Reshape y to have a batch size of 1 and 6 classes
-y = y.unsqueeze(0)
+#y = y.unsqueeze(0)
 
 # print y again
 
