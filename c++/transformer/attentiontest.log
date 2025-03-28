@@ -1,0 +1,11 @@
+(d2l) cs@cs-desktop:~/project/recognizing_handwritten_digits/c++/transformer$ ./transformer 
+res: 
+[[3.30283]
+ [3.30283]
+ [3.30283]
+ [3.30283]]
+
+[[4.30565]
+ [4.30565]
+ [4.30565]
+ [4.30565]]

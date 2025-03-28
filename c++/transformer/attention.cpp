@@ -19,8 +19,7 @@ std::vector<autograd::Node *> DotProductAttetion::forward(
     const std::vector<autograd::Node *> &K,
     const std::vector<autograd::Node *> &V
 ) {
-
-    assert (Q.size() == K.size() && K.size() == V.size());
+    assert (K.size() == V.size());
     std::vector<autograd::Node *> res;
     std::vector<autograd::Node *> scores;
     for (size_t i = 0; i < Q.size(); i++) {
