@@ -1,11 +1,18 @@
 #include "liner.h"
 #include "xavier.h"
 
+#define DEBUG_GRAD
+
 namespace autograd {
     Liner::Liner(uint input_num, uint output_num, bool _bias) 
         : bias(_bias) {
         mW = new Matrix(Shape(output_num, input_num));
-        init_weight(mW, xavier_init_sigmoid(mW));
+        #ifdef DEBUG_GRAD
+            #pragma message("DEBUG_GRAD")
+            mW->fill(1);
+        #else
+            init_weight(mW, xavier_init_sigmoid(mW));
+        #endif
         W = new Node(mW, true);
         W->require_grad();
         PW = new Parameters(W);
