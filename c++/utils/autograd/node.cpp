@@ -148,6 +148,16 @@ namespace autograd {
         }
         return node;
     }
+
+    Node *Node::Div(DATATYPE v) {
+        auto *tmp = allocTmpMatrix(*w / v);
+        auto *node = allocNode(tmp);
+        if (is_require_grad()) {
+            node->require_grad();
+            node->edges.push_back(DivEdge::create(this, v));
+        }
+        return node;
+    }
  
     Node *Node::operator+(Node *rhs) {
         auto *node = allocNode(*w + *(rhs->w));

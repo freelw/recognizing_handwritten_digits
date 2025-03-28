@@ -14,9 +14,16 @@ class DotProductAttetion {
             const std::vector<autograd::Node *> &K,
             const std::vector<autograd::Node *> &V
         );
+        void train(bool _is_training) {
+            is_training = _is_training;
+        }
+        bool training() {
+            return is_training;
+        }
     private:
         DATATYPE dropout;
         autograd::Dropout *dropout_layer;
+        bool is_training;
 };
 
 #endif

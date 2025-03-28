@@ -95,6 +95,7 @@ namespace autograd {
             Node *Norm();
             Node *Softmax();
             Node *Transpose();
+            Node *Div(DATATYPE v);
             std::vector<Node *> split(uint dim);
             std::vector<Node *> split0();
             // Node *operator*(Node &rhs);
@@ -531,6 +532,24 @@ namespace autograd {
                 assert(node->is_require_grad());
                 *node->get_grad() += *(grad->transpose());
             }
+    };
+
+    class DivEdge: public Edge {
+        public:
+            static Edge* create(Node *_node, DATATYPE _v) {
+                Edge *edge = new DivEdge(_node, _v);
+                edges.push_back(edge);
+                return edge;
+            }
+            DivEdge(Node *_node, DATATYPE _v)
+                : Edge(OpType::Div, _node), v(_v) {}
+            virtual ~DivEdge() {}
+            void backward(Matrix *grad) override {
+                assert(node->is_require_grad());
+                *node->get_grad() += *(*grad / v);
+            }
+        private:
+            DATATYPE v;
     };
 } // namespace autograd
 
