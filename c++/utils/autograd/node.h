@@ -25,6 +25,8 @@ namespace autograd {
         Tanh,
         Cat0,
         Cat1,
+        Split0,
+        Split1,
         Sigmoid,
         Relu,
         CrossEntropy,
@@ -89,6 +91,8 @@ namespace autograd {
             Node *Tanh();
             Node *Sigmoid();
             Node *Norm();
+            std::vector<Node *> split(uint dim);
+            std::vector<Node *> split0();
             // Node *operator*(Node &rhs);
             // Node *operator/(Node &rhs);
             // Node *operator-(Node &rhs);
@@ -108,6 +112,7 @@ namespace autograd {
     Node *cat(const std::vector<Node *> &nodes, uint dim = 0);
     Node *cat0(const std::vector<Node *> &nodes);
     Node *cat1(const std::vector<Node *> &nodes);
+    
     Node *allocNode(Matrix *w);
     void freeAllNodes();
     void freeAllEdges();
@@ -442,6 +447,7 @@ namespace autograd {
                 eps(_eps) {}
             virtual ~NormEdge() {}
             void backward(Matrix *grad) override {
+                assert(grad->getShape().colCnt == node->getShape().colCnt);
                 assert(node->is_require_grad());
                 std::vector<Node *> v_w;
                 for (uint k = 0; k < grad->getShape().colCnt; k++) {
@@ -458,7 +464,15 @@ namespace autograd {
                     }
                     v_w.push_back(allocNode(mw));
                 }
-                *node->get_grad() += *(cat(v_w, 0)->get_weight());
+                std::vector<Node *> v_grads = allocNode(grad)->split(0);
+                assert(v_w.size() == v_grads.size());
+                std::vector<Node *> v_res;
+                for (uint i = 0; i < v_w.size(); i++) {
+                    v_res.push_back(v_w[i]->at(v_grads[i]));
+                }
+                *node->get_grad() += *(cat(v_res, 0)->get_weight());
+
+                // *node->get_grad() += *(cat(v_w, 0)->get_weight());
             }
         private:
             Matrix *w_hat;

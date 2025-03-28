@@ -329,6 +329,37 @@ namespace autograd {
         return nullptr;
     }
 
+    std::vector<Node *> Node::split0() {
+        Shape shape = this->get_weight()->getShape();
+        uint colCnt = shape.colCnt;
+        uint rowCnt = shape.rowCnt;
+        std::vector<Node *> res;
+        for (uint i = 0; i < colCnt; ++ i) {
+            Matrix *m = allocTmpMatrix(Shape(rowCnt, 1));
+            Node *n = allocNode(m);
+            if (is_require_grad()) {
+                n->require_grad();
+            }
+            for (uint j = 0; j < rowCnt; ++ j) {
+                (*m)[j][0] = (*this->get_weight())[j][i];
+            }
+            res.push_back(n);
+        }
+        return res;
+    }
+
+    std::vector<Node *> Node::split(uint dim) {
+        assert(dim == 0 || dim == 1);
+        if (dim == 0) {
+            return split0();
+            
+        } else if (dim == 1) {
+            assert(false);
+            return {};
+        }
+        return {};
+    }
+
     void Node::backward() {
         assert(ref_cnt == 0);
         if (!is_require_grad()) {
