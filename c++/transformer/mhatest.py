@@ -178,6 +178,31 @@ def test(valid_lens):
 
     print("res:", res)
 
+    labels = [2, 3]
+
+    #convert labels to tensor
+
+    labels = torch.tensor(labels, dtype=torch.long)
+
+    loss = nn.CrossEntropyLoss()
+
+    res = res.reshape(-1, res.shape[-1])
+
+    # print res again
+
+    print("Reshaped res:", res)
+
+    loss_value = loss(res, labels)
+
+    print("loss_value:", loss_value)
+
+    loss_value.backward()
+
+    print("queries.grad:", queries.grad)
+    print("keys.grad:", keys.grad)
+    print("values.grad:", values.grad)
+
+
 def test_mha():
     valid_lens = torch.tensor([5, 5])
     test(valid_lens)
