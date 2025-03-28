@@ -51,3 +51,25 @@ std::vector<autograd::Node *> DotProductAttetion::forward(
     }
     return res;
 }
+
+MultiHeadAttention::MultiHeadAttention(
+    uint _num_heads,
+    uint _num_hidden,
+    DATATYPE dropout) 
+    : num_heads(_num_heads), num_hidden(_num_hidden), attention(nullptr), is_training(true) {
+    assert(_num_hidden % num_heads == 0);
+    attention = new DotProductAttetion(dropout);
+    Wq = new autograd::LazyLiner(num_hidden, false);
+    Wk = new autograd::LazyLiner(num_hidden, false);
+    Wv = new autograd::LazyLiner(num_hidden, false);
+    Wo = new autograd::LazyLiner(num_hidden, false);
+}
+
+MultiHeadAttention::~MultiHeadAttention() {
+    delete Wo;
+    delete Wv;
+    delete Wk;
+    delete Wq;
+    delete attention;
+}
+

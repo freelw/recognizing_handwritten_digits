@@ -43,5 +43,22 @@ namespace autograd {
         }
         return res;
     }
+
+    LazyLiner::LazyLiner(uint _output_num, bool _bias) 
+        : output_num(_output_num), bias(_bias) {
+    }
+
+    LazyLiner::~LazyLiner() {
+        if (liner != nullptr) {
+            delete liner;
+        }
+    }
+
+    Node *LazyLiner::forward(Node *input) {
+        if (liner == nullptr) {
+            liner = new Liner(input->get_weight()->getShape().rowCnt, output_num, bias);
+        }
+        return liner->forward(input);
+    }
     
 } // namespace autograd

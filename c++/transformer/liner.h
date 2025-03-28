@@ -20,5 +20,16 @@ namespace autograd {
             Parameters *PW;
             Parameters *Pb;
     };
+
+    class LazyLiner {
+        public:
+            LazyLiner(uint _output_num, bool _bias = true);
+            ~LazyLiner();
+            Node *forward(Node *input);
+        private:
+            uint output_num;
+            bool bias;
+            Liner *liner;
+    };
 } // namespace autograd
 #endif
