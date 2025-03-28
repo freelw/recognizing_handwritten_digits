@@ -45,6 +45,7 @@ class MultiHeadAttention {
         bool training() {
             return is_training;
         }
+        std::vector<autograd::Parameters *> get_parameters();
     private:
         uint num_heads;
         uint num_hidden;

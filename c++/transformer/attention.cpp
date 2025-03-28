@@ -73,3 +73,25 @@ MultiHeadAttention::~MultiHeadAttention() {
     delete attention;
 }
 
+std::vector<autograd::Node *> MultiHeadAttention::forward(
+    const std::vector<autograd::Node *> &queries,
+    const std::vector<autograd::Node *> &keys,
+    const std::vector<autograd::Node *> &values,
+    const std::vector<uint> &valid_lens
+) {
+
+}
+
+std::vector<autograd::Parameters *> MultiHeadAttention::get_parameters() {
+    std::vector<autograd::Parameters *> res;
+    auto q_params = Wq->get_parameters();
+    auto k_params = Wk->get_parameters();
+    auto v_params = Wv->get_parameters();
+    auto o_params = Wo->get_parameters();
+    res.insert(res.end(), q_params.begin(), q_params.end());
+    res.insert(res.end(), k_params.begin(), k_params.end());
+    res.insert(res.end(), v_params.begin(), v_params.end());
+    res.insert(res.end(), o_params.begin(), o_params.end());
+    return res;
+}
+
