@@ -79,7 +79,52 @@ std::vector<autograd::Node *> MultiHeadAttention::forward(
     const std::vector<autograd::Node *> &values,
     const std::vector<uint> &valid_lens
 ) {
+    assert(num_hidden % num_heads == 0);
+    assert(queries.size() == keys.size());
+    assert(queries.size() == values.size());
+    uint step = num_hidden / num_heads;
 
+    std::vector<autograd::Node *> split_queries;
+    std::vector<autograd::Node *> split_keys;
+    std::vector<autograd::Node *> split_values;
+    std::vector<uint> split_valid_lens;
+
+    split_queries.reserve(queries.size() * num_heads);
+    split_keys.reserve(keys.size() * num_heads);
+    split_values.reserve(values.size() * num_heads);
+    split_valid_lens.reserve(valid_lens.size() * num_heads);
+
+    for (auto & q : queries) {
+        std::vector<autograd::Node *> tmp = Wq->forward(q)->split(1, step);
+        split_queries.insert(split_queries.end(), tmp.begin(), tmp.end());
+    }
+    for (auto & k : keys) {
+        std::vector<autograd::Node *> tmp = Wk->forward(k)->split(1, step);
+        split_keys.insert(split_keys.end(), tmp.begin(), tmp.end());   
+    }
+    for (auto & v : values) {
+        std::vector<autograd::Node *> tmp = Wv->forward(v)->split(1, step);
+        split_values.insert(split_values.end(), tmp.begin(), tmp.end());
+    }
+    for (auto & len : valid_lens) {
+        for (uint i = 0; i < num_heads; i++) {
+            split_valid_lens.push_back(len);
+        }
+    }
+
+    std::vector<autograd::Node *> atts = attention->forward(split_queries, split_keys, split_values, split_valid_lens);
+    assert(atts.size() == split_queries.size());
+    std::vector<autograd::Node *> res;
+    res.reserve(queries.size());
+    for (uint i = 0; i < atts.size(); i += num_heads) {
+        std::vector<autograd::Node *> tmp;
+        for (uint j = 0; j < num_heads; j++) {
+            tmp.push_back(atts[i + j]);
+        }
+        autograd::Node *att = autograd::cat(tmp, 1);
+        res.push_back(Wo->forward(att));
+    }
+    return res;
 }
 
 std::vector<autograd::Parameters *> MultiHeadAttention::get_parameters() {
