@@ -110,6 +110,34 @@ namespace autograd {
         }
         return node;
     }
+
+    Node *Node::Softmax() {
+        auto *tmp = allocTmpMatrix(w);
+        Shape shape = tmp->getShape();
+        for (uint j = 0; j < shape.colCnt; ++ j) {
+            DATATYPE max = (*w)[0][j];
+            for (uint i = 0; i < shape.rowCnt; ++ i) {
+                if (max < (*w)[i][j]) {
+                    max = (*w)[i][j];
+                }
+            }
+            DATATYPE sum = 0;
+            for (uint i = 0; i < shape.rowCnt; ++ i) {
+                DATATYPE e = std::exp((*w)[i][j] - max);
+                sum += e;
+                (*tmp)[i][j] = e;
+            }
+            for (uint i = 0; i < shape.rowCnt; ++ i) {
+                (*tmp)[i][j] /= sum;
+            }
+        }
+        auto *node = allocNode(tmp);
+        if (is_require_grad()) {
+            node->require_grad();
+            node->edges.push_back(SoftmaxEdge::create(this, node));
+        }
+        return node;
+    }
  
     Node *Node::operator+(Node *rhs) {
         auto *node = allocNode(*w + *(rhs->w));

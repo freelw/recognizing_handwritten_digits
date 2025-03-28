@@ -32,6 +32,7 @@ namespace autograd {
         CrossEntropy,
         CrossEntropyMask,
         Norm,
+        Softmax,
     };
     class Node {
         public:
@@ -91,6 +92,7 @@ namespace autograd {
             Node *Tanh();
             Node *Sigmoid();
             Node *Norm();
+            Node *Softmax();
             std::vector<Node *> split(uint dim);
             std::vector<Node *> split0();
             // Node *operator*(Node &rhs);
@@ -471,15 +473,46 @@ namespace autograd {
                     v_res.push_back(v_w[i]->at(v_grads[i]));
                 }
                 *node->get_grad() += *(cat(v_res, 0)->get_weight());
-
-                // *node->get_grad() += *(cat(v_w, 0)->get_weight());
             }
         private:
             Matrix *w_hat;
             std::vector<DATATYPE> avg_res;
             std::vector<DATATYPE> var_res;
             DATATYPE eps;
+    };
 
+    class SoftmaxEdge: public Edge {
+        public:
+            static Edge* create(Node *_node, Node *_res) {
+                Edge *edge = new SoftmaxEdge(_node, _res);
+                edges.push_back(edge);
+                return edge;
+            }
+            SoftmaxEdge(Node *_node, Node *_res)
+                : Edge(Softmax, _node), res(_res) {}
+            virtual ~SoftmaxEdge() {}
+            void backward(Matrix *grad) override {
+                assert(grad->getShape().colCnt == node->getShape().colCnt);
+                assert(node->is_require_grad());
+                Matrix *softmax_grad = allocTmpMatrix(grad->getShape());
+                uint rowCnt = grad->getShape().rowCnt;
+                uint colCnt = grad->getShape().colCnt;
+                for (uint k = 0; k < colCnt; k++) {
+                    for (uint target = 0; target < rowCnt; target++) {
+                        for (uint i = 0; i < rowCnt; i++) {
+                            if (i != target) {
+                                (*softmax_grad)[target][k] += -(*node->get_weight())[target][k] * (*node->get_weight())[i][k];
+                            } else {
+                                (*softmax_grad)[i][k] += (*node->get_weight())[i][k] * (1 - (*node->get_weight())[i][k]);
+                            }
+                        }
+                    }
+                }
+                assert(softmax_grad->checkShape(grad->getShape()));
+                (*node->get_grad()) += *(*softmax_grad * *grad);
+            }
+        private:
+            Node *res;
     };
 } // namespace autograd
 
