@@ -405,6 +405,30 @@ namespace autograd {
             uint offset;
     };
 
+    class SplitEdge1: public Edge {
+        public:
+            static Edge* create(Node *_node, uint _step) {
+                Edge *edge = new SplitEdge1(_node, _step);
+                edges.push_back(edge);
+                return edge;
+            }
+            SplitEdge1(Node *_node, uint _step)
+                : Edge(OpType::Split1, _node), step(_step){}
+            virtual ~SplitEdge1() {}
+            void backward(Matrix *grad) override {
+                assert(node->is_require_grad());
+                Shape shape = grad->getShape();
+                uint rowBase = step * shape.rowCnt;
+                for (uint i = 0; i < shape.rowCnt; i ++) {
+                    for (uint j = 0; j < shape.colCnt; ++ j) {
+                        *(node->get_grad())[i + rowBase][j] += (*grad)[i][j];
+                    }
+                }
+            }
+        private:
+            uint step;
+    };
+
     class CatEdge1: public Edge {
         public:
             static Edge* create(Node *_node, uint _offset) {
