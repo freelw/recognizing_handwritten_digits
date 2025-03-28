@@ -44,6 +44,16 @@ class DotProductAttention(nn.Module):  #@save
         return torch.bmm(self.dropout(self.attention_weights), values)
 
 
+# 定义初始化权重的钩子函数
+def init_weights(module, input):
+    # print("init_weights 0")
+    # print(module)
+    if isinstance(module, nn.Linear):
+        constant_(module.weight, 1.0)
+        print("init_weights")
+        # 移除钩子，保证只执行一次
+        module._forward_pre_hooks.pop(list(module._forward_pre_hooks.keys())[0])
+
 class MultiHeadAttention:
     """Multi-head attention."""
     def __init__(self, num_hiddens, num_heads, dropout, bias=False, **kwargs):
@@ -54,10 +64,14 @@ class MultiHeadAttention:
         self.W_k = nn.LazyLinear(num_hiddens, bias=bias)
         self.W_v = nn.LazyLinear(num_hiddens, bias=bias)
         self.W_o = nn.LazyLinear(num_hiddens, bias=bias)
-        constant_(self.W_q.weight, 1.0)
-        constant_(self.W_k.weight, 1.0)
-        constant_(self.W_v.weight, 1.0)
-        constant_(self.W_o.weight, 1.0)
+        self.W_q.register_forward_pre_hook(init_weights)
+        self.W_k.register_forward_pre_hook(init_weights)
+        self.W_v.register_forward_pre_hook(init_weights)
+        self.W_o.register_forward_pre_hook(init_weights)
+        # constant_(self.W_q.weight, 1.0)
+        # constant_(self.W_k.weight, 1.0)
+        # constant_(self.W_v.weight, 1.0)
+        # constant_(self.W_o.weight, 1.0)
 
     def forward(self, queries, keys, values, valid_lens):
         # Shape of queries, keys, or values:
@@ -101,3 +115,72 @@ class MultiHeadAttention:
         X = X.reshape(-1, self.num_heads, X.shape[1], X.shape[2])
         X = X.permute(0, 2, 1, 3)
         return X.reshape(X.shape[0], X.shape[1], -1)
+
+
+def test(valid_lens):
+    queries = [
+        [
+            [0.1, 0.1],
+        ],
+        [
+            [0.2, 0.2],
+        ]
+    ]
+
+    queries = torch.tensor(queries, dtype=torch.float32)
+    #queries = torch.normal(0, 1, (2, 1, 2))
+
+    keys = [
+        [
+            [1.1, 1.1],
+            [1.2, 1.2],
+            [1.3, 1.3],
+            [1.4, 1.4],
+            [1.5, 1.5],
+        ],
+        [
+            [2.1, 2.1],
+            [2.2, 2.2],
+            [2.3, 2.3],
+            [2.4, 2.4],
+            [2.5, 2.5],
+        ]
+    ]
+
+    keys = torch.tensor(keys, dtype=torch.float32)
+
+    values = [
+        [
+            [3.1, 3.1, 3.1, 3.1],
+            [3.2, 3.2, 3.2, 3.2],
+            [3.3, 3.3, 3.3, 3.3],
+            [3.4, 3.4, 3.4, 3.4],
+            [3.5, 3.5, 3.5, 3.5],
+        ],
+        [
+            [4.1, 4.1, 4.1, 4.1],
+            [4.2, 4.2, 4.2, 4.2],
+            [4.3, 4.3, 4.3, 4.3],
+            [4.4, 4.4, 4.4, 4.4],
+            [4.5, 4.5, 4.5, 4.5],
+        ]
+    ]
+
+    values = torch.tensor(values, dtype=torch.float32)
+
+    queries.requires_grad = True
+    keys.requires_grad = True
+    values.requires_grad = True
+
+    attention = MultiHeadAttention(10, 5, 0, bias=False)
+
+    res = attention.forward(queries, keys, values, valid_lens)
+
+    print("res:", res)
+
+def test_mha():
+    valid_lens = torch.tensor([2, 4])
+    test(valid_lens)
+
+if '__main__' == __name__:
+    test_mha()
