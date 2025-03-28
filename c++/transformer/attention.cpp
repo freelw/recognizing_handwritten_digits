@@ -139,4 +139,3 @@ std::vector<autograd::Parameters *> MultiHeadAttention::get_parameters() {
     res.insert(res.end(), o_params.begin(), o_params.end());
     return res;
 }
-
