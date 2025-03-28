@@ -506,9 +506,9 @@ namespace autograd {
                     for (uint target = 0; target < rowCnt; target++) {
                         for (uint i = 0; i < rowCnt; i++) {
                             if (i != target) {
-                                (*softmax_grad)[i][k] += -(*res->get_weight())[target][k] * (*res->get_weight())[i][k];
+                                (*softmax_grad)[i][k] += -(*res->get_weight())[target][k] * (*res->get_weight())[i][k] * (*grad)[target][k];
                             } else {
-                                (*softmax_grad)[i][k] += (*res->get_weight())[i][k] * (1 - (*res->get_weight())[i][k]);
+                                (*softmax_grad)[i][k] += (*res->get_weight())[i][k] * (1 - (*res->get_weight())[i][k]) * (*grad)[i][k];
                             }
                         }
                     }
@@ -516,7 +516,7 @@ namespace autograd {
                 std::cout << "softmax_grad : " << std::endl;
                 std::cout << *softmax_grad << std::endl;
                 assert(softmax_grad->checkShape(grad->getShape()));
-                *node->get_grad() += *(*softmax_grad * *grad);
+                *node->get_grad() += *softmax_grad;
             }
         private:
             Node *res;
