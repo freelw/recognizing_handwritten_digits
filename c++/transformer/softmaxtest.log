@@ -1,0 +1,8 @@
+(d2l) cs@cs-desktop:~/project/recognizing_handwritten_digits/c++/transformer$ ./transformer 
+y: 
+[[0.00426978, 0.00426978]
+ [0.0116065, 0.0116065]
+ [0.0315496, 0.0315496]
+ [0.0857608, 0.0857608]
+ [0.233122, 0.233122]
+ [0.633691, 0.633691]]
