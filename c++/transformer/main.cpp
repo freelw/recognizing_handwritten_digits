@@ -50,9 +50,19 @@ void test_softmax() {
 
     autograd::Node *y = x->Softmax();
 
+    auto loss = y->CrossEntropy(labels);
+
+    loss->backward();
+
     // print y
     cout << "y: " << endl;
     cout << *y->get_weight() << endl;
+
+    cout << "loss : " << endl;
+    cout << *loss->get_weight() << endl;
+
+    cout << "x grad: " << endl;
+    cout << *x->get_grad() << endl;
 
     freeTmpMatrix();
     autograd::freeAllNodes();
