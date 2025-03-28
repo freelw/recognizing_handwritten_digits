@@ -138,6 +138,16 @@ namespace autograd {
         }
         return node;
     }
+
+    Node *Node::Transpose() {
+        auto *tmp = allocTmpMatrix(w->transpose());
+        auto *node = allocNode(tmp);
+        if (is_require_grad()) {
+            node->require_grad();
+            node->edges.push_back(TransposeEdge::create(this));
+        }
+        return node;
+    }
  
     Node *Node::operator+(Node *rhs) {
         auto *node = allocNode(*w + *(rhs->w));

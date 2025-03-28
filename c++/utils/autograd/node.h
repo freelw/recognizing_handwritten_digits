@@ -33,6 +33,7 @@ namespace autograd {
         CrossEntropyMask,
         Norm,
         Softmax,
+        Transpose,
     };
     class Node {
         public:
@@ -93,6 +94,7 @@ namespace autograd {
             Node *Sigmoid();
             Node *Norm();
             Node *Softmax();
+            Node *Transpose();
             std::vector<Node *> split(uint dim);
             std::vector<Node *> split0();
             // Node *operator*(Node &rhs);
@@ -513,6 +515,22 @@ namespace autograd {
             }
         private:
             Node *res;
+    };
+
+    class TransposeEdge: public Edge {
+        public:
+            static Edge* create(Node *_node) {
+                Edge *edge = new TransposeEdge(_node);
+                edges.push_back(edge);
+                return edge;
+            }
+            TransposeEdge(Node *_node)
+                : Edge(OpType::Transpose, _node) {}
+            virtual ~TransposeEdge() {}
+            void backward(Matrix *grad) override {
+                assert(node->is_require_grad());
+                *node->get_grad() += *(grad->transpose());
+            }
     };
 } // namespace autograd
 
