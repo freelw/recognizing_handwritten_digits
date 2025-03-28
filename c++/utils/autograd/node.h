@@ -492,6 +492,11 @@ namespace autograd {
                 : Edge(Softmax, _node), res(_res) {}
             virtual ~SoftmaxEdge() {}
             void backward(Matrix *grad) override {
+                std::cout << "SoftmaxEdge input grad : " << endl;
+                std::cout << *grad << endl;
+
+                std::cout << "SoftmaxEdge res : " << endl;
+                std::cout << *res->get_weight() << endl;
                 assert(grad->getShape().colCnt == node->getShape().colCnt);
                 assert(node->is_require_grad());
                 Matrix *softmax_grad = allocTmpMatrix(grad->getShape());
@@ -501,15 +506,17 @@ namespace autograd {
                     for (uint target = 0; target < rowCnt; target++) {
                         for (uint i = 0; i < rowCnt; i++) {
                             if (i != target) {
-                                (*softmax_grad)[target][k] += -(*node->get_weight())[target][k] * (*node->get_weight())[i][k];
+                                (*softmax_grad)[i][k] += -(*res->get_weight())[target][k] * (*res->get_weight())[i][k];
                             } else {
-                                (*softmax_grad)[i][k] += (*node->get_weight())[i][k] * (1 - (*node->get_weight())[i][k]);
+                                (*softmax_grad)[i][k] += (*res->get_weight())[i][k] * (1 - (*res->get_weight())[i][k]);
                             }
                         }
                     }
                 }
+                std::cout << "softmax_grad : " << std::endl;
+                std::cout << *softmax_grad << std::endl;
                 assert(softmax_grad->checkShape(grad->getShape()));
-                (*node->get_grad()) += *(*softmax_grad * *grad);
+                *node->get_grad() += *(*softmax_grad * *grad);
             }
         private:
             Node *res;

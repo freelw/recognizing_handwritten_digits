@@ -1,9 +1,6 @@
 import torch
 import torch.nn as nn
 
-
-
-
 # 构造输入特征 x
 x = [
     [0, 1, 2, 3, 4, 5],
@@ -31,6 +28,7 @@ softmax = nn.Softmax(dim=1)
 # 将输入特征 x 传入 Softmax 层
 
 y = softmax(x)
+y.retain_grad()
 
 loss = nn.CrossEntropyLoss()
 
@@ -48,3 +46,6 @@ loss_value.backward()
 
 # print x grad
 print("x grad:", x.grad)
+
+# print y grad
+print("y grad:", y.grad)
