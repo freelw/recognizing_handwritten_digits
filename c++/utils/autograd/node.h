@@ -421,7 +421,11 @@ namespace autograd {
                 uint rowBase = step * shape.rowCnt;
                 for (uint i = 0; i < shape.rowCnt; i ++) {
                     for (uint j = 0; j < shape.colCnt; ++ j) {
-                        *(node->get_grad())[i + rowBase][j] += (*grad)[i][j];
+                        assert(i + rowBase < node->get_grad()->getShape().rowCnt);
+                        assert(i < shape.rowCnt);
+                        assert(j < shape.colCnt);
+                        assert(j < node->get_grad()->getShape().colCnt);
+                        (*node->get_grad())[i + rowBase][j] += (*grad)[i][j];
                     }
                 }
             }

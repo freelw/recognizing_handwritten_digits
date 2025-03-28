@@ -399,6 +399,7 @@ namespace autograd {
                     (*m)[j][k] = (*this->get_weight())[i+j][k];
                 }
             }
+            n->edges.push_back(SplitEdge1::create(this, i/step));
             res.push_back(n);
         }
         return res;
