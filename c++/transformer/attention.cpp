@@ -1,7 +1,5 @@
 #include "attention.h"
 
-
-
 DotProductAttetion::DotProductAttetion(DATATYPE _dropout)
     : dropout(_dropout), dropout_layer(nullptr), is_training(true) {
     assert (dropout >= 0 && dropout < 1);
