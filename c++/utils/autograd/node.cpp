@@ -96,16 +96,17 @@ namespace autograd {
         std::vector<DATATYPE> avg_res = w->avg();
         std::vector<DATATYPE> var_res = w->var();
         Shape shape = tmp->getShape();
+        DATATYPE eps = 1e-5;
         for (uint i = 0; i < shape.rowCnt; ++ i) {
             for (uint j = 0; j < shape.colCnt; ++ j) {
-                (*tmp)[i][j] = ((*w)[i][j] - avg_res[j]) / sqrt(var_res[j] + 1e-5);
+                (*tmp)[i][j] = ((*w)[i][j] - avg_res[j]) / sqrt(var_res[j] + eps);
             }
         }
         
         auto *node = allocNode(tmp);
         if (is_require_grad()) {
-            // node->require_grad();
-            // node->edges.push_back(NormEdge::create(this));
+            node->require_grad();
+            node->edges.push_back(NormEdge::create(this, tmp, avg_res, var_res, eps));
         }
         return node;
     }

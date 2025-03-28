@@ -423,8 +423,9 @@ namespace autograd {
             static Edge* create(
                 Node *_node,
                 Matrix *w_hat,
-                const std::vector<DATATYPE> &_avg_res, const std::vector<DATATYPE> &_var_res) {
-                Edge *edge = new NormEdge(_node, w_hat, _avg_res, _var_res);
+                const std::vector<DATATYPE> &_avg_res, const std::vector<DATATYPE> &_var_res,
+                DATATYPE eps) {
+                Edge *edge = new NormEdge(_node, w_hat, _avg_res, _var_res, eps);
                 edges.push_back(edge);
                 return edge;
             }
@@ -432,11 +433,13 @@ namespace autograd {
                 Node *_node,
                 Matrix *_w_hat,
                 const std::vector<DATATYPE> &_avg_res,
-                const std::vector<DATATYPE> &_var_res
+                const std::vector<DATATYPE> &_var_res,
+                DATATYPE _eps
             ) : Edge(OpType::Norm, _node),
                 w_hat(_w_hat),
                 avg_res(_avg_res),
-                var_res(_var_res) {}
+                var_res(_var_res),
+                eps(_eps) {}
             virtual ~NormEdge() {}
             void backward(Matrix *grad) override {
                 assert(node->is_require_grad());
@@ -447,7 +450,7 @@ namespace autograd {
                     for (uint i = 0; i < rowCnt; i++) {
                         for (uint j = 0; j < rowCnt; j++) {
                             int eq = i == j;
-                            auto sigma = std::sqrt(var_res[k] + 1e-5);
+                            auto sigma = std::sqrt(var_res[k] + eps);
                             auto x_hat_i = (*w_hat)[i][k];
                             auto x_hat_j = (*w_hat)[j][k];
                             (*mw)[i][j] = (eq - 1.0 / rowCnt - 1.0 / rowCnt * x_hat_i * x_hat_j) / sigma;
@@ -461,6 +464,7 @@ namespace autograd {
             Matrix *w_hat;
             std::vector<DATATYPE> avg_res;
             std::vector<DATATYPE> var_res;
+            DATATYPE eps;
 
     };
 } // namespace autograd
