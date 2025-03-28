@@ -1,18 +1,6 @@
 #include "layernorm.h"
 
 
-Norm::Norm() {
-    
-}
-
-Norm::~Norm() {
-    
-}
-
-autograd::Node* Norm::forward(autograd::Node* x) {
-    
-}
-
 LayerNorm::LayerNorm(uint dim) {
     mgamma = new Matrix(Shape(dim, 1));
     mbeta = new Matrix(Shape(dim, 1));
@@ -32,6 +20,5 @@ LayerNorm::~LayerNorm() {
 }
 
 autograd::Node* LayerNorm::forward(autograd::Node* x) {
-    auto node = gamma->at(x)->expand_add(beta);
-    return norm.forward(node);
+    return gamma->at(x->Norm())->expand_add(beta);
 }

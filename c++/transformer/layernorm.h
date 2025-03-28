@@ -4,13 +4,6 @@
 #include "autograd/node.h"
 #include "autograd/parameters.h"
 
-class Norm {
-    public:
-        Norm();
-        ~Norm();
-        autograd::Node* forward(autograd::Node* x);
-};
-
 class LayerNorm {
     public:
         LayerNorm(uint dim);
@@ -18,7 +11,6 @@ class LayerNorm {
         autograd::Node* forward(autograd::Node* x);
         std::vector<autograd::Parameters*> parameters();
     private:
-        Norm norm;
         Matrix *mgamma;
         Matrix *mbeta;
         autograd::Node *gamma;
