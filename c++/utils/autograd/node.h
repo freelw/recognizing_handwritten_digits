@@ -420,7 +420,6 @@ namespace autograd {
                 assert(node->get_grad()->getShape().colCnt == grad->getShape().colCnt); 
                 Shape shape = grad->getShape();
                 uint rowBase = step * shape.rowCnt;
-                std::cout << "rowBase: " << rowBase << std::endl;
                 for (uint i = 0; i < shape.rowCnt; i ++) {
                     for (uint j = 0; j < shape.colCnt; ++ j) {
                         assert(i + rowBase < node->get_grad()->getShape().rowCnt);

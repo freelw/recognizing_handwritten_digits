@@ -10,6 +10,7 @@ namespace autograd {
         #ifdef DEBUG_GRAD
             #pragma message("DEBUG_GRAD")
             mW->fill(1);
+            (*mW)[0][0] = 0.1;
             // assert(input_num == output_num); // for debug
             // mW->fill(0);
             // for (uint i = 0; i < output_num; i++) {

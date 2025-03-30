@@ -50,7 +50,8 @@ def init_weights(module, input):
     # print("init_weights 0")
     # print(module)
     if isinstance(module, nn.Linear):
-        constant_(module.weight, 1.0)
+        constant_(module.weight, 1)
+        module.weight.data[0, 0] = 0.1
         # eye_(module.weight)
         print("init_weights")
         # 移除钩子，保证只执行一次
@@ -194,8 +195,10 @@ def get_qkv_labels0():
     keys = [
         [
             [1.1, 1.1],
+            [1.2, 1.2],
         ],
         [
+            [2.1, 2.1],
             [2.1, 2.1],
         ]
     ]
@@ -205,8 +208,10 @@ def get_qkv_labels0():
     values = [
         [
             [3.1, 3.1],
+            [3.2, 3.5],
         ],
         [
+            [4.1, 4.1],
             [4.1, 4.1],
         ]
     ]
