@@ -340,6 +340,8 @@ void test_mh_attention(const std::vector<uint> &valid_lens) {
     MultiHeadAttention attention(1, 10, 0);
     std::vector<autograd::Node *> res = attention.forward(queries, keys, values, valid_lens);
     autograd::Node *loss = autograd::cat(res, 0)->CrossEntropy(labels);
+    cout << "loss: " << endl;
+    cout << *loss->get_weight() << endl;
     print_qkv_res_grad(queries, keys, values, res);
     freeTmpMatrix();
     autograd::freeAllNodes();
@@ -355,6 +357,8 @@ void test_attention1(const std::vector<uint> &valid_lens) {
     DotProductAttetion attention(0);
     std::vector<autograd::Node *> res = attention.forward(queries, keys, values, valid_lens);
     autograd::Node *loss = autograd::cat(res, 0)->CrossEntropy(labels);
+    cout << "loss: " << endl;
+    cout << *loss->get_weight() << endl;
     print_qkv_res_grad(queries, keys, values, res);
     freeTmpMatrix();
     autograd::freeAllNodes();
