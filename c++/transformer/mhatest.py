@@ -174,7 +174,7 @@ def get_qkv_labels1():
     keys.requires_grad = True
     values.requires_grad = True
 
-    labels = [2, 3]
+    labels = [0, 0]
     labels = torch.tensor(labels, dtype=torch.long)
 
     return queries, keys, values, labels
@@ -256,6 +256,11 @@ def test_mha1():
     queries, keys, values, labels = get_qkv_labels1()
     test0(valid_lens, queries, keys, values, labels, 10)
 
+def test_mha_with_mask():
+    valid_lens = torch.tensor([2, 4])
+    queries, keys, values, labels = get_qkv_labels1()
+    test0(valid_lens, queries, keys, values, labels, 10)
+
 def test1(valid_lens):
     
     queries, keys, values, labels = get_qkv_labels0()
@@ -275,9 +280,9 @@ def test_attention():
 
 if '__main__' == __name__:
 
-    print ("------test_mha0------")
-    test_mha0()
-    print ("------test_mha0 end------")
+    # print ("------test_mha0------")
+    # test_mha0()
+    # print ("------test_mha0 end------")
 
     # print ("------test_mha1------")
     # test_mha1()
@@ -285,3 +290,5 @@ if '__main__' == __name__:
     # print ("------test_attention------")
     # test_attention()
     # print ("------test_attention end------")
+
+    test_mha_with_mask()

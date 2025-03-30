@@ -344,8 +344,8 @@ void init_qkv_labels1(
     values.push_back(v2);
 
 
-    labels.push_back(2);
-    labels.push_back(3);
+    labels.push_back(0);
+    labels.push_back(0);
 }
 
 void init_qkv_labels0(
@@ -493,7 +493,6 @@ void test_attention_to_cp_with_mha() {
     test_attention1(valid_lens);
 }
 
-
 void test_mh_attention_without_mask0() {
     std::vector<uint> valid_lens = {5, 5}; // all valid
     std::vector<autograd::Node *> queries;
@@ -503,8 +502,19 @@ void test_mh_attention_without_mask0() {
     init_qkv_labels0(queries, keys, values, labels);
     test_mh_attention(valid_lens, queries, keys, values, labels, 3);
 }
+
 void test_mh_attention_without_mask1() {
     std::vector<uint> valid_lens = {5, 5}; // all valid
+    std::vector<autograd::Node *> queries;
+    std::vector<autograd::Node *> keys;
+    std::vector<autograd::Node *> values;
+    std::vector<uint> labels;
+    init_qkv_labels1(queries, keys, values, labels);
+    test_mh_attention(valid_lens, queries, keys, values, labels, 10);
+}
+
+void test_mh_attention_with_mask() {
+    std::vector<uint> valid_lens = {2, 4};
     std::vector<autograd::Node *> queries;
     std::vector<autograd::Node *> keys;
     std::vector<autograd::Node *> values;
@@ -557,9 +567,9 @@ int main() {
     // test_softmax();
     // test_attention_without_mask();
     // test_attention_with_mask();
-    cout << "------ test_mh_attention_without_mask0 ------" << endl;
-    test_mh_attention_without_mask0();
-    cout << "------ test_mh_attention_without_mask0 end ------" << endl;
+    // cout << "------ test_mh_attention_without_mask0 ------" << endl;
+    // test_mh_attention_without_mask0();
+    // cout << "------ test_mh_attention_without_mask0 end ------" << endl;
 
     // cout << "------ test_mh_attention_without_mask1 ------" << endl;
     // test_mh_attention_without_mask1();
@@ -568,5 +578,8 @@ int main() {
     // test_attention_to_cp_with_mha();
     // cout << "------ test_attention_to_cp_with_mha end ------" << endl;
     // test_lazy_liner();
+
+
+    test_mh_attention_with_mask();
     return 0;
 }
