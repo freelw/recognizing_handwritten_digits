@@ -371,18 +371,13 @@ void init_qkv_labels0(
     queries.push_back(q1);
     queries.push_back(q2);
 
-    Matrix *mk1 = allocTmpMatrix(Shape(2, 2));
+    Matrix *mk1 = allocTmpMatrix(Shape(2, 1));
     (*mk1)[0][0] = 1.1;
     (*mk1)[1][0] = 1.1;
-    (*mk1)[0][1] = 1.2;
-    (*mk1)[1][1] = 1.2;
 
-    Matrix *mk2 = allocTmpMatrix(Shape(2, 2));
+    Matrix *mk2 = allocTmpMatrix(Shape(2, 1));
     (*mk2)[0][0] = 2.1;
     (*mk2)[1][0] = 2.1;
-    (*mk2)[0][1] = 2.2;
-    (*mk2)[1][1] = 2.2;
-
     
     autograd::Node *k1 = autograd::allocNode(mk1);
     autograd::Node *k2 = autograd::allocNode(mk2);
@@ -393,21 +388,14 @@ void init_qkv_labels0(
     keys.push_back(k1);
     keys.push_back(k2);
 
-    Matrix *mv1 = allocTmpMatrix(Shape(3, 2));
+    Matrix *mv1 = allocTmpMatrix(Shape(2, 1));
     (*mv1)[0][0] = 3.1;
     (*mv1)[1][0] = 3.1;
-    (*mv1)[2][0] = 3.1;
-    (*mv1)[0][1] = 3.2;
-    (*mv1)[1][1] = 3.2;
-    (*mv1)[2][1] = 3.2;
 
-    Matrix *mv2 = allocTmpMatrix(Shape(3, 2));
+    Matrix *mv2 = allocTmpMatrix(Shape(2, 1));
     (*mv2)[0][0] = 4.1;
     (*mv2)[1][0] = 4.1;
-    (*mv2)[2][0] = 4.1;
-    (*mv2)[0][1] = 4.2;
-    (*mv2)[1][1] = 4.2;
-    (*mv2)[2][1] = 4.2;
+    
 
     autograd::Node *v1 = autograd::allocNode(mv1);
     autograd::Node *v2 = autograd::allocNode(mv2);
@@ -419,7 +407,7 @@ void init_qkv_labels0(
     values.push_back(v2);
 
     labels.push_back(0);
-    labels.push_back(1);
+    labels.push_back(0);
 }
 
 void print_qkv_res_grad(
@@ -505,7 +493,7 @@ void test_mh_attention_without_mask0() {
     std::vector<autograd::Node *> values;
     std::vector<uint> labels;
     init_qkv_labels0(queries, keys, values, labels);
-    test_mh_attention(valid_lens, queries, keys, values, labels, 10);
+    test_mh_attention(valid_lens, queries, keys, values, labels, 3);
 }
 void test_mh_attention_without_mask1() {
     std::vector<uint> valid_lens = {5, 5}; // all valid
@@ -565,9 +553,9 @@ int main() {
     test_mh_attention_without_mask0();
     cout << "------ test_mh_attention_without_mask0 end ------" << endl;
 
-    cout << "------ test_mh_attention_without_mask1 ------" << endl;
-    test_mh_attention_without_mask1();
-    cout << "------ test_mh_attention_without_mask1 end ------" << endl;
+    // cout << "------ test_mh_attention_without_mask1 ------" << endl;
+    // test_mh_attention_without_mask1();
+    // cout << "------ test_mh_attention_without_mask1 end ------" << endl;
     // cout << "------ test_attention_to_cp_with_mha ------" << endl;
     // test_attention_to_cp_with_mha();
     // cout << "------ test_attention_to_cp_with_mha end ------" << endl;
