@@ -494,7 +494,11 @@ namespace autograd {
                             auto sigma = std::sqrt(var_res[k] + eps);
                             auto x_hat_i = (*w_hat)[i][k];
                             auto x_hat_j = (*w_hat)[j][k];
-                            (*mw)[i][j] = (eq - 1.0 / rowCnt - 1.0 / rowCnt * x_hat_i * x_hat_j) / sigma;
+                            // (*mw)[i][j] = (eq - 1.0 / rowCnt - 1.0 / rowCnt * x_hat_i * x_hat_j) / sigma;
+                            // 上面的计算精度降低很多，下面的计算精度更高
+                            auto part1 = eq * (int)rowCnt - 1 - x_hat_i * x_hat_j;
+                            auto part2 = (int)rowCnt * sigma;
+                            (*mw)[i][j] = part1 / part2;
                         }
                     }
                     v_w.push_back(allocNode(mw));

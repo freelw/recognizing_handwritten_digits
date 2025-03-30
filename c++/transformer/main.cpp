@@ -646,6 +646,11 @@ void test_addnorm() {
 
     loss->backward();
 
+    cout << "res grad: " << endl;
+    for (auto r : res) {
+        cout << *r->get_grad() << endl;
+    }
+
     cout << "q1 grad: " << endl;
     cout << *q1->get_grad() << endl;
 
@@ -660,7 +665,7 @@ void test_addnorm() {
 }
 
 int main() {
-    test_layernorm();
+    // test_layernorm();
     // test_softmax();
     // test_attention_without_mask();
     // test_attention_with_mask();
@@ -681,6 +686,6 @@ int main() {
 
     // test_pos_encoding();
 
-    // test_addnorm();
+    test_addnorm();
     return 0;
 }
