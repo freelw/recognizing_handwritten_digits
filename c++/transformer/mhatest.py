@@ -160,7 +160,9 @@ def test(valid_lens):
 
     res = attention.forward(queries, keys, values, valid_lens)
 
+    
     print("res:", res)
+    
 
     labels = [2, 3]
 
@@ -171,6 +173,8 @@ def test(valid_lens):
     loss = nn.CrossEntropyLoss()
 
     res = res.reshape(-1, res.shape[-1])
+    res.retain_grad()
+    
 
     # print res again
 
@@ -185,6 +189,8 @@ def test(valid_lens):
     print("queries.grad:", queries.grad)
     print("keys.grad:", keys.grad)
     print("values.grad:", values.grad)
+    print("res.grad:", res.grad)
+    
 
 
 def test_mha():

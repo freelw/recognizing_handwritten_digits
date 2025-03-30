@@ -378,6 +378,11 @@ void test_mh_attention(const std::vector<uint> &valid_lens) {
     cout << "v2 grad: " << endl;
     cout << *v2->get_grad() << endl;
 
+    cout << "res grad: " << endl;
+    for (auto r : res) {
+        cout << *r->get_grad() << endl;
+    }
+
     freeTmpMatrix();
     autograd::freeAllNodes();
     autograd::freeAllEdges();
