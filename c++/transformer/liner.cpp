@@ -9,7 +9,12 @@ namespace autograd {
         mW = new Matrix(Shape(output_num, input_num));
         #ifdef DEBUG_GRAD
             #pragma message("DEBUG_GRAD")
-            mW->fill(1);
+            assert(input_num == output_num); // for debug
+            // mW->fill(1);
+            mW->fill(0);
+            for (uint i = 0; i < output_num; i++) {
+                (*mW)[i][i] = 1;
+            }
         #else
             init_weight(mW, xavier_init_sigmoid(mW));
         #endif

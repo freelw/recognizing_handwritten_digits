@@ -337,7 +337,7 @@ void test_mh_attention(const std::vector<uint> &valid_lens) {
     std::vector<autograd::Node *> values;
     std::vector<uint> labels;
     init_qkv_labels(queries, keys, values, labels);
-    MultiHeadAttention attention(1, 10, 0);
+    MultiHeadAttention attention(1, 2, 0);
     std::vector<autograd::Node *> res = attention.forward(queries, keys, values, valid_lens);
     autograd::Node *loss = autograd::cat(res, 0)->CrossEntropy(labels);
     cout << "loss: " << endl;
