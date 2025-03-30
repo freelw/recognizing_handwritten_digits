@@ -687,7 +687,7 @@ void test_ffn() {
 
     std::vector<autograd::Node *> queries = {q1, q2};
 
-    PositionwiseFFN *ffn = new PositionwiseFFN(4);
+    PositionwiseFFN *ffn = new PositionwiseFFN(8, 5);
 
     std::vector<autograd::Node *> res;
 

@@ -7,11 +7,12 @@
 
 class PositionwiseFFN {
     public:
-        PositionwiseFFN(u_int32_t _num_hidden);
+        PositionwiseFFN(uint _num_hidden, uint _num_out);
         ~PositionwiseFFN();
         autograd::Node *forward(autograd::Node *x);
     private:
         uint num_hidden;
+        uint num_out;
         autograd::LazyLiner *dense1;
         autograd::LazyLiner *dense2;
 };

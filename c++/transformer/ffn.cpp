@@ -1,8 +1,9 @@
 #include "ffn.h"
 
-PositionwiseFFN::PositionwiseFFN(uint _num_hidden) : num_hidden(_num_hidden) {
-    dense1 = new autograd::LazyLiner(num_hidden);
-    dense2 = new autograd::LazyLiner(num_hidden);
+PositionwiseFFN::PositionwiseFFN(uint _num_hidden, uint _num_out)
+    : num_hidden(_num_hidden), num_out(_num_out) {
+    dense1 = new autograd::LazyLiner(num_hidden, false);
+    dense2 = new autograd::LazyLiner(num_out, false);
 }
 
 PositionwiseFFN::~PositionwiseFFN() {

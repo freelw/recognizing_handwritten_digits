@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 import math
 from torch.nn.init import constant_
-from torch.nn.init import eye_
 
 def masked_softmax(X, valid_lens):  #@save
     """Perform softmax operation by masking elements on the last axis."""
