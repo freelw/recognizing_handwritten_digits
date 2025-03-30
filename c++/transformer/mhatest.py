@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import math
 from torch.nn.init import constant_
+from torch.nn.init import eye_
 
 def masked_softmax(X, valid_lens):  #@save
     """Perform softmax operation by masking elements on the last axis."""
@@ -49,7 +50,8 @@ def init_weights(module, input):
     # print("init_weights 0")
     # print(module)
     if isinstance(module, nn.Linear):
-        constant_(module.weight, 1.0)
+        # constant_(module.weight, 1.0)
+        eye_(module.weight)
         print("init_weights")
         # 移除钩子，保证只执行一次
         module._forward_pre_hooks.pop(list(module._forward_pre_hooks.keys())[0])
@@ -117,7 +119,7 @@ class MultiHeadAttention:
         return X.reshape(X.shape[0], X.shape[1], -1)
 
 
-def test(valid_lens):
+def test0(valid_lens):
     queries = [
         [
             [0.1, 0.1],
@@ -143,10 +145,10 @@ def test(valid_lens):
 
     values = [
         [
-            [3.1, 3.1, 3.1, 3.1],
+            [3.1, 3.1],
         ],
         [
-            [4.1, 4.1, 4.1, 4.1],
+            [4.1, 4.1],
         ]
     ]
 
@@ -156,7 +158,7 @@ def test(valid_lens):
     keys.requires_grad = True
     values.requires_grad = True
 
-    attention = MultiHeadAttention(10, 1, 0, bias=False)
+    attention = MultiHeadAttention(2, 1, 0, bias=False)
 
     res = attention.forward(queries, keys, values, valid_lens)
 
@@ -164,7 +166,7 @@ def test(valid_lens):
     print("res:", res)
     
 
-    labels = [2, 3]
+    labels = [0, 1]
 
     #convert labels to tensor
 
@@ -195,7 +197,91 @@ def test(valid_lens):
 
 def test_mha():
     valid_lens = torch.tensor([5, 5])
-    test(valid_lens)
+    test0(valid_lens)
+
+def test1(valid_lens):
+    queries = [
+        [
+            [0.1, 0.1],
+        ],
+        [
+            [0.2, 0.2],
+        ]
+    ]
+
+    queries = torch.tensor(queries, dtype=torch.float32)
+    #queries = torch.normal(0, 1, (2, 1, 2))
+
+    keys = [
+        [
+            [1.1, 1.1],
+        ],
+        [
+            [2.1, 2.1],
+        ]
+    ]
+
+    keys = torch.tensor(keys, dtype=torch.float32)
+
+    values = [
+        [
+            [3.1, 3.1],
+        ],
+        [
+            [4.1, 4.1],
+        ]
+    ]
+
+    values = torch.tensor(values, dtype=torch.float32)
+
+    queries.requires_grad = True
+    keys.requires_grad = True
+    values.requires_grad = True
+
+    attention = DotProductAttention(0)
+
+    res = attention.forward(queries, keys, values, valid_lens)
+
+    
+    print("res:", res)
+    
+
+    labels = [0, 1]
+
+    #convert labels to tensor
+
+    labels = torch.tensor(labels, dtype=torch.long)
+
+    loss = nn.CrossEntropyLoss()
+
+    res = res.reshape(-1, res.shape[-1])
+    res.retain_grad()
+    
+
+    # print res again
+
+    print("Reshaped res:", res)
+
+    loss_value = loss(res, labels)
+
+    print("loss_value:", loss_value)
+
+    loss_value.backward()
+
+    print("queries.grad:", queries.grad)
+    print("keys.grad:", keys.grad)
+    print("values.grad:", values.grad)
+    print("res.grad:", res.grad)
+
+def test_attention():
+    valid_lens = torch.tensor([5, 5])
+    test1(valid_lens)
 
 if '__main__' == __name__:
+
+    print ("------test_mha------")
     test_mha()
+    print ("------test_mha end------")
+    print ("------test_attention------")
+    test_attention()
+    print ("------test_attention end------")

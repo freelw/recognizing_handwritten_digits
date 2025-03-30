@@ -439,7 +439,7 @@ int main() {
     // test_softmax();
     // test_attention_without_mask();
     // test_attention_with_mask();
-    // test_mh_attention_without_mask();
-    test_lazy_liner();
+    test_mh_attention_without_mask();
+    // test_lazy_liner();
     return 0;
 }
