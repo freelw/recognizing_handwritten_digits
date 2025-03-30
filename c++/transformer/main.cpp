@@ -342,6 +342,7 @@ void test_mh_attention(const std::vector<uint> &valid_lens) {
     autograd::Node *loss = autograd::cat(res, 0)->CrossEntropy(labels);
     cout << "loss: " << endl;
     cout << *loss->get_weight() << endl;
+    loss->backward();
     print_qkv_res_grad(queries, keys, values, res);
     freeTmpMatrix();
     autograd::freeAllNodes();
@@ -359,6 +360,7 @@ void test_attention1(const std::vector<uint> &valid_lens) {
     autograd::Node *loss = autograd::cat(res, 0)->CrossEntropy(labels);
     cout << "loss: " << endl;
     cout << *loss->get_weight() << endl;
+    loss->backward();
     print_qkv_res_grad(queries, keys, values, res);
     freeTmpMatrix();
     autograd::freeAllNodes();
