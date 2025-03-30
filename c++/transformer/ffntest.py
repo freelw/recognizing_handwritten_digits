@@ -16,8 +16,8 @@ def init_weights(module, input):
 
 def get_qkv_labels1():
     queries = [
-        [3.5, 3.1, 3.1, 3.1],
-        [4.5, 4.1, 4.1, 4.1],
+        [1, 1, 1, 1],
+        [1, 1, 1, 1]
     ]
     queries = torch.tensor(queries, dtype=torch.float32)
     queries.requires_grad = True
@@ -47,6 +47,8 @@ def test():
     loss = nn.CrossEntropyLoss()
     res = res.reshape(-1, res.shape[-1])
     res.retain_grad()
+    print(ffn.dense1.weight)
+    print(ffn.dense2.weight)
     print("res:", res)
     print("labels:", labels)
     loss_val = loss(res, labels)
