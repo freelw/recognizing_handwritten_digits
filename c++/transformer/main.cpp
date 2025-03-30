@@ -2,6 +2,7 @@
 #include "layernorm.h"
 #include "attention.h"
 #include "posencoding.h"
+#include "addnorm.h"
 
 using namespace std;
 
@@ -598,6 +599,66 @@ void test_pos_encoding() {
     autograd::freeAllEdges();
 }
 
+void test_addnorm() {
+    Matrix *mq1 = allocTmpMatrix(Shape(4, 1));
+    (*mq1)[0][0] = 3.5;
+    (*mq1)[1][0] = 3.1;
+    (*mq1)[2][0] = 3.1;
+    (*mq1)[3][0] = 3.1;
+
+    Matrix *mq2 = allocTmpMatrix(Shape(4, 1));
+    (*mq2)[0][0] = 4.5;
+    (*mq2)[1][0] = 4.1;
+    (*mq2)[2][0] = 4.1;
+    (*mq2)[3][0] = 4.1;
+
+    autograd::Node *q1 = autograd::allocNode(mq1);
+    autograd::Node *q2 = autograd::allocNode(mq2);
+
+    q1->require_grad();
+    q2->require_grad();
+
+    std::vector<autograd::Node *> queries = {q1, q2};
+
+    AddNorm *addnorm = new AddNorm(4, 0);
+
+    //std::vector<autograd::Node *> res = addnorm->forward(x, x);
+
+    std::vector<autograd::Node *> res;
+    for (auto q : queries) {
+        // print q
+        cout << "q: " << endl;
+        cout << *q->get_weight() << endl;
+        res.push_back(addnorm->forward(q, q));
+    }
+
+    // print res
+
+    cout << "res: " << endl;
+    for (auto r : res) {
+        cout << *r->get_weight() << endl;
+    }
+
+    autograd::Node *loss = autograd::cat(res, 0)->CrossEntropy({0, 0});
+
+    cout << "loss: " << endl;
+    cout << *loss->get_weight() << endl;
+
+    loss->backward();
+
+    cout << "q1 grad: " << endl;
+    cout << *q1->get_grad() << endl;
+
+    cout << "q2 grad: " << endl;
+    cout << *q2->get_grad() << endl;
+
+    delete addnorm;
+
+    freeTmpMatrix();
+    autograd::freeAllNodes();
+    autograd::freeAllEdges();
+}
+
 int main() {
     // test_layernorm();
     // test_softmax();
@@ -618,6 +679,8 @@ int main() {
 
     // test_mh_attention_with_mask();
 
-    test_pos_encoding();
+    // test_pos_encoding();
+
+    test_addnorm();
     return 0;
 }

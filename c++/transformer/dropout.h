@@ -12,6 +12,7 @@ namespace autograd {
             Dropout(DATATYPE _dropout);
             ~Dropout() {}
             std::vector<Node *> forward(const std::vector<Node *> &inputs);
+            Node *forward(Node *input);
         private:
             DATATYPE dropout;
             std::mt19937 gen;

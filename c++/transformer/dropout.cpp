@@ -13,14 +13,25 @@ namespace autograd {
         res.resize(inputs.size());
         for (uint j = 0; j < inputs.size(); j++) {
             auto &input = inputs[j];
-            Matrix *mask = allocTmpMatrix(input->get_weight()->getShape());
-            auto buffer = mask->getData();
-            for (uint i = 0; i < mask->getShape().size(); i++) {
-                buffer[i] = dis(gen) > dropout ? 1 : 0;
-            }
-            Node *n = allocNode(mask);
-            res[j] = *input * n;
+            // Matrix *mask = allocTmpMatrix(input->get_weight()->getShape());
+            // auto buffer = mask->getData();
+            // for (uint i = 0; i < mask->getShape().size(); i++) {
+            //     buffer[i] = dis(gen) > dropout ? 1 : 0;
+            // }
+            // Node *n = allocNode(mask);
+            // res[j] = *input * n;
+            res[j] = forward(input);
         }
         return res;
+    }
+
+    Node *Dropout::forward(Node * input) {
+        Matrix *mask = allocTmpMatrix(input->get_weight()->getShape());
+        auto buffer = mask->getData();
+        for (uint i = 0; i < mask->getShape().size(); i++) {
+            buffer[i] = dis(gen) > dropout ? 1 : 0;
+        }
+        Node *n = allocNode(mask);
+        return *input * n;
     }
 } // namespace autograd

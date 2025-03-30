@@ -79,8 +79,8 @@ namespace autograd {
                 }
             }
 
-            void checkShape(const Shape &shape) {
-                w->checkShape(shape);
+            bool checkShape(const Shape &shape) {
+                return w->checkShape(shape);
             }
 
             Node *operator+(Node *rhs);

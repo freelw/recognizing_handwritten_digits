@@ -3,7 +3,12 @@
 #include <cmath>
 
 PosEncoding::PosEncoding(int _max_len, int _num_hidden, DATATYPE _dropout)
-: max_len(_max_len), num_hidden(_num_hidden), dropout(_dropout), dropout_layer(nullptr) {
+    : max_len(_max_len),
+    num_hidden(_num_hidden),
+    training(true),
+    dropout(_dropout),
+    dropout_layer(nullptr)
+{
     pos_encoding.reserve(max_len);
     for (int i = 0; i < max_len; i++) {
         Matrix *pe = new Matrix(Shape(num_hidden, 1));
@@ -39,7 +44,7 @@ std::vector<autograd::Node *> PosEncoding::forward(const std::vector<autograd::N
     for (uint i = 0; i < x.size(); i++) {
         res.push_back(*(x[i]) + pos_encoding[i]);
     }
-    if (dropout > 0) {
+    if (dropout > 0 && is_training()) {
         res = dropout_layer->forward(res);
     }
     return res;
