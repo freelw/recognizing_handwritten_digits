@@ -9,16 +9,13 @@ PosEncoding::PosEncoding(int _max_len, int _num_hidden, DATATYPE _dropout)
         Matrix *pe = new Matrix(Shape(num_hidden, 1));
         for (int j = 0; j < num_hidden; j++) {
             if (j % 2 == 0) {
-                (*pe)[j][0] = sin(i / pow(10000, j / num_hidden));
+                (*pe)[j][0] = sin(i * 1. / pow(10000, j*1. / num_hidden));
             } else {
-                (*pe)[j][0] = cos(i / pow(10000, j / num_hidden));
+                (*pe)[j][0] = cos(i * 1. / pow(10000, (j & ~1)*1. / num_hidden));
             }
         }
         pos_encoding_matrics.push_back(pe);
         pos_encoding.push_back(new autograd::Node(pe, true));
-    }
-    for (int i = 0; i < max_len; i++) {
-        std::cout << *pos_encoding[i]->get_weight() << std::endl;
     }
     if (dropout > 0) {
         dropout_layer = new autograd::Dropout(dropout);
