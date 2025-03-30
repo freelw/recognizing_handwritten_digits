@@ -377,9 +377,23 @@ namespace autograd {
         return nullptr;
     }
 
-    std::vector<Node *> Node::split0() {
-        assert(false);
-        return {};
+    std::vector<Node *> Node::split0() { // 注意这个函数只用在反向传播中，不需要edge
+        Shape shape = this->get_weight()->getShape();
+         uint colCnt = shape.colCnt;
+         uint rowCnt = shape.rowCnt;
+         std::vector<Node *> res;
+         for (uint i = 0; i < colCnt; ++ i) {
+             Matrix *m = allocTmpMatrix(Shape(rowCnt, 1));
+             Node *n = allocNode(m);
+             if (is_require_grad()) {
+                 n->require_grad();
+             }
+             for (uint j = 0; j < rowCnt; ++ j) {
+                 (*m)[j][0] = (*this->get_weight())[j][i];
+             }
+             res.push_back(n);
+         }
+         return res;
     }
 
     std::vector<Node *> Node::split1(uint step) {
@@ -408,7 +422,7 @@ namespace autograd {
     std::vector<Node *> Node::split(uint dim, uint step) {
         assert(dim == 0 || dim == 1);
         if (dim == 0) { // 将错就错，dim == 0 时我们切割行，cat也要这样实现
-            assert(false);
+            // assert(false);
             assert(step == 1);
             return split0();
             

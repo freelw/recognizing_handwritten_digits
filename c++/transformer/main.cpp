@@ -660,7 +660,7 @@ void test_addnorm() {
 }
 
 int main() {
-    // test_layernorm();
+    test_layernorm();
     // test_softmax();
     // test_attention_without_mask();
     // test_attention_with_mask();
@@ -681,6 +681,6 @@ int main() {
 
     // test_pos_encoding();
 
-    test_addnorm();
+    // test_addnorm();
     return 0;
 }
