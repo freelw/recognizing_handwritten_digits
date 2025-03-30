@@ -8,6 +8,7 @@ def init_weights(module, input):
     # print(module)
     if isinstance(module, nn.Linear):
         constant_(module.weight, 1)
+        constant_(module.bias, 0)
         module.weight.data[0, 0] = 0.1
         # eye_(module.weight)
         print("init_weights")
@@ -16,8 +17,8 @@ def init_weights(module, input):
 
 def get_qkv_labels1():
     queries = [
-        [1, 1, 1, 1],
-        [1, 1, 1, 1]
+        [3.5, 3.1, 3.1, 3.1],
+        [4.5, 4.1, 4.1, 4.1]
     ]
     queries = torch.tensor(queries, dtype=torch.float32)
     queries.requires_grad = True
@@ -29,9 +30,9 @@ class PositionWiseFFN():  #@save
     """The positionwise feed-forward network."""
     def __init__(self, ffn_num_hiddens, ffn_num_outputs):
         super().__init__()
-        self.dense1 = nn.LazyLinear(ffn_num_hiddens)
+        self.dense1 = nn.LazyLinear(ffn_num_hiddens, bias=True)
         self.relu = nn.ReLU()
-        self.dense2 = nn.LazyLinear(ffn_num_outputs)
+        self.dense2 = nn.LazyLinear(ffn_num_outputs, bias=True)
 
         self.dense1.register_forward_pre_hook(init_weights)
         self.dense2.register_forward_pre_hook(init_weights)
