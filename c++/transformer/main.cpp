@@ -1,6 +1,7 @@
 #include <iostream>
 #include "layernorm.h"
 #include "attention.h"
+#include "posencoding.h"
 
 using namespace std;
 
@@ -563,6 +564,40 @@ void test_lazy_liner() {
     autograd::freeAllEdges();  
 }
 
+void test_pos_encoding() {
+
+    PosEncoding *pos_encoding = new PosEncoding(2, 20, 0);
+
+    Matrix *input0 = allocTmpMatrix(Shape(20, 1));
+
+    Matrix *input1 = allocTmpMatrix(Shape(20, 1));
+
+    std::vector<autograd::Node *> x;
+
+    autograd::Node *x0 = autograd::allocNode(input0);
+    autograd::Node *x1 = autograd::allocNode(input1);
+
+    x0->require_grad();
+    x1->require_grad();
+
+    x.push_back(x0);
+    x.push_back(x1);
+
+    std::vector<autograd::Node *> res = pos_encoding->forward(x);
+
+    // print res
+    cout << "res: " << endl;
+    for (auto r : res) {
+        cout << *r->get_weight() << endl;
+    }
+
+    delete pos_encoding;
+
+    freeTmpMatrix();
+    autograd::freeAllNodes();
+    autograd::freeAllEdges();
+}
+
 int main() {
     // test_layernorm();
     // test_softmax();
@@ -581,6 +616,8 @@ int main() {
     // test_lazy_liner();
 
 
-    test_mh_attention_with_mask();
+    // test_mh_attention_with_mask();
+
+    test_pos_encoding();
     return 0;
 }
