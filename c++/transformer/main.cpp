@@ -395,11 +395,51 @@ void test_mh_attention_without_mask() {
     test_mh_attention(valid_lens);
 }
 
+void test_lazy_liner() {
+
+    std::vector<autograd::Node *> queries;
+
+    Matrix *mq1 = allocTmpMatrix(Shape(2, 1));
+    (*mq1)[0][0] = 0.1;
+    (*mq1)[1][0] = 0.1;
+
+    autograd::Node *q1 = autograd::allocNode(mq1);
+
+    q1->require_grad();
+
+    auto W = new autograd::LazyLiner(3, false);
+
+    std::vector<autograd::Node *> res = {W->forward(q1)};
+
+    std::vector<uint> labels = {2};
+
+    autograd::Node *loss = autograd::cat(res, 0)->CrossEntropy(labels);
+
+    cout << "res: " << endl;
+    for (auto r : res) {
+        cout << *r->get_weight() << endl;
+    }
+
+    cout << "loss: " << endl;
+    cout << *loss->get_weight() << endl;
+
+    loss->backward();
+
+    cout << "q1 grad: " << endl;
+    cout << *q1->get_grad() << endl;
+
+    delete W;
+    freeTmpMatrix();
+    autograd::freeAllNodes();
+    autograd::freeAllEdges();  
+}
+
 int main() {
     // test_layernorm();
     // test_softmax();
     // test_attention_without_mask();
     // test_attention_with_mask();
-    test_mh_attention_without_mask();
+    // test_mh_attention_without_mask();
+    test_lazy_liner();
     return 0;
 }
