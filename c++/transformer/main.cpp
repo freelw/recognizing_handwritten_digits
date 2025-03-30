@@ -257,13 +257,18 @@ void init_qkv_labels(
     queries.push_back(q1);
     queries.push_back(q2);
 
-    Matrix *mk1 = allocTmpMatrix(Shape(2, 1));
+    Matrix *mk1 = allocTmpMatrix(Shape(2, 2));
     (*mk1)[0][0] = 1.1;
     (*mk1)[1][0] = 1.1;
+    (*mk1)[0][1] = 1.2;
+    (*mk1)[1][1] = 1.2;
 
-    Matrix *mk2 = allocTmpMatrix(Shape(2, 1));
+    Matrix *mk2 = allocTmpMatrix(Shape(2, 2));
     (*mk2)[0][0] = 2.1;
     (*mk2)[1][0] = 2.1;
+    (*mk2)[0][1] = 2.2;
+    (*mk2)[1][1] = 2.2;
+
     
     autograd::Node *k1 = autograd::allocNode(mk1);
     autograd::Node *k2 = autograd::allocNode(mk2);
@@ -274,13 +279,17 @@ void init_qkv_labels(
     keys.push_back(k1);
     keys.push_back(k2);
 
-    Matrix *mv1 = allocTmpMatrix(Shape(2, 1));
+    Matrix *mv1 = allocTmpMatrix(Shape(2, 2));
     (*mv1)[0][0] = 3.1;
     (*mv1)[1][0] = 3.1;
+    (*mv1)[0][1] = 3.2;
+    (*mv1)[1][1] = 3.2;
 
-    Matrix *mv2 = allocTmpMatrix(Shape(2, 1));
+    Matrix *mv2 = allocTmpMatrix(Shape(2, 2));
     (*mv2)[0][0] = 4.1;
     (*mv2)[1][0] = 4.1;
+    (*mv2)[0][1] = 4.2;
+    (*mv2)[1][1] = 4.2;
 
     autograd::Node *v1 = autograd::allocNode(mv1);
     autograd::Node *v2 = autograd::allocNode(mv2);

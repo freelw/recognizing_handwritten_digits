@@ -50,8 +50,8 @@ def init_weights(module, input):
     # print("init_weights 0")
     # print(module)
     if isinstance(module, nn.Linear):
-        # constant_(module.weight, 1.0)
-        eye_(module.weight)
+        constant_(module.weight, 1.0)
+        # eye_(module.weight)
         print("init_weights")
         # 移除钩子，保证只执行一次
         module._forward_pre_hooks.pop(list(module._forward_pre_hooks.keys())[0])
