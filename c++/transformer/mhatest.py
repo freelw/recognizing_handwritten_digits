@@ -118,8 +118,7 @@ class MultiHeadAttention:
         X = X.permute(0, 2, 1, 3)
         return X.reshape(X.shape[0], X.shape[1], -1)
 
-
-def test0(valid_lens):
+def get_qkv_labels1():
     queries = [
         [
             [0.1, 0.1],
@@ -135,9 +134,17 @@ def test0(valid_lens):
     keys = [
         [
             [1.1, 1.1],
+            [1.2, 1.2],
+            [1.3, 1.3],
+            [1.4, 1.4],
+            [1.5, 1.5],
         ],
         [
             [2.1, 2.1],
+            [2.2, 2.2],
+            [2.3, 2.3],
+            [2.4, 2.4],
+            [2.5, 2.5],
         ]
     ]
 
@@ -145,10 +152,18 @@ def test0(valid_lens):
 
     values = [
         [
-            [3.1, 3.1],
+            [3.1, 3.1, 3.1, 3.1],
+            [3.2, 3.2, 3.2, 3.2],
+            [3.3, 3.3, 3.3, 3.3],
+            [3.4, 3.4, 3.4, 3.4],
+            [3.5, 3.5, 3.5, 3.5],
         ],
         [
-            [4.1, 4.1],
+            [4.1, 4.1, 4.1, 4.1],
+            [4.2, 4.2, 4.2, 4.2],
+            [4.3, 4.3, 4.3, 4.3],
+            [4.4, 4.4, 4.4, 4.4],
+            [4.5, 4.5, 4.5, 4.5],
         ]
     ]
 
@@ -158,120 +173,100 @@ def test0(valid_lens):
     keys.requires_grad = True
     values.requires_grad = True
 
-    attention = MultiHeadAttention(2, 1, 0, bias=False)
-
-    res = attention.forward(queries, keys, values, valid_lens)
-
-    
-    print("res:", res)
-    
-
-    labels = [0, 1]
-
-    #convert labels to tensor
-
+    labels = [2, 3]
     labels = torch.tensor(labels, dtype=torch.long)
 
-    loss = nn.CrossEntropyLoss()
+    return queries, keys, values, labels
 
-    res = res.reshape(-1, res.shape[-1])
-    res.retain_grad()
-    
+def get_qkv_labels0():
+    queries = [
+        [
+            [0.1, 0.1],
+        ],
+        [
+            [0.2, 0.2],
+        ]
+    ]
 
-    # print res again
+    queries = torch.tensor(queries, dtype=torch.float32)
+    #queries = torch.normal(0, 1, (2, 1, 2))
 
-    print("Reshaped res:", res)
+    keys = [
+        [
+            [1.1, 1.1],
+            [1.2, 1.2],
+        ],
+        [
+            [2.1, 2.1],
+            [2.2, 2.2],
+        ]
+    ]
 
-    loss_value = loss(res, labels)
+    keys = torch.tensor(keys, dtype=torch.float32)
 
-    print("loss_value:", loss_value)
+    values = [
+        [
+            [3.1, 3.1, 3.1],
+            [3.2, 3.2, 3.2],
+        ],
+        [
+            [4.1, 4.1, 4.1],
+            [4.2, 4.2, 4.2],
+        ]
+    ]
 
-    loss_value.backward()
+    values = torch.tensor(values, dtype=torch.float32)
 
+    queries.requires_grad = True
+    keys.requires_grad = True
+    values.requires_grad = True
+
+    labels = [0, 1]
+    labels = torch.tensor(labels, dtype=torch.long)
+
+    return queries, keys, values, labels
+
+def print_grads_res(queries, keys, values, res):
+    print("res:", res)  
     print("queries.grad:", queries.grad)
     print("keys.grad:", keys.grad)
     print("values.grad:", values.grad)
     print("res.grad:", res.grad)
+
+def test0(valid_lens, queries, keys, values, labels, num_hidden):
     
+    attention = MultiHeadAttention(num_hidden, 1, 0, bias=False)
+    res = attention.forward(queries, keys, values, valid_lens)
+    loss = nn.CrossEntropyLoss()
+    res = res.reshape(-1, res.shape[-1])
+    res.retain_grad()
+    loss_value = loss(res, labels)
+    print("loss_value:", loss_value)
+    loss_value.backward()
+    print_grads_res(queries, keys, values, res)
 
-
-def test_mha():
+def test_mha0():
     valid_lens = torch.tensor([5, 5])
-    test0(valid_lens)
+    queries, keys, values, labels = get_qkv_labels0()
+    test0(valid_lens, queries, keys, values, labels, 10)
+
+def test_mha1():
+    valid_lens = torch.tensor([5, 5])
+    queries, keys, values, labels = get_qkv_labels1()
+    test0(valid_lens, queries, keys, values, labels, 10)
 
 def test1(valid_lens):
-    queries = [
-        [
-            [0.1, 0.1],
-        ],
-        [
-            [0.2, 0.2],
-        ]
-    ]
-
-    queries = torch.tensor(queries, dtype=torch.float32)
-    #queries = torch.normal(0, 1, (2, 1, 2))
-
-    keys = [
-        [
-            [1.1, 1.1],
-        ],
-        [
-            [2.1, 2.1],
-        ]
-    ]
-
-    keys = torch.tensor(keys, dtype=torch.float32)
-
-    values = [
-        [
-            [3.1, 3.1],
-        ],
-        [
-            [4.1, 4.1],
-        ]
-    ]
-
-    values = torch.tensor(values, dtype=torch.float32)
-
-    queries.requires_grad = True
-    keys.requires_grad = True
-    values.requires_grad = True
-
+    
+    queries, keys, values, labels = get_qkv_labels0()
     attention = DotProductAttention(0)
-
     res = attention.forward(queries, keys, values, valid_lens)
-
-    
-    print("res:", res)
-    
-
-    labels = [0, 1]
-
-    #convert labels to tensor
-
-    labels = torch.tensor(labels, dtype=torch.long)
-
     loss = nn.CrossEntropyLoss()
-
     res = res.reshape(-1, res.shape[-1])
     res.retain_grad()
-    
-
-    # print res again
-
-    print("Reshaped res:", res)
-
     loss_value = loss(res, labels)
-
     print("loss_value:", loss_value)
-
     loss_value.backward()
-
-    print("queries.grad:", queries.grad)
-    print("keys.grad:", keys.grad)
-    print("values.grad:", values.grad)
-    print("res.grad:", res.grad)
+    print_grads_res(queries, keys, values, res)
 
 def test_attention():
     valid_lens = torch.tensor([5, 5])
@@ -279,9 +274,13 @@ def test_attention():
 
 if '__main__' == __name__:
 
-    print ("------test_mha------")
-    test_mha()
-    print ("------test_mha end------")
-    print ("------test_attention------")
-    test_attention()
-    print ("------test_attention end------")
+    print ("------test_mha0------")
+    test_mha0()
+    print ("------test_mha0 end------")
+
+    print ("------test_mha1------")
+    test_mha1()
+    print ("------test_mha1 end------")
+    # print ("------test_attention------")
+    # test_attention()
+    # print ("------test_attention end------")

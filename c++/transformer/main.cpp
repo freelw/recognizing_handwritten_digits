@@ -234,7 +234,121 @@ void test_attention_with_mask() {
     test_attention(valid_lens);
 }
 
-void init_qkv_labels(
+void init_qkv_labels1(
+    std::vector<autograd::Node *> &queries,
+    std::vector<autograd::Node *> &keys,
+    std::vector<autograd::Node *> &values,
+    std::vector<uint> &labels
+) {
+    Matrix *mq1 = allocTmpMatrix(Shape(2, 1));
+    (*mq1)[0][0] = 0.1;
+    (*mq1)[1][0] = 0.1;
+
+    Matrix *mq2 = allocTmpMatrix(Shape(2, 1));
+    (*mq2)[0][0] = 0.2;
+    (*mq2)[1][0] = 0.2;
+
+    autograd::Node *q1 = autograd::allocNode(mq1);
+    autograd::Node *q2 = autograd::allocNode(mq2);
+
+    q1->require_grad();
+    q2->require_grad();
+
+    queries.push_back(q1);
+    queries.push_back(q2);
+
+    Matrix *mk1 = allocTmpMatrix(Shape(2, 5));
+    (*mk1)[0][0] = 1.1;
+    (*mk1)[1][0] = 1.1;
+    (*mk1)[0][1] = 1.2;
+    (*mk1)[1][1] = 1.2;
+    (*mk1)[0][2] = 1.3;
+    (*mk1)[1][2] = 1.3;
+    (*mk1)[0][3] = 1.4;
+    (*mk1)[1][3] = 1.4;
+    (*mk1)[0][4] = 1.5;
+    (*mk1)[1][4] = 1.5;
+
+    Matrix *mk2 = allocTmpMatrix(Shape(2, 5));
+    (*mk2)[0][0] = 2.1;
+    (*mk2)[1][0] = 2.1;
+    (*mk2)[0][1] = 2.2;
+    (*mk2)[1][1] = 2.2;
+    (*mk2)[0][2] = 2.3;
+    (*mk2)[1][2] = 2.3;
+    (*mk2)[0][3] = 2.4;
+    (*mk2)[1][3] = 2.4;
+    (*mk2)[0][4] = 2.5;
+    (*mk2)[1][4] = 2.5;
+
+    autograd::Node *k1 = autograd::allocNode(mk1);
+    autograd::Node *k2 = autograd::allocNode(mk2);
+
+    k1->require_grad();
+    k2->require_grad();
+
+    keys.push_back(k1);
+    keys.push_back(k2);
+
+    Matrix *mv1 = allocTmpMatrix(Shape(4, 5));
+    (*mv1)[0][0] = 3.1;
+    (*mv1)[1][0] = 3.1;
+    (*mv1)[2][0] = 3.1;
+    (*mv1)[3][0] = 3.1;
+    (*mv1)[0][1] = 3.2;
+    (*mv1)[1][1] = 3.2;
+    (*mv1)[2][1] = 3.2;
+    (*mv1)[3][1] = 3.2;
+    (*mv1)[0][2] = 3.3;
+    (*mv1)[1][2] = 3.3;
+    (*mv1)[2][2] = 3.3;
+    (*mv1)[3][2] = 3.3;
+    (*mv1)[0][3] = 3.4;
+    (*mv1)[1][3] = 3.4;
+    (*mv1)[2][3] = 3.4;
+    (*mv1)[3][3] = 3.4;
+    (*mv1)[0][4] = 3.5;
+    (*mv1)[1][4] = 3.5;
+    (*mv1)[2][4] = 3.5;
+    (*mv1)[3][4] = 3.5;
+
+    Matrix *mv2 = allocTmpMatrix(Shape(4, 5));
+    (*mv2)[0][0] = 4.1;
+    (*mv2)[1][0] = 4.1;
+    (*mv2)[2][0] = 4.1;
+    (*mv2)[3][0] = 4.1;
+    (*mv2)[0][1] = 4.2;
+    (*mv2)[1][1] = 4.2;
+    (*mv2)[2][1] = 4.2;
+    (*mv2)[3][1] = 4.2;
+    (*mv2)[0][2] = 4.3;
+    (*mv2)[1][2] = 4.3;
+    (*mv2)[2][2] = 4.3;
+    (*mv2)[3][2] = 4.3;
+    (*mv2)[0][3] = 4.4;
+    (*mv2)[1][3] = 4.4;
+    (*mv2)[2][3] = 4.4;
+    (*mv2)[3][3] = 4.4;
+    (*mv2)[0][4] = 4.5;
+    (*mv2)[1][4] = 4.5;
+    (*mv2)[2][4] = 4.5;
+    (*mv2)[3][4] = 4.5;
+
+    autograd::Node *v1 = autograd::allocNode(mv1);
+    autograd::Node *v2 = autograd::allocNode(mv2);
+
+    v1->require_grad();
+    v2->require_grad();
+
+    values.push_back(v1);
+    values.push_back(v2);
+
+
+    labels.push_back(2);
+    labels.push_back(3);
+}
+
+void init_qkv_labels0(
     std::vector<autograd::Node *> &queries,
     std::vector<autograd::Node *> &keys,
     std::vector<autograd::Node *> &values,
@@ -279,17 +393,21 @@ void init_qkv_labels(
     keys.push_back(k1);
     keys.push_back(k2);
 
-    Matrix *mv1 = allocTmpMatrix(Shape(2, 2));
+    Matrix *mv1 = allocTmpMatrix(Shape(3, 2));
     (*mv1)[0][0] = 3.1;
     (*mv1)[1][0] = 3.1;
+    (*mv1)[2][0] = 3.1;
     (*mv1)[0][1] = 3.2;
     (*mv1)[1][1] = 3.2;
+    (*mv1)[2][1] = 3.2;
 
-    Matrix *mv2 = allocTmpMatrix(Shape(2, 2));
+    Matrix *mv2 = allocTmpMatrix(Shape(3, 2));
     (*mv2)[0][0] = 4.1;
     (*mv2)[1][0] = 4.1;
+    (*mv2)[2][0] = 4.1;
     (*mv2)[0][1] = 4.2;
     (*mv2)[1][1] = 4.2;
+    (*mv2)[2][1] = 4.2;
 
     autograd::Node *v1 = autograd::allocNode(mv1);
     autograd::Node *v2 = autograd::allocNode(mv2);
@@ -336,13 +454,15 @@ void print_qkv_res_grad(
     }
 }
 
-void test_mh_attention(const std::vector<uint> &valid_lens) {
-    std::vector<autograd::Node *> queries;
-    std::vector<autograd::Node *> keys;
-    std::vector<autograd::Node *> values;
-    std::vector<uint> labels;
-    init_qkv_labels(queries, keys, values, labels);
-    MultiHeadAttention attention(1, 2, 0);
+void test_mh_attention(
+    const std::vector<uint> &valid_lens,
+    std::vector<autograd::Node *> queries,
+    std::vector<autograd::Node *> keys,
+    std::vector<autograd::Node *> values,
+    std::vector<uint> labels,
+    uint num_hidden) {
+    
+    MultiHeadAttention attention(1, num_hidden, 0);
     std::vector<autograd::Node *> res = attention.forward(queries, keys, values, valid_lens);
     autograd::Node *loss = autograd::cat(res, 0)->CrossEntropy(labels);
     cout << "loss: " << endl;
@@ -359,7 +479,7 @@ void test_attention1(const std::vector<uint> &valid_lens) {
     std::vector<autograd::Node *> keys;
     std::vector<autograd::Node *> values;
     std::vector<uint> labels;
-    init_qkv_labels(queries, keys, values, labels);
+    init_qkv_labels0(queries, keys, values, labels);
     DotProductAttetion attention(0);
     std::vector<autograd::Node *> res = attention.forward(queries, keys, values, valid_lens);
     autograd::Node *loss = autograd::cat(res, 0)->CrossEntropy(labels);
@@ -378,9 +498,23 @@ void test_attention_to_cp_with_mha() {
 }
 
 
-void test_mh_attention_without_mask() {
+void test_mh_attention_without_mask0() {
     std::vector<uint> valid_lens = {5, 5}; // all valid
-    test_mh_attention(valid_lens);
+    std::vector<autograd::Node *> queries;
+    std::vector<autograd::Node *> keys;
+    std::vector<autograd::Node *> values;
+    std::vector<uint> labels;
+    init_qkv_labels0(queries, keys, values, labels);
+    test_mh_attention(valid_lens, queries, keys, values, labels, 10);
+}
+void test_mh_attention_without_mask1() {
+    std::vector<uint> valid_lens = {5, 5}; // all valid
+    std::vector<autograd::Node *> queries;
+    std::vector<autograd::Node *> keys;
+    std::vector<autograd::Node *> values;
+    std::vector<uint> labels;
+    init_qkv_labels1(queries, keys, values, labels);
+    test_mh_attention(valid_lens, queries, keys, values, labels, 10);
 }
 
 void test_lazy_liner() {
@@ -427,12 +561,16 @@ int main() {
     // test_softmax();
     // test_attention_without_mask();
     // test_attention_with_mask();
-    cout << "------ test_mh_attention_without_mask ------" << endl;
-    test_mh_attention_without_mask();
-    cout << "------ test_mh_attention_without_mask end ------" << endl;
-    cout << "------ test_attention_to_cp_with_mha ------" << endl;
-    test_attention_to_cp_with_mha();
-    cout << "------ test_attention_to_cp_with_mha end ------" << endl;
+    cout << "------ test_mh_attention_without_mask0 ------" << endl;
+    test_mh_attention_without_mask0();
+    cout << "------ test_mh_attention_without_mask0 end ------" << endl;
+
+    cout << "------ test_mh_attention_without_mask1 ------" << endl;
+    test_mh_attention_without_mask1();
+    cout << "------ test_mh_attention_without_mask1 end ------" << endl;
+    // cout << "------ test_attention_to_cp_with_mha ------" << endl;
+    // test_attention_to_cp_with_mha();
+    // cout << "------ test_attention_to_cp_with_mha end ------" << endl;
     // test_lazy_liner();
     return 0;
 }
