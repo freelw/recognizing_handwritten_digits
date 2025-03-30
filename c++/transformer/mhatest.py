@@ -234,9 +234,9 @@ def print_grads_res(queries, keys, values, res):
     print("values.grad:", values.grad)
     print("res.grad:", res.grad)
 
-def test0(valid_lens, queries, keys, values, labels, num_hidden):
+def test0(valid_lens, queries, keys, values, labels, num_hidden, num_heads=1):
     
-    attention = MultiHeadAttention(num_hidden, 1, 0, bias=False)
+    attention = MultiHeadAttention(num_hidden, num_heads, 0, bias=False)
     res = attention.forward(queries, keys, values, valid_lens)
     loss = nn.CrossEntropyLoss()
     res = res.reshape(-1, res.shape[-1])
@@ -259,7 +259,7 @@ def test_mha1():
 def test_mha_with_mask():
     valid_lens = torch.tensor([2, 4])
     queries, keys, values, labels = get_qkv_labels1()
-    test0(valid_lens, queries, keys, values, labels, 10)
+    test0(valid_lens, queries, keys, values, labels, 10, 2)
 
 def test1(valid_lens):
     

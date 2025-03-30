@@ -456,9 +456,10 @@ void test_mh_attention(
     std::vector<autograd::Node *> keys,
     std::vector<autograd::Node *> values,
     std::vector<uint> labels,
-    uint num_hidden) {
+    uint num_hidden,
+    uint num_heads = 1) {
     
-    MultiHeadAttention attention(1, num_hidden, 0);
+    MultiHeadAttention attention(num_heads, num_hidden, 0);
     std::vector<autograd::Node *> res = attention.forward(queries, keys, values, valid_lens);
     autograd::Node *loss = autograd::cat(res, 0)->CrossEntropy(labels);
     cout << "loss: " << endl;
@@ -520,7 +521,7 @@ void test_mh_attention_with_mask() {
     std::vector<autograd::Node *> values;
     std::vector<uint> labels;
     init_qkv_labels1(queries, keys, values, labels);
-    test_mh_attention(valid_lens, queries, keys, values, labels, 10);
+    test_mh_attention(valid_lens, queries, keys, values, labels, 10, 2);
 }
 
 void test_lazy_liner() {
