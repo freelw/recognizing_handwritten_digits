@@ -104,6 +104,10 @@ void warmUp(Seq2SeqEncoderDecoder *encoder_decoder) {
     freeTmpMatrix();
 }
 
+void check_parameters(const std::vector<autograd::Parameters *> &parameters) {
+    
+}
+
 void train(
     const std::string &corpus,
     const std::string &checkpoint,
@@ -152,13 +156,18 @@ void train(
         2 + 2 + 2 // addnorm1 addnorm2 addnorm3
     ) + 2 // decoder final linear with bias
     */
-    assert(
+    if (
         parameters.size() == 
         enc_vocab_size + dec_vocab_size +
         num_blks * (
             4 + 4 + 2 + 2 + 4 + 4 + 4 + 2 + 2 + 2
         ) + 2
-    );
+    ) {
+        std::cout << "parameter size = " << parameters.size() << std::endl;
+    } else {
+        std::cerr << "parameter size = " << parameters.size() << std::endl;
+        abort();
+    }
 
     releaseEncoderDecoder(encoder_decoder);
 }
