@@ -1,11 +1,18 @@
 #include "embedding.h"
 
+#define DEBUG_GRAD
 namespace autograd {
 
     Embedding::Embedding(uint _vocab_size, uint _hidden_num) : vocab_size(_vocab_size), hidden_num(_hidden_num) {
         for (uint i = 0; i < vocab_size; i++) {
             Matrix *m = new Matrix(Shape(hidden_num, 1));
-            init_weight_uniform(m, sqrt(1.0/hidden_num));
+            #ifdef DEBUG_GRAD
+                #pragma message("Embedding DEBUG_GRAD")
+                m->fill(1);
+                (*m)[0][0] = 0.1;
+            #else
+                init_weight_uniform(m, sqrt(1.0/hidden_num));
+            #endif
             mW.push_back(m);
             Node *n = new Node(m, true);
             n->require_grad();

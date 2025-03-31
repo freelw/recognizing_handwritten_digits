@@ -44,4 +44,5 @@ void test_lazy_liner();
 void test_pos_encoding();
 void test_addnorm();
 void test_ffn();
+void test_encoder();
 #endif

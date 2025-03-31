@@ -39,10 +39,19 @@ PosEncoding::~PosEncoding() {
     }
 }
 
+autograd::Node *PosEncoding::get_pos_node(uint len) {
+    std::vector<autograd::Node *> res;
+    res.reserve(len);
+    for (uint i = 0; i < len; i++) {
+        res.push_back(pos_encoding[i]);
+    }
+    return autograd::cat(res, 0);
+}
+
 std::vector<autograd::Node *> PosEncoding::forward(const std::vector<autograd::Node *> &x) {
     std::vector<autograd::Node *> res;
     for (uint i = 0; i < x.size(); i++) {
-        res.push_back(*(x[i]) + pos_encoding[i]);
+        res.push_back(*(x[i]) + get_pos_node(x[i]->getShape().colCnt));
     }
     if (dropout > 0 && is_training()) {
         res = dropout_layer->forward(res);

@@ -5,6 +5,7 @@
 #include "posencoding.h"
 #include "addnorm.h"
 #include "ffn.h"
+#include "encoder.h"
 
 void test_layernorm() {
     auto normalized_shape = 6;
@@ -679,6 +680,47 @@ void test_ffn() {
     cout << "q2 grad: " << endl;
     cout << *q2->get_grad() << endl;
     delete ffn;
+    freeTmpMatrix();
+    autograd::freeAllNodes();
+    autograd::freeAllEdges();
+}
+
+void test_encoder() {
+    std::vector<std::vector<uint>> inputs;
+    inputs.push_back({0, 1, 2});
+    inputs.push_back({0, 2, 3});
+
+    uint num_hiddens = 16;
+    uint num_blks = 2;
+    float dropout = 0;
+    uint ffn_num_hiddens = 4;
+    uint num_heads = 4;
+    uint vocab_size = 4;
+
+    Encoder *encoder = new Encoder(vocab_size, num_hiddens, ffn_num_hiddens, num_heads, num_blks, dropout);
+    std::vector<autograd::Node *> res = encoder->forward(inputs, {});
+
+    // print res
+    cout << "res: " << endl;
+    for (auto r : res) {
+        cout << *r->get_weight() << endl;
+    }
+
+    autograd::Node *loss = autograd::cat(res, 0)->CrossEntropy({0, 0, 0, 0, 0, 0});
+
+    cout << "loss: " << endl;
+
+    cout << *loss->get_weight() << endl;
+
+    loss->backward();
+
+    cout << "res grad: " << endl;
+
+    for (auto r : res) {
+        cout << *r->get_grad() << endl;
+    }
+
+    delete encoder;
     freeTmpMatrix();
     autograd::freeAllNodes();
     autograd::freeAllEdges();

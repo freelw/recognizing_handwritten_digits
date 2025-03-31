@@ -12,6 +12,8 @@ class PosEncoding {
         void train(bool _training) { training = _training; }
         bool is_training() { return training; }
     private:
+        autograd::Node *get_pos_node(uint len);
+    private:
         int max_len;
         int num_hidden;
         bool training;

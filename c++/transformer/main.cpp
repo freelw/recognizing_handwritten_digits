@@ -30,6 +30,7 @@ int main() {
     // test_addnorm();
     // test_ffn();
     // test_mh_attention_without_mask1();
-    test_mh_attention_without_mask2();
+    // test_mh_attention_without_mask2();
+    test_encoder();
     return 0;
 }
