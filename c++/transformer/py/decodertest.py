@@ -257,9 +257,11 @@ class TransformerDecoderBlock(nn.Module):
         Y = self.addnorm1.forward(X, X2)
         # Encoder-decoder attention. Shape of enc_outputs:
         # (batch_size, num_steps, num_hiddens)
+        print("enc_outputs:", enc_outputs)
+        print("state:", state)
         Y2 = self.attention2.forward(Y, enc_outputs, enc_outputs, enc_valid_lens)
         Z = self.addnorm2.forward(Y, Y2)
-        return self.addnorm3.forward(Z, self.ffn(Z)), state
+        return self.addnorm3.forward(Z, self.ffn.forward(Z)), state
 
 class TransformerDecoder():
     def __init__(self, vocab_size, num_hiddens, ffn_num_hiddens, num_heads,
@@ -287,7 +289,7 @@ class TransformerDecoder():
         
         for i, blk in enumerate(self.blks):
             X, state = blk(X, state)
-        return self.dense(X), state
+        return self.dense(X), state, embs
 
 def test():
     x = torch.tensor(
@@ -311,12 +313,12 @@ def test():
     decoder = TransformerDecoder(vocab_size, num_hiddens, ffn_num_hiddens, num_heads, num_blks, dropout)
     
     # enc_outputs: (2, 2, 3) tensor
-    enc_outputs = torch.tensor((2, 2, 3), dtype=torch.float)
+    enc_outputs = torch.randn(2, 2, 3)
     enc_outputs.fill_(1)
     enc_outputs.requires_grad = True
     state = [enc_outputs, None, [None] * num_blks]
 
-    res, embs = decoder.forward(x, state)
+    res, state, embs = decoder.forward(x, state)
     print("res:", res)
     loss = nn.CrossEntropyLoss()
     res = res.reshape(-1, res.shape[-1])

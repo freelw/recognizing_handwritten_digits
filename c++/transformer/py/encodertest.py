@@ -249,6 +249,7 @@ def test():
     res, embs = encoder.forward(x, None)
 
     print("res:", res)
+    print("res shape:", res.shape)
 
     loss = nn.CrossEntropyLoss()
 
@@ -268,6 +269,7 @@ def test():
 
     print("embs:", embs)
     print("embs.grad:", embs.grad)
+    
 
 if '__main__' == __name__:
     test()
