@@ -97,7 +97,7 @@ std::vector<autograd::Node *> Encoder::forward(
         X.push_back(emb->Mul(sqrt(num_hidden)));
     }
     X = posencoding->forward(X);
-    
+    // todo attention
 }
 
 std::vector<autograd::Parameters *> Encoder::get_parameters() {

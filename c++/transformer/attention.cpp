@@ -29,6 +29,7 @@ std::vector<autograd::Node *> DotProductAttetion::forward(
     const std::vector<uint> &valid_lens
 ) {
     assert (K.size() == V.size());
+    assert(valid_lens.size() == K.size() || valid_lens.size() == 0);
     std::vector<autograd::Node *> res;
     std::vector<autograd::Node *> scores;
     for (size_t i = 0; i < Q.size(); i++) {
@@ -36,7 +37,9 @@ std::vector<autograd::Node *> DotProductAttetion::forward(
         autograd::Node *k = K[i];
         autograd::Node *score = q->Transpose()->at(k)->Transpose();
         score = score->Div(sqrt(k->getShape().rowCnt));
-        mask(score, valid_lens[i]);
+        if (valid_lens.size() > 0) {
+            mask(score, valid_lens[i]);
+        }
         score = score->Softmax();
         scores.push_back(score);
     }
