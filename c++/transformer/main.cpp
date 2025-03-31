@@ -8,8 +8,9 @@
 #include "ffn.h"
 #include "test.h"
 #include "dataloader.h"
-#include "optimizers.h"
+#include "autograd/optimizers.h"
 #include "seq2seq.h"
+#include "checkpoint.h"
 
 using namespace std;
 
@@ -104,10 +105,6 @@ void warmUp(Seq2SeqEncoderDecoder *encoder_decoder) {
     freeTmpMatrix();
 }
 
-void check_parameters(const std::vector<autograd::Parameters *> &parameters) {
-    
-}
-
 void train(
     const std::string &corpus,
     const std::string &checkpoint,
@@ -126,7 +123,6 @@ void train(
 
     uint num_hiddens = 256;
     uint num_blks = 2;
-    // DATATYPE dropout = 0.2;
     uint ffn_num_hiddens = 64;
     uint num_heads = 4;
 
@@ -169,6 +165,12 @@ void train(
         abort();
     }
 
+    if (!checkpoint.empty()) {
+        cout << "loading from checkpoint : " << checkpoint << endl;
+        loadfrom_checkpoint(*encoder_decoder, checkpoint);
+        cout << "loaded from checkpoint" << endl;
+    }
+    auto adam = autograd::Adam(parameters, lr);
     releaseEncoderDecoder(encoder_decoder);
 }
 
