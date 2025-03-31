@@ -46,6 +46,79 @@ void EncoderBlock::train(bool _training) {
     addnorm1->train(_training);
     addnorm2->train(_training);
 }
+
 bool EncoderBlock::is_training() {
+    return training;
+}
+
+#define MAX_POSENCODING_LEN 10000
+
+Encoder::Encoder(
+    uint _vocab_size,
+    uint _num_hidden,
+    uint _ffn_num_hiddens,
+    uint _num_heads,
+    uint _num_blocks,
+    DATATYPE dropout,
+    bool _bias)
+    : vocab_size(_vocab_size),
+    num_hidden(_num_hidden),
+    ffn_num_hiddens(_ffn_num_hiddens),
+    num_heads(_num_heads),
+    num_blocks(_num_blocks),
+    training(true),
+    bias(_bias)
+{
+    embedding = new autograd::Embedding(vocab_size, num_hidden);
+    posencoding = new PosEncoding(MAX_POSENCODING_LEN, num_hidden, dropout);
+    for (uint i = 0; i < num_blocks; i++) {
+        blocks.push_back(new EncoderBlock(num_hidden, ffn_num_hiddens, num_heads, dropout, bias));
+    }
+}
+
+Encoder::~Encoder() {
+    for (auto & block : blocks) {
+        delete block;
+    }
+    delete posencoding;
+    delete embedding;
+}
+
+std::vector<autograd::Node *> Encoder::forward(
+    const std::vector<std::vector<uint>> &inputs,
+    const std::vector<uint> &valid_lens) {
+    
+    std::vector<autograd::Node *> res;
+
+    auto embs = embedding->forward(inputs);
+    std::vector<autograd::Node *> X;
+    X.reserve(embs.size());
+    for (auto & emb : embs) {
+        X.push_back(emb->Mul(sqrt(num_hidden)));
+    }
+    X = posencoding->forward(X);
+    
+}
+
+std::vector<autograd::Parameters *> Encoder::get_parameters() {
+    std::vector<autograd::Parameters *> res;
+    for (auto & block : blocks) {
+        auto p = block->get_parameters();
+        res.insert(res.end(), p.begin(), p.end());
+    }
+    auto p = embedding->get_parameters();
+    res.insert(res.end(), p.begin(), p.end());
+    return res;
+}
+
+void Encoder::train(bool _training) {
+    training = _training;
+    for (auto & block : blocks) {
+        block->train(_training);
+    }
+    posencoding->train(_training);
+}
+
+bool Encoder::is_training() {
     return training;
 }

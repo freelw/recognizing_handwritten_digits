@@ -574,6 +574,8 @@ void test_pos_encoding() {
 
     Matrix *input1 = allocTmpMatrix(Shape(20, 1));
 
+    input1->fill(1);
+
     std::vector<autograd::Node *> x;
 
     autograd::Node *x0 = autograd::allocNode(input0);
@@ -752,8 +754,8 @@ int main() {
     // cout << "------ test_attention_to_cp_with_mha end ------" << endl;
     // test_lazy_liner();
     // test_mh_attention_with_mask();
-    // test_pos_encoding();
-    test_addnorm();
+    test_pos_encoding();
+    // test_addnorm();
     // test_ffn();
     return 0;
 }
