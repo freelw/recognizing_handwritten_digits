@@ -42,6 +42,7 @@ void DecoderBlock::train(bool _training) {
 std::vector<autograd::Node *> DecoderBlock::forward(
     const std::vector<autograd::Node *> &X,
     const std::vector<autograd::Node *> &enc_outputs,
+    const std::vector<uint> &enc_valid_lens,
     DecoderContext *ctx
 ) {
     std::vector<autograd::Node *> key_values;
@@ -63,10 +64,8 @@ std::vector<autograd::Node *> DecoderBlock::forward(
         assert(is_training());
         key_values = X;
     }
-
-    std::vector<std::vector<uint>> valid_lens;
-    valid_lens.clear();
-
+    std::vector<std::vector<uint>> dec_valid_lens;
+    dec_valid_lens.clear();
     if (is_training()) {
         for (uint i = 0; i < X.size(); i++) {
             std::vector<uint> tmp;
@@ -76,10 +75,12 @@ std::vector<autograd::Node *> DecoderBlock::forward(
             for (uint j = 0; j < shape.rowCnt; j++) {
                 tmp.push_back(j+1);
             }
-            valid_lens.push_back(tmp);
+            dec_valid_lens.push_back(tmp);
         }
     }
-
-    auto X2 = self_attention->forward(X, key_values, key_values, valid_lens);
-
+    auto X2 = self_attention->forward(X, key_values, key_values, dec_valid_lens);
+    auto Y = addnorm1->forward(X, X2);
+    auto Y2 = enc_attention->forward(Y, enc_outputs, enc_outputs, enc_valid_lens);
+    auto Z = addnorm2->forward(Y, Y2);
+    return addnorm3->forward(Z, ffn->forward(Z));
 }
