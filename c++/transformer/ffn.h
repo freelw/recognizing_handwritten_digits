@@ -10,6 +10,8 @@ class PositionwiseFFN {
         PositionwiseFFN(uint _num_hidden, uint _num_out);
         ~PositionwiseFFN();
         autograd::Node *forward(autograd::Node *x);
+        std::vector<autograd::Node *> forward(const std::vector<autograd::Node *> &x);
+        std::vector<autograd::Parameters *> get_parameters();
     private:
         uint num_hidden;
         uint num_out;

@@ -30,3 +30,14 @@ autograd::Node *AddNorm::forward(autograd::Node *x, autograd::Node *y) {
     }
     return layernorm->forward((*x) + _y);
 }
+
+std::vector<autograd::Node *> AddNorm::forward(
+    const std::vector<autograd::Node *> &x,
+    const std::vector<autograd::Node *> &y) {
+    assert(x.size() == y.size());
+    std::vector<autograd::Node *> res;
+    for (size_t i = 0; i < x.size(); i++) {
+        res.push_back(forward(x[i], y[i]));
+    }
+    return res;
+}

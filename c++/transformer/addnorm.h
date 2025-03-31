@@ -10,6 +10,7 @@ class AddNorm {
         AddNorm(int _num_hidden, DATATYPE _dropout);
         ~AddNorm();
         autograd::Node *forward(autograd::Node *x, autograd::Node *y);
+        std::vector<autograd::Node *> forward(const std::vector<autograd::Node *> &x, const std::vector<autograd::Node *> &y);
         void train(bool _training) { training = _training; }
         bool is_training() { return training; }
     private:
