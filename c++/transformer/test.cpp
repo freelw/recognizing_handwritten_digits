@@ -792,7 +792,7 @@ void test_decoder() {
     Matrix *menc_o1 = allocTmpMatrix(Shape(3, 2));
     menc_o1->fill(1);
     Matrix *menc_o2 = allocTmpMatrix(Shape(3, 2));
-    menc_o2->fill(2);
+    menc_o2->fill(1);
     autograd::Node *enc_o1 = autograd::allocNode(menc_o1);
     autograd::Node *enc_o2 = autograd::allocNode(menc_o2);
     enc_o1->require_grad();
