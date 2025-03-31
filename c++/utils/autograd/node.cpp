@@ -149,6 +149,16 @@ namespace autograd {
         return node;
     }
 
+    Node *Node::Mul(DATATYPE v) {
+        auto *tmp = allocTmpMatrix(*w * v);
+        auto *node = allocNode(tmp);
+        if (is_require_grad()) {
+            node->require_grad();
+            node->edges.push_back(MulSingleValueEdge::create(this, v));
+        }
+        return node;
+    }
+
     Node *Node::Div(DATATYPE v) {
         auto *tmp = allocTmpMatrix(*w / v);
         auto *node = allocNode(tmp);

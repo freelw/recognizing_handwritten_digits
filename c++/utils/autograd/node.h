@@ -20,6 +20,7 @@ namespace autograd {
         Mul,
         Sub,
         Div,
+        MulSV, // single value
         MatMulL,
         MatMulR,
         Tanh,
@@ -95,6 +96,7 @@ namespace autograd {
             Node *Norm();
             Node *Softmax();
             Node *Transpose();
+            Node *Mul(DATATYPE v);
             Node *Div(DATATYPE v);
             std::vector<Node *> split(uint dim, uint step = 1);
             std::vector<Node *> split0();
@@ -566,6 +568,24 @@ namespace autograd {
                 assert(node->is_require_grad());
                 *node->get_grad() += *(grad->transpose());
             }
+    };
+
+    class MulSingleValueEdge: public Edge {
+        public:
+            static Edge* create(Node *_node, DATATYPE _v) {
+                Edge *edge = new MulSingleValueEdge(_node, _v);
+                edges.push_back(edge);
+                return edge;
+            }
+            MulSingleValueEdge(Node *_node, DATATYPE _v)
+                : Edge(OpType::MulSV, _node), v(_v) {}
+            virtual ~MulSingleValueEdge() {}
+            void backward(Matrix *grad) override {
+                assert(node->is_require_grad());
+                *node->get_grad() += *(*grad * v);
+            }
+        private:
+            DATATYPE v;
     };
 
     class DivEdge: public Edge {
