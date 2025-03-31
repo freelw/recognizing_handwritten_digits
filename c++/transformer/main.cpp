@@ -171,6 +171,83 @@ void train(
         cout << "loaded from checkpoint" << endl;
     }
     auto adam = autograd::Adam(parameters, lr);
+
+    std::string checkpoint_prefix = "checkpoint" + generateDateTimeSuffix();
+
+    std::vector<std::vector<uint>> src_token_ids;
+    std::vector<std::vector<uint>> tgt_token_ids;
+    loader.get_token_ids(src_token_ids, tgt_token_ids);
+    assert(src_token_ids.size() == tgt_token_ids.size());
+    for (uint epoch = 0; epoch < epochs; epoch++) {
+        DATATYPE loss_sum = 0;
+        int emit_clip = 0;
+        int cnt = 0;
+        for (uint i = 0; i < src_token_ids.size(); i += BATCH_SIZE) {
+            cnt ++;
+            std::vector<std::vector<uint>> input_sentences;
+            std::vector<std::vector<uint>> target_sentences;
+            std::vector<std::vector<uint>> target_labels;
+            std::vector<uint> labels;
+            std::vector<bool> mask;
+            std::vector<uint> enc_valid_lens;
+            auto end = i + BATCH_SIZE;
+            if (end > src_token_ids.size()) {
+                end = src_token_ids.size();
+            }
+            auto cur_batch_size = end - i;
+            for (uint j = i; j < end; j++) {
+                enc_valid_lens.push_back(src_token_ids[j].size());
+                input_sentences.push_back(trim_or_padding(src_token_ids[j], num_steps, loader.src_pad_id()));
+                target_sentences.push_back(trim_or_padding(add_bos(tgt_token_ids[j], loader.tgt_bos_id()), num_steps, loader.tgt_pad_id()));
+                target_labels.push_back(trim_or_padding(tgt_token_ids[j], num_steps, loader.tgt_pad_id()));
+            }
+
+            for (auto &l : target_labels) {
+                for (auto &t : l) {
+                    labels.push_back(t);
+                    mask.push_back(t != loader.tgt_pad_id());
+                }
+            }
+
+            assert(input_sentences.size() == cur_batch_size);
+            assert(target_sentences.size() == cur_batch_size);
+            assert(target_labels.size() == cur_batch_size);
+            assert(labels.size() == cur_batch_size * num_steps);
+            assert(mask.size() == cur_batch_size * num_steps);
+
+            std::vector<autograd::Node *> enc_out_embs;
+            std::vector<autograd::Node *> dec_out_embs;
+
+            auto dec_outputs = encoder_decoder->forward(
+                input_sentences, target_sentences, enc_valid_lens,
+                enc_out_embs, dec_out_embs
+            );
+            dec_outputs->checkShape(Shape(dec_vocab_size, cur_batch_size * num_steps));
+            auto loss = dec_outputs->CrossEntropyMask(labels, mask);
+            assert(loss->get_weight()->getShape().rowCnt == 1);
+            assert(loss->get_weight()->getShape().colCnt == 1);
+            loss_sum += (*loss->get_weight())[0][0];
+
+            adam.zero_grad();
+            loss->backward();
+            if (adam.clip_grad(1)) {
+                emit_clip++;
+            }
+            adam.step();
+            print_progress(end, src_token_ids.size());
+            if (shutdown) {
+                save_checkpoint(checkpoint_prefix, epoch, *encoder_decoder);
+                exit(0);
+            }
+            freeTmpMatrix();
+            autograd::freeAllNodes();
+            autograd::freeAllEdges();
+        }
+        if (epoch % 10 == 0 || epoch == epochs - 1) {
+            save_checkpoint(checkpoint_prefix, epoch, *encoder_decoder);
+        }
+        std::cout << "epoch " << epoch << " loss : " << loss_sum/cnt << " emit_clip : " << emit_clip << std::endl;
+    }
     releaseEncoderDecoder(encoder_decoder);
 }
 
