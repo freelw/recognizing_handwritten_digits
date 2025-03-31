@@ -5,10 +5,10 @@
 #include "autograd/parameters.h"
 
 namespace autograd {
-    class Liner {
+    class Linear {
         public:
-            Liner(uint input_num, uint output_num, bool _bias = true);
-            ~Liner();
+            Linear(uint input_num, uint output_num, bool _bias = true);
+            ~Linear();
             Node *forward(Node *input);
             std::vector<Parameters *> get_parameters();
         private:
@@ -21,16 +21,16 @@ namespace autograd {
             Parameters *Pb;
     };
 
-    class LazyLiner {
+    class LazyLinear {
         public:
-            LazyLiner(uint _output_num, bool _bias = true);
-            ~LazyLiner();
+            LazyLinear(uint _output_num, bool _bias = true);
+            ~LazyLinear();
             Node *forward(Node *input);
             std::vector<Parameters *> get_parameters();
         private:
             uint output_num;
             bool bias;
-            Liner *liner;
+            Linear *linear;
     };
 } // namespace autograd
 #endif

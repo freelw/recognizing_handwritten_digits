@@ -1,10 +1,10 @@
-#include "liner.h"
+#include "linear.h"
 #include "xavier.h"
 
 #define DEBUG_GRAD
 
 namespace autograd {
-    Liner::Liner(uint input_num, uint output_num, bool _bias) 
+    Linear::Linear(uint input_num, uint output_num, bool _bias) 
         : bias(_bias) {
         mW = new Matrix(Shape(output_num, input_num));
         #ifdef DEBUG_GRAD
@@ -32,7 +32,7 @@ namespace autograd {
         }
     }
 
-    Liner::~Liner() {
+    Linear::~Linear() {
         delete mW;
         delete W;
         delete PW;
@@ -43,12 +43,12 @@ namespace autograd {
         }
     }
 
-    Node *Liner::forward(Node *input) {
+    Node *Linear::forward(Node *input) {
         auto node = W->at(input);
         return bias ? node->expand_add(b) : node;
     }
 
-    std::vector<Parameters *> Liner::get_parameters() {
+    std::vector<Parameters *> Linear::get_parameters() {
         std::vector<Parameters *> res;
         res.push_back(PW);
         if (bias) {
@@ -57,26 +57,26 @@ namespace autograd {
         return res;
     }
 
-    LazyLiner::LazyLiner(uint _output_num, bool _bias) 
-        : output_num(_output_num), bias(_bias), liner(nullptr) {
+    LazyLinear::LazyLinear(uint _output_num, bool _bias) 
+        : output_num(_output_num), bias(_bias), linear(nullptr) {
     }
 
-    LazyLiner::~LazyLiner() {
-        if (liner != nullptr) {
-            delete liner;
+    LazyLinear::~LazyLinear() {
+        if (linear != nullptr) {
+            delete linear;
         }
     }
 
-    Node *LazyLiner::forward(Node *input) {
-        if (liner == nullptr) {
-            liner = new Liner(input->get_weight()->getShape().rowCnt, output_num, bias);
+    Node *LazyLinear::forward(Node *input) {
+        if (linear == nullptr) {
+            linear = new Linear(input->get_weight()->getShape().rowCnt, output_num, bias);
         }
-        return liner->forward(input);
+        return linear->forward(input);
     }
 
-    std::vector<Parameters *> LazyLiner::get_parameters() {
-        assert(liner != nullptr); // adam 必须在每一轮结束获取一次参数
-        return liner->get_parameters();
+    std::vector<Parameters *> LazyLinear::get_parameters() {
+        assert(linear != nullptr); // adam 必须在每一轮结束获取一次参数
+        return linear->get_parameters();
     }
     
 } // namespace autograd

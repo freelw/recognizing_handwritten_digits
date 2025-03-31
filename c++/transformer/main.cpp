@@ -539,7 +539,7 @@ void test_lazy_liner() {
 
     q1->require_grad();
 
-    auto W = new autograd::LazyLiner(3, false);
+    auto W = new autograd::LazyLinear(3, false);
 
     std::vector<autograd::Node *> res = {W->forward(q1)};
 

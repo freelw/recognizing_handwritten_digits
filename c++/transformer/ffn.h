@@ -3,7 +3,7 @@
 
 #include "autograd/node.h"
 #include "dropout.h"
-#include "liner.h"
+#include "linear.h"
 
 class PositionwiseFFN {
     public:
@@ -13,8 +13,8 @@ class PositionwiseFFN {
     private:
         uint num_hidden;
         uint num_out;
-        autograd::LazyLiner *dense1;
-        autograd::LazyLiner *dense2;
+        autograd::LazyLinear *dense1;
+        autograd::LazyLinear *dense2;
 };
 
 #endif

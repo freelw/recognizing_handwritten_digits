@@ -3,7 +3,7 @@
 
 #include "autograd/node.h"
 #include "dropout.h"
-#include "liner.h"
+#include "linear.h"
 
 
 class DotProductAttetion {
@@ -50,10 +50,10 @@ class MultiHeadAttention {
         uint num_heads;
         uint num_hidden;
         DotProductAttetion *attention;
-        autograd::LazyLiner *Wq;
-        autograd::LazyLiner *Wk;
-        autograd::LazyLiner *Wv;
-        autograd::LazyLiner *Wo;
+        autograd::LazyLinear *Wq;
+        autograd::LazyLinear *Wk;
+        autograd::LazyLinear *Wv;
+        autograd::LazyLinear *Wo;
         bool is_training;
 };
 
