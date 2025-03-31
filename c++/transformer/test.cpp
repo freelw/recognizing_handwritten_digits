@@ -460,6 +460,27 @@ void test_mh_attention(
     autograd::freeAllEdges();
 }
 
+void test_mh_attention_2d(
+    const std::vector<std::vector<uint>> &valid_lens,
+    std::vector<autograd::Node *> queries,
+    std::vector<autograd::Node *> keys,
+    std::vector<autograd::Node *> values,
+    std::vector<uint> labels,
+    uint num_hidden,
+    uint num_heads) {
+    
+    MultiHeadAttention attention(num_heads, num_hidden, 0);
+    std::vector<autograd::Node *> res = attention.forward(queries, keys, values, valid_lens);
+    autograd::Node *loss = autograd::cat(res, 0)->CrossEntropy(labels);
+    cout << "loss: " << endl;
+    cout << *loss->get_weight() << endl;
+    loss->backward();
+    print_qkv_res_grad(queries, keys, values, res);
+    freeTmpMatrix();
+    autograd::freeAllNodes();
+    autograd::freeAllEdges();
+}
+
 void test_attention1(const std::vector<uint> &valid_lens) {
     std::vector<autograd::Node *> queries;
     std::vector<autograd::Node *> keys;
@@ -738,5 +759,13 @@ void test_encoder() {
 }
 
 void test_mh_attention_with_2d_mask() {
-    
+    std::vector<std::vector<uint>> valid_lens;
+    valid_lens.push_back({2});
+    valid_lens.push_back({4});
+    std::vector<autograd::Node *> queries;
+    std::vector<autograd::Node *> keys;
+    std::vector<autograd::Node *> values;
+    std::vector<uint> labels;
+    init_qkv_labels1(queries, keys, values, labels);
+    test_mh_attention_2d(valid_lens, queries, keys, values, labels, 10, 2);
 }
