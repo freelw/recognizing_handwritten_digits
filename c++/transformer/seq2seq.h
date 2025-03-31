@@ -15,7 +15,10 @@ class Seq2SeqEncoderDecoder {
         ~Seq2SeqEncoderDecoder() {}
         autograd::Node* forward(
             const std::vector<std::vector<uint>> &src_token_ids,
-            const std::vector<std::vector<uint>> &tgt_token_ids
+            const std::vector<std::vector<uint>> &tgt_token_ids,
+            const std::vector<uint> &valid_lens,
+            std::vector<autograd::Node *> &out_embs,
+            std::vector<autograd::Node *> &dec_out_embs
         );
         std::vector<uint> predict(
             const std::vector<uint> &src_token_ids,
