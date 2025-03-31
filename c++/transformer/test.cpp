@@ -31,17 +31,14 @@ void test_layernorm() {
     for (auto param : layernorm.parameters()) {
         cout << *param->get_grad() << endl;
     }
-
     cout << "x grad: " << endl;
     cout << *x->get_grad() << endl;
-
     freeTmpMatrix();
     autograd::freeAllNodes();
     autograd::freeAllEdges();
 }
 
 void test_softmax() {
-
     auto softmax_size = 6;
     Matrix *input = allocTmpMatrix(Shape(softmax_size, 2));
     for (int i = 0; i < 6; i++) {
@@ -53,21 +50,16 @@ void test_softmax() {
     x->require_grad();
 
     autograd::Node *y = x->Softmax();
-
     auto loss = y->CrossEntropy(labels);
 
     loss->backward();
-
     // print y
     cout << "y: " << endl;
     cout << *y->get_weight() << endl;
-
     cout << "loss : " << endl;
     cout << *loss->get_weight() << endl;
-
     cout << "x grad: " << endl;
     cout << *x->get_grad() << endl;
-
     freeTmpMatrix();
     autograd::freeAllNodes();
     autograd::freeAllEdges();
@@ -223,16 +215,12 @@ void test_attention(const std::vector<uint> &valid_lens) {
 }
 
 void test_attention_without_mask() {
-
     std::vector<uint> valid_lens = {5, 5}; // all valid
-
     test_attention(valid_lens);
 }
 
 void test_attention_with_mask() {
-
     std::vector<uint> valid_lens = {2, 4}; // 3 valid for the first query
-
     test_attention(valid_lens);
 }
 
@@ -345,7 +333,6 @@ void init_qkv_labels1(
     values.push_back(v1);
     values.push_back(v2);
 
-
     labels.push_back(0);
     labels.push_back(0);
 }
@@ -406,7 +393,6 @@ void init_qkv_labels0(
     (*mv2)[0][1] = 4.1;
     (*mv2)[1][1] = 4.1;
     
-
     autograd::Node *v1 = autograd::allocNode(mv1);
     autograd::Node *v2 = autograd::allocNode(mv2);
 
@@ -527,38 +513,25 @@ void test_mh_attention_with_mask() {
 }
 
 void test_lazy_liner() {
-
     std::vector<autograd::Node *> queries;
-
     Matrix *mq1 = allocTmpMatrix(Shape(2, 1));
     (*mq1)[0][0] = 0.1;
     (*mq1)[1][0] = 0.1;
-
     autograd::Node *q1 = autograd::allocNode(mq1);
-
     q1->require_grad();
-
     auto W = new autograd::LazyLinear(3, false);
-
     std::vector<autograd::Node *> res = {W->forward(q1)};
-
     std::vector<uint> labels = {2};
-
     autograd::Node *loss = autograd::cat(res, 0)->CrossEntropy(labels);
-
     cout << "res: " << endl;
     for (auto r : res) {
         cout << *r->get_weight() << endl;
     }
-
     cout << "loss: " << endl;
     cout << *loss->get_weight() << endl;
-
     loss->backward();
-
     cout << "q1 grad: " << endl;
     cout << *q1->get_grad() << endl;
-
     delete W;
     freeTmpMatrix();
     autograd::freeAllNodes();
@@ -566,36 +539,24 @@ void test_lazy_liner() {
 }
 
 void test_pos_encoding() {
-
     PosEncoding *pos_encoding = new PosEncoding(2, 20, 0);
-
     Matrix *input0 = allocTmpMatrix(Shape(20, 1));
-
     Matrix *input1 = allocTmpMatrix(Shape(20, 1));
-
     input1->fill(1);
-
     std::vector<autograd::Node *> x;
-
     autograd::Node *x0 = autograd::allocNode(input0);
     autograd::Node *x1 = autograd::allocNode(input1);
-
     x0->require_grad();
     x1->require_grad();
-
     x.push_back(x0);
     x.push_back(x1);
-
     std::vector<autograd::Node *> res = pos_encoding->forward(x);
-
     // print res
     cout << "res: " << endl;
     for (auto r : res) {
         cout << *r->get_weight() << endl;
     }
-
     delete pos_encoding;
-
     freeTmpMatrix();
     autograd::freeAllNodes();
     autograd::freeAllEdges();
@@ -621,13 +582,9 @@ void test_addnorm() {
     q2->require_grad();
 
     std::vector<autograd::Node *> queries = {q1, q2};
-
     AddNorm *addnorm = new AddNorm(4, 0);
-
     std::vector<autograd::Parameters *> params = addnorm->get_parameters();
-
     //std::vector<autograd::Node *> res = addnorm->forward(x, x);
-
     std::vector<autograd::Node *> res;
     for (auto q : queries) {
         // print q
@@ -637,19 +594,15 @@ void test_addnorm() {
     }
 
     // print res
-
     cout << "res: " << endl;
     for (auto r : res) {
         cout << *r->get_weight() << endl;
     }
 
     autograd::Node *loss = autograd::cat(res, 0)->CrossEntropy({0, 0});
-
     cout << "loss: " << endl;
     cout << *loss->get_weight() << endl;
-
     loss->backward();
-
     cout << "res grad: " << endl;
     for (auto r : res) {
         cout << *r->get_grad() << endl;
@@ -657,25 +610,19 @@ void test_addnorm() {
 
     cout << "q1 grad: " << endl;
     cout << *q1->get_grad() << endl;
-
     cout << "q2 grad: " << endl;
     cout << *q2->get_grad() << endl;
-
     cout << "gamma grad: " << endl;
     cout << *params[0]->get_grad() << endl;
-
     cout << "beta grad: " << endl;
     cout << *params[1]->get_grad() << endl;
-
     delete addnorm;
-
     freeTmpMatrix();
     autograd::freeAllNodes();
     autograd::freeAllEdges();
 }
 
 void test_ffn() {
-
     Matrix *mq1 = allocTmpMatrix(Shape(4, 1));
     (*mq1)[0][0] = 3.5;
     (*mq1)[1][0] = 3.1;
@@ -695,9 +642,7 @@ void test_ffn() {
     q2->require_grad();
 
     std::vector<autograd::Node *> queries = {q1, q2};
-
     PositionwiseFFN *ffn = new PositionwiseFFN(8, 5);
-
     std::vector<autograd::Node *> res;
 
     for (auto q : queries) {
@@ -711,13 +656,9 @@ void test_ffn() {
     }
 
     autograd::Node *loss = autograd::cat(res, 0)->CrossEntropy({0, 0});
-
     cout << "loss: " << endl;
-
     cout << *loss->get_weight() << endl;
-
     loss->backward();
-
     cout << "res grad: " << endl;
     for (auto r : res) {
         cout << *r->get_grad() << endl;
@@ -725,12 +666,9 @@ void test_ffn() {
 
     cout << "q1 grad: " << endl;
     cout << *q1->get_grad() << endl;
-
     cout << "q2 grad: " << endl;
     cout << *q2->get_grad() << endl;
-
     delete ffn;
-
     freeTmpMatrix();
     autograd::freeAllNodes();
     autograd::freeAllEdges();
