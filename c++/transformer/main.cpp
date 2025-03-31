@@ -623,6 +623,8 @@ void test_addnorm() {
 
     AddNorm *addnorm = new AddNorm(4, 0);
 
+    std::vector<autograd::Parameters *> params = addnorm->get_parameters();
+
     //std::vector<autograd::Node *> res = addnorm->forward(x, x);
 
     std::vector<autograd::Node *> res;
@@ -657,6 +659,12 @@ void test_addnorm() {
 
     cout << "q2 grad: " << endl;
     cout << *q2->get_grad() << endl;
+
+    cout << "gamma grad: " << endl;
+    cout << *params[0]->get_grad() << endl;
+
+    cout << "beta grad: " << endl;
+    cout << *params[1]->get_grad() << endl;
 
     delete addnorm;
 
@@ -745,7 +753,7 @@ int main() {
     // test_lazy_liner();
     // test_mh_attention_with_mask();
     // test_pos_encoding();
-    // test_addnorm();
-    test_ffn();
+    test_addnorm();
+    // test_ffn();
     return 0;
 }

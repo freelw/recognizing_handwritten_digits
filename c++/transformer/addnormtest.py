@@ -48,5 +48,10 @@ def test():
     print("queries.grad:", queries.grad)
     print("res.grad:", res.grad)
 
+    #print addnorm.ln gamma and beta grad
+    print("addnorm.ln.weight.grad:", addnorm.ln.weight.grad)
+    print("addnorm.ln.bias.grad:", addnorm.ln.bias.grad)
+
+
 if '__main__' == __name__:
     test()
