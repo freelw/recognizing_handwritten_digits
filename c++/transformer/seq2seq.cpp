@@ -11,3 +11,10 @@ autograd::Node* Seq2SeqEncoderDecoder::forward(
     auto dec_outputs = decoder->forward(tgt_token_ids, hiddens, valid_lens, dec_out_embs);
     return autograd::cat(dec_outputs);
 }
+
+std::vector<autograd::Parameters *> Seq2SeqEncoderDecoder::get_parameters() {
+    auto encoder_params = encoder->get_parameters();
+    auto decoder_params = decoder->get_parameters();
+    encoder_params.insert(encoder_params.end(), decoder_params.begin(), decoder_params.end());
+    return encoder_params;
+}

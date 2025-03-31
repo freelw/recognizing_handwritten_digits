@@ -54,13 +54,14 @@ Seq2SeqEncoderDecoder *allocEncoderDecoder(
     uint enc_vocab_size,
     uint dec_vocab_size,
     uint bos_id,
-    uint eos_id
+    uint eos_id,
+    uint num_hiddens,
+    uint num_blks,
+    uint ffn_num_hiddens,
+    uint num_heads,
+    DATATYPE dropout
 ) {
-    uint num_hiddens = 256;
-    uint num_blks = 2;
-    DATATYPE dropout = 0.2;
-    uint ffn_num_hiddens = 64;
-    uint num_heads = 4;
+    
     Encoder *encoder = new Encoder(
         enc_vocab_size, num_hiddens, 
         ffn_num_hiddens, num_heads,
@@ -119,10 +120,45 @@ void train(
     uint enc_vocab_size = loader.src_vocab_size();
     uint dec_vocab_size = loader.tgt_vocab_size();
 
+    uint num_hiddens = 256;
+    uint num_blks = 2;
+    // DATATYPE dropout = 0.2;
+    uint ffn_num_hiddens = 64;
+    uint num_heads = 4;
+
     Seq2SeqEncoderDecoder *encoder_decoder = allocEncoderDecoder(
-        enc_vocab_size, dec_vocab_size, loader.tgt_bos_id(), loader.tgt_eos_id()
+        enc_vocab_size, dec_vocab_size,
+        loader.tgt_bos_id(), loader.tgt_eos_id(),
+        num_hiddens, num_blks, ffn_num_hiddens, num_heads, dropout
     );
     warmUp(encoder_decoder);
+
+    auto parameters = encoder_decoder->get_parameters();
+    /*
+    parameter size = 
+
+    enc_vocab_size + dec_vocab_size // vocab embeddings
+
+    + num_blks * (
+        // encoder block
+        4 // multi-head attention Wq Wk Wv Wo no bias
+        4 // ffn dense1 dense2 with bias
+        2 + 2 // addnorm1 gamma beta addnorm2 gamma beta
+        // decoder block
+        
+        4 // self attention
+        4 // enc attention
+        4 // ffn
+        2 + 2 + 2 // addnorm1 addnorm2 addnorm3
+    ) + 2 // decoder final linear with bias
+    */
+    assert(
+        parameters.size() == 
+        enc_vocab_size + dec_vocab_size +
+        num_blks * (
+            4 + 4 + 2 + 2 + 4 + 4 + 4 + 2 + 2 + 2
+        ) + 2
+    );
 
     releaseEncoderDecoder(encoder_decoder);
 }
