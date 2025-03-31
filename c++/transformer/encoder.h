@@ -13,6 +13,7 @@ class EncoderBlock {
         EncoderBlock(uint _num_hidden, uint _ffn_num_hiddens, uint _num_heads, DATATYPE dropout, bool _bias = false);
         ~EncoderBlock();
         std::vector<autograd::Node *> forward(const std::vector<autograd::Node *> &x, const std::vector<uint> &valid_lens);
+        std::vector<autograd::Parameters *> get_parameters();
         void train(bool _training);
         bool is_training();
     private:

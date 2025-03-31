@@ -31,6 +31,10 @@ autograd::Node *AddNorm::forward(autograd::Node *x, autograd::Node *y) {
     return layernorm->forward((*x) + _y);
 }
 
+std::vector<autograd::Parameters *> AddNorm::get_parameters() {
+    return layernorm->parameters();
+}
+
 std::vector<autograd::Node *> AddNorm::forward(
     const std::vector<autograd::Node *> &x,
     const std::vector<autograd::Node *> &y) {

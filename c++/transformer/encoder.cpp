@@ -27,6 +27,19 @@ std::vector<autograd::Node *> EncoderBlock::forward(
     return addnorm2->forward(y, ffn->forward(y));
 }
 
+std::vector<autograd::Parameters *> EncoderBlock::get_parameters() {
+    std::vector<autograd::Parameters *> res;
+    auto p1 = attention->get_parameters();
+    auto p2 = ffn->get_parameters();
+    auto p3 = addnorm1->get_parameters();
+    auto p4 = addnorm2->get_parameters();
+    res.insert(res.end(), p1.begin(), p1.end());
+    res.insert(res.end(), p2.begin(), p2.end());
+    res.insert(res.end(), p3.begin(), p3.end());
+    res.insert(res.end(), p4.begin(), p4.end());
+    return res;
+}
+
 void EncoderBlock::train(bool _training) {
     training = _training;
     attention->train(_training);

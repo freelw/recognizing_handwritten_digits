@@ -11,6 +11,7 @@ class AddNorm {
         ~AddNorm();
         autograd::Node *forward(autograd::Node *x, autograd::Node *y);
         std::vector<autograd::Node *> forward(const std::vector<autograd::Node *> &x, const std::vector<autograd::Node *> &y);
+        std::vector<autograd::Parameters *> get_parameters();
         void train(bool _training) { training = _training; }
         bool is_training() { return training; }
     private:
