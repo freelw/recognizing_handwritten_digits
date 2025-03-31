@@ -1,0 +1,27 @@
+# Transformer
+
+## train
+
+初步观察小数据可以收敛
+
+```
+(d2l) cs@cs-desktop:~/project/recognizing_handwritten_digits/c++/transformer$ ./transformer -e 10 -f ../../resources/fra_tiny.txt 
+OMP_THREADS: 8
+epochs : 10
+dropout : 0.2
+lr : 0.005
+tiny : 0
+data loaded
+parameter size = 21388
+[300/300]checkpoint saved : ./checkpoints/checkpoint_20250331_204059_0.bin
+epoch 0 loss : 8.38027 emit_clip : 3
+[300/300]epoch 1 loss : 4.6412 emit_clip : 3
+[300/300]epoch 2 loss : 3.9675 emit_clip : 3
+[300/300]epoch 3 loss : 3.90752 emit_clip : 3
+[300/300]epoch 4 loss : 3.8816 emit_clip : 3
+[300/300]epoch 5 loss : 3.874 emit_clip : 3
+[300/300]epoch 6 loss : 3.85435 emit_clip : 3
+[300/300]epoch 7 loss : 3.82307 emit_clip : 3
+[300/300]epoch 8 loss : 3.81192 emit_clip : 3
+[300/300]checkpoint saved : ./checkpoints/checkpoint_20250331_204059_9.bin
+```
