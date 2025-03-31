@@ -87,9 +87,7 @@ Encoder::~Encoder() {
 std::vector<autograd::Node *> Encoder::forward(
     const std::vector<std::vector<uint>> &inputs,
     const std::vector<uint> &valid_lens) {
-    
     std::vector<autograd::Node *> res;
-
     auto embs = embedding->forward(inputs);
     std::vector<autograd::Node *> X;
     X.reserve(embs.size());
@@ -97,7 +95,10 @@ std::vector<autograd::Node *> Encoder::forward(
         X.push_back(emb->Mul(sqrt(num_hidden)));
     }
     X = posencoding->forward(X);
-    // todo attention
+    for (auto blk : blocks) {
+        X = blk->forward(X, valid_lens);
+    }
+    return X;
 }
 
 std::vector<autograd::Parameters *> Encoder::get_parameters() {
