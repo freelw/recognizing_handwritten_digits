@@ -277,6 +277,7 @@ class TransformerDecoder():
             self.blks.add_module("block"+str(i), TransformerDecoderBlock(
                 num_hiddens, ffn_num_hiddens, num_heads, dropout, i))
         self.dense = nn.LazyLinear(vocab_size)
+        self.dense.register_forward_pre_hook(init_weights_ffn)
 
     def init_state(self, enc_outputs, enc_valid_lens):
         return [enc_outputs, enc_valid_lens, [None] * self.num_blks]
@@ -330,6 +331,7 @@ def test():
     loss_value.backward()
     print("embs:", embs)
     print("embs.grad:", embs.grad)
+    # print("enc_outputs :", enc_outputs)
 
 if '__main__' == __name__:
     test()
