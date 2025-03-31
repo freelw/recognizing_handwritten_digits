@@ -84,3 +84,21 @@ std::vector<autograd::Node *> DecoderBlock::forward(
     auto Z = addnorm2->forward(Y, Y2);
     return addnorm3->forward(Z, ffn->forward(Z));
 }
+
+std::vector<autograd::Parameters *> DecoderBlock::get_parameters() {
+    std::vector<autograd::Parameters *> res;
+    std::vector<autograd::Parameters *> tmp;
+    tmp = self_attention->get_parameters();
+    res.insert(res.end(), tmp.begin(), tmp.end());
+    tmp = enc_attention->get_parameters();
+    res.insert(res.end(), tmp.begin(), tmp.end());
+    tmp = ffn->get_parameters();
+    res.insert(res.end(), tmp.begin(), tmp.end());
+    tmp = addnorm1->get_parameters();
+    res.insert(res.end(), tmp.begin(), tmp.end());
+    tmp = addnorm2->get_parameters();
+    res.insert(res.end(), tmp.begin(), tmp.end());
+    tmp = addnorm3->get_parameters();
+    res.insert(res.end(), tmp.begin(), tmp.end());
+    return res;
+}

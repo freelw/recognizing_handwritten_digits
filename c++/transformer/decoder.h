@@ -29,6 +29,7 @@ class DecoderBlock {
             const std::vector<uint> &enc_valid_lens,
             DecoderContext *ctx
         );
+        std::vector<autograd::Parameters *> get_parameters();
     private:
         uint num_hidden;
         uint ffn_num_hiddens;
@@ -41,5 +42,9 @@ class DecoderBlock {
         AddNorm *addnorm1;
         AddNorm *addnorm2;
         AddNorm *addnorm3;
+};
+
+class Decoder {
+
 };
 #endif
