@@ -9,7 +9,7 @@ namespace autograd {
             #ifdef DEBUG_GRAD
                 #pragma message("Embedding DEBUG_GRAD")
                 m->fill(1);
-                (*m)[0][0] = 0.1;
+                (*m)[0][0] = 0.1*i;
             #else
                 init_weight_uniform(m, sqrt(1.0/hidden_num));
             #endif

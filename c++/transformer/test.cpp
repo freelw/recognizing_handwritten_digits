@@ -698,7 +698,8 @@ void test_encoder() {
     uint vocab_size = 4;
 
     Encoder *encoder = new Encoder(vocab_size, num_hiddens, ffn_num_hiddens, num_heads, num_blks, dropout);
-    std::vector<autograd::Node *> res = encoder->forward(inputs, {});
+    std::vector<autograd::Node *> embs;
+    std::vector<autograd::Node *> res = encoder->forward(inputs, {}, embs);
 
     // print res
     cout << "res: " << endl;
@@ -718,6 +719,16 @@ void test_encoder() {
 
     for (auto r : res) {
         cout << *r->get_grad() << endl;
+    }
+
+    cout << "embs:" << endl;
+    for (auto e : embs) {
+        cout << *e->get_weight() << endl;
+    }
+
+    cout << "embs grad:" << endl;
+    for (auto e : embs) {
+        cout << *e->get_grad() << endl;
     }
 
     delete encoder;

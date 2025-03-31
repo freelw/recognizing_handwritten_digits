@@ -41,7 +41,11 @@ class Encoder {
             bool _bias = false
         );
         ~Encoder();
-        std::vector<autograd::Node *> forward(const std::vector<std::vector<uint>> &inputs, const std::vector<uint> &valid_lens);
+        std::vector<autograd::Node *> forward(
+            const std::vector<std::vector<uint>> &inputs,
+            const std::vector<uint> &valid_lens,
+            std::vector<autograd::Node *> &out_embs
+        );
         std::vector<autograd::Parameters *> get_parameters();
         void train(bool _training);
         bool is_training();
