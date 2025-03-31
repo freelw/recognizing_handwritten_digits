@@ -29,8 +29,10 @@ int main() {
     // test_pos_encoding();
     // test_addnorm();
     // test_ffn();
-    test_mh_attention_without_mask1();
+    // test_mh_attention_without_mask1();
     // test_mh_attention_without_mask2();
     // test_encoder();
+
+    test_mh_attention_with_2d_mask();
     return 0;
 }

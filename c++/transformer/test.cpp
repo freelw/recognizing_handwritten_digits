@@ -736,3 +736,7 @@ void test_encoder() {
     autograd::freeAllNodes();
     autograd::freeAllEdges();
 }
+
+void test_mh_attention_with_2d_mask() {
+    
+}
