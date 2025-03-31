@@ -38,6 +38,7 @@ void test_attention1(const std::vector<uint> &valid_lens);
 void test_attention_to_cp_with_mha();
 void test_mh_attention_without_mask0();
 void test_mh_attention_without_mask1();
+void test_mh_attention_without_mask2();
 void test_mh_attention_with_mask();
 void test_lazy_liner();
 void test_pos_encoding();

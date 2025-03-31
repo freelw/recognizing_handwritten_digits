@@ -502,6 +502,16 @@ void test_mh_attention_without_mask1() {
     test_mh_attention(valid_lens, queries, keys, values, labels, 10);
 }
 
+void test_mh_attention_without_mask2() {
+    std::vector<uint> valid_lens = {}; // all valid
+    std::vector<autograd::Node *> queries;
+    std::vector<autograd::Node *> keys;
+    std::vector<autograd::Node *> values;
+    std::vector<uint> labels;
+    init_qkv_labels1(queries, keys, values, labels);
+    test_mh_attention(valid_lens, queries, keys, values, labels, 10);
+}
+
 void test_mh_attention_with_mask() {
     std::vector<uint> valid_lens = {2, 4};
     std::vector<autograd::Node *> queries;

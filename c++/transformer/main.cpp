@@ -26,8 +26,10 @@ int main() {
     // cout << "------ test_attention_to_cp_with_mha end ------" << endl;
     // test_lazy_liner();
     // test_mh_attention_with_mask();
-    test_pos_encoding();
+    // test_pos_encoding();
     // test_addnorm();
     // test_ffn();
+    // test_mh_attention_without_mask1();
+    test_mh_attention_without_mask2();
     return 0;
 }
