@@ -46,4 +46,5 @@ void test_addnorm();
 void test_ffn();
 void test_encoder();
 void test_mh_attention_with_2d_mask();
+void test_decoder();
 #endif

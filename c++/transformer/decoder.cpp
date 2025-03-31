@@ -159,7 +159,7 @@ std::vector<autograd::Node *> Decoder::forward(
     }
     X = posencoding->forward(X);
     DecoderContext *ctx = nullptr;
-    if (is_training()) {
+    if (!is_training()) {
         ctx = new DecoderContext();
         for (uint i = 0; i < X.size(); i++) {
             ctx->dec_X.push_back(nullptr);

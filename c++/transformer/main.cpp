@@ -33,6 +33,7 @@ int main() {
     // test_mh_attention_without_mask2();
     // test_encoder();
 
-    test_mh_attention_with_2d_mask();
+    // test_mh_attention_with_2d_mask();
+    test_decoder();
     return 0;
 }

@@ -14,18 +14,11 @@ DotProductAttetion::~DotProductAttetion() {
     }
 }
 
-// void mask(autograd::Node *node, uint valid_len) {
-//     for (uint i = valid_len; i < node->get_weight()->getShape().rowCnt; i++) {
-//         for (uint j = 0; j < node->get_weight()->getShape().colCnt; j++) {
-//             (*node->get_weight())[i][j] = -1e6; // very big negative value
-//         }
-//     }
-// }
-
 void mask(autograd::Node *node, const std::vector<uint> &valid_lens) {
-    assert(node->get_weight()->getShape().colCnt == valid_lens.size());
-    for (uint i = 0; i < node->get_weight()->getShape().colCnt; i++) {
-        for (uint j = valid_lens[i]; j < node->get_weight()->getShape().rowCnt; j++) {
+    Shape shape = node->getShape();
+    assert(shape.colCnt == valid_lens.size());
+    for (uint i = 0; i < shape.colCnt; i++) {
+        for (uint j = valid_lens[i]; j < shape.rowCnt; j++) {
             (*node->get_weight())[j][i] = -1e6; // very big negative value
         }
     }

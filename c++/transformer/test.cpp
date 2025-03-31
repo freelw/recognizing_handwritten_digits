@@ -6,6 +6,7 @@
 #include "addnorm.h"
 #include "ffn.h"
 #include "encoder.h"
+#include "decoder.h"
 
 void test_layernorm() {
     auto normalized_shape = 6;
@@ -768,4 +769,60 @@ void test_mh_attention_with_2d_mask() {
     std::vector<uint> labels;
     init_qkv_labels1(queries, keys, values, labels);
     test_mh_attention_2d(valid_lens, queries, keys, values, labels, 10, 2);
+}
+
+void test_decoder() {
+
+
+    std::vector<std::vector<uint>> inputs;
+    inputs.push_back({0, 1, 2});
+    inputs.push_back({0, 2, 3});
+
+    uint num_hiddens = 16;
+    uint num_blks = 2;
+    float dropout = 0;
+    uint ffn_num_hiddens = 4;
+    uint num_heads = 4;
+    uint vocab_size = 4;
+
+    Decoder *decoder = new Decoder(vocab_size, num_hiddens, ffn_num_hiddens, num_heads, num_blks, dropout);
+    std::vector<autograd::Node *> embs;
+    std::vector<uint> enc_valid_lens = {};
+    std::vector<autograd::Node *> enc_output;
+    Matrix *menc_o1 = allocTmpMatrix(Shape(3, 2));
+    menc_o1->fill(1);
+    Matrix *menc_o2 = allocTmpMatrix(Shape(3, 2));
+    menc_o2->fill(2);
+    autograd::Node *enc_o1 = autograd::allocNode(menc_o1);
+    autograd::Node *enc_o2 = autograd::allocNode(menc_o2);
+    enc_o1->require_grad();
+    enc_o2->require_grad();
+    enc_output.push_back(enc_o1);
+    enc_output.push_back(enc_o2);
+    std::vector<autograd::Node *> res = decoder->forward(inputs, enc_output, enc_valid_lens, embs);
+    // print res
+    cout << "res: " << endl;
+    for (auto r : res) {
+        cout << *r->get_weight() << endl;
+    }
+    autograd::Node *loss = autograd::cat(res, 0)->CrossEntropy({0, 0, 0, 0, 0, 0});
+    cout << "loss: " << endl;
+    cout << *loss->get_weight() << endl;
+    loss->backward();
+    cout << "res grad: " << endl;
+    for (auto r : res) {
+        cout << *r->get_grad() << endl;
+    }
+    cout << "embs:" << endl;
+    for (auto e : embs) {
+        cout << *e->get_weight() << endl;
+    }
+    cout << "embs grad:" << endl;
+    for (auto e : embs) {
+        cout << *e->get_grad() << endl;
+    }
+    delete decoder;
+    freeTmpMatrix();
+    autograd::freeAllNodes();
+    autograd::freeAllEdges();
 }
