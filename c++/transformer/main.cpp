@@ -9,6 +9,7 @@
 #include "test.h"
 #include "dataloader.h"
 #include "optimizers.h"
+#include "seq2seq.h"
 
 using namespace std;
 
@@ -49,6 +50,59 @@ std::vector<uint> add_bos(const std::vector<uint> &src, uint bos_id) {
     return res;
 }
 
+Seq2SeqEncoderDecoder *allocEncoderDecoder(
+    uint enc_vocab_size,
+    uint dec_vocab_size,
+    uint bos_id,
+    uint eos_id
+) {
+    uint num_hiddens = 256;
+    uint num_blks = 2;
+    DATATYPE dropout = 0.2;
+    uint ffn_num_hiddens = 64;
+    uint num_heads = 4;
+    Encoder *encoder = new Encoder(
+        enc_vocab_size, num_hiddens, 
+        ffn_num_hiddens, num_heads,
+        num_blks, dropout
+    );
+    Decoder *decoder = new Decoder(
+        dec_vocab_size, num_hiddens, 
+        ffn_num_hiddens, num_heads,
+        num_blks, dropout
+    );
+    Seq2SeqEncoderDecoder *encoder_decoder = new Seq2SeqEncoderDecoder(
+        encoder, decoder, bos_id, eos_id
+    );
+    return encoder_decoder;
+}
+
+void releaseEncoderDecoder(Seq2SeqEncoderDecoder *encoder_decoder){
+    delete encoder_decoder->get_decoder();
+    delete encoder_decoder->get_encoder();
+    delete encoder_decoder;
+}
+
+/*
+    只有在warmUp之后LazyLinear才能正常工作，才能get_parameters
+    注意optimizer的初始化时机一定要在warmUp之后
+    注意checkpoint的加载时机一定要在warmUp之后
+*/
+void warmUp(Seq2SeqEncoderDecoder *encoder_decoder) {
+    std::vector<std::vector<uint>> src_token_ids = {{0}};
+    std::vector<std::vector<uint>> tgt_token_ids = {{0}};
+    std::vector<uint> valid_lens = {};
+    std::vector<autograd::Node *> enc_out_embs;
+    std::vector<autograd::Node *> dec_out_embs;
+    encoder_decoder->forward(
+        src_token_ids, tgt_token_ids, valid_lens,
+        enc_out_embs, dec_out_embs
+    );
+    autograd::freeAllNodes();
+    autograd::freeAllEdges();
+    freeTmpMatrix();
+}
+
 void train(
     const std::string &corpus,
     const std::string &checkpoint,
@@ -56,7 +110,21 @@ void train(
     DATATYPE dropout,
     DATATYPE lr,
     bool tiny) {
-    
+
+    uint num_steps = 9;
+    std::string src_vocab_name = tiny ? SRC_VOCAB_TINY_NAME : SRC_VOCAB_NAME;
+    std::string tgt_vocab_name = tiny ? TGT_VOCAB_TINY_NAME : TGT_VOCAB_NAME;
+    seq2seq::DataLoader loader(corpus, src_vocab_name, tgt_vocab_name, TEST_FILE);
+    std::cout << "data loaded" << std::endl;
+    uint enc_vocab_size = loader.src_vocab_size();
+    uint dec_vocab_size = loader.tgt_vocab_size();
+
+    Seq2SeqEncoderDecoder *encoder_decoder = allocEncoderDecoder(
+        enc_vocab_size, dec_vocab_size, loader.tgt_bos_id(), loader.tgt_eos_id()
+    );
+    warmUp(encoder_decoder);
+
+    releaseEncoderDecoder(encoder_decoder);
 }
 
 int main(int argc, char *argv[]) {

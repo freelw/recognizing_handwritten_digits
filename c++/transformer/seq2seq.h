@@ -29,6 +29,8 @@ class Seq2SeqEncoderDecoder {
             encoder->train(_training);
             decoder->train(_training);
         }
+        Encoder *get_encoder() { return encoder; }
+        Decoder *get_decoder() { return decoder; }
     private:
         Encoder *encoder;
         Decoder *decoder;
