@@ -73,7 +73,7 @@ std::vector<autograd::Node *> DecoderBlock::forward(
             tmp.clear();
             auto q = X[i];
             Shape shape = q->getShape();
-            for (uint j = 0; j < shape.rowCnt; j++) {
+            for (uint j = 0; j < shape.colCnt; j++) {
                 tmp.push_back(j+1);
             }
             dec_valid_lens.push_back(tmp);
