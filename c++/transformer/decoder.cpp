@@ -168,7 +168,7 @@ std::vector<autograd::Node *> Decoder::forward(
     for (auto blk : blocks) {
         X = blk->forward(X, enc_outputs, enc_valid_lens, ctx);
     }
-    if (is_training()) {
+    if (!is_training()) {
         assert(ctx);
         delete ctx;
     }
