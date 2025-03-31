@@ -184,13 +184,22 @@ class PositionalEncoding:  #@save
     def forward(self, X):
         X = X + self.P[:, :X.shape[1], :].to(X.device)
         return self.dropout(X)
+    
+def build_my_embedding(vocab_size, num_hiddens):
+    matrix = torch.zeros((vocab_size, num_hiddens))
+    matrix.fill_(1)
+    for i in range(vocab_size):
+        matrix[i, 0] = 0.1 * i
+    return matrix
 
 class TransformerEncoder():
     """The Transformer encoder."""
     def __init__(self, vocab_size, num_hiddens, ffn_num_hiddens,
                  num_heads, num_blks, dropout, use_bias=False):
         self.num_hiddens = num_hiddens
-        self.embedding = nn.Embedding(vocab_size, num_hiddens)
+        #self.embedding = nn.Embedding(vocab_size, num_hiddens)
+
+        self.embedding = build_my_embedding(vocab_size, num_hiddens)
         self.pos_encoding = PositionalEncoding(num_hiddens, dropout)
         self.blks = nn.Sequential()
         for i in range(num_blks):
@@ -201,15 +210,25 @@ class TransformerEncoder():
         # Since positional encoding values are between -1 and 1, the embedding
         # values are multiplied by the square root of the embedding dimension
         # to rescale before they are summed up
-        embs = self.embedding(X).clone().detach()
+        embs = X @ self.embedding
         embs.requires_grad = True
+        print("embs:", embs)
         X = self.pos_encoding.forward(embs * math.sqrt(self.num_hiddens))
         for i, blk in enumerate(self.blks):
             X = blk(X, valid_lens)    
         return X, embs
 
 def test():
-    x = torch.tensor([[0, 1, 2], [0, 2, 3]])
+    x = torch.tensor(
+        [[
+        [1, 0, 0, 0],
+        [0, 1, 0, 0],
+        [0, 0, 1, 0]
+        ],
+        [[1, 0, 0, 0],
+        [0, 0, 1, 0],
+        [0, 0, 0, 1]]
+        ], dtype=torch.float)
 
     # uint num_hiddens = 16;
     # uint num_blks = 2;
