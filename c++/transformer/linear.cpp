@@ -47,6 +47,14 @@ namespace autograd {
         return bias ? node->expand_add(b) : node;
     }
 
+    std::vector<Node *> Linear::forward(const std::vector<Node *> &input) {
+        std::vector<Node *> res;
+        for (auto node : input) {
+            res.push_back(forward(node));
+        }
+        return res;
+    }
+
     std::vector<Parameters *> Linear::get_parameters() {
         std::vector<Parameters *> res;
         res.push_back(PW);
@@ -71,6 +79,14 @@ namespace autograd {
             linear = new Linear(input->get_weight()->getShape().rowCnt, output_num, bias);
         }
         return linear->forward(input);
+    }
+
+    std::vector<Node *> LazyLinear::forward(const std::vector<Node *> &input) {
+        std::vector<Node *> res;
+        for (auto node : input) {
+            res.push_back(forward(node));
+        }
+        return res;
     }
 
     std::vector<Parameters *> LazyLinear::get_parameters() {

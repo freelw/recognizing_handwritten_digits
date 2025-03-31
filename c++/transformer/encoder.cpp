@@ -87,7 +87,6 @@ std::vector<autograd::Node *> Encoder::forward(
     const std::vector<std::vector<uint>> &inputs,
     const std::vector<uint> &valid_lens,
     std::vector<autograd::Node *> &out_embs) {
-    std::vector<autograd::Node *> res;
     auto embs = embedding->forward(inputs);
     out_embs = embs;
     std::vector<autograd::Node *> X;

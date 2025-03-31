@@ -1,4 +1,5 @@
 #include "decoder.h"
+#include "macro.h"
 
 DecoderBlock::DecoderBlock(
     uint _num_hidden,
@@ -101,4 +102,75 @@ std::vector<autograd::Parameters *> DecoderBlock::get_parameters() {
     tmp = addnorm3->get_parameters();
     res.insert(res.end(), tmp.begin(), tmp.end());
     return res;
+}
+
+Decoder::Decoder(
+    uint _vocab_size,
+    uint _num_hidden,
+    uint _ffn_num_hiddens,
+    uint _num_heads,
+    uint _num_blks,
+    DATATYPE dropout
+)
+    : vocab_size(_vocab_size),
+    num_hidden(_num_hidden),
+    ffn_num_hiddens(_ffn_num_hiddens),
+    num_heads(_num_heads),
+    num_blks(_num_blks),
+    training(true)
+{
+    embedding = new autograd::Embedding(vocab_size, num_hidden);
+    posencoding = new PosEncoding(MAX_POSENCODING_LEN, num_hidden, dropout);
+    for (uint i = 0; i < num_blks; i++) {
+        blocks.push_back(new DecoderBlock(num_hidden, ffn_num_hiddens, num_heads, dropout, i));
+    }
+    linear = new autograd::LazyLinear(vocab_size, true);
+}
+
+Decoder::~Decoder() {
+    delete linear;
+    for (auto blk : blocks) {
+        delete blk;
+    }
+    delete posencoding;
+    delete embedding;
+}
+
+void Decoder::train(bool _training) {
+    training = _training;
+    posencoding->train(_training);
+    for (auto blk : blocks) {
+        blk->train(_training);
+    }
+}
+
+std::vector<autograd::Node *> Decoder::forward(
+    const std::vector<std::vector<uint>> &inputs,
+    const std::vector<autograd::Node *> &enc_outputs,
+    const std::vector<uint> &enc_valid_lens,
+    std::vector<autograd::Node *> &out_embs
+) {
+    auto embs = embedding->forward(inputs);
+    out_embs = embs;
+    std::vector<autograd::Node *> X;
+    X.reserve(embs.size());
+    for (auto & emb : embs) {
+        X.push_back(emb->Mul(sqrt(num_hidden)));
+    }
+    X = posencoding->forward(X);
+    DecoderContext *ctx = nullptr;
+    if (is_training()) {
+        ctx = new DecoderContext();
+        for (uint i = 0; i < X.size(); i++) {
+            ctx->dec_X.push_back(nullptr);
+        }
+    }
+    for (auto blk : blocks) {
+        X = blk->forward(X, enc_outputs, enc_valid_lens, ctx);
+    }
+    if (is_training()) {
+        assert(ctx);
+        delete ctx;
+    }
+    return linear->forward(X);
 }

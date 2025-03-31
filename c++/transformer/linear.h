@@ -10,6 +10,7 @@ namespace autograd {
             Linear(uint input_num, uint output_num, bool _bias = true);
             ~Linear();
             Node *forward(Node *input);
+            std::vector<Node *> forward(const std::vector<Node *> &input);
             std::vector<Parameters *> get_parameters();
         private:
             bool bias;
@@ -26,6 +27,7 @@ namespace autograd {
             LazyLinear(uint _output_num, bool _bias = true);
             ~LazyLinear();
             Node *forward(Node *input);
+            std::vector<Node *> forward(const std::vector<Node *> &input);
             std::vector<Parameters *> get_parameters();
         private:
             uint output_num;
