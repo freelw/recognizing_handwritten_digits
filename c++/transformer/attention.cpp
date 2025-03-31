@@ -31,51 +31,36 @@ void mask(autograd::Node *node, const std::vector<uint> &valid_lens) {
     }
 }
 
+void expand_valid_lens(
+    const std::vector<autograd::Node *> &Q,
+    const std::vector<uint> &valid_lens,
+    std::vector<std::vector<uint>> &new_valid_lens
+) {
+    new_valid_lens.clear();
+    std::vector<std::vector<uint>> res;
+    for (uint i = 0; i < valid_lens.size(); i++) {
+        auto q = Q[i];
+        std::vector<uint> tmp;
+        for (uint j = 0; j < q->getShape().colCnt; j++) {
+            tmp.push_back(valid_lens[i]);
+        }
+        new_valid_lens.push_back(tmp);
+    }
+}
+
 std::vector<autograd::Node *> DotProductAttetion::forward(
     const std::vector<autograd::Node *> &Q,
     const std::vector<autograd::Node *> &K,
     const std::vector<autograd::Node *> &V,
     const std::vector<uint> &valid_lens
 ) {
-    // assert (K.size() == V.size());
-    // assert(valid_lens.size() == K.size() || valid_lens.size() == 0);
-    // std::vector<autograd::Node *> res;
-    // std::vector<autograd::Node *> scores;
-    // for (size_t i = 0; i < Q.size(); i++) {
-    //     autograd::Node *q = Q[i];
-    //     autograd::Node *k = K[i];
-    //     autograd::Node *score = q->Transpose()->at(k)->Transpose();
-    //     score = score->Div(sqrt(k->getShape().rowCnt));
-    //     if (valid_lens.size() > 0) {
-    //         mask(score, valid_lens[i]);
-    //     }
-    //     score = score->Softmax();
-    //     scores.push_back(score);
-    // }
-
-    // if (dropout > 0 && training()) {
-    //     scores = dropout_layer->forward(scores);
-    // }
-
-    // for (size_t i = 0; i < V.size(); i++) {
-    //     autograd::Node *att = V[i]->at(scores[i]);
-    //     res.push_back(att);
-    // }
-    // return res;
     assert (K.size() == V.size());
     assert(valid_lens.size() == K.size() || valid_lens.size() == 0);
     std::vector<std::vector<uint>> new_valid_lens;
     if (valid_lens.size() == 0) {
         new_valid_lens.clear();
     } else {
-        for (uint i = 0; i < valid_lens.size(); i++) {
-            auto q = Q[i];
-            std::vector<uint> tmp;
-            for (uint j = 0; j < q->getShape().colCnt; j++) {
-                tmp.push_back(valid_lens[i]);
-            }
-            new_valid_lens.push_back(tmp);
-        }
+        expand_valid_lens(Q, valid_lens, new_valid_lens);
     }
     return forward(Q, K, V, new_valid_lens);
 }
@@ -141,6 +126,21 @@ std::vector<autograd::Node *> MultiHeadAttention::forward(
     const std::vector<autograd::Node *> &values,
     const std::vector<uint> &valid_lens
 ) {
+    std::vector<std::vector<uint>> new_valid_lens;
+    if (valid_lens.size() == 0) {
+        new_valid_lens.clear();
+    } else {
+        expand_valid_lens(queries, valid_lens, new_valid_lens);
+    }
+    return forward(queries, keys, values, new_valid_lens);
+}
+
+std::vector<autograd::Node *> MultiHeadAttention::forward(
+    const std::vector<autograd::Node *> &queries,
+    const std::vector<autograd::Node *> &keys,
+    const std::vector<autograd::Node *> &values,
+    const std::vector<std::vector<uint>> &valid_lens
+) {
     assert(num_hidden % num_heads == 0);
     assert(queries.size() == keys.size());
     assert(queries.size() == values.size());
@@ -149,7 +149,7 @@ std::vector<autograd::Node *> MultiHeadAttention::forward(
     std::vector<autograd::Node *> split_queries;
     std::vector<autograd::Node *> split_keys;
     std::vector<autograd::Node *> split_values;
-    std::vector<uint> split_valid_lens;
+    std::vector<std::vector<uint>> split_valid_lens;
 
     split_queries.reserve(queries.size() * num_heads);
     split_keys.reserve(keys.size() * num_heads);

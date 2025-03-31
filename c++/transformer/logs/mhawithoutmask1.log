@@ -1,4 +1,3 @@
-(d2l) cs@cs-desktop:~/project/recognizing_handwritten_digits/c++/transformer$ ./transformer 
 loss: 
 [[12.896]]
 
@@ -75,3 +74,4 @@ res grad:
  [0.0555555]
  [0.0555555]
  [0.0555555]]
+

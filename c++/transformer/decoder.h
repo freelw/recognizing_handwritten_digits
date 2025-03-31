@@ -26,7 +26,6 @@ class DecoderBlock {
         std::vector<autograd::Node *> forward(
             const std::vector<autograd::Node *> &X,
             const std::vector<autograd::Node *> &enc_outputs,
-            const std::vector<uint> &valid_lens,
             DecoderContext *ctx
         );
     private:

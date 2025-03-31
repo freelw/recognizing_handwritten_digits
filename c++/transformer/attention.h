@@ -44,6 +44,12 @@ class MultiHeadAttention {
             const std::vector<autograd::Node *> &values,
             const std::vector<uint> &valid_lens
         );
+        std::vector<autograd::Node *> forward(
+            const std::vector<autograd::Node *> &queries,
+            const std::vector<autograd::Node *> &keys,
+            const std::vector<autograd::Node *> &values,
+            const std::vector<std::vector<uint>> &valid_lens
+        );
         void train(bool _is_training) {
             is_training = _is_training;
             attention->train(_is_training);
