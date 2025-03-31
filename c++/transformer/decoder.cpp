@@ -174,3 +174,17 @@ std::vector<autograd::Node *> Decoder::forward(
     }
     return linear->forward(X);
 }
+
+std::vector<autograd::Parameters *> Decoder::get_parameters() {
+    std::vector<autograd::Parameters *> res;
+    std::vector<autograd::Parameters *> tmp;
+    tmp = embedding->get_parameters();
+    res.insert(res.end(), tmp.begin(), tmp.end());
+    for (auto blk : blocks) {
+        tmp = blk->get_parameters();
+        res.insert(res.end(), tmp.begin(), tmp.end());
+    }
+    tmp = linear->get_parameters();
+    res.insert(res.end(), tmp.begin(), tmp.end());
+    return res;
+}
