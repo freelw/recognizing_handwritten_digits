@@ -1,4 +1,5 @@
 #include "encoder.h"
+#include "macro.h"
 
 EncoderBlock::EncoderBlock(uint _num_hidden, uint _ffn_num_hiddens, uint _num_heads, DATATYPE dropout, bool _bias)
     : num_hidden(_num_hidden),
@@ -50,8 +51,6 @@ void EncoderBlock::train(bool _training) {
 bool EncoderBlock::is_training() {
     return training;
 }
-
-#define MAX_POSENCODING_LEN 10000
 
 Encoder::Encoder(
     uint _vocab_size,

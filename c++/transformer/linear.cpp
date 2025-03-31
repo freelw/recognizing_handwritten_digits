@@ -1,7 +1,6 @@
 #include "linear.h"
 #include "xavier.h"
-
-#define DEBUG_GRAD
+#include "macro.h"
 
 namespace autograd {
     Linear::Linear(uint input_num, uint output_num, bool _bias) 

@@ -1,6 +1,6 @@
 #include "embedding.h"
+#include "macro.h"
 
-#define DEBUG_GRAD
 namespace autograd {
 
     Embedding::Embedding(uint _vocab_size, uint _hidden_num) : vocab_size(_vocab_size), hidden_num(_hidden_num) {
