@@ -20,15 +20,21 @@ namespace autograd {
         Mul,
         Sub,
         Div,
+        MulSV, // single value
         MatMulL,
         MatMulR,
         Tanh,
         Cat0,
         Cat1,
+        Split0,
+        Split1,
         Sigmoid,
         Relu,
         CrossEntropy,
         CrossEntropyMask,
+        Norm,
+        Softmax,
+        Transpose,
     };
     class Node {
         public:
@@ -74,8 +80,8 @@ namespace autograd {
                 }
             }
 
-            void checkShape(const Shape &shape) {
-                w->checkShape(shape);
+            bool checkShape(const Shape &shape) {
+                return w->checkShape(shape);
             }
 
             Node *operator+(Node *rhs);
@@ -87,6 +93,14 @@ namespace autograd {
             Node *CrossEntropyMask(const std::vector<uint> &labels, const std::vector<bool> &mask);
             Node *Tanh();
             Node *Sigmoid();
+            Node *Norm();
+            Node *Softmax();
+            Node *Transpose();
+            Node *Mul(DATATYPE v);
+            Node *Div(DATATYPE v);
+            std::vector<Node *> split(uint dim, uint step = 1);
+            std::vector<Node *> split0();
+            std::vector<Node *> split1(uint step);
             // Node *operator*(Node &rhs);
             // Node *operator/(Node &rhs);
             // Node *operator-(Node &rhs);
@@ -102,6 +116,16 @@ namespace autograd {
             std::vector<Edge *> edges;
             int ref_cnt;
     };
+
+    Node *cat(const std::vector<Node *> &nodes, uint dim = 0);
+    Node *cat0(const std::vector<Node *> &nodes);
+    Node *cat1(const std::vector<Node *> &nodes);
+    
+    Node *allocNode(Matrix *w);
+    void freeAllNodes();
+    void freeAllEdges();
+    TmpNodesStats tmpNodesStats();
+    TmpEdgesStats tmpEdgesStats();
 
     class Edge {
         public:
@@ -383,6 +407,35 @@ namespace autograd {
             uint offset;
     };
 
+    class SplitEdge1: public Edge {
+        public:
+            static Edge* create(Node *_node, uint _step) {
+                Edge *edge = new SplitEdge1(_node, _step);
+                edges.push_back(edge);
+                return edge;
+            }
+            SplitEdge1(Node *_node, uint _step)
+                : Edge(OpType::Split1, _node), step(_step){}
+            virtual ~SplitEdge1() {}
+            void backward(Matrix *grad) override {
+                assert(node->is_require_grad());
+                assert(node->get_grad()->getShape().colCnt == grad->getShape().colCnt); 
+                Shape shape = grad->getShape();
+                uint rowBase = step * shape.rowCnt;
+                for (uint i = 0; i < shape.rowCnt; i ++) {
+                    for (uint j = 0; j < shape.colCnt; ++ j) {
+                        assert(i + rowBase < node->get_grad()->getShape().rowCnt);
+                        assert(i < shape.rowCnt);
+                        assert(j < shape.colCnt);
+                        assert(j < node->get_grad()->getShape().colCnt);
+                        (*node->get_grad())[i + rowBase][j] += (*grad)[i][j];
+                    }
+                }
+            }
+        private:
+            uint step;
+    };
+
     class CatEdge1: public Edge {
         public:
             static Edge* create(Node *_node, uint _offset) {
@@ -407,14 +460,151 @@ namespace autograd {
             uint offset;
     };
 
-    Node *cat(const std::vector<Node *> &nodes, uint dim = 0);
-    Node *cat0(const std::vector<Node *> &nodes);
-    Node *cat1(const std::vector<Node *> &nodes);
-    Node *allocNode(Matrix *w);
-    void freeAllNodes();
-    void freeAllEdges();
-    TmpNodesStats tmpNodesStats();
-    TmpEdgesStats tmpEdgesStats();
+    class NormEdge: public Edge {
+        public:
+            static Edge* create(
+                Node *_node,
+                Matrix *w_hat,
+                const std::vector<DATATYPE> &_avg_res, const std::vector<DATATYPE> &_var_res,
+                DATATYPE eps) {
+                Edge *edge = new NormEdge(_node, w_hat, _avg_res, _var_res, eps);
+                edges.push_back(edge);
+                return edge;
+            }
+            NormEdge(
+                Node *_node,
+                Matrix *_w_hat,
+                const std::vector<DATATYPE> &_avg_res,
+                const std::vector<DATATYPE> &_var_res,
+                DATATYPE _eps
+            ) : Edge(OpType::Norm, _node),
+                w_hat(_w_hat),
+                avg_res(_avg_res),
+                var_res(_var_res),
+                eps(_eps) {}
+            virtual ~NormEdge() {}
+            void backward(Matrix *grad) override {
+                assert(grad->getShape().colCnt == node->getShape().colCnt);
+                assert(node->is_require_grad());
+                std::vector<Node *> v_w;
+                for (uint k = 0; k < grad->getShape().colCnt; k++) {
+                    uint rowCnt = grad->getShape().rowCnt;
+                    Matrix *mw = allocTmpMatrix(Shape(rowCnt, rowCnt));
+                    for (uint i = 0; i < rowCnt; i++) {
+                        for (uint j = 0; j < rowCnt; j++) {
+                            int eq = i == j;
+                            auto sigma = std::sqrt(var_res[k] + eps);
+                            auto x_hat_i = (*w_hat)[i][k];
+                            auto x_hat_j = (*w_hat)[j][k];
+                            // (*mw)[i][j] = (eq - 1.0 / rowCnt - 1.0 / rowCnt * x_hat_i * x_hat_j) / sigma;
+                            // 上面的计算精度降低很多，下面的计算精度更高
+                            auto part1 = eq * (int)rowCnt - 1 - x_hat_i * x_hat_j;
+                            auto part2 = (int)rowCnt * sigma;
+                            (*mw)[i][j] = part1 / part2;
+                        }
+                    }
+                    v_w.push_back(allocNode(mw));
+                }
+                std::vector<Node *> v_grads = allocNode(grad)->split(0);
+                assert(v_w.size() == v_grads.size());
+                std::vector<Node *> v_res;
+                for (uint i = 0; i < v_w.size(); i++) {
+                    v_res.push_back(v_w[i]->at(v_grads[i]));
+                }
+                *node->get_grad() += *(cat(v_res, 0)->get_weight());
+            }
+        private:
+            Matrix *w_hat;
+            std::vector<DATATYPE> avg_res;
+            std::vector<DATATYPE> var_res;
+            DATATYPE eps;
+    };
+
+    class SoftmaxEdge: public Edge {
+        public:
+            static Edge* create(Node *_node, Node *_res) {
+                Edge *edge = new SoftmaxEdge(_node, _res);
+                edges.push_back(edge);
+                return edge;
+            }
+            SoftmaxEdge(Node *_node, Node *_res)
+                : Edge(Softmax, _node), res(_res) {}
+            virtual ~SoftmaxEdge() {}
+            void backward(Matrix *grad) override {
+                assert(grad->getShape().colCnt == node->getShape().colCnt);
+                assert(node->is_require_grad());
+                Matrix *softmax_grad = allocTmpMatrix(grad->getShape());
+                uint rowCnt = grad->getShape().rowCnt;
+                uint colCnt = grad->getShape().colCnt;
+                for (uint k = 0; k < colCnt; k++) {
+                    for (uint target = 0; target < rowCnt; target++) {
+                        for (uint i = 0; i < rowCnt; i++) {
+                            if (i != target) {
+                                (*softmax_grad)[i][k] += -(*res->get_weight())[target][k] * (*res->get_weight())[i][k] * (*grad)[target][k];
+                            } else {
+                                (*softmax_grad)[i][k] += (*res->get_weight())[i][k] * (1 - (*res->get_weight())[i][k]) * (*grad)[i][k];
+                            }
+                        }
+                    }
+                }
+                assert(softmax_grad->checkShape(grad->getShape()));
+                *node->get_grad() += *softmax_grad;
+            }
+        private:
+            Node *res;
+    };
+
+    class TransposeEdge: public Edge {
+        public:
+            static Edge* create(Node *_node) {
+                Edge *edge = new TransposeEdge(_node);
+                edges.push_back(edge);
+                return edge;
+            }
+            TransposeEdge(Node *_node)
+                : Edge(OpType::Transpose, _node) {}
+            virtual ~TransposeEdge() {}
+            void backward(Matrix *grad) override {
+                assert(node->is_require_grad());
+                *node->get_grad() += *(grad->transpose());
+            }
+    };
+
+    class MulSingleValueEdge: public Edge {
+        public:
+            static Edge* create(Node *_node, DATATYPE _v) {
+                Edge *edge = new MulSingleValueEdge(_node, _v);
+                edges.push_back(edge);
+                return edge;
+            }
+            MulSingleValueEdge(Node *_node, DATATYPE _v)
+                : Edge(OpType::MulSV, _node), v(_v) {}
+            virtual ~MulSingleValueEdge() {}
+            void backward(Matrix *grad) override {
+                assert(node->is_require_grad());
+                *node->get_grad() += *(*grad * v);
+            }
+        private:
+            DATATYPE v;
+    };
+
+    class DivEdge: public Edge {
+        public:
+            static Edge* create(Node *_node, DATATYPE _v) {
+                Edge *edge = new DivEdge(_node, _v);
+                edges.push_back(edge);
+                return edge;
+            }
+            DivEdge(Node *_node, DATATYPE _v)
+                : Edge(OpType::Div, _node), v(_v) {}
+            virtual ~DivEdge() {}
+            void backward(Matrix *grad) override {
+                assert(node->is_require_grad());
+                *node->get_grad() += *(*grad / v);
+            }
+        private:
+            DATATYPE v;
+    };
 } // namespace autograd
 
 #endif

@@ -41,7 +41,7 @@ Matrix *Matrix::zero() {
     return this;
 }
 
-void Matrix::checkShape(const Matrix &m) {
+bool Matrix::checkShape(const Matrix &m) {
     if (!(this->getShape() == m.getShape())) {
         std::cerr << 
             "matrix shape missmatch." << 
@@ -53,6 +53,7 @@ void Matrix::checkShape(const Matrix &m) {
         std::cerr << "matrix not initialized..." << std::endl;
         assert(false);
     }
+    return true;
 }
 
 ostream &operator<<(ostream &output, const Matrix &m) {
@@ -419,6 +420,35 @@ std::vector<uint> Matrix::argMax() {
             }
         }
         res.push_back(max_index);
+    }
+    return res;
+}
+
+std::vector<DATATYPE> Matrix::avg() {
+    Shape shape = getShape();
+    std::vector<DATATYPE> res;
+    res.reserve(shape.colCnt);
+    for (uint i = 0; i < shape.colCnt; ++ i) {
+        DATATYPE sum = 0;
+        for (uint j = 0; j < shape.rowCnt; ++ j) {
+            sum += (*this)[j][i];
+        }
+        res.push_back(sum/shape.rowCnt);
+    }
+    return res;
+}
+
+std::vector<DATATYPE> Matrix::var() {
+    std::vector<DATATYPE> res;
+    std::vector<DATATYPE> avg_res = this->avg();
+    Shape shape = getShape();
+    for (uint i = 0; i < shape.colCnt; ++ i) {
+        DATATYPE sum = 0;
+        auto avg_r = avg_res[i];
+        for (uint j = 0; j < shape.rowCnt; ++ j) {
+            sum += std::pow(((*this)[j][i] - avg_r), 2);
+        }
+        res.push_back(sum/shape.rowCnt);
     }
     return res;
 }

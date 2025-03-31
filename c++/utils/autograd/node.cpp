@@ -90,6 +90,84 @@ namespace autograd {
         (*loss)[0][0] = loss_value/mask_cnt;
         return loss;
     }
+
+    Node *Node::Norm() {
+        auto *tmp = allocTmpMatrix(w);
+        std::vector<DATATYPE> avg_res = w->avg();
+        std::vector<DATATYPE> var_res = w->var();
+        Shape shape = tmp->getShape();
+        DATATYPE eps = 1e-5;
+        for (uint i = 0; i < shape.rowCnt; ++ i) {
+            for (uint j = 0; j < shape.colCnt; ++ j) {
+                (*tmp)[i][j] = ((*w)[i][j] - avg_res[j]) / sqrt(var_res[j] + eps);
+            }
+        }
+        
+        auto *node = allocNode(tmp);
+        if (is_require_grad()) {
+            node->require_grad();
+            node->edges.push_back(NormEdge::create(this, tmp, avg_res, var_res, eps));
+        }
+        return node;
+    }
+
+    Node *Node::Softmax() {
+        auto *tmp = allocTmpMatrix(w);
+        Shape shape = tmp->getShape();
+        for (uint j = 0; j < shape.colCnt; ++ j) {
+            DATATYPE max = (*w)[0][j];
+            for (uint i = 0; i < shape.rowCnt; ++ i) {
+                if (max < (*w)[i][j]) {
+                    max = (*w)[i][j];
+                }
+            }
+            DATATYPE sum = 0;
+            for (uint i = 0; i < shape.rowCnt; ++ i) {
+                DATATYPE e = std::exp((*w)[i][j] - max);
+                sum += e;
+                (*tmp)[i][j] = e;
+            }
+            for (uint i = 0; i < shape.rowCnt; ++ i) {
+                (*tmp)[i][j] /= sum;
+            }
+        }
+        auto *node = allocNode(tmp);
+        if (is_require_grad()) {
+            node->require_grad();
+            node->edges.push_back(SoftmaxEdge::create(this, node));
+        }
+        return node;
+    }
+
+    Node *Node::Transpose() {
+        auto *tmp = allocTmpMatrix(w->transpose());
+        auto *node = allocNode(tmp);
+        if (is_require_grad()) {
+            node->require_grad();
+            node->edges.push_back(TransposeEdge::create(this));
+        }
+        return node;
+    }
+
+    Node *Node::Mul(DATATYPE v) {
+        auto *tmp = allocTmpMatrix(*w * v);
+        auto *node = allocNode(tmp);
+        if (is_require_grad()) {
+            node->require_grad();
+            node->edges.push_back(MulSingleValueEdge::create(this, v));
+        }
+        return node;
+    }
+
+    Node *Node::Div(DATATYPE v) {
+        auto *tmp = allocTmpMatrix(*w / v);
+        auto *node = allocNode(tmp);
+        if (is_require_grad()) {
+            node->require_grad();
+            node->edges.push_back(DivEdge::create(this, v));
+        }
+        return node;
+    }
  
     Node *Node::operator+(Node *rhs) {
         auto *node = allocNode(*w + *(rhs->w));
@@ -301,12 +379,67 @@ namespace autograd {
     Node *cat(const std::vector<Node *> &nodes, uint dim) {
         assert(dim == 0 || dim == 1);
         assert(nodes.size() > 0);
-        if (dim == 0) {
+        if (dim == 0) { // 这里似乎反了，将错就错，dim == 0 时我们拼接行，split也要这样实现
             return cat0(nodes);
         } else if (dim == 1) {
             return cat1(nodes);
         }
         return nullptr;
+    }
+
+    std::vector<Node *> Node::split0() { // 注意这个函数只用在反向传播中，不需要edge
+        Shape shape = this->get_weight()->getShape();
+         uint colCnt = shape.colCnt;
+         uint rowCnt = shape.rowCnt;
+         std::vector<Node *> res;
+         for (uint i = 0; i < colCnt; ++ i) {
+             Matrix *m = allocTmpMatrix(Shape(rowCnt, 1));
+             Node *n = allocNode(m);
+             if (is_require_grad()) {
+                 n->require_grad();
+             }
+             for (uint j = 0; j < rowCnt; ++ j) {
+                 (*m)[j][0] = (*this->get_weight())[j][i];
+             }
+             res.push_back(n);
+         }
+         return res;
+    }
+
+    std::vector<Node *> Node::split1(uint step) {
+        Shape shape = this->get_weight()->getShape();
+        uint colCnt = shape.colCnt;
+        uint rowCnt = shape.rowCnt;
+        assert(step > 0 && rowCnt % step == 0);
+        std::vector<Node *> res;
+        for (uint i = 0; i < rowCnt; i += step) {
+            Matrix *m = allocTmpMatrix(Shape(step, colCnt));
+            Node *n = allocNode(m);
+            if (is_require_grad()) {
+                n->require_grad();
+            }
+            for (uint j = 0; j < step; ++ j) {
+                for (uint k = 0; k < colCnt; ++ k) {
+                    (*m)[j][k] = (*this->get_weight())[i+j][k];
+                }
+            }
+            n->edges.push_back(SplitEdge1::create(this, i/step));
+            res.push_back(n);
+        }
+        return res;
+    }
+
+    std::vector<Node *> Node::split(uint dim, uint step) {
+        assert(dim == 0 || dim == 1);
+        if (dim == 0) { // 将错就错，dim == 0 时我们切割行，cat也要这样实现
+            // assert(false);
+            assert(step == 1);
+            return split0();
+            
+        } else if (dim == 1) {
+            return split1(step);
+        }
+        return {};
     }
 
     void Node::backward() {

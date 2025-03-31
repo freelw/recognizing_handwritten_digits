@@ -67,12 +67,14 @@ public:
     bool valid(uint x, uint y) const;
     void reShape(Shape shape);
     Matrix *assign(Matrix *);
-    void checkShape(const Matrix &m);
+    bool checkShape(const Matrix &m);
     Matrix *sum(uint dim);
     std::vector<Matrix *> split(uint dim);
     DATATYPE *getData() const;
     Matrix *fill(DATATYPE value);
     std::vector<uint> argMax();
+    std::vector<DATATYPE> avg();
+    std::vector<DATATYPE> var();
 private:
     bool initialized;
     bool allocated;
