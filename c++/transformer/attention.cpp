@@ -14,10 +14,19 @@ DotProductAttetion::~DotProductAttetion() {
     }
 }
 
-void mask(autograd::Node *node, uint valid_len) {
-    for (uint i = valid_len; i < node->get_weight()->getShape().rowCnt; i++) {
-        for (uint j = 0; j < node->get_weight()->getShape().colCnt; j++) {
-            (*node->get_weight())[i][j] = -1e6;
+// void mask(autograd::Node *node, uint valid_len) {
+//     for (uint i = valid_len; i < node->get_weight()->getShape().rowCnt; i++) {
+//         for (uint j = 0; j < node->get_weight()->getShape().colCnt; j++) {
+//             (*node->get_weight())[i][j] = -1e6; // very big negative value
+//         }
+//     }
+// }
+
+void mask(autograd::Node *node, const std::vector<uint> &valid_lens) {
+    assert(node->get_weight()->getShape().colCnt == valid_lens.size());
+    for (uint i = 0; i < node->get_weight()->getShape().colCnt; i++) {
+        for (uint j = valid_lens[i]; j < node->get_weight()->getShape().rowCnt; j++) {
+            (*node->get_weight())[j][i] = -1e6; // very big negative value
         }
     }
 }
@@ -27,6 +36,55 @@ std::vector<autograd::Node *> DotProductAttetion::forward(
     const std::vector<autograd::Node *> &K,
     const std::vector<autograd::Node *> &V,
     const std::vector<uint> &valid_lens
+) {
+    // assert (K.size() == V.size());
+    // assert(valid_lens.size() == K.size() || valid_lens.size() == 0);
+    // std::vector<autograd::Node *> res;
+    // std::vector<autograd::Node *> scores;
+    // for (size_t i = 0; i < Q.size(); i++) {
+    //     autograd::Node *q = Q[i];
+    //     autograd::Node *k = K[i];
+    //     autograd::Node *score = q->Transpose()->at(k)->Transpose();
+    //     score = score->Div(sqrt(k->getShape().rowCnt));
+    //     if (valid_lens.size() > 0) {
+    //         mask(score, valid_lens[i]);
+    //     }
+    //     score = score->Softmax();
+    //     scores.push_back(score);
+    // }
+
+    // if (dropout > 0 && training()) {
+    //     scores = dropout_layer->forward(scores);
+    // }
+
+    // for (size_t i = 0; i < V.size(); i++) {
+    //     autograd::Node *att = V[i]->at(scores[i]);
+    //     res.push_back(att);
+    // }
+    // return res;
+    assert (K.size() == V.size());
+    assert(valid_lens.size() == K.size() || valid_lens.size() == 0);
+    std::vector<std::vector<uint>> new_valid_lens;
+    if (valid_lens.size() == 0) {
+        new_valid_lens.clear();
+    } else {
+        for (uint i = 0; i < valid_lens.size(); i++) {
+            auto q = Q[i];
+            std::vector<uint> tmp;
+            for (uint j = 0; j < q->getShape().colCnt; j++) {
+                tmp.push_back(valid_lens[i]);
+            }
+            new_valid_lens.push_back(tmp);
+        }
+    }
+    return forward(Q, K, V, new_valid_lens);
+}
+
+std::vector<autograd::Node *> DotProductAttetion::forward(
+    const std::vector<autograd::Node *> &Q,
+    const std::vector<autograd::Node *> &K,
+    const std::vector<autograd::Node *> &V,
+    const std::vector<std::vector<uint>> &valid_lens
 ) {
     assert (K.size() == V.size());
     assert(valid_lens.size() == K.size() || valid_lens.size() == 0);
