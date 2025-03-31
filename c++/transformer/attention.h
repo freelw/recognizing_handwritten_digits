@@ -30,7 +30,7 @@ class DotProductAttetion {
 
 class MultiHeadAttention {
     public:
-        MultiHeadAttention(uint _num_heads, uint _num_hidden, DATATYPE dropout);
+        MultiHeadAttention(uint _num_heads, uint _num_hidden, DATATYPE dropout, bool _bias = false);
         ~MultiHeadAttention();
         std::vector<autograd::Node *> forward(
             const std::vector<autograd::Node *> &queries,
@@ -55,6 +55,7 @@ class MultiHeadAttention {
         autograd::LazyLinear *Wv;
         autograd::LazyLinear *Wo;
         bool is_training;
+        bool bias;
 };
 
 #endif
