@@ -167,6 +167,12 @@ std::vector<autograd::Node *> MultiHeadAttention::forward(
             split_valid_lens.push_back(len);
         }
     }
+    assert(split_queries.size() > 0);
+    assert(split_queries[0]->getShape().rowCnt == step);
+    assert(split_queries.size() == queries.size() * num_heads);
+    assert(split_keys.size() == keys.size() * num_heads);
+    assert(split_values.size() == values.size() * num_heads);
+    assert(split_valid_lens.size() == valid_lens.size() * num_heads);
 
     std::vector<autograd::Node *> atts = attention->forward(split_queries, split_keys, split_values, split_valid_lens);
     assert(atts.size() == split_queries.size());
@@ -178,6 +184,8 @@ std::vector<autograd::Node *> MultiHeadAttention::forward(
             tmp.push_back(atts[i + j]);
         }
         autograd::Node *att = autograd::cat(tmp, 1);
+        assert(att->getShape().rowCnt == num_hidden);
+        assert(att->getShape().colCnt == queries[i / num_heads]->getShape().colCnt);
         res.push_back(Wo->forward(att));
     }
     return res;
