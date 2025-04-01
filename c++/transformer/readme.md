@@ -29,3 +29,6 @@ epoch 0 loss : 8.38027 emit_clip : 3
 [300/300]epoch 8 loss : 3.81192 emit_clip : 3
 [300/300]checkpoint saved : ./checkpoints/checkpoint_20250331_204059_9.bin
 ```
+
+## perf
+![alt text](perf/p_3681797.svg)

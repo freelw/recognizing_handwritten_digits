@@ -27,7 +27,7 @@ bool shutdown = false;
 #define TINY_EMBED_SIZE 2
 
 #define TEST_FILE "./test.txt"
-#define BATCH_SIZE 1
+#define BATCH_SIZE 128
 
 void signal_callback_handler(int signum);
 
