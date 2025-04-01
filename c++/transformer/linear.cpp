@@ -24,7 +24,8 @@ namespace autograd {
 
         if (bias) {
             mb = new Matrix(Shape(output_num, 1));
-            mb->zero();
+            // mb->zero();
+            init_weight(mb, 0.01); // this is very important, break the symmetry
             b = new Node(mb, true);
             b->require_grad();
             Pb = new Parameters(b);

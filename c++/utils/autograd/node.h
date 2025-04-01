@@ -409,19 +409,20 @@ namespace autograd {
 
     class SplitEdge1: public Edge {
         public:
-            static Edge* create(Node *_node, uint _step) {
-                Edge *edge = new SplitEdge1(_node, _step);
+            static Edge* create(Node *_node, uint _index, uint _step) {
+                Edge *edge = new SplitEdge1(_node, _index, _step);
                 edges.push_back(edge);
                 return edge;
             }
-            SplitEdge1(Node *_node, uint _step)
-                : Edge(OpType::Split1, _node), step(_step){}
+            SplitEdge1(Node *_node, uint _index, uint _step)
+                : Edge(OpType::Split1, _node), index(_index), step(_step){}
             virtual ~SplitEdge1() {}
             void backward(Matrix *grad) override {
                 assert(node->is_require_grad());
                 assert(node->get_grad()->getShape().colCnt == grad->getShape().colCnt); 
                 Shape shape = grad->getShape();
-                uint rowBase = step * shape.rowCnt;
+                assert(shape.rowCnt == step);
+                uint rowBase = index * step;
                 for (uint i = 0; i < shape.rowCnt; i ++) {
                     for (uint j = 0; j < shape.colCnt; ++ j) {
                         assert(i + rowBase < node->get_grad()->getShape().rowCnt);
@@ -433,6 +434,7 @@ namespace autograd {
                 }
             }
         private:
+            uint index;
             uint step;
     };
 

@@ -73,6 +73,7 @@ std::vector<autograd::Node *> DotProductAttetion::forward(
         autograd::Node *k = K[i];
         autograd::Node *score = q->Transpose()->at(k)->Transpose();
         score = score->Div(sqrt(k->getShape().rowCnt));
+        assert(score->is_require_grad());
         if (valid_lens.size() > 0) {
             mask(score, valid_lens[i]);
         }
@@ -166,17 +167,28 @@ std::vector<autograd::Node *> MultiHeadAttention::forward(
             split_valid_lens.push_back(len);
         }
     }
+    assert(split_queries.size() > 0);
+    assert(split_queries[0]->getShape().rowCnt == step);
+    assert(split_queries.size() == queries.size() * num_heads);
+    assert(split_keys.size() == keys.size() * num_heads);
+    assert(split_values.size() == values.size() * num_heads);
+    assert(split_valid_lens.size() == valid_lens.size() * num_heads);
 
     std::vector<autograd::Node *> atts = attention->forward(split_queries, split_keys, split_values, split_valid_lens);
     assert(atts.size() == split_queries.size());
     std::vector<autograd::Node *> res;
     res.reserve(queries.size());
+    assert(atts.size() % num_heads == 0);
     for (uint i = 0; i < atts.size(); i += num_heads) {
         std::vector<autograd::Node *> tmp;
         for (uint j = 0; j < num_heads; j++) {
             tmp.push_back(atts[i + j]);
+            assert(atts[i + j]->is_require_grad());
         }
         autograd::Node *att = autograd::cat(tmp, 1);
+        assert(att->getShape().rowCnt == num_hidden);
+        assert(att->getShape().colCnt == queries[i / num_heads]->getShape().colCnt);
+        assert(att->is_require_grad());
         res.push_back(Wo->forward(att));
     }
     return res;

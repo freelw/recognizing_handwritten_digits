@@ -75,7 +75,7 @@ class Decoder {
         bool training;
         autograd::Embedding *embedding;
         PosEncoding *posencoding;
-        autograd::LazyLinear *linear;
+        autograd::LazyLinear *dense;
         std::vector<DecoderBlock *> blocks;
 };
 #endif
