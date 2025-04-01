@@ -297,8 +297,8 @@ void train(
 
 int main(int argc, char *argv[]) {
     cout << "OMP_THREADS: " << OMP_THREADS << endl;
-    test();
-    return -1;
+    // test();
+    // return -1;
     signal(SIGINT, signal_callback_handler);
     std::string corpus;
     std::string checkpoint;
