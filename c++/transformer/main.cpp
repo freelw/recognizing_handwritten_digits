@@ -165,6 +165,13 @@ void train(
         std::cerr << "parameter size = " << parameters.size() << std::endl;
         abort();
     }
+    for (auto p : parameters) {
+        if (!p->require_grad()) {
+            std::cerr << "parameter require_grad = false" << std::endl;
+            abort();
+        }
+    }
+    std::cout << "all parameters require_grad = true" << std::endl;
 
     if (!checkpoint.empty()) {
         cout << "loading from checkpoint : " << checkpoint << endl;
