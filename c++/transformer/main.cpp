@@ -27,7 +27,7 @@ bool shutdown = false;
 #define TINY_EMBED_SIZE 2
 
 #define TEST_FILE "./test.txt"
-#define BATCH_SIZE 128
+#define BATCH_SIZE 1
 
 void signal_callback_handler(int signum);
 
@@ -113,7 +113,7 @@ void train(
     DATATYPE lr,
     bool tiny) {
 
-    uint num_steps = 9;
+    uint num_steps = tiny ? 4 : 9;
     std::string src_vocab_name = tiny ? SRC_VOCAB_TINY_NAME : SRC_VOCAB_NAME;
     std::string tgt_vocab_name = tiny ? TGT_VOCAB_TINY_NAME : TGT_VOCAB_NAME;
     seq2seq::DataLoader loader(corpus, src_vocab_name, tgt_vocab_name, TEST_FILE);
@@ -121,9 +121,9 @@ void train(
     uint enc_vocab_size = loader.src_vocab_size();
     uint dec_vocab_size = loader.tgt_vocab_size();
 
-    uint num_hiddens = 256;
+    uint num_hiddens = tiny ? 16 : 256;
     uint num_blks = 2;
-    uint ffn_num_hiddens = 64;
+    uint ffn_num_hiddens = tiny ? 4 : 64;
     uint num_heads = 4;
 
     Seq2SeqEncoderDecoder *encoder_decoder = allocEncoderDecoder(
@@ -132,6 +132,7 @@ void train(
         num_hiddens, num_blks, ffn_num_hiddens, num_heads, dropout
     );
     warmUp(encoder_decoder);
+    std::cout << "warmUp done" << std::endl;
 
     auto parameters = encoder_decoder->get_parameters();
     /*
@@ -209,6 +210,40 @@ void train(
                 }
             }
 
+            // print input_sencentces
+            for (auto &s : input_sentences) {
+                for (auto &t : s) {
+                    std::cout << loader.get_src_token(t) << " ";
+                }
+                std::cout << std::endl;
+            }
+
+            // print target_sentences
+            for (auto &s : target_sentences) {
+                for (auto &t : s) {
+                    std::cout << loader.get_tgt_token(t) << " ";
+                }
+                std::cout << std::endl;
+            }
+
+            // print target_labels
+            for (auto &t : labels) {
+                std::cout << loader.get_tgt_token(t) << " ";
+            }
+            std::cout << std::endl;
+
+            // print mask
+            for (auto m : mask) {
+                std::cout << m << " ";
+            }
+            std::cout << std::endl;
+            
+            // print enc_valid_lens
+            for (auto l : enc_valid_lens) {
+                std::cout << l << " ";
+            }
+            std::cout << std::endl;
+
             assert(input_sentences.size() == cur_batch_size);
             assert(target_sentences.size() == cur_batch_size);
             assert(target_labels.size() == cur_batch_size);
@@ -223,6 +258,8 @@ void train(
                 enc_out_embs, dec_out_embs
             );
             dec_outputs->checkShape(Shape(dec_vocab_size, cur_batch_size * num_steps));
+            // print dec_outputs shape
+            std::cout << "dec_outputs shape : " << dec_outputs->getShape() << std::endl;
             auto loss = dec_outputs->CrossEntropyMask(labels, mask);
             assert(loss->get_weight()->getShape().rowCnt == 1);
             assert(loss->get_weight()->getShape().colCnt == 1);
