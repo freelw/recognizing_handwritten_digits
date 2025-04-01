@@ -72,6 +72,7 @@ std::vector<autograd::Node *> DotProductAttetion::forward(
         autograd::Node *q = Q[i];
         autograd::Node *k = K[i];
         autograd::Node *score = q->Transpose()->at(k)->Transpose();
+        assert(score->is_require_grad());
         score = score->Div(sqrt(k->getShape().rowCnt));
         if (valid_lens.size() > 0) {
             mask(score, valid_lens[i]);
