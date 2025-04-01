@@ -81,27 +81,27 @@ std::vector<autograd::Node *> DecoderBlock::forward(
         }
     }
     // print dec_valid_lens
-    std::cout << "dec_valid_lens" << std::endl;
-    for (auto l : dec_valid_lens) {
-        for (auto i : l) {
-            std::cout << i << " ";
-        }
-        std::cout << std::endl;
-    }
+    // std::cout << "dec_valid_lens" << std::endl;
+    // for (auto l : dec_valid_lens) {
+    //     for (auto i : l) {
+    //         std::cout << i << " ";
+    //     }
+    //     std::cout << std::endl;
+    // }
 
     // print enc_valid_lens
-    std::cout << "enc_valid_lens" << std::endl;
-    for (auto l : enc_valid_lens) {
-        std::cout << l << " ";
-    }
-    std::cout << std::endl;
+    // std::cout << "enc_valid_lens" << std::endl;
+    // for (auto l : enc_valid_lens) {
+    //     std::cout << l << " ";
+    // }
+    // std::cout << std::endl;
 
     // print enc_outputs
-    std::cout << "enc_outputs" << std::endl;
-    for (auto l : enc_outputs) {
-        std::cout << *l->get_weight() << " ";
-    }
-    std::cout << std::endl;
+    // std::cout << "enc_outputs" << std::endl;
+    // for (auto l : enc_outputs) {
+    //     std::cout << *l->get_weight() << " ";
+    // }
+    // std::cout << std::endl;
     auto X2 = self_attention->forward(X, key_values, key_values, dec_valid_lens);
     auto Y = addnorm1->forward(X, X2);
     auto Y2 = enc_attention->forward(Y, enc_outputs, enc_outputs, enc_valid_lens);
