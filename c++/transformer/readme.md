@@ -1,5 +1,9 @@
 # Transformer
 
+## bug 记录
+
+1. linear 的bias不要全是0，要初始化成随机值打破平衡性，否则不好收敛
+
 ## train
 
 初步观察小数据可以收敛
