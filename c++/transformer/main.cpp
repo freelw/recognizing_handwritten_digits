@@ -122,8 +122,10 @@ void train(
     uint dec_vocab_size = loader.tgt_vocab_size();
 
     uint num_hiddens = tiny ? 16 : 256;
+    // uint num_hiddens = tiny ? 16 : 64;
     uint num_blks = 2;
     uint ffn_num_hiddens = tiny ? 4 : 64;
+    //uint ffn_num_hiddens = tiny ? 4 : 16;
     uint num_heads = 4;
 
     Seq2SeqEncoderDecoder *encoder_decoder = allocEncoderDecoder(

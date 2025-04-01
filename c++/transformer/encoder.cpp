@@ -92,7 +92,9 @@ std::vector<autograd::Node *> Encoder::forward(
     std::vector<autograd::Node *> X;
     X.reserve(embs.size());
     for (auto & emb : embs) {
-        X.push_back(emb->Mul(sqrt(num_hidden)));
+        auto p = emb->Mul(sqrt(num_hidden));
+        assert(p->is_require_grad());
+        X.push_back(p);
     }
     X = posencoding->forward(X);
     for (auto blk : blocks) {
