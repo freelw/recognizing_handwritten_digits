@@ -1,2 +1,1 @@
 go now .	allez-y maintenant .
-i try .	j'essaye .

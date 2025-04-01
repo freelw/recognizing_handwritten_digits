@@ -18,6 +18,8 @@ class PositionalEncoding:  #@save
         return self.dropout(X)
 
 if '__main__' == __name__:
-    encoding = PositionalEncoding(20, 0)
-    X = torch.zeros((1, 2, 20))
+    num_hidden = 20
+    # num_hidden = 256
+    encoding = PositionalEncoding(num_hidden, 0)
+    X = torch.ones((1, 2, num_hidden))
     print(encoding.forward(X))

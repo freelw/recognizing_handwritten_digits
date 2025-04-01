@@ -1,7 +1,7 @@
 #ifndef TRANSFORMER_MACRO_H
 #define TRANSFORMER_MACRO_H
 
-// #define DEBUG_GRAD
+#define DEBUG_GRAD
 #define MAX_POSENCODING_LEN 10000
 
 #endif
