@@ -3,7 +3,7 @@
 #include "macro.h"
 
 namespace autograd {
-    Linear::Linear(uint input_num, uint output_num, bool _bias) 
+    Linear::Linear(uint input_num, uint output_num, ACTIVATION act, bool _bias) 
         : bias(_bias) {
         mW = new Matrix(Shape(output_num, input_num));
         #ifdef DEBUG_GRAD
@@ -16,7 +16,22 @@ namespace autograd {
             //     (*mW)[i][i] = 1;
             // }
         #else
-            init_weight(mW, he_init_relu(mW));
+            switch (act) {
+                case RELU:
+                    init_weight(mW, he_init_relu(mW));
+                    break;
+                case SIGMOID:
+                    init_weight(mW, xavier_init_sigmoid(mW));
+                    break;
+                case TANH:
+                    init_weight(mW, xavier_init_tanh(mW));
+                    break;
+                case NONE:
+                    init_weight(mW, xavier_init_sigmoid(mW));
+                    break;
+                default:
+                    assert(false);
+            }
         #endif
         W = new Node(mW, true);
         W->require_grad();
@@ -65,8 +80,8 @@ namespace autograd {
         return res;
     }
 
-    LazyLinear::LazyLinear(uint _output_num, bool _bias) 
-        : output_num(_output_num), bias(_bias), linear(nullptr) {
+    LazyLinear::LazyLinear(uint _output_num, ACTIVATION _act, bool _bias) 
+        : output_num(_output_num), bias(_bias), linear(nullptr), act(_act) {
     }
 
     LazyLinear::~LazyLinear() {
@@ -77,7 +92,7 @@ namespace autograd {
 
     Node *LazyLinear::forward(Node *input) {
         if (linear == nullptr) {
-            linear = new Linear(input->get_weight()->getShape().rowCnt, output_num, bias);
+            linear = new Linear(input->get_weight()->getShape().rowCnt, output_num, act, bias);
         }
         return linear->forward(input);
     }

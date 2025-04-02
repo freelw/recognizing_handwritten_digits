@@ -127,7 +127,7 @@ Decoder::Decoder(
     for (uint i = 0; i < num_blks; i++) {
         blocks.push_back(new DecoderBlock(num_hidden, ffn_num_hiddens, num_heads, dropout, i));
     }
-    dense = new autograd::LazyLinear(vocab_size, true);
+    dense = new autograd::LazyLinear(vocab_size, autograd::ACTIVATION::NONE, true);
 }
 
 Decoder::~Decoder() {

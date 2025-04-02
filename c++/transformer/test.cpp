@@ -552,7 +552,7 @@ void test_lazy_liner() {
     (*mq1)[1][0] = 0.1;
     autograd::Node *q1 = autograd::allocNode(mq1);
     q1->require_grad();
-    auto W = new autograd::LazyLinear(3, false);
+    auto W = new autograd::LazyLinear(3, autograd::ACTIVATION::NONE, false);
     std::vector<autograd::Node *> res = {W->forward(q1)};
     std::vector<uint> labels = {2};
     autograd::Node *loss = autograd::cat(res, 0)->CrossEntropy(labels);

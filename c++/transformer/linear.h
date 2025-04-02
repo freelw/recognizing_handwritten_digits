@@ -5,9 +5,17 @@
 #include "autograd/parameters.h"
 
 namespace autograd {
+
+    enum ACTIVATION {
+        RELU,
+        SIGMOID,
+        TANH,
+        NONE
+    };
+
     class Linear {
         public:
-            Linear(uint input_num, uint output_num, bool _bias = true);
+            Linear(uint input_num, uint output_num, ACTIVATION act, bool _bias = true);
             ~Linear();
             Node *forward(Node *input);
             std::vector<Node *> forward(const std::vector<Node *> &input);
@@ -24,7 +32,7 @@ namespace autograd {
 
     class LazyLinear {
         public:
-            LazyLinear(uint _output_num, bool _bias = true);
+            LazyLinear(uint _output_num, ACTIVATION _act, bool _bias = true);
             ~LazyLinear();
             Node *forward(Node *input);
             std::vector<Node *> forward(const std::vector<Node *> &input);
@@ -33,6 +41,7 @@ namespace autograd {
             uint output_num;
             bool bias;
             Linear *linear;
+            ACTIVATION act;
     };
 } // namespace autograd
 #endif
