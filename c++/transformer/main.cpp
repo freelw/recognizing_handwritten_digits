@@ -254,7 +254,9 @@ void train(
             std::cout << std::endl;
         }
     }
-
+    freeTmpMatrix();
+    autograd::freeAllNodes();
+    autograd::freeAllEdges();
     releaseEncoderDecoder(encoder_decoder);
 }
 

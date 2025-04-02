@@ -160,7 +160,7 @@ std::vector<autograd::Node *> Decoder::forward(
     DecoderContext *ctx = nullptr;
     if (!is_training()) {
         ctx = new DecoderContext();
-        for (uint i = 0; i < X.size(); i++) {
+        for (uint i = 0; i < num_blks; i++) {
             ctx->dec_X.push_back(nullptr);
         }
     }
