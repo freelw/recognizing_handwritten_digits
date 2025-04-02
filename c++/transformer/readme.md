@@ -30,10 +30,22 @@ epoch 0 loss : 8.38027 emit_clip : 3
 [300/300]epoch 8 loss : 3.81192 emit_clip : 3
 [300/300]checkpoint saved : ./checkpoints/checkpoint_20250331_204059_9.bin
 ```
+
+## 切割模型文件
+
+```
+split -b $(($(stat -c%s ./checkpoint_20250402_150847_40.bin)/2)) checkpoint_20250402_150847_40.bin checkpoint_20250402_150847_40_part_
+```
+
+## 合并文件
+
+```
+cat checkpoint_20250402_150847_40_part_aa checkpoint_20250402_150847_40_part_ab > checkpoint_20250402_150847_40.bin
+```
 ## preidct
 
 ```
-(base) cs@cs-desktop:~/project/recognizing_handwritten_digits/c++/transformer$ ./transformer -e 0 -c ./checkpoints/checkpoint_20250402_150847_30.bin
+(base) cs@cs-desktop:~/project/recognizing_handwritten_digits/c++/transformer$ ./transformer -e 0 -c ./checkpoint_20250402_150847_40.bin
 OMP_THREADS: 8
 epochs : 0
 dropout : 0.2
@@ -43,25 +55,25 @@ data loaded
 warmUp done
 parameter size = 21388
 all parameters require_grad = true
-loading from checkpoint : ./checkpoints/checkpoint_20250402_150847_30.bin
+loading from checkpoint : ./checkpoint_20250402_150847_40.bin
 loaded from checkpoint
 serving mode
 go now . <eos>
-translate res : <bos> allez-y maintenant . <eos>
+translate res : <bos> allez-y maintenant maintenant maintenant . <eos>
 i try . <eos>
 translate res : <bos> j'essaye . <eos>
 cheers ! <eos>
-translate res : <bos> à votre santé ! <eos>
+translate res : <bos> santé ! <eos>
 get up . <eos>
 translate res : <bos> lève-toi . <eos>
 hug me . <eos>
-translate res : <bos> serre-moi dans tes bras ! <eos>
+translate res : <bos> <unk> dans vos bras ! <eos>
 i know . <eos>
 translate res : <bos> je sais . <eos>
 no way ! <eos>
 translate res : <bos> en aucune manière ! <eos>
 be nice . <eos>
-translate res : <bos> soyez gentilles ! <eos>
+translate res : <bos> soyez gentille ! <eos>
 i jumped . <eos>
 translate res : <bos> j'ai sauté . <eos>
 congratulations ! <eos>
