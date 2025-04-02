@@ -233,6 +233,7 @@ void train(
 
     if (epochs == 0) {
         std::cout << "serving mode" << std::endl;
+        autograd::dropout_run = false;
         encoder_decoder->train(false);
         std::vector<std::string> src_sentences = loader.get_test_sentences();
         for (auto & sentence : src_sentences) {
@@ -247,6 +248,9 @@ void train(
                 src_token_ids, 20,
                 enc_out_embs, dec_out_embs
             );
+            if (autograd::dropout_run) {
+                std::cerr << "[warning!!!!] dropout run" << std::endl;
+            } 
             std::cout << "translate res : ";
             for (auto &token_id : tgt_token_ids) {
                 std::cout << loader.get_tgt_token(token_id) << " ";
