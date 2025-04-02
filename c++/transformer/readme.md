@@ -42,7 +42,7 @@ split -b $(($(stat -c%s ./checkpoint_20250402_150847_40.bin)/2)) checkpoint_2025
 ```
 cat checkpoint_20250402_150847_40_part_aa checkpoint_20250402_150847_40_part_ab > checkpoint_20250402_150847_40.bin
 ```
-## preidct
+## predict
 
 ```
 (base) cs@cs-desktop:~/project/recognizing_handwritten_digits/c++/transformer$ ./transformer -e 0 -c ./checkpoint_20250402_150847_40.bin
