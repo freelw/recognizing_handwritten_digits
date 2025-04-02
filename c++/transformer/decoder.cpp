@@ -77,6 +77,10 @@ std::vector<autograd::Node *> DecoderBlock::forward(
             }
             dec_valid_lens.push_back(tmp);
         }
+    } else {
+        if (dec_valid_lens.size() > 0) {
+            std::cerr << "[warning!!!] predict dec_valid_lens.size() > 0" << std::endl;
+        }
     }
     auto X2 = self_attention->forward(X, key_values, key_values, dec_valid_lens);
     auto Y = addnorm1->forward(X, X2);
