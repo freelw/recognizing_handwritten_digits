@@ -48,20 +48,18 @@ std::vector<autograd::Node *> DecoderBlock::forward(
 ) {
     std::vector<autograd::Node *> key_values;
     if (ctx) { // predict
-        assert(false); // we should use index here, fix me.
+        assert(X.size() == 1); // 为了简单 predict 时不支持并行
         assert(is_training() == false);
-        assert(X.size() == ctx->dec_X.size());
         key_values.clear();
-        key_values.reserve(X.size());
-        for (size_t i = 0; i < X.size(); i++) {
-            if (ctx->dec_X[i]) {
-                std::vector<autograd::Node *> tmp = {ctx->dec_X[i], X[i]};
-                ctx->dec_X[i] = autograd::cat(tmp, 0);
-            } else {
-                ctx->dec_X[i] = X[i];
-            }
-            key_values.push_back(ctx->dec_X[i]);
+        assert(ctx->dec_X.size() == NUM_BLKS);
+        assert(index < NUM_BLKS);
+        if (ctx->dec_X[index]) {
+            std::vector<autograd::Node *> tmp = {ctx->dec_X[index], X[0]};
+            ctx->dec_X[index] = autograd::cat(tmp, 0);
+        } else {
+            ctx->dec_X[index] = X[0];
         }
+        key_values.push_back(ctx->dec_X[index]);
     } else { // training
         assert(is_training());
         key_values = X;
@@ -80,28 +78,6 @@ std::vector<autograd::Node *> DecoderBlock::forward(
             dec_valid_lens.push_back(tmp);
         }
     }
-    // print dec_valid_lens
-    // std::cout << "dec_valid_lens" << std::endl;
-    // for (auto l : dec_valid_lens) {
-    //     for (auto i : l) {
-    //         std::cout << i << " ";
-    //     }
-    //     std::cout << std::endl;
-    // }
-
-    // print enc_valid_lens
-    // std::cout << "enc_valid_lens" << std::endl;
-    // for (auto l : enc_valid_lens) {
-    //     std::cout << l << " ";
-    // }
-    // std::cout << std::endl;
-
-    // print enc_outputs
-    // std::cout << "enc_outputs" << std::endl;
-    // for (auto l : enc_outputs) {
-    //     std::cout << *l->get_weight() << " ";
-    // }
-    // std::cout << std::endl;
     auto X2 = self_attention->forward(X, key_values, key_values, dec_valid_lens);
     auto Y = addnorm1->forward(X, X2);
     auto Y2 = enc_attention->forward(Y, enc_outputs, enc_outputs, enc_valid_lens);

@@ -230,6 +230,31 @@ void train(
         }
         std::cout << "epoch " << epoch << " loss : " << loss_sum/cnt << " emit_clip : " << emit_clip << std::endl;
     }
+
+    if (epochs == 0) {
+        std::cout << "serving mode" << std::endl;
+        encoder_decoder->train(false);
+        std::vector<std::string> src_sentences = loader.get_test_sentences();
+        for (auto & sentence : src_sentences) {
+            std::vector<uint> src_token_ids = loader.to_src_token_ids(sentence);
+            for (auto &token_id : src_token_ids) {
+                std::cout << loader.get_src_token(token_id) << " ";
+            }
+            std::cout << std::endl;
+            std::vector<autograd::Node *> enc_out_embs;
+            std::vector<autograd::Node *> dec_out_embs;
+            std::vector<uint> tgt_token_ids = encoder_decoder->predict(
+                src_token_ids, 20,
+                enc_out_embs, dec_out_embs
+            );
+            std::cout << "translate res : ";
+            for (auto &token_id : tgt_token_ids) {
+                std::cout << loader.get_tgt_token(token_id) << " ";
+            }
+            std::cout << std::endl;
+        }
+    }
+
     releaseEncoderDecoder(encoder_decoder);
 }
 

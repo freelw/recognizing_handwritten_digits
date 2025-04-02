@@ -7,6 +7,8 @@
 
 namespace autograd {
 
+    extern bool dropout_run;
+
     class Dropout {
         public:
             Dropout(DATATYPE _dropout);
