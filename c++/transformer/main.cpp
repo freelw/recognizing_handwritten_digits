@@ -275,7 +275,7 @@ int main(int argc, char *argv[]) {
     int opt;
     uint epochs = 30;
     DATATYPE dropout = 0.2;
-    DATATYPE lr = 0.005;
+    DATATYPE lr = 0.001;
     bool tiny = false;
     while ((opt = getopt(argc, argv, "f:c:e:d:l:t:")) != -1) {
         switch (opt) {
