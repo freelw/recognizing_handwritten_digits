@@ -11,24 +11,11 @@
 #include "autograd/optimizers.h"
 #include "seq2seq.h"
 #include "checkpoint.h"
+#include "macro.h"
 
 using namespace std;
 
 bool shutdown = false;
-
-#define RESOURCE_NAME "../../resources/fra_preprocessed.txt"
-#define SRC_VOCAB_NAME "../fra_vocab_builder/vocab_en.txt"
-#define TGT_VOCAB_NAME "../fra_vocab_builder/vocab_fr.txt"
-#define SRC_VOCAB_TINY_NAME "../fra_vocab_builder/vocab_en_tiny.txt"
-#define TGT_VOCAB_TINY_NAME "../fra_vocab_builder/vocab_fr_tiny.txt"
-#define HIDDEN_SIZE 256
-#define EMBED_SIZE 256
-#define TINY_HIDDEN_SIZE 2
-#define TINY_EMBED_SIZE 2
-
-#define TEST_FILE "./test.txt"
-#define BATCH_SIZE 128
-
 void signal_callback_handler(int signum);
 
 void print_progress(uint i, uint tot) {
@@ -62,7 +49,6 @@ Seq2SeqEncoderDecoder *allocEncoderDecoder(
     uint num_heads,
     DATATYPE dropout
 ) {
-    
     Encoder *encoder = new Encoder(
         enc_vocab_size, num_hiddens, 
         ffn_num_hiddens, num_heads,
@@ -112,22 +98,17 @@ void train(
     DATATYPE dropout,
     DATATYPE lr,
     bool tiny) {
-
-    uint num_steps = 9;
+    uint num_steps = NUM_STEPS;
     std::string src_vocab_name = tiny ? SRC_VOCAB_TINY_NAME : SRC_VOCAB_NAME;
     std::string tgt_vocab_name = tiny ? TGT_VOCAB_TINY_NAME : TGT_VOCAB_NAME;
     seq2seq::DataLoader loader(corpus, src_vocab_name, tgt_vocab_name, TEST_FILE);
     std::cout << "data loaded" << std::endl;
     uint enc_vocab_size = loader.src_vocab_size();
     uint dec_vocab_size = loader.tgt_vocab_size();
-
-    uint num_hiddens = tiny ? 16 : 256;
-    // uint num_hiddens = tiny ? 16 : 64;
-    uint num_blks = 2;
-    uint ffn_num_hiddens = tiny ? 4 : 64;
-    //uint ffn_num_hiddens = tiny ? 4 : 16;
-    uint num_heads = 4;
-
+    uint num_hiddens = tiny ? TINY_NUM_HIDDENS : NUM_HIDDENS;
+    uint num_blks = NUM_BLKS;
+    uint ffn_num_hiddens = tiny ? TINY_FFN_NUM_HIDDENS: FFN_NUM_HIDDENS;
+    uint num_heads = NUM_HEADS;
     Seq2SeqEncoderDecoder *encoder_decoder = allocEncoderDecoder(
         enc_vocab_size, dec_vocab_size,
         loader.tgt_bos_id(), loader.tgt_eos_id(),
@@ -135,7 +116,6 @@ void train(
     );
     warmUp(encoder_decoder);
     std::cout << "warmUp done" << std::endl;
-
     auto parameters = encoder_decoder->get_parameters();
     /*
     parameter size = 
@@ -174,16 +154,13 @@ void train(
         }
     }
     std::cout << "all parameters require_grad = true" << std::endl;
-
     if (!checkpoint.empty()) {
         cout << "loading from checkpoint : " << checkpoint << endl;
         loadfrom_checkpoint(*encoder_decoder, checkpoint);
         cout << "loaded from checkpoint" << endl;
     }
     auto adam = autograd::Adam(parameters, lr);
-
     std::string checkpoint_prefix = "checkpoint" + generateDateTimeSuffix();
-
     std::vector<std::vector<uint>> src_token_ids;
     std::vector<std::vector<uint>> tgt_token_ids;
     loader.get_token_ids(src_token_ids, tgt_token_ids);
@@ -211,69 +188,28 @@ void train(
                 target_sentences.push_back(trim_or_padding(add_bos(tgt_token_ids[j], loader.tgt_bos_id()), num_steps, loader.tgt_pad_id()));
                 target_labels.push_back(trim_or_padding(tgt_token_ids[j], num_steps, loader.tgt_pad_id()));
             }
-
             for (auto &l : target_labels) {
                 for (auto &t : l) {
                     labels.push_back(t);
                     mask.push_back(t != loader.tgt_pad_id());
                 }
             }
-
-            // // print input_sencentces
-            // for (auto &s : input_sentences) {
-            //     for (auto &t : s) {
-            //         std::cout << loader.get_src_token(t) << " ";
-            //     }
-            //     std::cout << std::endl;
-            // }
-
-            // // print target_sentences
-            // for (auto &s : target_sentences) {
-            //     for (auto &t : s) {
-            //         std::cout << loader.get_tgt_token(t) << " ";
-            //     }
-            //     std::cout << std::endl;
-            // }
-
-            // // print target_labels
-            // for (auto &t : labels) {
-            //     std::cout << loader.get_tgt_token(t) << " ";
-            // }
-            // std::cout << std::endl;
-
-            // // print mask
-            // for (auto m : mask) {
-            //     std::cout << m << " ";
-            // }
-            // std::cout << std::endl;
-            
-            // // print enc_valid_lens
-            // for (auto l : enc_valid_lens) {
-            //     std::cout << l << " ";
-            // }
-            // std::cout << std::endl;
-
             assert(input_sentences.size() == cur_batch_size);
             assert(target_sentences.size() == cur_batch_size);
             assert(target_labels.size() == cur_batch_size);
             assert(labels.size() == cur_batch_size * num_steps);
             assert(mask.size() == cur_batch_size * num_steps);
-
             std::vector<autograd::Node *> enc_out_embs;
             std::vector<autograd::Node *> dec_out_embs;
-
             auto dec_outputs = encoder_decoder->forward(
                 input_sentences, target_sentences, enc_valid_lens,
                 enc_out_embs, dec_out_embs
             );
             dec_outputs->checkShape(Shape(dec_vocab_size, cur_batch_size * num_steps));
-            // print dec_outputs shape
-            // std::cout << "dec_outputs shape : " << dec_outputs->getShape() << std::endl;
             auto loss = dec_outputs->CrossEntropyMask(labels, mask);
             assert(loss->get_weight()->getShape().rowCnt == 1);
             assert(loss->get_weight()->getShape().colCnt == 1);
             loss_sum += (*loss->get_weight())[0][0];
-
             adam.zero_grad();
             loss->backward();
             if (adam.clip_grad(1)) {
@@ -334,7 +270,6 @@ int main(int argc, char *argv[]) {
                 return 1;
         }
     }
-
     if (corpus.empty()) {
         corpus = RESOURCE_NAME;
     }
@@ -343,6 +278,5 @@ int main(int argc, char *argv[]) {
     std::cout << "lr : " << lr << std::endl;
     std::cout << "tiny : " << tiny << std::endl;
     train(corpus, checkpoint, epochs, dropout, lr, tiny);
-
     return 0;
 }
