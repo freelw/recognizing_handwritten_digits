@@ -16,7 +16,7 @@ namespace autograd {
             //     (*mW)[i][i] = 1;
             // }
         #else
-            init_weight(mW, xavier_init_sigmoid(mW));
+            init_weight(mW, he_init_relu(mW));
         #endif
         W = new Node(mW, true);
         W->require_grad();
