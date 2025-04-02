@@ -2,8 +2,8 @@
 
 PositionwiseFFN::PositionwiseFFN(uint _num_hidden, uint _num_out)
     : num_hidden(_num_hidden), num_out(_num_out) {
-    dense1 = new autograd::LazyLinear(num_hidden, true);
-    dense2 = new autograd::LazyLinear(num_out, true);
+    dense1 = new autograd::LazyLinear(num_hidden, autograd::ACTIVATION::RELU, true);
+    dense2 = new autograd::LazyLinear(num_out,  autograd::ACTIVATION::NONE, true);
     // #pragma message("dense bias should be random, fix later.")
 }
 

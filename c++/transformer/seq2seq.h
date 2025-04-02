@@ -20,15 +20,17 @@ class Seq2SeqEncoderDecoder {
             std::vector<autograd::Node *> &out_embs,
             std::vector<autograd::Node *> &dec_out_embs
         );
-        std::vector<uint> predict(
-            const std::vector<uint> &src_token_ids,
-            uint max_len
-        );
         std::vector<autograd::Parameters *> get_parameters();
         void train(bool _training) {
             encoder->train(_training);
             decoder->train(_training);
         }
+        std::vector<uint> predict(
+            const std::vector<uint> &src_token_ids,
+            uint max_len,
+            std::vector<autograd::Node *> &enc_out_embs,
+            std::vector<autograd::Node *> &dec_out_embs
+        );
         Encoder *get_encoder() { return encoder; }
         Decoder *get_decoder() { return decoder; }
     private:
