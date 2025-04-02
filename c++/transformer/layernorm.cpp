@@ -3,8 +3,10 @@
 LayerNorm::LayerNorm(uint dim) {
     mgamma = new Matrix(Shape(dim, 1));
     mbeta = new Matrix(Shape(dim, 1));
-    mgamma->fill(1);
-    mbeta->fill(0);
+    // mgamma->fill(1);
+    // mbeta->fill(0);
+    init_weight(mgamma, 0.01, 1);
+    init_weight(mbeta, 0.01, 0);
     gamma = new autograd::Node(mgamma, true);
     beta = new autograd::Node(mbeta, true);
     gamma->require_grad();

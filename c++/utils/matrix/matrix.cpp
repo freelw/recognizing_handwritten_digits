@@ -520,13 +520,13 @@ TrainingData::~TrainingData() {
     delete x;
 }
 
-void init_weight(Matrix *weight, DATATYPE sigma) {
+void init_weight(Matrix *weight, DATATYPE sigma, DATATYPE mean) {
     unsigned seed1 = std::chrono::system_clock::now().time_since_epoch().count();
     std::default_random_engine generator_w(seed1);
     std::normal_distribution<DATATYPE> distribution_w(0.0, sigma);
     for (uint i = 0; i < weight->getShape().rowCnt; ++ i) {
         for (uint j = 0; j < weight->getShape().colCnt; ++ j) {
-            (*weight)[i][j] = distribution_w(generator_w);
+            (*weight)[i][j] = distribution_w(generator_w) + mean;
         }
     }
 }
