@@ -169,6 +169,7 @@ void train(
         DATATYPE loss_sum = 0;
         int emit_clip = 0;
         int cnt = 0;
+        print_progress(0, src_token_ids.size());
         for (uint i = 0; i < src_token_ids.size(); i += BATCH_SIZE) {
             cnt ++;
             std::vector<std::vector<uint>> input_sentences;
