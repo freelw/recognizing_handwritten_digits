@@ -34,4 +34,4 @@
 
 ### transformer
 
-* [transformer](https://github.com/freelw/recognizing_handwritten_digits/tree/main/c++/transformer)
+* [transformer](https://github.com/freelw/cpp-transformer)
