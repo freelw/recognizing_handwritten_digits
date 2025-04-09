@@ -8,7 +8,7 @@
 #define EPOCHS 8
 
 __global__ void reduce(float *d_input, float *d_output) {
-    float *sdata = d_input + blockIdx.x * blockDim.x + threadIdx.x;
+    float *sdata = d_input + blockIdx.x * blockDim.x;
     int pow = 1;
     for (int i = 0; i < EPOCHS; ++i) {
         pow *= 2;
@@ -47,7 +47,8 @@ int main() {
     cudaMalloc((void **)&d_output, sizeof(float)*block_num);
     
     for (int i = 0; i < N; i++) {
-        h_input[i] = 2 * (float)drand48() - 1.0;
+        //h_input[i] = 2 * (float)drand48() - 1.0;
+        h_input[i] = 1;
     }
 
     for (int i = 0; i < block_num; ++ i) {
@@ -58,9 +59,8 @@ int main() {
     dim3 gridDim(block_num);
     dim3 blockDim(THREAD_PER_BLOCK);
 
-    reduce<<<gridDim, blockDim>>>(d_input, d_output);
-
     cudaMemcpy(d_input, h_input, size, cudaMemcpyHostToDevice);
+    reduce<<<gridDim, blockDim>>>(d_input, d_output);
     cudaMemcpy(h_output, d_output, sizeof(float)*block_num, cudaMemcpyDeviceToHost);
 
     if (check(h_output, res, block_num)) {
