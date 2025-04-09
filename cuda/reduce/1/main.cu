@@ -24,7 +24,7 @@ __global__ void reduce(float *d_input, float *d_output) {
 
 bool check(float *h_output, float *res, int size) {
     for (int i = 0; i < size; ++i) {
-        if (fabs(h_output[i] - res[i]) > 1e-5) {
+        if (fabs(h_output[i] - res[i]) > 1e-3) {
             std::cout << "Error: " << "[" << i << "] " << h_output[i] << " != " << res[i] << std::endl;
             return false;
         }
@@ -47,8 +47,8 @@ int main() {
     cudaMalloc((void **)&d_output, sizeof(float)*block_num);
     
     for (int i = 0; i < N; i++) {
-        //h_input[i] = 2 * (float)drand48() - 1.0;
-        h_input[i] = 1;
+        h_input[i] = 2 * (float)drand48() - 1.0;
+        // h_input[i] = 1;
     }
 
     for (int i = 0; i < block_num; ++ i) {
