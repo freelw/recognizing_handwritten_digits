@@ -9,16 +9,19 @@
 
 __global__ void reduce(float *d_input, float *d_output) {
     float *sdata = d_input + blockIdx.x * blockDim.x;
+    __shared__ float share[THREAD_PER_BLOCK];
+    share[threadIdx.x] = sdata[threadIdx.x];
+    __syncthreads();
     int pow = 1;
     for (int i = 0; i < EPOCHS; ++i) {
         pow *= 2;
         if (threadIdx.x % pow == 0) {
-            sdata[threadIdx.x] += sdata[threadIdx.x + pow / 2];
+            share[threadIdx.x] += share[threadIdx.x + pow / 2];
         }
         __syncthreads();
     }
     if (threadIdx.x == 0) {
-        d_output[blockIdx.x] = sdata[0];
+        d_output[blockIdx.x] = share[0];
     }
 }
 
