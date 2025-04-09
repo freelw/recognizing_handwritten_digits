@@ -49,5 +49,6 @@
         "streambuf": "cpp",
         "typeinfo": "cpp",
         "map": "cpp"
-    }
+    },
+    "cmake.sourceDirectory": "/home/cs/project/recognizing_handwritten_digits/cuda/reduce"
 }

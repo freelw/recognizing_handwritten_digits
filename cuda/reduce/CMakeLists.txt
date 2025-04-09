@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 3.20)
+set(ENV{CUDA_PATH} "/usr/local/cuda")
+project(reduce LANGUAGES CXX CUDA C)
+find_package(CUDAToolkit)
+add_subdirectory(1)
