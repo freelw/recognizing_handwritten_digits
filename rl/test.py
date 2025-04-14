@@ -1,4 +1,5 @@
 import gym
+import warnings
+import numpy as np
 
-env = gym.make('CartPole-v0')
-
+warnings.filterwarnings('ignore')
