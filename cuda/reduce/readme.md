@@ -6,6 +6,7 @@
 * [Warp-level Primitives](https://developer.nvidia.com/blog/using-cuda-warp-level-primitives/)
 * [cooperative-groups](https://developer.nvidia.com/blog/cooperative-groups/)
 * [share mem](https://developer.nvidia.com/blog/using-shared-memory-cuda-cc/)
+* [warp-aggregated](https://developer.nvidia.com/blog/parallelforall/cuda-pro-tip-optimized-filtering-warp-aggregated-atomics/)
 
 ## sanitizer
 
