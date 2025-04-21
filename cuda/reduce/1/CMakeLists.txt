@@ -12,3 +12,8 @@ add_executable(test test.cu)
 target_link_libraries(test PRIVATE CUDA::cudart)
 target_compile_options(test PRIVATE -fno-omit-frame-pointer)
 target_link_options(test PRIVATE)
+
+add_executable(baseline baseline.cu)
+target_link_libraries(baseline PRIVATE CUDA::cudart)
+target_compile_options(baseline PRIVATE -fno-omit-frame-pointer)
+target_link_options(baseline PRIVATE)
