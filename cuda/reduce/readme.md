@@ -12,7 +12,7 @@
 
 # nsight
 ```
-./ncu --set detailed -o /home/cs/t1 /home/cs/project/recognizing_handwritten_digits/build/1/baseline
+/usr/local/cuda/nsight-compute-2024.3.2/ncu --set detailed -o /home/cs/t1 /home/cs/project/recognizing_handwritten_digits/build/1/baseline
 ```
 
 ![alt text](1/perf/image.png)
