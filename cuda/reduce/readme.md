@@ -20,4 +20,4 @@ sudo ./run_perf.sh
 ```
 
 ## perf
-![alt text](1/perf/image2.png)
+![alt text](1/perf/image.png)
