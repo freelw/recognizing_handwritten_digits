@@ -20,4 +20,4 @@ sudo /usr/local/cuda/nsight-compute-2024.3.2/ncu --set detailed -o /home/cs/proj
 ```
 
 ## perf
-![baseline](1/perf/image.png)
+![alt text](1/perf/image.png)
