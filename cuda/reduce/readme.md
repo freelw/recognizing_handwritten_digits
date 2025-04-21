@@ -15,6 +15,8 @@
 sudo /usr/local/cuda/nsight-compute-2024.3.2/ncu --set detailed -o /home/cs/project/recognizing_handwritten_digits/build/nsight_out_$(date +%Y%m%d%H%M%S) /home/cs/project/recognizing_handwritten_digits/build/1/baseline
 
 sudo /usr/local/cuda/nsight-compute-2024.3.2/ncu --set detailed -o /home/cs/project/recognizing_handwritten_digits/build/nsight_out_$(date +%Y%m%d%H%M%S) /home/cs/project/recognizing_handwritten_digits/build/1/opt1
+
+sudo /usr/local/cuda/nsight-compute-2024.3.2/ncu --set detailed -o /home/cs/project/recognizing_handwritten_digits/build/nsight_out_$(date +%Y%m%d%H%M%S) /home/cs/project/recognizing_handwritten_digits/build/1/opt2
 ```
 
 ## perf

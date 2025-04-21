@@ -18,8 +18,12 @@ target_link_libraries(baseline PRIVATE CUDA::cudart)
 target_compile_options(baseline PRIVATE -fno-omit-frame-pointer)
 target_link_options(baseline PRIVATE)
 
-
 add_executable(opt1 opt1.cu)
 target_link_libraries(opt1 PRIVATE CUDA::cudart)
 target_compile_options(opt1 PRIVATE -fno-omit-frame-pointer)
 target_link_options(opt1 PRIVATE)
+
+add_executable(opt2 opt2.cu)
+target_link_libraries(opt2 PRIVATE CUDA::cudart)
+target_compile_options(opt2 PRIVATE -fno-omit-frame-pointer)
+target_link_options(opt2 PRIVATE)
