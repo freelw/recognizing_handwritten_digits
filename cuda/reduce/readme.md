@@ -4,6 +4,7 @@
 * [nsight-compute](https://zhuanlan.zhihu.com/p/662012270)
 * [nv nsight 官方文档](https://docs.nvidia.com/nsight-compute/NsightCompute/index.html)
 * [Warp-level Primitives](https://developer.nvidia.com/blog/using-cuda-warp-level-primitives/)
+* [cooperative-groups](https://developer.nvidia.com/blog/cooperative-groups/)
 
 ## sanitizer
 
