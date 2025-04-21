@@ -76,5 +76,8 @@ int main() {
     free(res);
     cudaFree(d_input);
     cudaFree(d_output);
+
+    cudaDeviceSynchronize();
+    cudaDeviceReset();
     return 0;
 }
