@@ -1,0 +1,93 @@
+#include <iostream>
+#include <cuda.h>
+#include <cuda_runtime.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define THREAD_PER_BLOCK 256
+
+__device__ void warpReduce(volatile float* cache,int tid){
+    cache[tid]+=cache[tid+32];
+    cache[tid]+=cache[tid+16];
+    cache[tid]+=cache[tid+8];
+    cache[tid]+=cache[tid+4];
+    cache[tid]+=cache[tid+2];
+    cache[tid]+=cache[tid+1];
+}
+
+__global__ void reduce(float *d_in,float *d_out) {
+    __shared__ float sdata[THREAD_PER_BLOCK];
+
+    //each thread loads one element from global memory to shared mem
+    unsigned int i=blockIdx.x*blockDim.x*2+threadIdx.x;
+    unsigned int tid=threadIdx.x;
+    sdata[tid]=d_in[i] + d_in[i+blockDim.x];
+    __syncthreads();
+
+    for(unsigned int s=blockDim.x/2; s>32; s>>=1){
+        if(tid < s){
+            sdata[tid]+=sdata[tid+s];
+        }
+        __syncthreads();
+    }
+    
+    // write result for this block to global mem
+    if (tid < 32) warpReduce(sdata, tid);
+    if(tid==0)d_out[blockIdx.x]=sdata[tid];
+}
+
+bool check(float *h_output, float *res, int size) {
+    for (int i = 0; i < size; ++i) {
+        if (fabs(h_output[i] - res[i]) > 1e-3) {
+            std::cout << "Error: " << "[" << i << "] " << h_output[i] << " != " << res[i] << std::endl;
+            return false;
+        }
+    }
+    return true;
+}
+
+int main() {
+    const int N = 32 * 1024 * 1024;
+    const int size = N * sizeof(float);
+    int NUM_PER_BLOCK = 2*THREAD_PER_BLOCK;
+    int block_num = N / NUM_PER_BLOCK;
+    float *h_input = (float *)malloc(size);
+    float *h_output = (float *)malloc(sizeof(float)*block_num);
+    float *res = (float *)malloc(sizeof(float)*block_num);
+    memset(res, 0, sizeof(float)*block_num);
+    float *d_input;
+    float *d_output;
+    
+    cudaMalloc((void **)&d_input, size);
+    cudaMalloc((void **)&d_output, sizeof(float)*block_num);
+    
+    for (int i = 0; i < N; i++) {
+        h_input[i] = 2 * (float)drand48() - 1.0;
+        // h_input[i] = 1;
+    }
+
+    for (int i = 0; i < block_num; ++ i) {
+        for (int j = 0; j < NUM_PER_BLOCK; ++ j) {
+            res[i] += h_input[i * NUM_PER_BLOCK + j];
+        }
+    }
+    
+    dim3 gridDim(block_num);
+    dim3 blockDim(THREAD_PER_BLOCK);
+
+    cudaMemcpy(d_input, h_input, size, cudaMemcpyHostToDevice);
+    reduce<<<gridDim, blockDim>>>(d_input, d_output);
+    cudaMemcpy(h_output, d_output, sizeof(float)*block_num, cudaMemcpyDeviceToHost);
+
+    if (check(h_output, res, block_num)) {
+        std::cout << "Success!" << std::endl;
+    } else {
+        std::cout << "Failed!" << std::endl;
+    }
+    free(h_input);
+    free(h_output);
+    free(res);
+    cudaFree(d_input);
+    cudaFree(d_output);
+    return 0;
+}
