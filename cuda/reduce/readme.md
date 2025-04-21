@@ -7,7 +7,7 @@
 * [cooperative-groups](https://developer.nvidia.com/blog/cooperative-groups/)
 * [share mem](https://developer.nvidia.com/blog/using-shared-memory-cuda-cc/)
 * [warp-aggregated](https://developer.nvidia.com/blog/parallelforall/cuda-pro-tip-optimized-filtering-warp-aggregated-atomics/)
-
+* [shuffle 写的不错](https://zhuanlan.zhihu.com/p/669957986)
 ## sanitizer
 
 ```
