@@ -27,3 +27,8 @@ add_executable(opt2 opt2.cu)
 target_link_libraries(opt2 PRIVATE CUDA::cudart)
 target_compile_options(opt2 PRIVATE -fno-omit-frame-pointer)
 target_link_options(opt2 PRIVATE)
+
+add_executable(opt3 opt3.cu)
+target_link_libraries(opt3 PRIVATE CUDA::cudart)
+target_compile_options(opt3 PRIVATE -fno-omit-frame-pointer)
+target_link_options(opt3 PRIVATE)
