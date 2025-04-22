@@ -12,6 +12,7 @@
 * [bank conflict](https://zhuanlan.zhihu.com/p/659142274)
 * [官方 CUDA C++ Programming Guide](https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html?highlight=bank#)
 * [how-do-cuda-blocks-warps-threads-map-onto-cuda-cores](https://stackoverflow.com/questions/10460742/how-do-cuda-blocks-warps-threads-map-onto-cuda-cores)
+* [cuda graph](https://developer.nvidia.com/blog/cuda-graphs/)
 ## sanitizer
 
 ```
