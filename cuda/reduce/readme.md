@@ -14,6 +14,7 @@
 * [how-do-cuda-blocks-warps-threads-map-onto-cuda-cores](https://stackoverflow.com/questions/10460742/how-do-cuda-blocks-warps-threads-map-onto-cuda-cores)
 * [cuda graph](https://developer.nvidia.com/blog/cuda-graphs/)
 * [cuda 调试  ](???)
+* [block grid 维度](???)
 ## sanitizer
 
 ```
