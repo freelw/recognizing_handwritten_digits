@@ -11,6 +11,7 @@
 * [英伟达GPU架构演进近十年，从费米到安培](https://zhuanlan.zhihu.com/p/413145211)
 * [bank conflict](https://zhuanlan.zhihu.com/p/659142274)
 * [官方 CUDA C++ Programming Guide](https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html?highlight=bank#)
+* [how-do-cuda-blocks-warps-threads-map-onto-cuda-cores](https://stackoverflow.com/questions/10460742/how-do-cuda-blocks-warps-threads-map-onto-cuda-cores)
 ## sanitizer
 
 ```
