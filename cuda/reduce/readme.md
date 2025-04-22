@@ -8,6 +8,8 @@
 * [share mem](https://developer.nvidia.com/blog/using-shared-memory-cuda-cc/)
 * [warp-aggregated](https://developer.nvidia.com/blog/parallelforall/cuda-pro-tip-optimized-filtering-warp-aggregated-atomics/)
 * [shuffle 写的不错](https://zhuanlan.zhihu.com/p/669957986)
+* [英伟达GPU架构演进近十年，从费米到安培](https://zhuanlan.zhihu.com/p/413145211)
+
 ## sanitizer
 
 ```
