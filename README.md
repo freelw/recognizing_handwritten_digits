@@ -38,4 +38,4 @@
 
 ### cuda
 
-* [reduce](https://github.com/freelw/recognizing_handwritten_digits/tree/main/cuda/reduce)
+* [reduce](https://github.com/freelw/recognizing_handwritten_digits/tree/main/cuda/playground)

@@ -27,4 +27,4 @@ sudo ./run_perf.sh
 ```
 
 ## perf
-![alt text](1/perf/image.png)
+![alt text](reduce/perf/image.png)
