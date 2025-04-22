@@ -10,6 +10,7 @@
 * [shuffle 写的不错](https://zhuanlan.zhihu.com/p/669957986)
 * [英伟达GPU架构演进近十年，从费米到安培](https://zhuanlan.zhihu.com/p/413145211)
 * [bank conflict](https://zhuanlan.zhihu.com/p/659142274)
+* [官方 CUDA C++ Programming Guide](https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html?highlight=bank#)
 ## sanitizer
 
 ```
