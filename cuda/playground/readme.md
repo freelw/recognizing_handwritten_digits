@@ -13,7 +13,8 @@
 * [官方 CUDA C++ Programming Guide](https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html?highlight=bank#)
 * [how-do-cuda-blocks-warps-threads-map-onto-cuda-cores](https://stackoverflow.com/questions/10460742/how-do-cuda-blocks-warps-threads-map-onto-cuda-cores)
 * [cuda graph](https://developer.nvidia.com/blog/cuda-graphs/)
-* [cuda 调试  ](???)
+* [cuda 调试 ](https://zhuanlan.zhihu.com/p/508810115)
+* [使用Vscode调试cuda代码](https://fancyerii.github.io/2024/01/17/vscode-cuda-debug/)
 * [block grid 维度](???)
 ## sanitizer
 
