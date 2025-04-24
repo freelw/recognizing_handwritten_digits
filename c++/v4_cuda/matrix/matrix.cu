@@ -547,10 +547,8 @@ void Matrix::set_val(int i, int j, DATATYPE val) {
     commited = false;
 }
 
-DATATYPE Matrix::get_val(int i, int j) {
+DATATYPE Matrix::get_val(int i, int j) const {
     assert(i < shape.rowCnt && j < shape.colCnt);
-    cp_from_device();
-    assert(false);
     return (*this)[i][j];
 }
 

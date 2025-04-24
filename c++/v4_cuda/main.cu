@@ -33,8 +33,8 @@ DATATYPE update_mini_batch(
     auto loss = m.forward(autograd_cuda::allocNode(input))->CrossEntropy(labels);
     assert(loss->get_weight()->getShape().rowCnt == 1);
     assert(loss->get_weight()->getShape().colCnt == 1);
-    assert(false);
-    DATATYPE ret = 0;//*(loss->get_weight())[0][0];
+    loss->get_weight()->cp_from_device();
+    DATATYPE ret = loss->get_weight()->get_val(0, 0);
     loss->backward();
     optimizer.step();
     autograd_cuda::freeAllNodes();
@@ -48,14 +48,9 @@ int evaluate(autograd_cuda::MLP &m, std::vector<TrainingData*> &v_test_data) {
     for (uint i = 0; i < v_test_data.size(); ++ i) {
         Matrix *input = allocTmpMatrix(v_test_data[i]->x);
         Matrix *res = m.forward(autograd_cuda::allocNode(input))->get_weight();
+        res->cp_from_device();
         res->checkShape(Shape(10, 1));
-        uint index = 0;
-        for (uint j = 1; j < res->getShape().rowCnt; ++ j) {
-            assert(false);
-            // if ((*res)[j][0] > (*res)[index][0]) {
-            //     index = j;
-            // }
-        }
+        uint index = res->argMax()[0];
         if (index == v_test_data[i]->y) {
             sum ++;
         }
