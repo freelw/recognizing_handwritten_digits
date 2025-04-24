@@ -11,7 +11,8 @@
 Matrix::Matrix(Shape _shape)
         : initialized(false),
         allocated(false),
-        shape(_shape) {
+        shape(_shape),
+        commited(false) {
     data = new DATATYPE[shape.size()];
     allocated = true;
     zero();
@@ -20,11 +21,25 @@ Matrix::Matrix(Shape _shape)
 Matrix::Matrix(const Matrix &m):
     initialized(m.initialized),
     allocated(false),
-    shape(m.shape) {
+    shape(m.shape),
+    commited(false) {
     assert(initialized);
     data = new DATATYPE[shape.size()];
     allocated = true;
     memcpy(data, m.data, sizeof(DATATYPE) * shape.rowCnt * shape.colCnt);
+}
+
+Matrix::Matrix(const std::vector<DATATYPE> &v):
+    initialized(false),
+    allocated(false),
+    shape(Shape(v.size(), 1)),
+    commited(false) {
+    data = new DATATYPE[shape.size()];
+    allocated = true;
+    for (uint i = 0; i < shape.rowCnt; ++ i) {
+        data[i] = v[i];
+    }
+    initialized = true;
 }
 
 Matrix::~Matrix() {
@@ -489,6 +504,12 @@ Matrix *allocTmpMatrix(const Shape & shape) {
     return res;
 }
 
+Matrix *allocTmpMatrix(const std::vector<DATATYPE> &v) {
+    Matrix *res = new Matrix(v);
+    tmpMatrics.push_back(res);
+    return res;
+}
+
 void freeTmpMatrix() {
     for (auto p : tmpMatrics) {
         delete p;
@@ -520,13 +541,23 @@ void Matrix::init_weight_uniform(DATATYPE sigma) {
     }
 }
 
+void Matrix::set_val(int i, int j, DATATYPE val) {
+    assert(i < shape.rowCnt && j < shape.colCnt);
+    (*this)[i][j] = val;
+    commited = false;
+}
+
+void Matrix::commit() {
+    assert(allocated && initialized);
+    commited = true;
+    assert(false);
+}
+
 
 TrainingData::TrainingData(int input_layer_size, int _y)
     : y(_y) {  
-    x = new Matrix(Shape(input_layer_size, 1));
-    x->zero();
+    x.reserve(input_layer_size);
 }
 
 TrainingData::~TrainingData() {
-    delete x;
 }

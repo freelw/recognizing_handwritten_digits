@@ -20,10 +20,11 @@ DATATYPE update_mini_batch(
     std::vector<uint> labels;
     for (uint i = 0; i < INPUT_LAYER_SIZE; ++ i) {
         for (uint j = 0; j < mini_batch.size(); ++ j) {
-            assert(false);
-            //(*input)[i][j] = (*(mini_batch[j]->x))[i][0];
+            //(*input)[i][j] = mini_batch[j]->x[i];
+            input->set_val(i, j, mini_batch[j]->x[i]);
         }
     }
+    input->commit();
     labels.reserve(mini_batch.size());
     for (uint j = 0; j < mini_batch.size(); ++ j) {
         labels.emplace_back(mini_batch[j]->y);
@@ -45,7 +46,8 @@ DATATYPE update_mini_batch(
 int evaluate(autograd_cuda::MLP &m, std::vector<TrainingData*> &v_test_data) {
     int sum = 0;
     for (uint i = 0; i < v_test_data.size(); ++ i) {
-        Matrix *res = m.forward(autograd_cuda::allocNode(v_test_data[i]->x))->get_weight();
+        Matrix *input = allocTmpMatrix(v_test_data[i]->x);
+        Matrix *res = m.forward(autograd_cuda::allocNode(input))->get_weight();
         res->checkShape(Shape(10, 1));
         uint index = 0;
         for (uint j = 1; j < res->getShape().rowCnt; ++ j) {
@@ -99,8 +101,7 @@ void train(int epochs, int batch_size, bool use_dropout, bool eval) {
     for (auto i = 0; i < TRAIN_IMAGES_NUM; ++ i) {
         TrainingData *p = new TrainingData(INPUT_LAYER_SIZE, loader.getTrainLabels()[i]);
         for (auto j = 0; j < INPUT_LAYER_SIZE; ++ j) {
-            assert(false);
-            // (*(p->x))[j][0] = loader.getTrainImages()[i][j];
+            p->x.emplace_back(loader.getTrainImages()[i][j]);
         }
         v_training_data.emplace_back(p);
     }
@@ -108,8 +109,7 @@ void train(int epochs, int batch_size, bool use_dropout, bool eval) {
         int index = i + TRAIN_IMAGES_NUM;
         TrainingData *p = new TrainingData(INPUT_LAYER_SIZE, loader.getTrainLabels()[index]);
         for (auto j = 0; j < INPUT_LAYER_SIZE; ++ j) {
-            assert(false);
-            // (*(p->x))[j][0] = loader.getTrainImages()[index][j];
+            p->x.emplace_back(loader.getTrainImages()[index][j]);
         }
         v_test_data.emplace_back(p);
     }

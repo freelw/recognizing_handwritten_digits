@@ -31,6 +31,7 @@ class Matrix {
 public:
     Matrix(Shape _shape);
     Matrix(const Matrix &m);
+    Matrix(const std::vector<DATATYPE> &v);
     ~Matrix();
     Matrix *zero();
     friend ostream &operator<<(ostream &output, const Matrix &m);
@@ -71,6 +72,8 @@ public:
     friend Matrix *operator-(DATATYPE, const Matrix &m);
     void init_weight(DATATYPE sigma, DATATYPE mean = 0);
     void init_weight_uniform(DATATYPE sigma);
+    void set_val(int i, int j, DATATYPE val);
+    void commit();
 private:
     DATATYPE* operator[](unsigned int index) const;
 private:
@@ -78,6 +81,7 @@ private:
     bool allocated;
     Shape shape;
     DATATYPE *data;
+    bool commited;
 };
 
 Matrix *sigmoid(const Matrix &m);
@@ -85,13 +89,14 @@ Matrix *sigmoid_prime(const Matrix &m);
 Matrix *allocTmpMatrix(Matrix *m);
 Matrix *allocTmpMatrix(const Matrix &m);
 Matrix *allocTmpMatrix(const Shape & shape);
+Matrix *allocTmpMatrix(const std::vector<DATATYPE> &v);
 void freeTmpMatrix();
 
 class TrainingData {
 public:
     TrainingData(int, int);
     ~TrainingData();
-    Matrix *x;
+    std::vector<DATATYPE> x;
     uint y;
 };
 
