@@ -1,4 +1,4 @@
-#include "matrix.h"
+#include "matrix.cuh"
 
 #include <iostream>
 #include <assert.h>
@@ -516,4 +516,15 @@ void init_weight_uniform(Matrix *weight, DATATYPE sigma) {
             (*weight)[i][j] = distribution_w(generator_w);
         }
     }
+}
+
+
+TrainingData::TrainingData(int input_layer_size, int _y)
+    : y(_y) {  
+    x = new Matrix(Shape(input_layer_size, 1));
+    x->zero();
+}
+
+TrainingData::~TrainingData() {
+    delete x;
 }

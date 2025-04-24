@@ -86,4 +86,12 @@ void freeTmpMatrix();
 void init_weight(Matrix *weight, DATATYPE sigma, DATATYPE mean = 0);
 void init_weight_uniform(Matrix *weight, DATATYPE sigma);
 
+class TrainingData {
+public:
+    TrainingData(int, int);
+    ~TrainingData();
+    Matrix *x;
+    uint y;
+};
+
 #endif
