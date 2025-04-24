@@ -1,9 +1,9 @@
 add_executable(matrix_baseline baseline.cu)
 target_link_libraries(matrix_baseline PRIVATE CUDA::cudart)
-target_compile_options(matrix_baseline PRIVATE -fno-omit-frame-pointer)
+target_compile_options(matrix_baseline PRIVATE -fno-omit-frame-pointer -g -G)
 target_link_options(matrix_baseline PRIVATE)
 
 add_executable(matrix_opt1 opt1.cu)
 target_link_libraries(matrix_opt1 PRIVATE CUDA::cudart)
-target_compile_options(matrix_opt1 PRIVATE -fno-omit-frame-pointer)
+target_compile_options(matrix_opt1 PRIVATE -fno-omit-frame-pointer -g -G)
 target_link_options(matrix_opt1 PRIVATE)
