@@ -9,32 +9,33 @@ namespace autograd_cuda {
         assert(input->getShape().colCnt == labels.size());
         assert(info.size() == 0);
         Matrix *loss = allocTmpMatrix(Shape(1,1));
-        DATATYPE loss_value = 0;
-        info.resize(input->getShape().colCnt);
+        assert(false);
+        // DATATYPE loss_value = 0;
+        // info.resize(input->getShape().colCnt);
 
-        #pragma omp parallel for reduction(+:loss_value)
-        for (uint j = 0; j < input->getShape().colCnt; ++ j) {
-            DATATYPE max = (*input)[0][j];
-            for (uint i = 0; i < input->getShape().rowCnt; ++ i) {
-                auto e = (*input)[i][j];
-                if (max < e) {
-                    max = e;
-                }
-            }
-            DATATYPE sum = 0;
-            auto target = labels[j];
-            DATATYPE zt = (*input)[target][j];
-            for (uint i = 0; i < input->getShape().rowCnt; ++ i) {
-                DATATYPE e = (*input)[i][j];
-                e = std::exp(e-max);
-                sum += e;
-            }
-            CrosEntropyInfo &p = info[j];
-            p.sum = sum;
-            p.max = max;
-            loss_value += -(zt - max - log(sum));
-        }
-        (*loss)[0][0] = loss_value/labels.size();
+        // #pragma omp parallel for reduction(+:loss_value)
+        // for (uint j = 0; j < input->getShape().colCnt; ++ j) {
+        //     DATATYPE max = (*input)[0][j];
+        //     for (uint i = 0; i < input->getShape().rowCnt; ++ i) {
+        //         auto e = (*input)[i][j];
+        //         if (max < e) {
+        //             max = e;
+        //         }
+        //     }
+        //     DATATYPE sum = 0;
+        //     auto target = labels[j];
+        //     DATATYPE zt = (*input)[target][j];
+        //     for (uint i = 0; i < input->getShape().rowCnt; ++ i) {
+        //         DATATYPE e = (*input)[i][j];
+        //         e = std::exp(e-max);
+        //         sum += e;
+        //     }
+        //     CrosEntropyInfo &p = info[j];
+        //     p.sum = sum;
+        //     p.max = max;
+        //     loss_value += -(zt - max - log(sum));
+        // }
+        // (*loss)[0][0] = loss_value/labels.size();
         return loss;
     }
 
@@ -49,44 +50,45 @@ namespace autograd_cuda {
         assert(info.size() == 0);
 
         Matrix *loss = allocTmpMatrix(Shape(1,1));
-        DATATYPE loss_value = 0;
-        info.resize(input->getShape().colCnt);
-        uint mask_cnt = 0;
-        // #pragma omp parallel for reduction(+:mask_cnt)
-        for (uint i = 0; i < mask.size(); ++ i) {
-            mask_cnt += mask[i];
-        }
-        if (mask_cnt == 0) {
-            (*loss)[0][0] = 0;
-            return loss;
-        }
+        assert(false);
+        // DATATYPE loss_value = 0;
+        // info.resize(input->getShape().colCnt);
+        // uint mask_cnt = 0;
+        // // #pragma omp parallel for reduction(+:mask_cnt)
+        // for (uint i = 0; i < mask.size(); ++ i) {
+        //     mask_cnt += mask[i];
+        // }
+        // if (mask_cnt == 0) {
+        //     (*loss)[0][0] = 0;
+        //     return loss;
+        // }
 
-        // #pragma omp parallel for reduction(+:loss_value)
-        for (uint j = 0; j < input->getShape().colCnt; ++ j) {
-            if (!mask[j]) {
-                continue;
-            }
-            DATATYPE max = (*input)[0][j];
-            for (uint i = 0; i < input->getShape().rowCnt; ++ i) {
-                auto e = (*input)[i][j];
-                if (max < e) {
-                    max = e;
-                }
-            }
-            DATATYPE sum = 0;
-            auto target = labels[j];
-            DATATYPE zt = (*input)[target][j];
-            for (uint i = 0; i < input->getShape().rowCnt; ++ i) {
-                DATATYPE e = (*input)[i][j];
-                e = std::exp(e-max);
-                sum += e;
-            }
-            CrosEntropyInfo &p = info[j];
-            p.sum = sum;
-            p.max = max;
-            loss_value += -(zt - max - log(sum));
-        }
-        (*loss)[0][0] = loss_value/mask_cnt;
+        // // #pragma omp parallel for reduction(+:loss_value)
+        // for (uint j = 0; j < input->getShape().colCnt; ++ j) {
+        //     if (!mask[j]) {
+        //         continue;
+        //     }
+        //     DATATYPE max = (*input)[0][j];
+        //     for (uint i = 0; i < input->getShape().rowCnt; ++ i) {
+        //         auto e = (*input)[i][j];
+        //         if (max < e) {
+        //             max = e;
+        //         }
+        //     }
+        //     DATATYPE sum = 0;
+        //     auto target = labels[j];
+        //     DATATYPE zt = (*input)[target][j];
+        //     for (uint i = 0; i < input->getShape().rowCnt; ++ i) {
+        //         DATATYPE e = (*input)[i][j];
+        //         e = std::exp(e-max);
+        //         sum += e;
+        //     }
+        //     CrosEntropyInfo &p = info[j];
+        //     p.sum = sum;
+        //     p.max = max;
+        //     loss_value += -(zt - max - log(sum));
+        // }
+        // (*loss)[0][0] = loss_value/mask_cnt;
         return loss;
     }
 
@@ -96,11 +98,12 @@ namespace autograd_cuda {
         std::vector<DATATYPE> var_res = w->var();
         Shape shape = tmp->getShape();
         DATATYPE eps = 1e-5;
-        for (uint i = 0; i < shape.rowCnt; ++ i) {
-            for (uint j = 0; j < shape.colCnt; ++ j) {
-                (*tmp)[i][j] = ((*w)[i][j] - avg_res[j]) / sqrt(var_res[j] + eps);
-            }
-        }
+        assert(false);
+        // for (uint i = 0; i < shape.rowCnt; ++ i) {
+        //     for (uint j = 0; j < shape.colCnt; ++ j) {
+        //         (*tmp)[i][j] = ((*w)[i][j] - avg_res[j]) / sqrt(var_res[j] + eps);
+        //     }
+        // }
         
         auto *node = allocNode(tmp);
         if (is_require_grad()) {
@@ -114,21 +117,25 @@ namespace autograd_cuda {
         auto *tmp = allocTmpMatrix(w);
         Shape shape = tmp->getShape();
         for (uint j = 0; j < shape.colCnt; ++ j) {
-            DATATYPE max = (*w)[0][j];
-            for (uint i = 0; i < shape.rowCnt; ++ i) {
-                if (max < (*w)[i][j]) {
-                    max = (*w)[i][j];
-                }
-            }
-            DATATYPE sum = 0;
-            for (uint i = 0; i < shape.rowCnt; ++ i) {
-                DATATYPE e = std::exp((*w)[i][j] - max);
-                sum += e;
-                (*tmp)[i][j] = e;
-            }
-            for (uint i = 0; i < shape.rowCnt; ++ i) {
-                (*tmp)[i][j] /= sum;
-            }
+            assert(false);
+            // DATATYPE max = (*w)[0][j];
+            // for (uint i = 0; i < shape.rowCnt; ++ i) {
+            //     if (max < (*w)[i][j]) {
+            //         max = (*w)[i][j];
+            //     }
+            // }
+            // DATATYPE sum = 0;
+            
+            // for (uint i = 0; i < shape.rowCnt; ++ i) {
+            //     DATATYPE e = std::exp((*w)[i][j] - max);
+            //     sum += e;
+                
+            //     (*tmp)[i][j] = e;
+            // }
+            // for (uint i = 0; i < shape.rowCnt; ++ i) {
+            //     assert(false);
+            //     (*tmp)[i][j] /= sum;
+            // }
         }
         auto *node = allocNode(tmp);
         if (is_require_grad()) {
@@ -398,7 +405,8 @@ namespace autograd_cuda {
                  n->require_grad();
              }
              for (uint j = 0; j < rowCnt; ++ j) {
-                 (*m)[j][0] = (*this->get_weight())[j][i];
+                assert(false);
+                 // (*m)[j][0] = (*this->get_weight())[j][i];
              }
              res.push_back(n);
          }
@@ -419,7 +427,8 @@ namespace autograd_cuda {
             }
             for (uint j = 0; j < step; ++ j) {
                 for (uint k = 0; k < colCnt; ++ k) {
-                    (*m)[j][k] = (*this->get_weight())[i+j][k];
+                    assert(false);
+                    // (*m)[j][k] = (*this->get_weight())[i+j][k];
                 }
             }
             assert(i % step == 0);

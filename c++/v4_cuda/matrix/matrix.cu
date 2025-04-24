@@ -502,7 +502,8 @@ void init_weight(Matrix *weight, DATATYPE sigma, DATATYPE mean) {
     std::normal_distribution<DATATYPE> distribution_w(0.0, sigma);
     for (uint i = 0; i < weight->getShape().rowCnt; ++ i) {
         for (uint j = 0; j < weight->getShape().colCnt; ++ j) {
-            (*weight)[i][j] = distribution_w(generator_w) + mean;
+            assert(false);
+            // (*weight)[i][j] = distribution_w(generator_w) + mean;
         }
     }
 }
@@ -513,7 +514,8 @@ void init_weight_uniform(Matrix *weight, DATATYPE sigma) {
     std::uniform_real_distribution<DATATYPE> distribution_w(-sigma, sigma);
     for (uint i = 0; i < weight->getShape().rowCnt; ++ i) {
         for (uint j = 0; j < weight->getShape().colCnt; ++ j) {
-            (*weight)[i][j] = distribution_w(generator_w);
+            assert(false);
+            // (*weight)[i][j] = distribution_w(generator_w);
         }
     }
 }

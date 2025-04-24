@@ -54,8 +54,6 @@ public:
     Matrix *sigmoid_prime();
     Matrix& operator=(const Matrix &m);
     Matrix *pow2();
-    friend Matrix *operator-(DATATYPE, const Matrix &m);
-    DATATYPE* operator[](unsigned int index) const;
     Shape getShape() const;
     Matrix *at(const Matrix &m);
     Matrix *transpose();
@@ -70,6 +68,9 @@ public:
     std::vector<uint> argMax();
     std::vector<DATATYPE> avg();
     std::vector<DATATYPE> var();
+    friend Matrix *operator-(DATATYPE, const Matrix &m);
+private:
+    DATATYPE* operator[](unsigned int index) const;
 private:
     bool initialized;
     bool allocated;

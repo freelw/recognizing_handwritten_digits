@@ -277,20 +277,21 @@ namespace autograd_cuda {
             virtual ~CrossEntropyEdge() {}
             void backward(Matrix *) override {
                 assert(node->is_require_grad());
-                #pragma omp parallel for
-                for (uint i = 0; i < labels.size(); ++i) {
-                    auto target = labels[i];
-                    DATATYPE max = info[i].max;
-                    DATATYPE sum = info[i].sum;
-                    for (uint j = 0; j < node->get_weight()->getShape().rowCnt; ++j) {
-                        if (j == target) {
-                            continue;
-                        }
-                        auto &_grad = (*node->get_grad())[j][i];
-                        _grad = std::exp((*node->get_weight())[j][i] - max) / sum / labels.size();
-                    }
-                    (*node->get_grad())[target][i] = (std::exp((*node->get_weight())[target][i] - max) / sum - 1) / labels.size();
-                }
+                assert(false);
+                // #pragma omp parallel for
+                // for (uint i = 0; i < labels.size(); ++i) {
+                //     auto target = labels[i];
+                //     DATATYPE max = info[i].max;
+                //     DATATYPE sum = info[i].sum;
+                //     for (uint j = 0; j < node->get_weight()->getShape().rowCnt; ++j) {
+                //         if (j == target) {
+                //             continue;
+                //         }
+                //         auto &_grad = (*node->get_grad())[j][i];
+                //         _grad = std::exp((*node->get_weight())[j][i] - max) / sum / labels.size();
+                //     }
+                //     (*node->get_grad())[target][i] = (std::exp((*node->get_weight())[target][i] - max) / sum - 1) / labels.size();
+                // }
             }
         private:
             std::vector<uint> labels;
@@ -325,23 +326,24 @@ namespace autograd_cuda {
                 if (mask_cnt == 0) {
                     return;
                 }
-                #pragma omp parallel for
-                for (uint j = 0; j < node->get_weight()->getShape().colCnt; ++ j) {
-                    if (!mask[j]) {
-                        continue;
-                    }
-                    auto target = labels[j];
-                    DATATYPE max = info[j].max;
-                    DATATYPE sum = info[j].sum;
-                    for (uint i = 0; i < node->get_weight()->getShape().rowCnt; ++ i) {
-                        if (i == target) {
-                            continue;
-                        }
-                        auto &_grad = (*node->get_grad())[i][j];
-                        _grad = std::exp((*node->get_weight())[i][j] - max) / sum / mask_cnt;
-                    }
-                    (*node->get_grad())[target][j] = (std::exp((*node->get_weight())[target][j] - max) / sum - 1) / mask_cnt;
-                }
+                assert(false);
+                // #pragma omp parallel for
+                // for (uint j = 0; j < node->get_weight()->getShape().colCnt; ++ j) {
+                //     if (!mask[j]) {
+                //         continue;
+                //     }
+                //     auto target = labels[j];
+                //     DATATYPE max = info[j].max;
+                //     DATATYPE sum = info[j].sum;
+                //     for (uint i = 0; i < node->get_weight()->getShape().rowCnt; ++ i) {
+                //         if (i == target) {
+                //             continue;
+                //         }
+                //         auto &_grad = (*node->get_grad())[i][j];
+                //         _grad = std::exp((*node->get_weight())[i][j] - max) / sum / mask_cnt;
+                //     }
+                //     (*node->get_grad())[target][j] = (std::exp((*node->get_weight())[target][j] - max) / sum - 1) / mask_cnt;
+                // }
             }
         private:
             std::vector<uint> labels;
@@ -396,7 +398,8 @@ namespace autograd_cuda {
                 Shape shape = node->get_weight()->getShape();
                 for (uint i = 0; i < shape.rowCnt; ++ i) {
                     for (uint j = 0; j < shape.colCnt; ++ j) {
-                        (*node->get_grad())[i][j] += (*grad)[i][j+offset];
+                        assert(false);
+                        // (*node->get_grad())[i][j] += (*grad)[i][j+offset];
                     }
                 }
             }
@@ -426,7 +429,8 @@ namespace autograd_cuda {
                         assert(i < shape.rowCnt);
                         assert(j < shape.colCnt);
                         assert(j < node->get_grad()->getShape().colCnt);
-                        (*node->get_grad())[i + rowBase][j] += (*grad)[i][j];
+                        assert(false);
+                        // (*node->get_grad())[i + rowBase][j] += (*grad)[i][j];
                     }
                 }
             }
@@ -486,24 +490,25 @@ namespace autograd_cuda {
                 assert(grad->getShape().colCnt == node->getShape().colCnt);
                 assert(node->is_require_grad());
                 std::vector<Node *> v_w;
-                for (uint k = 0; k < grad->getShape().colCnt; k++) {
-                    uint rowCnt = grad->getShape().rowCnt;
-                    Matrix *mw = allocTmpMatrix(Shape(rowCnt, rowCnt));
-                    for (uint i = 0; i < rowCnt; i++) {
-                        for (uint j = 0; j < rowCnt; j++) {
-                            int eq = i == j;
-                            auto sigma = std::sqrt(var_res[k] + eps);
-                            auto x_hat_i = (*w_hat)[i][k];
-                            auto x_hat_j = (*w_hat)[j][k];
-                            // (*mw)[i][j] = (eq - 1.0 / rowCnt - 1.0 / rowCnt * x_hat_i * x_hat_j) / sigma;
-                            // 上面的计算精度降低很多，下面的计算精度更高
-                            auto part1 = eq * (int)rowCnt - 1 - x_hat_i * x_hat_j;
-                            auto part2 = (int)rowCnt * sigma;
-                            (*mw)[i][j] = part1 / part2;
-                        }
-                    }
-                    v_w.push_back(allocNode(mw));
-                }
+                assert(false);
+                // for (uint k = 0; k < grad->getShape().colCnt; k++) {
+                //     uint rowCnt = grad->getShape().rowCnt;
+                //     Matrix *mw = allocTmpMatrix(Shape(rowCnt, rowCnt));
+                //     for (uint i = 0; i < rowCnt; i++) {
+                //         for (uint j = 0; j < rowCnt; j++) {
+                //             int eq = i == j;
+                //             auto sigma = std::sqrt(var_res[k] + eps);
+                //             auto x_hat_i = (*w_hat)[i][k];
+                //             auto x_hat_j = (*w_hat)[j][k];
+                //             // (*mw)[i][j] = (eq - 1.0 / rowCnt - 1.0 / rowCnt * x_hat_i * x_hat_j) / sigma;
+                //             // 上面的计算精度降低很多，下面的计算精度更高
+                //             auto part1 = eq * (int)rowCnt - 1 - x_hat_i * x_hat_j;
+                //             auto part2 = (int)rowCnt * sigma;
+                //             (*mw)[i][j] = part1 / part2;
+                //         }
+                //     }
+                //     v_w.push_back(allocNode(mw));
+                // }
                 std::vector<Node *> v_grads = allocNode(grad)->split(0);
                 assert(v_w.size() == v_grads.size());
                 std::vector<Node *> v_res;
@@ -533,19 +538,20 @@ namespace autograd_cuda {
                 assert(grad->getShape().colCnt == node->getShape().colCnt);
                 assert(node->is_require_grad());
                 Matrix *softmax_grad = allocTmpMatrix(grad->getShape());
-                uint rowCnt = grad->getShape().rowCnt;
-                uint colCnt = grad->getShape().colCnt;
-                for (uint k = 0; k < colCnt; k++) {
-                    for (uint target = 0; target < rowCnt; target++) {
-                        for (uint i = 0; i < rowCnt; i++) {
-                            if (i != target) {
-                                (*softmax_grad)[i][k] += -(*res->get_weight())[target][k] * (*res->get_weight())[i][k] * (*grad)[target][k];
-                            } else {
-                                (*softmax_grad)[i][k] += (*res->get_weight())[i][k] * (1 - (*res->get_weight())[i][k]) * (*grad)[i][k];
-                            }
-                        }
-                    }
-                }
+                assert(false);
+                // uint rowCnt = grad->getShape().rowCnt;
+                // uint colCnt = grad->getShape().colCnt;
+                // for (uint k = 0; k < colCnt; k++) {
+                //     for (uint target = 0; target < rowCnt; target++) {
+                //         for (uint i = 0; i < rowCnt; i++) {
+                //             if (i != target) {
+                //                 (*softmax_grad)[i][k] += -(*res->get_weight())[target][k] * (*res->get_weight())[i][k] * (*grad)[target][k];
+                //             } else {
+                //                 (*softmax_grad)[i][k] += (*res->get_weight())[i][k] * (1 - (*res->get_weight())[i][k]) * (*grad)[i][k];
+                //             }
+                //         }
+                //     }
+                // }
                 assert(softmax_grad->checkShape(grad->getShape()));
                 *node->get_grad() += *softmax_grad;
             }
