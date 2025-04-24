@@ -22,6 +22,7 @@ class BackendOps {
             DATATYPE eps) = 0;
         virtual Matrix *Softmax(Matrix *w) = 0;
         virtual std::vector<Matrix*> split0(Matrix *w) = 0;
+        virtual std::vector<Matrix*> split1(Matrix *w, uint step) = 0;
 };
 
 extern BackendOps *g_backend_ops;

@@ -128,7 +128,6 @@ Matrix *CPUBackendOps::Softmax(Matrix *w) {
         for (uint i = 0; i < shape.rowCnt; ++ i) {
             DATATYPE e = std::exp((*w)[i][j] - max);
             sum += e;
-            
             (*tmp)[i][j] = e;
         }
         for (uint i = 0; i < shape.rowCnt; ++ i) {
@@ -151,6 +150,24 @@ std::vector<Matrix*> CPUBackendOps::split0(Matrix *w) {
             (*m)[j][0] = (*w)[j][i];
         }
         ret.emplace_back(m);
+    }
+    return ret;
+}
+
+std::vector<Matrix*> CPUBackendOps::split1(Matrix *w, uint step) {
+    Shape shape = w->getShape();
+    uint colCnt = shape.colCnt;
+    uint rowCnt = shape.rowCnt;
+    assert(step > 0 && rowCnt % step == 0);
+    std::vector<Matrix *> ret;
+    for (uint i = 0; i < rowCnt; i += step) {
+        Matrix *m = allocTmpMatrix(Shape(step, colCnt));
+        for (uint j = 0; j < step; ++ j) {
+            for (uint k = 0; k < colCnt; ++ k) {
+                (*m)[j][k] = (*w)[i+j][k];
+            }
+        }
+        ret.push_back(m);
     }
     return ret;
 }

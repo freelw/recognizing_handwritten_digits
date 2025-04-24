@@ -306,24 +306,18 @@ namespace autograd_cuda {
 
     std::vector<Node *> Node::split1(uint step) {
         Shape shape = this->get_weight()->getShape();
-        uint colCnt = shape.colCnt;
         uint rowCnt = shape.rowCnt;
         assert(step > 0 && rowCnt % step == 0);
+        std::vector<Matrix *> m_vec = g_backend_ops->split1(this->get_weight(), step);
         std::vector<Node *> res;
-        for (uint i = 0; i < rowCnt; i += step) {
-            Matrix *m = allocTmpMatrix(Shape(step, colCnt));
+        res.reserve(m_vec.size());
+        for (uint i = 0; i < m_vec.size(); ++ i) {
+            Matrix *m = m_vec[i];
             Node *n = allocNode(m);
             if (is_require_grad()) {
                 n->require_grad();
             }
-            for (uint j = 0; j < step; ++ j) {
-                for (uint k = 0; k < colCnt; ++ k) {
-                    assert(false);
-                    // (*m)[j][k] = (*this->get_weight())[i+j][k];
-                }
-            }
-            assert(i % step == 0);
-            n->edges.push_back(SplitEdge1::create(this, i/step, step));
+            n->edges.push_back(SplitEdge1::create(this, i, step));
             res.push_back(n);
         }
         return res;
