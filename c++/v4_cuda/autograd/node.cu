@@ -23,7 +23,6 @@ namespace autograd_cuda {
         auto var_res = w->var();
         DATATYPE eps = 1e-5;
         auto tmp = g_backend_ops->Norm(w, avg_res, var_res, eps);
-        
         auto *node = allocNode(tmp);
         if (is_require_grad()) {
             node->require_grad();
@@ -291,23 +290,18 @@ namespace autograd_cuda {
     }
 
     std::vector<Node *> Node::split0() { // 注意这个函数只用在反向传播中，不需要edge
-        Shape shape = this->get_weight()->getShape();
-         uint colCnt = shape.colCnt;
-         uint rowCnt = shape.rowCnt;
-         std::vector<Node *> res;
-         for (uint i = 0; i < colCnt; ++ i) {
-             Matrix *m = allocTmpMatrix(Shape(rowCnt, 1));
-             Node *n = allocNode(m);
-             if (is_require_grad()) {
-                 n->require_grad();
-             }
-             for (uint j = 0; j < rowCnt; ++ j) {
-                assert(false);
-                 // (*m)[j][0] = (*this->get_weight())[j][i];
-             }
-             res.push_back(n);
-         }
-         return res;
+        std::vector<Matrix *> m_vec = g_backend_ops->split0(this->get_weight());
+        std::vector<Node *> res;
+        res.reserve(m_vec.size());
+        for (uint i = 0; i < m_vec.size(); ++ i) {
+            Matrix *m = m_vec[i];
+            Node *n = allocNode(m);
+            if (is_require_grad()) {
+                n->require_grad();
+            }
+            res.push_back(n);
+        }
+        return res;
     }
 
     std::vector<Node *> Node::split1(uint step) {

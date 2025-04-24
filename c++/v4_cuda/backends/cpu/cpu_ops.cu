@@ -138,3 +138,19 @@ Matrix *CPUBackendOps::Softmax(Matrix *w) {
     }
     return tmp;
 }
+
+std::vector<Matrix*> CPUBackendOps::split0(Matrix *w) {
+    Shape shape = w->getShape();
+    uint colCnt = shape.colCnt;
+    uint rowCnt = shape.rowCnt;
+    std::vector<Matrix*> ret;
+    ret.reserve(colCnt);
+    for (uint i = 0; i < colCnt; ++ i) {
+        Matrix *m = allocTmpMatrix(Shape(rowCnt, 1));
+        for (uint j = 0; j < rowCnt; ++ j) {
+            (*m)[j][0] = (*w)[j][i];
+        }
+        ret.emplace_back(m);
+    }
+    return ret;
+}

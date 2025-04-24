@@ -21,6 +21,7 @@ class CPUBackendOps : public BackendOps {
             const std::vector<DATATYPE> &var_res,
             DATATYPE eps) override;
         virtual Matrix *Softmax(Matrix *w) override;
+        virtual std::vector<Matrix*> split0(Matrix *w) override;
 };
 
 #endif
