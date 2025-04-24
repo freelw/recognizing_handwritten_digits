@@ -313,6 +313,12 @@
                     "ignoreFailures": true
                 }
             ]
+        },
+        {
+            "name": "cuda c++ launch",
+            "type": "cuda-gdb",
+            "request": "launch",
+            "program": "/home/cs/project/recognizing_handwritten_digits/build/matrixmul/matrix_opt1",
         }
     ]
 }
