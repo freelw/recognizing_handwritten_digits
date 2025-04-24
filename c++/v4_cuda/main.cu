@@ -24,7 +24,7 @@ DATATYPE update_mini_batch(
             input->set_val(i, j, mini_batch[j]->x[i]);
         }
     }
-    input->commit();
+    input->cp_to_device();
     labels.reserve(mini_batch.size());
     for (uint j = 0; j < mini_batch.size(); ++ j) {
         labels.emplace_back(mini_batch[j]->y);

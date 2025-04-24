@@ -441,7 +441,6 @@ namespace autograd_cuda {
     std::vector<Node *> Node::split(uint dim, uint step) {
         assert(dim == 0 || dim == 1);
         if (dim == 0) { // 将错就错，dim == 0 时我们切割行，cat也要这样实现
-            // assert(false);
             assert(step == 1);
             return split0();
             

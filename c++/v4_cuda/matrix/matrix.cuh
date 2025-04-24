@@ -73,7 +73,9 @@ public:
     void init_weight(DATATYPE sigma, DATATYPE mean = 0);
     void init_weight_uniform(DATATYPE sigma);
     void set_val(int i, int j, DATATYPE val);
-    void commit();
+    DATATYPE get_val(int i, int j);
+    void cp_to_device();
+    void cp_from_device();
 private:
     DATATYPE* operator[](unsigned int index) const;
 private:

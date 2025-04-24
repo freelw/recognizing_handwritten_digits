@@ -547,12 +547,22 @@ void Matrix::set_val(int i, int j, DATATYPE val) {
     commited = false;
 }
 
-void Matrix::commit() {
+DATATYPE Matrix::get_val(int i, int j) {
+    assert(i < shape.rowCnt && j < shape.colCnt);
+    cp_from_device();
+    assert(false);
+    return (*this)[i][j];
+}
+
+void Matrix::cp_to_device() {
     assert(allocated && initialized);
     commited = true;
     assert(false);
 }
 
+void Matrix::cp_from_device() {
+    assert(false);
+}
 
 TrainingData::TrainingData(int input_layer_size, int _y)
     : y(_y) {  
