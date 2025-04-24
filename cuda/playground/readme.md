@@ -36,4 +36,7 @@ sudo ./run_perf.sh
 
 ### perf
 
+* opt1 share mem
+* opt2 prefetch
+
 ![alt text](matrixmul/perf/image.png)
