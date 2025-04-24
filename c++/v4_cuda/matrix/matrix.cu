@@ -7,12 +7,14 @@
 #include <omp.h> // Include OpenMP header
 #include <random>
 #include <chrono>
+#include "backends/cpu/cpu_ops.cuh"
 
 Matrix::Matrix(Shape _shape)
         : initialized(false),
         allocated(false),
         shape(_shape),
-        commited(false) {
+        commited(false),
+        data_device(nullptr) {
     data = new DATATYPE[shape.size()];
     allocated = true;
     zero();
@@ -22,7 +24,8 @@ Matrix::Matrix(const Matrix &m):
     initialized(m.initialized),
     allocated(false),
     shape(m.shape),
-    commited(false) {
+    commited(false),
+    data_device(nullptr) {
     assert(initialized);
     data = new DATATYPE[shape.size()];
     allocated = true;
@@ -33,7 +36,8 @@ Matrix::Matrix(const std::vector<DATATYPE> &v):
     initialized(false),
     allocated(false),
     shape(Shape(v.size(), 1)),
-    commited(false) {
+    commited(false),
+    data_device(nullptr) {
     data = new DATATYPE[shape.size()];
     allocated = true;
     for (uint i = 0; i < shape.rowCnt; ++ i) {
@@ -555,11 +559,11 @@ DATATYPE Matrix::get_val(int i, int j) const {
 void Matrix::cp_to_device() {
     assert(allocated && initialized);
     commited = true;
-    assert(false);
+    g_backend_ops->cp_to_device(data_device, data, shape.size());
 }
 
 void Matrix::cp_from_device() {
-    assert(false);
+    g_backend_ops->cp_from_device(data, data_device, shape.size());
 }
 
 TrainingData::TrainingData(int input_layer_size, int _y)

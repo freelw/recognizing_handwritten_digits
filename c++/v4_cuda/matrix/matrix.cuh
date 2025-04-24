@@ -83,6 +83,7 @@ private:
     bool allocated;
     Shape shape;
     DATATYPE *data;
+    DATATYPE *data_device;
     bool commited;
 };
 

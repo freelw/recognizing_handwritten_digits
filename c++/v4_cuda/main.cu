@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <random>
 #include <chrono>
+#include "backends/cpu/cpu_ops.cuh"
 
 #define INPUT_LAYER_SIZE 784
 
@@ -131,6 +132,7 @@ int main(int argc, char *argv[]) {
     int batch_size = atoi(argv[2]);
     int use_dropout = atoi(argv[3]);
     int eval = atoi(argv[4]);
+    g_backend_ops = new CPUBackendOps();
     train(epochs, batch_size, use_dropout == 1, eval == 1);
     freeTmpMatrix();
     return 0;

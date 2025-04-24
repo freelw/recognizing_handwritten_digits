@@ -8,6 +8,7 @@ SRCDIR := ./matrix
 SRCDIR += ./autograd
 SRCDIR += ./backends/cpu
 SRCDIR += ./backends/gpu
+SRCDIR += ./backends/
 SRCDIR += ../utils/dataloader
 SRCS := $(wildcard *.cpp) $(wildcard $(addsuffix /*.cpp, $(SRCDIR)))
 SRCS += $(wildcard *.cu) $(wildcard $(addsuffix /*.cu, $(SRCDIR)))
