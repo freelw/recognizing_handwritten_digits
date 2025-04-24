@@ -61,7 +61,7 @@ int evaluate(autograd_cuda::MLP &m, std::vector<TrainingData*> &v_test_data) {
     return sum;
 }
 
-void SGD(autograd_cuda::MLP &m, std::vector<TrainingData*> &v_training_data,
+void fit(autograd_cuda::MLP &m, std::vector<TrainingData*> &v_training_data,
     std::vector<TrainingData*> &v_test_data,
     int epochs, int mini_batch_size, autograd_cuda::Adam &optimizer, bool eval) {
 
@@ -117,7 +117,7 @@ void train(int epochs, int batch_size, bool use_dropout, bool eval) {
     
     autograd_cuda::MLP m(INPUT_LAYER_SIZE, {30, 10});
     autograd_cuda::Adam adam(m.get_parameters(), 0.001);
-    SGD(m, v_training_data, v_test_data, epochs, batch_size, adam, eval);
+    fit(m, v_training_data, v_test_data, epochs, batch_size, adam, eval);
     for (uint i = 0; i < v_training_data.size(); ++ i) {
         delete v_training_data[i];
     }
