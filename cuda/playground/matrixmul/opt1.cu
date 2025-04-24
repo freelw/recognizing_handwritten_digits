@@ -67,10 +67,8 @@ int main() {
     cudaMalloc((void **)&d_Pd, WIDTH*WIDTH*sizeof(float));
 
     for (int i = 0; i < WIDTH*WIDTH; i++) {
-        // h_Md[i] = 2 * (float)drand48() - 1.0;
-        // h_Nd[i] = 2 * (float)drand48() - 1.0;
-        h_Md[i] = 1;
-        h_Nd[i] = 1;
+        h_Md[i] = 2 * (float)drand48() - 1.0;
+        h_Nd[i] = 2 * (float)drand48() - 1.0;
     }
     naive_matrixmul(h_Md, h_Nd, h_res, WIDTH);
     
