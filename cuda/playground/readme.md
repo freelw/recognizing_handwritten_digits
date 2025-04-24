@@ -16,16 +16,24 @@
 * [cuda 调试 ](https://zhuanlan.zhihu.com/p/508810115)
 * [使用Vscode调试cuda代码](https://fancyerii.github.io/2024/01/17/vscode-cuda-debug/)
 * [block grid 维度](???)
-## sanitizer
+
+## reduce
+### sanitizer
 
 ```
 /usr/local/cuda/bin/compute-sanitizer ./reduce2
 ```
-## nsight
+### nsight
 
 ```
 sudo ./run_perf.sh
 ```
 
-## perf
+### perf
 ![alt text](reduce/perf/image.png)
+
+## matrixmul
+
+### perf
+
+![alt text](matrixmul/perf/image.png)
