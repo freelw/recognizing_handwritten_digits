@@ -4,16 +4,28 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define WIDTH 1024
 #define TILE_WIDTH 32
 
 __global__ void matrixmul(
     float *Md, float *Nd, float *Pd, int width) {
-    // naive
+    
     int row = blockIdx.y * blockDim.y + threadIdx.y;
     int col = blockIdx.x * blockDim.x + threadIdx.x;
+    
+    __shared__ float s_Md[TILE_WIDTH][TILE_WIDTH];
+    __shared__ float s_Nd[TILE_WIDTH][TILE_WIDTH];
+
     float sum = 0;
-    for (int k = 0; k < width; ++k) {
-        sum += Md[row * width + k] * Nd[k * width + col];
+    for (int m = 0; m < width / TILE_WIDTH; ++m) {
+        // Load data into shared memory
+        s_Md[threadIdx.y][threadIdx.x] = Md[row * width + m * TILE_WIDTH + threadIdx.x];
+        s_Nd[threadIdx.y][threadIdx.x] = Nd[(m * TILE_WIDTH + threadIdx.y) * width + col];
+        __syncthreads();
+        for (int k = 0; k < TILE_WIDTH; ++k) {
+            sum += s_Md[threadIdx.y][k] * s_Nd[k][threadIdx.x];
+        }
+        __syncthreads();
     }
     Pd[row * width + col] = sum;
 }
@@ -41,7 +53,7 @@ bool check(float *h_output, float *res, int size) {
 }
 
 int main() {
-    const int WIDTH = 1024;
+    
     float *h_Md = (float *)malloc(WIDTH*WIDTH*sizeof(float));
     float *h_Nd = (float *)malloc(WIDTH*WIDTH*sizeof(float));
     float *h_Pd = (float *)malloc(WIDTH*WIDTH*sizeof(float));
@@ -55,8 +67,10 @@ int main() {
     cudaMalloc((void **)&d_Pd, WIDTH*WIDTH*sizeof(float));
 
     for (int i = 0; i < WIDTH*WIDTH; i++) {
-        h_Md[i] = 2 * (float)drand48() - 1.0;
-        h_Nd[i] = 2 * (float)drand48() - 1.0;
+        // h_Md[i] = 2 * (float)drand48() - 1.0;
+        // h_Nd[i] = 2 * (float)drand48() - 1.0;
+        h_Md[i] = 1;
+        h_Nd[i] = 1;
     }
     naive_matrixmul(h_Md, h_Nd, h_res, WIDTH);
     
@@ -68,6 +82,9 @@ int main() {
         TILE_WIDTH,
         TILE_WIDTH
     );
+
+    std::cout << "gridDim : " << gridDim.x << " " << gridDim.y << std::endl;
+    std::cout << "blockDim : " << blockDim.x << " " << blockDim.y << std::endl;
 
     cudaMemcpy(d_Md, h_Md, WIDTH*WIDTH*sizeof(float), cudaMemcpyHostToDevice);
     cudaMemcpy(d_Nd, h_Nd, WIDTH*WIDTH*sizeof(float), cudaMemcpyHostToDevice);
