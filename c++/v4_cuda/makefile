@@ -6,6 +6,7 @@ TARGET	= mnist_cuda
 CFLAGS = $(DIR_INC) $(DIR_LIB)
 SRCDIR := ./matrix
 SRCDIR += ./autograd
+SRCDIR += ./cuda_util
 SRCDIR += ../utils/dataloader
 SRCS := $(wildcard *.cpp) $(wildcard $(addsuffix /*.cpp, $(SRCDIR)))
 SRCS += $(wildcard *.cu) $(wildcard $(addsuffix /*.cu, $(SRCDIR)))
