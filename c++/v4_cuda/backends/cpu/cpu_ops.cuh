@@ -11,6 +11,15 @@ class CPUBackendOps : public BackendOps {
             Matrix *input,
             const std::vector<uint> &labels,
             std::vector<autograd_cuda::CrosEntropyInfo> &info) override;
+        virtual Matrix *CrossEntropyLossMask(
+            Matrix *input,
+            const std::vector<uint> &labels,
+            std::vector<autograd_cuda::CrosEntropyInfo> &info,
+            const std::vector<bool> &mask) override;
+        virtual Matrix *Norm(Matrix *w,
+            const std::vector<DATATYPE> &avg_res,
+            const std::vector<DATATYPE> &var_res,
+            DATATYPE eps) override;
 };
 
 #endif
