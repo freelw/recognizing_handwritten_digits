@@ -15,3 +15,7 @@ ${CMAKE_BUILD_PATH}/matrix_opt1
 ${NCU_PATH} --set detailed \
 -o ${NSIGHT_OUT_PATH}/matrix_opt2 \
 ${CMAKE_BUILD_PATH}/matrix_opt2
+
+${NCU_PATH} --set detailed \
+-o ${NSIGHT_OUT_PATH}/matrix_opt3 \
+${CMAKE_BUILD_PATH}/matrix_opt3
