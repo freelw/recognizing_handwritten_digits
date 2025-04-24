@@ -104,13 +104,36 @@ Matrix *CPUBackendOps::Norm(
     const std::vector<DATATYPE> &var_res,
     DATATYPE eps) {
     auto *tmp = allocTmpMatrix(w);
-    
     Shape shape = tmp->getShape();
-    
     assert(false);
     for (uint i = 0; i < shape.rowCnt; ++ i) {
         for (uint j = 0; j < shape.colCnt; ++ j) {
             (*tmp)[i][j] = ((*w)[i][j] - avg_res[j]) / sqrt(var_res[j] + eps);
+        }
+    }
+    return tmp;
+}
+
+Matrix *CPUBackendOps::Softmax(Matrix *w) {
+    auto *tmp = allocTmpMatrix(w);
+    Shape shape = tmp->getShape();
+    for (uint j = 0; j < shape.colCnt; ++ j) {
+        DATATYPE max = (*w)[0][j];
+        for (uint i = 0; i < shape.rowCnt; ++ i) {
+            if (max < (*w)[i][j]) {
+                max = (*w)[i][j];
+            }
+        }
+        DATATYPE sum = 0;
+        for (uint i = 0; i < shape.rowCnt; ++ i) {
+            DATATYPE e = std::exp((*w)[i][j] - max);
+            sum += e;
+            
+            (*tmp)[i][j] = e;
+        }
+        for (uint i = 0; i < shape.rowCnt; ++ i) {
+            assert(false);
+            (*tmp)[i][j] /= sum;
         }
     }
     return tmp;

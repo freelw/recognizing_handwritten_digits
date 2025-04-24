@@ -33,29 +33,7 @@ namespace autograd_cuda {
     }
 
     Node *Node::Softmax() {
-        auto *tmp = allocTmpMatrix(w);
-        Shape shape = tmp->getShape();
-        for (uint j = 0; j < shape.colCnt; ++ j) {
-            assert(false);
-            // DATATYPE max = (*w)[0][j];
-            // for (uint i = 0; i < shape.rowCnt; ++ i) {
-            //     if (max < (*w)[i][j]) {
-            //         max = (*w)[i][j];
-            //     }
-            // }
-            // DATATYPE sum = 0;
-            
-            // for (uint i = 0; i < shape.rowCnt; ++ i) {
-            //     DATATYPE e = std::exp((*w)[i][j] - max);
-            //     sum += e;
-                
-            //     (*tmp)[i][j] = e;
-            // }
-            // for (uint i = 0; i < shape.rowCnt; ++ i) {
-            //     assert(false);
-            //     (*tmp)[i][j] /= sum;
-            // }
-        }
+        auto tmp = g_backend_ops->Softmax(w);
         auto *node = allocNode(tmp);
         if (is_require_grad()) {
             node->require_grad();
