@@ -2,7 +2,7 @@
 
 NCU_PATH="/usr/local/cuda/nsight-compute-2024.3.2/ncu"
 NSIGHT_OUT_PATH="/home/cs/project/recognizing_handwritten_digits/build/nsight_out/"
-CMAKE_BUILD_PATH="/home/cs/project/recognizing_handwritten_digits/build/1/"
+CMAKE_BUILD_PATH="/home/cs/project/recognizing_handwritten_digits/build/reduce/"
 mkdir -p ${NSIGHT_OUT_PATH}
 ${NCU_PATH} --set detailed \
 -o ${NSIGHT_OUT_PATH}/baseline \
