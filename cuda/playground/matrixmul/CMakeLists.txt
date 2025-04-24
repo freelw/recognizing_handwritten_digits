@@ -7,3 +7,8 @@ add_executable(matrix_opt1 opt1.cu)
 target_link_libraries(matrix_opt1 PRIVATE CUDA::cudart)
 target_compile_options(matrix_opt1 PRIVATE -fno-omit-frame-pointer -g -G)
 target_link_options(matrix_opt1 PRIVATE)
+
+add_executable(matrix_opt2 opt2.cu)
+target_link_libraries(matrix_opt2 PRIVATE CUDA::cudart)
+target_compile_options(matrix_opt2 PRIVATE -fno-omit-frame-pointer -g -G)
+target_link_options(matrix_opt2 PRIVATE)
