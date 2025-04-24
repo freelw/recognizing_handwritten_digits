@@ -496,26 +496,26 @@ void freeTmpMatrix() {
     tmpMatrics.clear();
 }
 
-void init_weight(Matrix *weight, DATATYPE sigma, DATATYPE mean) {
+void Matrix::init_weight(DATATYPE sigma, DATATYPE mean) {
     unsigned seed1 = std::chrono::system_clock::now().time_since_epoch().count();
     std::default_random_engine generator_w(seed1);
     std::normal_distribution<DATATYPE> distribution_w(0.0, sigma);
-    for (uint i = 0; i < weight->getShape().rowCnt; ++ i) {
-        for (uint j = 0; j < weight->getShape().colCnt; ++ j) {
-            assert(false);
-            // (*weight)[i][j] = distribution_w(generator_w) + mean;
+    auto shape = getShape();
+    for (uint i = 0; i < shape.rowCnt; ++ i) {
+        for (uint j = 0; j < shape.colCnt; ++ j) {
+            (*this)[i][j] = distribution_w(generator_w) + mean;
         }
     }
 }
 
-void init_weight_uniform(Matrix *weight, DATATYPE sigma) {
+void Matrix::init_weight_uniform(DATATYPE sigma) {
     unsigned seed1 = std::chrono::system_clock::now().time_since_epoch().count();
     std::default_random_engine generator_w(seed1);
     std::uniform_real_distribution<DATATYPE> distribution_w(-sigma, sigma);
-    for (uint i = 0; i < weight->getShape().rowCnt; ++ i) {
-        for (uint j = 0; j < weight->getShape().colCnt; ++ j) {
-            assert(false);
-            // (*weight)[i][j] = distribution_w(generator_w);
+    auto shape = getShape();
+    for (uint i = 0; i < shape.rowCnt; ++ i) {
+        for (uint j = 0; j < shape.colCnt; ++ j) {
+            (*this)[i][j] = distribution_w(generator_w);
         }
     }
 }

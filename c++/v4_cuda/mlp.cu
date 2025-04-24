@@ -15,10 +15,10 @@ MLP::MLP(uint _input, const std::vector<uint> &_outputs) {
     mb2 = allocMatrix(Shape(_outputs[1], 1));
 
     auto sigma = 0.02;
-    init_weight(mW1, sigma);
-    init_weight(mb1, sigma);
-    init_weight(mW2, sigma);
-    init_weight(mb2, sigma);
+    mW1->init_weight(sigma);
+    mb1->init_weight(sigma);
+    mW2->init_weight(sigma);
+    mb2->init_weight(sigma);
     
     W1 = new Node(mW1, true);
     b1 = new Node(mb1, true);

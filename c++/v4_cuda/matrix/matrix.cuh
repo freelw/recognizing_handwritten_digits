@@ -69,6 +69,8 @@ public:
     std::vector<DATATYPE> avg();
     std::vector<DATATYPE> var();
     friend Matrix *operator-(DATATYPE, const Matrix &m);
+    void init_weight(DATATYPE sigma, DATATYPE mean = 0);
+    void init_weight_uniform(DATATYPE sigma);
 private:
     DATATYPE* operator[](unsigned int index) const;
 private:
@@ -84,8 +86,6 @@ Matrix *allocTmpMatrix(Matrix *m);
 Matrix *allocTmpMatrix(const Matrix &m);
 Matrix *allocTmpMatrix(const Shape & shape);
 void freeTmpMatrix();
-void init_weight(Matrix *weight, DATATYPE sigma, DATATYPE mean = 0);
-void init_weight_uniform(Matrix *weight, DATATYPE sigma);
 
 class TrainingData {
 public:
