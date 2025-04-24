@@ -18,7 +18,7 @@ NVCC = nvcc
 $(TARGET) : $(OBJECTS)
 	@echo $(RELEASE_MSG)
 	${NVCC} $(CFLAGS) $^ -o $@ $(LDFLAGS)
-%.o : %.c
+%.o : %.cu
 	${NVCC} -c $(CFLAGS) $< -o $@
 clean:
 	@rm -f *.o $(TARGET)

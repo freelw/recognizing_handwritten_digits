@@ -85,6 +85,8 @@ private:
     DATATYPE *data;
     DATATYPE *data_device;
     bool commited;
+
+friend class CPUBackendOps;
 };
 
 Matrix *sigmoid(const Matrix &m);

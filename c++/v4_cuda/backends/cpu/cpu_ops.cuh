@@ -7,6 +7,10 @@ class CPUBackendOps : public BackendOps {
     public:
         void cp_to_device(void* dst, const void* src, size_t size) override;
         void cp_from_device(void* dst, const void* src, size_t size) override;
+        virtual Matrix *CrossEntropyLoss(
+            Matrix *input,
+            const std::vector<uint> &labels,
+            std::vector<autograd_cuda::CrosEntropyInfo> &info) override;
 };
 
 #endif
