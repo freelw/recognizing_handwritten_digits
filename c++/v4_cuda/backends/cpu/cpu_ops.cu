@@ -353,3 +353,52 @@ void CPUBackendOps::operator_divide_val(Matrix *w, DATATYPE v) {
         }
     }
 }
+
+void CPUBackendOps::Relu(Matrix *w) {
+    auto shape = w->getShape();
+    for (uint i = 0; i < shape.rowCnt; ++i) {
+        for (uint j = 0; j < shape.colCnt; ++j) {
+            auto &r = (*w)[i][j];
+            r = r > 0 ? r : 0;
+        }
+    }
+}
+
+void CPUBackendOps::Relu_prime(Matrix *w) {
+    auto shape = w->getShape();
+    for (uint i = 0; i < shape.rowCnt; ++i) {
+        for (uint j = 0; j < shape.colCnt; ++j) {
+            auto &r = (*w)[i][j];
+            r = r > 0 ? 1 : 0;
+        }
+    }
+}
+
+void CPUBackendOps::tanh(Matrix *w) {
+    auto shape = w->getShape();
+    for (uint i = 0; i < shape.rowCnt; ++i) {
+        for (uint j = 0; j < shape.colCnt; ++j) {
+            auto &r = (*w)[i][j];
+            r = std::tanh(r);
+        }
+    }
+}
+
+void CPUBackendOps::tanh_prime(Matrix *w) {
+    auto shape = w->getShape();
+    for (uint i = 0; i < shape.rowCnt; ++i) {
+        for (uint j = 0; j < shape.colCnt; ++j) {
+            auto &r = (*w)[i][j];
+            r = 1 - std::pow(std::tanh(r), 2);
+        }
+    }
+}
+
+void CPUBackendOps::operator_equal(Matrix *w, const Matrix &m) {
+    auto shape = w->getShape();
+    for (uint i = 0; i < shape.rowCnt; ++i) {
+        for (uint j = 0; j < shape.colCnt; ++j) {
+            (*w)[i][j] = m[i][j];
+        }
+    }
+}

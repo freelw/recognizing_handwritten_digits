@@ -55,5 +55,10 @@ class CPUBackendOps : public BackendOps {
         virtual void operator_multiply_val(Matrix *w, DATATYPE v) override;
         virtual void operator_divide(Matrix *w, const Matrix &m) override;
         virtual void operator_divide_val(Matrix *w, DATATYPE v) override;
+        virtual void Relu(Matrix *w) override;
+        virtual void Relu_prime(Matrix *w) override;
+        virtual void tanh(Matrix *w) override;
+        virtual void tanh_prime(Matrix *w) override;
+        virtual void operator_equal(Matrix *w, const Matrix &m) override;
 };
 #endif

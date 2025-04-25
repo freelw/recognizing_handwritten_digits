@@ -194,56 +194,37 @@ Matrix *Matrix::operator/(DATATYPE v) {
 
 Matrix *Matrix::Relu() {
     Matrix *res = allocTmpMatrix(this);
-    #pragma omp parallel for num_threads(OMP_THREADS)
-    for (uint i = 0; i < shape.rowCnt; ++i) {
-        auto row = (*res)[i];
-        for (uint j = 0; j < shape.colCnt; ++j) {
-            row[j] = std::max(row[j], (DATATYPE)0);
-        }
-    }
+    g_backend_ops->Relu(res);
     return res;
 }
 
 Matrix *Matrix::Relu_prime() {
     Matrix *res = allocTmpMatrix(this);
-    #pragma omp parallel for num_threads(OMP_THREADS)
-    for (uint i = 0; i < shape.rowCnt; ++i) {
-        auto row = (*res)[i];
-        for (uint j = 0; j < shape.colCnt; ++j) {
-            row[j] = row[j] > 0 ? 1 : 0;
-        }
-    }
+    g_backend_ops->Relu_prime(res);
     return res;
 }
 
 Matrix *Matrix::tanh() {
     Matrix *res = allocTmpMatrix(this);
-    #pragma omp parallel for num_threads(OMP_THREADS)
-    for (uint i = 0; i < shape.rowCnt; ++i) {
-        auto row = (*res)[i];
-        for (uint j = 0; j < shape.colCnt; ++j) {
-            row[j] = std::tanh(row[j]);
-        }
-    }
+    g_backend_ops->tanh(res);
     return res;
 }
 
 Matrix *Matrix::tanh_prime() {
-    return 1 - *(this->tanh()->pow2());
+    Matrix *res = allocTmpMatrix(this);
+    g_backend_ops->tanh_prime(res);
+    return res;
 }
 
 Matrix& Matrix::operator=(const Matrix &m) {
     assert(m.initialized);
     this->reShape(m.shape);
-    for (uint i = 0; i < shape.rowCnt; ++i) {
-        for (uint j = 0; j < shape.colCnt; ++j) {
-            (*this)[i][j] = m[i][j];
-        }
-    }
+    g_backend_ops->operator_equal(this, m);
     return *this;
 }
 
 DATATYPE *Matrix::operator[](unsigned int index) const {
+    assert(!g_backend_ops->is_gpu());
     assert(index < shape.rowCnt);
     return (DATATYPE *)&(data[index*shape.colCnt]);
 }
@@ -307,9 +288,12 @@ bool Matrix::valid(uint x, uint y) const {
 void Matrix::reShape(Shape _shape) {
     assert(allocated && initialized);
     delete []data;
+    g_backend_ops->releaseDeviceMem(data_device);
     shape = _shape;
     data = new DATATYPE[shape.size()];
     zero();
+    data_device = g_backend_ops->allocDeviceMem(shape.size() * sizeof(DATATYPE));
+    cp_to_device();
 }
 
 Matrix *Matrix::assign(Matrix *other) {
