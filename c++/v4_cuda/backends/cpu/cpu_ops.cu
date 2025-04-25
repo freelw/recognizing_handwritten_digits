@@ -354,7 +354,7 @@ void CPUBackendOps::operator_divide_val(Matrix *w, DATATYPE v) {
     }
 }
 
-void CPUBackendOps::Relu(Matrix *w) {
+void CPUBackendOps::operator_relu(Matrix *w) {
     auto shape = w->getShape();
     for (uint i = 0; i < shape.rowCnt; ++i) {
         for (uint j = 0; j < shape.colCnt; ++j) {
@@ -364,7 +364,7 @@ void CPUBackendOps::Relu(Matrix *w) {
     }
 }
 
-void CPUBackendOps::Relu_prime(Matrix *w) {
+void CPUBackendOps::operator_relu_prime(Matrix *w) {
     auto shape = w->getShape();
     for (uint i = 0; i < shape.rowCnt; ++i) {
         for (uint j = 0; j < shape.colCnt; ++j) {
@@ -374,7 +374,7 @@ void CPUBackendOps::Relu_prime(Matrix *w) {
     }
 }
 
-void CPUBackendOps::tanh(Matrix *w) {
+void CPUBackendOps::operator_tanh(Matrix *w) {
     auto shape = w->getShape();
     for (uint i = 0; i < shape.rowCnt; ++i) {
         for (uint j = 0; j < shape.colCnt; ++j) {
@@ -384,7 +384,7 @@ void CPUBackendOps::tanh(Matrix *w) {
     }
 }
 
-void CPUBackendOps::tanh_prime(Matrix *w) {
+void CPUBackendOps::operator_tanh_prime(Matrix *w) {
     auto shape = w->getShape();
     for (uint i = 0; i < shape.rowCnt; ++i) {
         for (uint j = 0; j < shape.colCnt; ++j) {
@@ -516,5 +516,28 @@ void CPUBackendOps::operator_var(std::vector<DATATYPE> &res, Matrix *w) {
             sum += std::pow(e, 2);
         }
         res[i] = sum / shape.rowCnt;
+    }
+}
+
+DATATYPE _sigmoid(DATATYPE z) {
+    return 1./(1.+exp(-z));
+}
+
+void CPUBackendOps::operator_sigmoid(Matrix *w) {
+    auto shape = w->getShape();
+    for (uint i = 0; i < shape.rowCnt; ++ i) {
+        for (uint j = 0; j < shape.colCnt; ++ j) {
+            (*w)[i][j] = _sigmoid((*w)[i][j]);
+        }
+    }
+}
+
+void CPUBackendOps::operator_sigmoid_prime(Matrix *w) {
+    auto shape = w->getShape();
+    for (uint i = 0; i < shape.rowCnt; ++ i) {
+        for (uint j = 0; j < shape.colCnt; ++ j) {
+            auto r = _sigmoid((*w)[i][j]);
+            r = r * (1 - r);
+        }
     }
 }

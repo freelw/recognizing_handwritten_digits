@@ -55,10 +55,10 @@ class BackendOps {
         virtual void operator_multiply_val(Matrix *w, DATATYPE v) = 0;
         virtual void operator_divide(Matrix *w, const Matrix &m) = 0;
         virtual void operator_divide_val(Matrix *w, DATATYPE v) = 0;
-        virtual void Relu(Matrix *w) = 0;
-        virtual void Relu_prime(Matrix *w) = 0;
-        virtual void tanh(Matrix *w) = 0;
-        virtual void tanh_prime(Matrix *w) = 0;
+        virtual void operator_relu(Matrix *w) = 0;
+        virtual void operator_relu_prime(Matrix *w) = 0;
+        virtual void operator_tanh(Matrix *w) = 0;
+        virtual void operator_tanh_prime(Matrix *w) = 0;
         virtual void operator_equal(Matrix *w, const Matrix &m) = 0;
         virtual void operator_at(Matrix *res, Matrix *w, const Matrix &m) = 0;
         virtual void operator_transpose(Matrix *res, Matrix *w) = 0;
@@ -69,6 +69,8 @@ class BackendOps {
         virtual void operator_argMax(std::vector<uint> &res, Matrix *w) = 0;
         virtual void operator_avg(std::vector<DATATYPE> &res, Matrix *w) = 0;
         virtual void operator_var(std::vector<DATATYPE> &res, Matrix *w) = 0;
+        virtual void operator_sigmoid(Matrix *w) = 0;
+        virtual void operator_sigmoid_prime(Matrix *w) = 0;
 };
 
 extern BackendOps *g_backend_ops;

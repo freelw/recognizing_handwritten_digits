@@ -194,25 +194,25 @@ Matrix *Matrix::operator/(DATATYPE v) {
 
 Matrix *Matrix::Relu() {
     Matrix *res = allocTmpMatrix(this);
-    g_backend_ops->Relu(res);
+    g_backend_ops->operator_relu(res);
     return res;
 }
 
 Matrix *Matrix::Relu_prime() {
     Matrix *res = allocTmpMatrix(this);
-    g_backend_ops->Relu_prime(res);
+    g_backend_ops->operator_relu_prime(res);
     return res;
 }
 
 Matrix *Matrix::tanh() {
     Matrix *res = allocTmpMatrix(this);
-    g_backend_ops->tanh(res);
+    g_backend_ops->operator_tanh(res);
     return res;
 }
 
 Matrix *Matrix::tanh_prime() {
     Matrix *res = allocTmpMatrix(this);
-    g_backend_ops->tanh_prime(res);
+    g_backend_ops->operator_tanh_prime(res);
     return res;
 }
 
@@ -326,23 +326,16 @@ std::vector<DATATYPE> Matrix::var() {
     return res;
 }
 
-DATATYPE _sigmoid(DATATYPE z) {
-    return 1./(1.+exp(-z));
-}
-
 Matrix *Matrix::sigmoid() {
-    Shape shape = getShape();
     Matrix *res = allocTmpMatrix(this);
-    for (uint i = 0; i < shape.rowCnt; ++i) {
-        for (uint j = 0; j < shape.colCnt; ++j) {
-            (*res)[i][j] = _sigmoid((*res)[i][j]);
-        }
-    }
+    g_backend_ops->operator_sigmoid(res);
     return res;
 }
 
 Matrix *Matrix::sigmoid_prime() {
-    return *sigmoid() * *(1 - *sigmoid());
+    Matrix *res = allocTmpMatrix(this);
+    g_backend_ops->operator_sigmoid_prime(res);
+    return res;
 }
 
 std::vector<Matrix *> tmpMatrics;
