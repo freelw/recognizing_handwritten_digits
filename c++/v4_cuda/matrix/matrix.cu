@@ -243,7 +243,7 @@ Shape Matrix::getShape() const {
     return shape;
 }
 
-Matrix *Matrix::at(const Matrix &m) {
+Matrix *Matrix::at(Matrix &m) {
     assert(m.shape.rowCnt == shape.colCnt);
     Matrix *res = allocTmpMatrix(Shape(shape.rowCnt, m.shape.colCnt));
     g_backend_ops->operator_at(res, this, m);
@@ -305,6 +305,10 @@ std::vector<Matrix *> Matrix::split(uint dim) {
 DATATYPE *Matrix::getLowLevelData() const {
     assert(!g_backend_ops->is_gpu());
     return data;
+}
+
+DATATYPE *Matrix::getLowLevelDataDevice() const {
+    return data_device;
 }
 
 Matrix *Matrix::fill(DATATYPE value) {

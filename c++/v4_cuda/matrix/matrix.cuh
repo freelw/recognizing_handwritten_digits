@@ -55,7 +55,7 @@ public:
     Matrix& operator=(const Matrix &m);
     Matrix *pow2();
     Shape getShape() const;
-    Matrix *at(const Matrix &m);
+    Matrix *at(Matrix &m);
     Matrix *transpose();
     bool valid(uint x, uint y) const;
     void reShape(Shape shape);
@@ -77,6 +77,7 @@ public:
     void increase_cpu_ver();
     void increase_gpu_ver();
     DATATYPE *getLowLevelData() const;
+    DATATYPE *getLowLevelDataDevice() const;
     
 private:
     DATATYPE* operator[](unsigned int index) const;

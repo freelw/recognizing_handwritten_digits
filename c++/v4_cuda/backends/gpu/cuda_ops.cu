@@ -1,4 +1,5 @@
 #include "cuda_ops.cuh"
+#include "kernel.cuh"
 
 
 bool GPUBackendOps::is_gpu() {
@@ -185,9 +186,35 @@ void GPUBackendOps::operator_equal(Matrix *w, const Matrix &m) {
     assert(false);
 }
 
-void GPUBackendOps::operator_at(Matrix *res, Matrix *w, const Matrix &m) {
-    std::cerr << "operator_at unimplemented" << std::endl;
-    assert(false);
+void GPUBackendOps::operator_at(Matrix *res, Matrix *w, Matrix &m) {
+    w->sync();
+    m.sync();
+
+    auto wshape = w->getShape();
+    auto mshape = m.getShape();
+    auto rshape = res->getShape();
+
+    assert(wshape.colCnt == mshape.rowCnt);
+    assert(rshape.rowCnt == wshape.rowCnt);
+
+    const int M = wshape.rowCnt;
+    const int N = wshape.colCnt;
+    const int P = mshape.colCnt;
+    
+    dim3 gridDim(
+        (P + TILE_WIDTH - 1) / TILE_WIDTH,
+        (M + TILE_WIDTH - 1) / TILE_WIDTH
+    );
+    dim3 blockDim(
+        TILE_WIDTH,
+        TILE_WIDTH
+    );
+    DATATYPE *d_Md = w->getLowLevelDataDevice();
+    DATATYPE *d_Nd = m.getLowLevelDataDevice();
+    DATATYPE *d_Pd = res->getLowLevelDataDevice();
+
+    matrixmul<<<gridDim, blockDim>>>(d_Md, d_Nd, d_Pd, M, N, P);
+    res->increase_gpu_ver();
 }
 
 void GPUBackendOps::operator_transpose(Matrix *res, Matrix *w) {

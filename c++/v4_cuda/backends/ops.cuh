@@ -60,7 +60,7 @@ class BackendOps {
         virtual void operator_tanh(Matrix *w) = 0;
         virtual void operator_tanh_prime(Matrix *w) = 0;
         virtual void operator_equal(Matrix *w, const Matrix &m) = 0;
-        virtual void operator_at(Matrix *res, Matrix *w, const Matrix &m) = 0;
+        virtual void operator_at(Matrix *res, Matrix *w, Matrix &m) = 0;
         virtual void operator_transpose(Matrix *res, Matrix *w) = 0;
         virtual void operator_assign(Matrix *w, Matrix *m) = 0;
         virtual void operator_sum(Matrix *res, Matrix *w) = 0;

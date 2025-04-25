@@ -431,7 +431,7 @@ void CPUBackendOps::operator_equal(Matrix *w, const Matrix &m) {
     w->increase_cpu_ver();
 }
 
-void CPUBackendOps::operator_at(Matrix *res, Matrix *w, const Matrix &m) {
+void CPUBackendOps::operator_at(Matrix *res, Matrix *w, Matrix &m) {
 
     auto shape = w->getShape();
     auto mshape = m.getShape();
