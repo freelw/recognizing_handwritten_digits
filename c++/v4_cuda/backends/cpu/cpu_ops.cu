@@ -438,3 +438,27 @@ void CPUBackendOps::operator_assign(Matrix *w, Matrix *m) {
     assert(shape == m->getShape());
     memcpy(w->data, m->data, sizeof(DATATYPE) * shape.size());
 }
+
+void CPUBackendOps::operator_sum(Matrix *res, Matrix *w) {
+    auto shape = w->getShape();
+    auto rshape = res->getShape();
+    assert(shape.rowCnt == rshape.rowCnt);
+    assert(rshape.colCnt == 1);
+    for (uint i = 0; i < shape.rowCnt; ++ i) {
+        for (uint j = 0; j < shape.colCnt; ++ j) {
+            (*res)[i][0] += (*w)[i][j];
+        }
+    }
+}
+
+void CPUBackendOps::operator_split(std::vector<Matrix *> &res, Matrix *w) {
+    auto shape = w->getShape();
+    uint colCnt = shape.colCnt;
+    uint rowCnt = shape.rowCnt;
+    assert(res.size() == colCnt);
+    for (uint i = 0; i < colCnt; ++ i) {
+        for (uint j = 0; j < rowCnt; ++ j) {
+            (*res[i])[j][0] = (*w)[j][i];
+        }
+    }
+}

@@ -272,11 +272,7 @@ Matrix *Matrix::sum(uint dim) {
     assert(dim == 1);
     if (dim == 1) {
         Matrix *res = allocTmpMatrix(Shape(shape.rowCnt, 1));
-        for (uint i = 0; i < shape.rowCnt; ++ i) {
-            for (uint j = 0; j < shape.colCnt; ++ j) {
-                (*res)[i][0] += (*this)[i][j];
-            }
-        }
+        g_backend_ops->operator_sum(res, this);
         return res;
     }
     return nullptr;
@@ -288,17 +284,16 @@ std::vector<Matrix *> Matrix::split(uint dim) {
         std::vector<Matrix *> res;
         for (uint i = 0; i < shape.colCnt; ++ i) {
             Matrix *m = allocTmpMatrix(Shape(shape.rowCnt, 1));
-            for (uint j = 0; j < shape.rowCnt; ++ j) {
-                (*m)[j][0] = (*this)[j][i];
-            }
             res.push_back(m);
         }
+        g_backend_ops->operator_split(res, this);
         return res;
     }
     return {};
 }
 
 DATATYPE *Matrix::getData() const {
+    assert(!g_backend_ops->is_gpu());
     return data;
 }
 
