@@ -246,7 +246,8 @@ Shape Matrix::getShape() const {
 Matrix *Matrix::at(Matrix &m) {
     assert(m.shape.rowCnt == shape.colCnt);
     Matrix *res = allocTmpMatrix(Shape(shape.rowCnt, m.shape.colCnt));
-    g_backend_ops->operator_at(res, this, m);
+    g_gpu_backend_ops->operator_at(res, this, m);
+    res->sync();
     return res;
 }
 
