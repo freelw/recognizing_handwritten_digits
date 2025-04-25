@@ -264,7 +264,7 @@ void Matrix::reShape(Shape _shape) {
 Matrix *Matrix::assign(Matrix *other) {
     assert(allocated && initialized);
     checkShape(other->getShape());
-    memcpy(data, other->data, sizeof(DATATYPE) * shape.size());
+    g_backend_ops->operator_assign(this, other);
     return this;
 }
 

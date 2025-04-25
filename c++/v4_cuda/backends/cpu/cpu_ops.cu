@@ -432,3 +432,9 @@ void CPUBackendOps::operator_transpose(Matrix *res, Matrix *w) {
         }
     }
 }
+
+void CPUBackendOps::operator_assign(Matrix *w, Matrix *m) {
+    auto shape = w->getShape();
+    assert(shape == m->getShape());
+    memcpy(w->data, m->data, sizeof(DATATYPE) * shape.size());
+}

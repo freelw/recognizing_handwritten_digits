@@ -62,6 +62,7 @@ class BackendOps {
         virtual void operator_equal(Matrix *w, const Matrix &m) = 0;
         virtual void operator_at(Matrix *res, Matrix *w, const Matrix &m) = 0;
         virtual void operator_transpose(Matrix *res, Matrix *w) = 0;
+        virtual void operator_assign(Matrix *w, Matrix *m) = 0;
 };
 
 extern BackendOps *g_backend_ops;
