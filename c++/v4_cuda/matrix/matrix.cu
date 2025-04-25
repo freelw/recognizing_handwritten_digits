@@ -370,27 +370,11 @@ void freeTmpMatrix() {
 }
 
 void Matrix::init_weight(DATATYPE sigma, DATATYPE mean) {
-    unsigned seed1 = std::chrono::system_clock::now().time_since_epoch().count();
-    std::default_random_engine generator_w(seed1);
-    std::normal_distribution<DATATYPE> distribution_w(0.0, sigma);
-    auto shape = getShape();
-    for (uint i = 0; i < shape.rowCnt; ++ i) {
-        for (uint j = 0; j < shape.colCnt; ++ j) {
-            (*this)[i][j] = distribution_w(generator_w) + mean;
-        }
-    }
+    g_backend_ops->operator_init_weight(this, sigma, mean);
 }
 
 void Matrix::init_weight_uniform(DATATYPE sigma) {
-    unsigned seed1 = std::chrono::system_clock::now().time_since_epoch().count();
-    std::default_random_engine generator_w(seed1);
-    std::uniform_real_distribution<DATATYPE> distribution_w(-sigma, sigma);
-    auto shape = getShape();
-    for (uint i = 0; i < shape.rowCnt; ++ i) {
-        for (uint j = 0; j < shape.colCnt; ++ j) {
-            (*this)[i][j] = distribution_w(generator_w);
-        }
-    }
+    g_backend_ops->operator_init_weight_uniform(this, sigma);
 }
 
 void Matrix::set_val(int i, int j, DATATYPE val) {

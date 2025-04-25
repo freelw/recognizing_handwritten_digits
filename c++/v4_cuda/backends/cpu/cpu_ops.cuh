@@ -71,5 +71,8 @@ class CPUBackendOps : public BackendOps {
         virtual void operator_var(std::vector<DATATYPE> &res, Matrix *w) override;
         virtual void operator_sigmoid(Matrix *w) override;
         virtual void operator_sigmoid_prime(Matrix *w) override;
+        virtual void operator_init_weight(Matrix *w, DATATYPE sigma, DATATYPE mean = 0) override;
+        virtual void operator_init_weight_uniform(Matrix *w, DATATYPE sigma) override;
+
 };
 #endif

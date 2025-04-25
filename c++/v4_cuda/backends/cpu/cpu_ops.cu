@@ -1,4 +1,6 @@
 #include "cpu_ops.cuh"
+#include <random>
+#include <chrono>
 
 bool CPUBackendOps::is_gpu() {
     return false;
@@ -538,6 +540,30 @@ void CPUBackendOps::operator_sigmoid_prime(Matrix *w) {
         for (uint j = 0; j < shape.colCnt; ++ j) {
             auto r = _sigmoid((*w)[i][j]);
             r = r * (1 - r);
+        }
+    }
+}
+
+void CPUBackendOps::operator_init_weight(Matrix *w, DATATYPE sigma, DATATYPE mean) {
+    unsigned seed1 = std::chrono::system_clock::now().time_since_epoch().count();
+    std::default_random_engine generator_w(seed1);
+    std::normal_distribution<DATATYPE> distribution_w(0.0, sigma);
+    auto shape = w->getShape();
+    for (uint i = 0; i < shape.rowCnt; ++ i) {
+        for (uint j = 0; j < shape.colCnt; ++ j) {
+            (*w)[i][j] = distribution_w(generator_w) + mean;
+        }
+    }
+}
+
+void CPUBackendOps::operator_init_weight_uniform(Matrix *w, DATATYPE sigma) {
+    unsigned seed1 = std::chrono::system_clock::now().time_since_epoch().count();
+    std::default_random_engine generator_w(seed1);
+    std::uniform_real_distribution<DATATYPE> distribution_w(-sigma, sigma);
+    auto shape = w->getShape();
+    for (uint i = 0; i < shape.rowCnt; ++ i) {
+        for (uint j = 0; j < shape.colCnt; ++ j) {
+            (*w)[i][j] = distribution_w(generator_w);
         }
     }
 }

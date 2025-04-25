@@ -71,6 +71,8 @@ class BackendOps {
         virtual void operator_var(std::vector<DATATYPE> &res, Matrix *w) = 0;
         virtual void operator_sigmoid(Matrix *w) = 0;
         virtual void operator_sigmoid_prime(Matrix *w) = 0;
+        virtual void operator_init_weight(Matrix *w, DATATYPE sigma, DATATYPE mean) = 0;
+        virtual void operator_init_weight_uniform(Matrix *w, DATATYPE sigma) = 0;
 };
 
 extern BackendOps *g_backend_ops;
