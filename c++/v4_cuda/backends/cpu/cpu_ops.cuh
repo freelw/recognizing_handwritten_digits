@@ -65,5 +65,9 @@ class CPUBackendOps : public BackendOps {
         virtual void operator_assign(Matrix *res, Matrix *w) override;
         virtual void operator_sum(Matrix *res, Matrix *w) override;
         virtual void operator_split(std::vector<Matrix *> &res, Matrix *w) override;
+        virtual void operator_fill(Matrix *w, DATATYPE value) override;
+        virtual void operator_argMax(std::vector<uint> &res, Matrix *w) override;
+        virtual void operator_avg(std::vector<DATATYPE> &res, Matrix *w) override;
+        virtual void operator_var(std::vector<DATATYPE> &res, Matrix *w) override;
 };
 #endif

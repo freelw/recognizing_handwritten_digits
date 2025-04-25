@@ -298,11 +298,7 @@ DATATYPE *Matrix::getData() const {
 }
 
 Matrix *Matrix::fill(DATATYPE value) {
-    for (uint i = 0; i < shape.rowCnt; ++ i) {
-        for (uint j = 0; j < shape.colCnt; ++ j) {
-            (*this)[i][j] = value;
-        }
-    }
+    g_backend_ops->operator_fill(this, value);
     return this;
 }
 
@@ -310,15 +306,7 @@ std::vector<uint> Matrix::argMax() {
     Shape shape = getShape();
     std::vector<uint> res;
     res.reserve(shape.colCnt);
-    for (uint i = 0; i < shape.colCnt; ++ i) {
-        uint max_index = 0;
-        for (uint j = 1; j < shape.rowCnt; ++ j) {
-            if ((*this)[j][i] > (*this)[max_index][i]) {
-                max_index = j;
-            }
-        }
-        res.push_back(max_index);
-    }
+    g_backend_ops->operator_argMax(res, this);
     return res;
 }
 
@@ -326,28 +314,15 @@ std::vector<DATATYPE> Matrix::avg() {
     Shape shape = getShape();
     std::vector<DATATYPE> res;
     res.reserve(shape.colCnt);
-    for (uint i = 0; i < shape.colCnt; ++ i) {
-        DATATYPE sum = 0;
-        for (uint j = 0; j < shape.rowCnt; ++ j) {
-            sum += (*this)[j][i];
-        }
-        res.push_back(sum/shape.rowCnt);
-    }
+    g_backend_ops->operator_avg(res, this);
     return res;
 }
 
 std::vector<DATATYPE> Matrix::var() {
-    std::vector<DATATYPE> res;
-    std::vector<DATATYPE> avg_res = this->avg();
     Shape shape = getShape();
-    for (uint i = 0; i < shape.colCnt; ++ i) {
-        DATATYPE sum = 0;
-        auto avg_r = avg_res[i];
-        for (uint j = 0; j < shape.rowCnt; ++ j) {
-            sum += std::pow(((*this)[j][i] - avg_r), 2);
-        }
-        res.push_back(sum/shape.rowCnt);
-    }
+    std::vector<DATATYPE> res;
+    res.reserve(shape.colCnt);
+    g_backend_ops->operator_var(res, this);
     return res;
 }
 

@@ -462,3 +462,59 @@ void CPUBackendOps::operator_split(std::vector<Matrix *> &res, Matrix *w) {
         }
     }
 }
+
+void CPUBackendOps::operator_fill(Matrix *w, DATATYPE value) {
+    auto shape = w->getShape();
+    for (uint i = 0; i < shape.rowCnt; ++ i) {
+        for (uint j = 0; j < shape.colCnt; ++ j) {
+            (*w)[i][j] = value;
+        }
+    }
+}
+
+void CPUBackendOps::operator_argMax(std::vector<uint> &res, Matrix *w) {
+    auto shape = w->getShape();
+    res.resize(shape.colCnt);
+    for (uint i = 0; i < shape.colCnt; ++ i) {
+        DATATYPE max = (*w)[0][i];
+        uint index = 0;
+        for (uint j = 1; j < shape.rowCnt; ++ j) {
+            if (max < (*w)[j][i]) {
+                max = (*w)[j][i];
+                index = j;
+            }
+        }
+        res[i] = index;
+    }
+}
+
+void CPUBackendOps::operator_avg(std::vector<DATATYPE> &res, Matrix *w) {
+    auto shape = w->getShape();
+    res.resize(shape.colCnt);
+    for (uint i = 0; i < shape.colCnt; ++ i) {
+        DATATYPE sum = 0;
+        for (uint j = 0; j < shape.rowCnt; ++ j) {
+            sum += (*w)[j][i];
+        }
+        res[i] = sum / shape.rowCnt;
+    }
+}
+
+void CPUBackendOps::operator_var(std::vector<DATATYPE> &res, Matrix *w) {
+    auto shape = w->getShape();
+    res.resize(shape.colCnt);
+    for (uint i = 0; i < shape.colCnt; ++ i) {
+        DATATYPE sum = 0;
+        DATATYPE avg = 0;
+        for (uint j = 0; j < shape.rowCnt; ++ j) {
+            sum += (*w)[j][i];
+        }
+        avg = sum / shape.rowCnt;
+        sum = 0;
+        for (uint j = 0; j < shape.rowCnt; ++ j) {
+            DATATYPE e = (*w)[j][i] - avg;
+            sum += std::pow(e, 2);
+        }
+        res[i] = sum / shape.rowCnt;
+    }
+}

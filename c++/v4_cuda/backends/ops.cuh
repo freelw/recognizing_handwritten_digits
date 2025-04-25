@@ -65,6 +65,10 @@ class BackendOps {
         virtual void operator_assign(Matrix *w, Matrix *m) = 0;
         virtual void operator_sum(Matrix *res, Matrix *w) = 0;
         virtual void operator_split(std::vector<Matrix *> &res, Matrix *w) = 0;
+        virtual void operator_fill(Matrix *w, DATATYPE value) = 0;
+        virtual void operator_argMax(std::vector<uint> &res, Matrix *w) = 0;
+        virtual void operator_avg(std::vector<DATATYPE> &res, Matrix *w) = 0;
+        virtual void operator_var(std::vector<DATATYPE> &res, Matrix *w) = 0;
 };
 
 extern BackendOps *g_backend_ops;
