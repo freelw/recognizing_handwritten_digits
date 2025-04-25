@@ -4,6 +4,7 @@
 #include "autograd/node.cuh"
 class BackendOps {
     public:
+        virtual bool is_gpu() = 0;
         virtual void cp_to_device(void* dst, const void* src, size_t size) = 0;
         virtual void cp_from_device(void* dst, const void* src, size_t size) = 0;
         virtual Matrix *CrossEntropyLoss(
@@ -40,6 +41,8 @@ class BackendOps {
             const std::vector<DATATYPE> &avg_res,
             const std::vector<DATATYPE> &var_res,
             DATATYPE eps) = 0;
+        virtual DATATYPE *allocDeviceMem(size_t size) = 0;
+        virtual void releaseDeviceMem(DATATYPE *ptr) = 0;
 };
 
 extern BackendOps *g_backend_ops;

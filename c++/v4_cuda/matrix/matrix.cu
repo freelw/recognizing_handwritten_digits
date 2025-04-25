@@ -16,8 +16,10 @@ Matrix::Matrix(Shape _shape)
         commited(false),
         data_device(nullptr) {
     data = new DATATYPE[shape.size()];
+    data_device = g_backend_ops->allocDeviceMem(shape.size() * sizeof(DATATYPE));
     allocated = true;
     zero();
+    this->cp_to_device();
 }
 
 Matrix::Matrix(const Matrix &m):
@@ -28,8 +30,10 @@ Matrix::Matrix(const Matrix &m):
     data_device(nullptr) {
     assert(initialized);
     data = new DATATYPE[shape.size()];
+    data_device = g_backend_ops->allocDeviceMem(shape.size() * sizeof(DATATYPE));
     allocated = true;
     memcpy(data, m.data, sizeof(DATATYPE) * shape.rowCnt * shape.colCnt);
+    this->cp_to_device();
 }
 
 Matrix::Matrix(const std::vector<DATATYPE> &v):
@@ -44,12 +48,15 @@ Matrix::Matrix(const std::vector<DATATYPE> &v):
         data[i] = v[i];
     }
     initialized = true;
+    this->cp_to_device();
 }
 
 Matrix::~Matrix() {
     assert(initialized && allocated);
     delete [] data;
     data = nullptr;
+    g_backend_ops->releaseDeviceMem(data_device);
+    data_device = nullptr;
 }
 
 Matrix *Matrix::zero() {

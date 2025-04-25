@@ -5,8 +5,9 @@
 
 class CPUBackendOps : public BackendOps {
     public:
-        void cp_to_device(void* dst, const void* src, size_t size) override;
-        void cp_from_device(void* dst, const void* src, size_t size) override;
+        virtual bool is_gpu() override;
+        virtual void cp_to_device(void* dst, const void* src, size_t size) override;
+        virtual void cp_from_device(void* dst, const void* src, size_t size) override;
         virtual Matrix *CrossEntropyLoss(
             Matrix *input,
             const std::vector<uint> &labels,
@@ -40,6 +41,8 @@ class CPUBackendOps : public BackendOps {
             const std::vector<DATATYPE> &avg_res,
             const std::vector<DATATYPE> &var_res,
             DATATYPE eps) override;
+        virtual DATATYPE *allocDeviceMem(size_t size) override;
+        virtual void releaseDeviceMem(DATATYPE *ptr) override;
 };
 
 #endif

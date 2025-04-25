@@ -1,5 +1,8 @@
 #include "cpu_ops.cuh"
 
+bool CPUBackendOps::is_gpu() {
+    return false;
+}
 
 void CPUBackendOps::cp_to_device(void* dst, const void* src, size_t size) {
     
@@ -232,4 +235,12 @@ void CPUBackendOps::NormEdgeBackward(
     const std::vector<DATATYPE> &var_res,
     DATATYPE eps) {
     assert(false);
+}
+
+DATATYPE *CPUBackendOps::allocDeviceMem(size_t size) {
+    return nullptr;
+}
+
+void CPUBackendOps::releaseDeviceMem(DATATYPE *ptr) {
+    assert(ptr == nullptr);
 }
