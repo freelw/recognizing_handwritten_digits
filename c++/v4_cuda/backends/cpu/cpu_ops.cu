@@ -272,3 +272,30 @@ void CPUBackendOps::pow2(Matrix *w) {
         }
     }
 }
+
+void CPUBackendOps::operator_add_val(Matrix *w, DATATYPE v) {
+    auto shape = w->getShape();
+    for (uint i = 0; i < shape.rowCnt; ++i) {
+        for (uint j = 0; j < shape.colCnt; ++j) {
+            (*w)[i][j] += v;
+        }
+    }
+}
+
+void CPUBackendOps::operator_minus_val(Matrix *w, DATATYPE v) {
+    auto shape = w->getShape();
+    for (uint i = 0; i < shape.rowCnt; ++i) {
+        for (uint j = 0; j < shape.colCnt; ++j) {
+            (*w)[i][j] -= v;
+        }
+    }
+}
+
+void CPUBackendOps::operator_negative(Matrix *w) {
+    auto shape = w->getShape();
+    for (uint i = 0; i < shape.rowCnt; ++i) {
+        for (uint j = 0; j < shape.colCnt; ++j) {
+            (*w)[i][j] = -(*w)[i][j];
+        }
+    }
+}

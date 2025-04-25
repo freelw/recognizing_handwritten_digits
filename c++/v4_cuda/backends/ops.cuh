@@ -46,6 +46,9 @@ class BackendOps {
         virtual void expand_add(Matrix *w, const Matrix &m) = 0;
         virtual void operator_add(Matrix *w, const Matrix &m) = 0;
         virtual void pow2(Matrix *w) = 0;
+        virtual void operator_add_val(Matrix *w, DATATYPE v) = 0;
+        virtual void operator_minus_val(Matrix *w, DATATYPE v) = 0;
+        virtual void operator_negative(Matrix *w) = 0;
 };
 
 extern BackendOps *g_backend_ops;

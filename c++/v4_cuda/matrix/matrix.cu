@@ -133,32 +133,19 @@ Matrix *Matrix::pow2() {
 
 Matrix *Matrix::operator+(DATATYPE dt) {
     Matrix *res = allocTmpMatrix(this);
-    for (uint i = 0; i < shape.rowCnt; ++i) {
-        for (uint j = 0; j < shape.colCnt; ++j) {
-            (*res)[i][j] += dt;
-        }
-    }
+    g_backend_ops->operator_add_val(res, dt);
     return res;
 }
 
 Matrix *Matrix::operator-(DATATYPE dt) {
     Matrix *res = allocTmpMatrix(this);
-    for (uint i = 0; i < shape.rowCnt; ++i) {
-        for (uint j = 0; j < shape.colCnt; ++j) {
-            (*res)[i][j] -= dt;
-        }
-    }
+    g_backend_ops->operator_minus_val(res, dt);
     return res;
 }
 
 Matrix *Matrix::operator-() {
     Matrix *res = allocTmpMatrix(this);
-    for (uint i = 0; i < shape.rowCnt; ++i) {
-        for (uint j = 0; j < shape.colCnt; ++j) {
-            auto &r = (*res)[i][j];
-            r = -r;
-        }
-    }
+    g_backend_ops->operator_negative(res);
     return res;
 }
 
