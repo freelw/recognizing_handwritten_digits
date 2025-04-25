@@ -407,13 +407,13 @@ void Matrix::cp_to_device() {
     assert(cpu_ver > gpu_ver);
     assert(allocated && initialized);
     commited = true;
-    g_gpu_backend_ops->cp_to_device(data_device, data, shape.size());
+    g_gpu_backend_ops->cp_to_device(data_device, data, shape.size()*sizeof(DATATYPE));
     gpu_ver = cpu_ver;
 }
 
 void Matrix::cp_from_device() {
     assert(cpu_ver < gpu_ver);
-    g_gpu_backend_ops->cp_from_device(data, data_device, shape.size());
+    g_gpu_backend_ops->cp_from_device(data, data_device, shape.size()*sizeof(DATATYPE));
     cpu_ver = gpu_ver;
 }
 
