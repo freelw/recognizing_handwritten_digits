@@ -253,6 +253,10 @@ DATATYPE *CPUBackendOps::allocDeviceMem(size_t size) {
     return nullptr;
 }
 
+void CPUBackendOps::deviceMemcpy(void *dst, const void *src, size_t size) {
+    assert(false);
+}
+
 void CPUBackendOps::releaseDeviceMem(DATATYPE *ptr) {
     assert(ptr == nullptr);
 }

@@ -42,6 +42,7 @@ class BackendOps {
             const std::vector<DATATYPE> &var_res,
             DATATYPE eps) = 0;
         virtual DATATYPE *allocDeviceMem(size_t size) = 0;
+        virtual void deviceMemcpy(void *dst, const void *src, size_t size) = 0;
         virtual void releaseDeviceMem(DATATYPE *ptr) = 0;
         virtual void expand_add(Matrix *w, const Matrix &m) = 0;
         virtual void operator_add(Matrix *w, const Matrix &m) = 0;

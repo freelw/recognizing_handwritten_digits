@@ -96,6 +96,10 @@ DATATYPE *GPUBackendOps::allocDeviceMem(size_t size) {
     return ret;
 }
 
+void GPUBackendOps::deviceMemcpy(void *dst, const void *src, size_t size) {
+    cudaMemcpy(dst, src, size, cudaMemcpyDeviceToDevice);
+}
+
 void GPUBackendOps::releaseDeviceMem(DATATYPE *ptr) {
     assert(ptr != nullptr);
     cudaFree(ptr);

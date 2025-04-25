@@ -74,6 +74,7 @@ public:
     DATATYPE get_val(int i, int j) const;
     
     void sync();
+    bool is_sync() const;
     void increase_cpu_ver();
     void increase_gpu_ver();
     DATATYPE *getLowLevelData() const;

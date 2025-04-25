@@ -22,7 +22,7 @@ Matrix::Matrix(Shape _shape)
     allocated = true;
     zero();
     increase_cpu_ver();
-    this->cp_to_device();
+    sync();
 }
 
 Matrix::Matrix(const Matrix &m):
@@ -31,15 +31,17 @@ Matrix::Matrix(const Matrix &m):
     shape(m.shape),
     commited(false),
     data_device(nullptr),
-    cpu_ver(0),
-    gpu_ver(0) {
+    cpu_ver(m.cpu_ver),
+    gpu_ver(m.gpu_ver) {
     assert(initialized);
+    // assert(m.is_sync());
     data = new DATATYPE[shape.size()];
     data_device = g_gpu_backend_ops->allocDeviceMem(shape.size() * sizeof(DATATYPE));
+    g_gpu_backend_ops->deviceMemcpy(data_device, m.data_device, shape.size() * sizeof(DATATYPE));
     allocated = true;
     memcpy(data, m.data, sizeof(DATATYPE) * shape.rowCnt * shape.colCnt);
     increase_cpu_ver();
-    this->cp_to_device();
+    sync();
 }
 
 Matrix::Matrix(const std::vector<DATATYPE> &v):
@@ -58,7 +60,7 @@ Matrix::Matrix(const std::vector<DATATYPE> &v):
     data_device = g_gpu_backend_ops->allocDeviceMem(shape.size() * sizeof(DATATYPE));
     initialized = true;
     increase_cpu_ver();
-    this->cp_to_device();
+    sync();
 }
 
 Matrix::~Matrix() {
@@ -247,6 +249,7 @@ Matrix *Matrix::at(Matrix &m) {
     assert(m.shape.rowCnt == shape.colCnt);
     Matrix *res = allocTmpMatrix(Shape(shape.rowCnt, m.shape.colCnt));
     g_gpu_backend_ops->operator_at(res, this, m);
+    // g_backend_ops->operator_at(res, this, m);
     res->sync();
     return res;
 }
@@ -423,6 +426,10 @@ void Matrix::sync() {
     } else if (cpu_ver > gpu_ver) {
         cp_to_device();
     }
+}
+
+bool Matrix::is_sync() const {
+    return cpu_ver == gpu_ver;
 }
 
 void Matrix::increase_cpu_ver() {
