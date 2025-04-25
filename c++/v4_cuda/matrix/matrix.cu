@@ -115,44 +115,19 @@ Matrix *Matrix::expand_add(const Matrix &m) {
 Matrix *Matrix::operator+(const Matrix &m) {
     checkShape(m);
     Matrix *res = allocTmpMatrix(this);
-    #pragma omp parallel for num_threads(OMP_THREADS)
-    for (uint i = 0; i < shape.rowCnt; ++i) {
-        DATATYPE *m_data = m[i];
-        DATATYPE *this_data = (*res)[i];
-        for (uint j = 0; j < shape.colCnt; ++j) {
-            this_data[j] += m_data[j];
-        }
-    }
+    g_backend_ops->operator_add(res, m);
     return res;
 }
 
 Matrix *Matrix::operator+=(const Matrix &m) {
     checkShape(m);
-    DATATYPE *m_data = m.getData();
-    DATATYPE *this_data = this->getData();
-
-    const uint blockSize = 16; // Block size for cache optimization
-    #pragma omp parallel for num_threads(OMP_THREADS)
-    for (uint i = 0; i < shape.rowCnt; i += blockSize) {
-        for (uint j = 0; j < shape.colCnt; j += blockSize) {
-            for (uint ii = i; ii < std::min(i + blockSize, shape.rowCnt); ++ii) {
-                for (uint jj = j; jj < std::min(j + blockSize, shape.colCnt); ++jj) {
-                    this_data[ii * shape.colCnt + jj] += m_data[ii * shape.colCnt + jj];
-                }
-            }
-        }
-    }
+    g_backend_ops->operator_add(this, m);
     return this;
 }
 
 Matrix *Matrix::pow2() {
     Matrix *res = allocTmpMatrix(this);
-    for (uint i = 0; i < shape.rowCnt; ++i) {
-        for (uint j = 0; j < shape.colCnt; ++j) {
-            auto &r = (*res)[i][j];
-            r = std::pow(r, 2);
-        }
-    }
+    g_backend_ops->pow2(res);
     return res;
 }
 

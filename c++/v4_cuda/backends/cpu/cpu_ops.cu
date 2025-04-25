@@ -262,3 +262,13 @@ void CPUBackendOps::operator_add(Matrix *w, const Matrix &m) {
         }
     }
 }
+
+void CPUBackendOps::pow2(Matrix *w) {
+    auto shape = w->getShape();
+    for (uint i = 0; i < shape.rowCnt; ++i) {
+        for (uint j = 0; j < shape.colCnt; ++j) {
+            auto &r = (*res)[i][j];
+            r = std::pow(r, 2);
+        }
+    }
+}

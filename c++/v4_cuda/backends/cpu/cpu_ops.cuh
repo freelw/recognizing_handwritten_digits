@@ -45,5 +45,6 @@ class CPUBackendOps : public BackendOps {
         virtual void releaseDeviceMem(DATATYPE *ptr) override;
         virtual void expand_add(Matrix *w, const Matrix &m) override;
         virtual void operator_add(Matrix *w, const Matrix &m) override;
+        virtual void pow2(Matrix *w) override;
 };
 #endif

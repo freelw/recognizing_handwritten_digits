@@ -45,6 +45,7 @@ class BackendOps {
         virtual void releaseDeviceMem(DATATYPE *ptr) = 0;
         virtual void expand_add(Matrix *w, const Matrix &m) = 0;
         virtual void operator_add(Matrix *w, const Matrix &m) = 0;
+        virtual void pow2(Matrix *w) = 0;
 };
 
 extern BackendOps *g_backend_ops;
