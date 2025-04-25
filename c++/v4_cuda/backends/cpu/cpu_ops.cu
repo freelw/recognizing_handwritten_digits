@@ -56,7 +56,6 @@ Matrix *CPUBackendOps::CrossEntropyLossMask(
     assert(info.size() == 0);
 
     Matrix *loss = allocTmpMatrix(Shape(1,1));
-    assert(false);
     DATATYPE loss_value = 0;
     info.resize(input->getShape().colCnt);
     uint mask_cnt = 0;
@@ -105,7 +104,6 @@ Matrix *CPUBackendOps::Norm(
     DATATYPE eps) {
     auto *tmp = allocTmpMatrix(w);
     Shape shape = tmp->getShape();
-    assert(false);
     for (uint i = 0; i < shape.rowCnt; ++ i) {
         for (uint j = 0; j < shape.colCnt; ++ j) {
             (*tmp)[i][j] = ((*w)[i][j] - avg_res[j]) / sqrt(var_res[j] + eps);
@@ -131,7 +129,6 @@ Matrix *CPUBackendOps::Softmax(Matrix *w) {
             (*tmp)[i][j] = e;
         }
         for (uint i = 0; i < shape.rowCnt; ++ i) {
-            assert(false);
             (*tmp)[i][j] /= sum;
         }
     }
