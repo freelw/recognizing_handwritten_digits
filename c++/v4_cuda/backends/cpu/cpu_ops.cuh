@@ -60,5 +60,6 @@ class CPUBackendOps : public BackendOps {
         virtual void tanh(Matrix *w) override;
         virtual void tanh_prime(Matrix *w) override;
         virtual void operator_equal(Matrix *w, const Matrix &m) override;
+        virtual void operator_at(Matrix *res, Matrix *w, const Matrix &m) override;
 };
 #endif

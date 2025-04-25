@@ -60,6 +60,7 @@ class BackendOps {
         virtual void tanh(Matrix *w) = 0;
         virtual void tanh_prime(Matrix *w) = 0;
         virtual void operator_equal(Matrix *w, const Matrix &m) = 0;
+        virtual void operator_at(Matrix *res, Matrix *w, const Matrix &m) = 0;
 };
 
 extern BackendOps *g_backend_ops;

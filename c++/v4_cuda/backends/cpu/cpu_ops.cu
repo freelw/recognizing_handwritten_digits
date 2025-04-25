@@ -402,3 +402,20 @@ void CPUBackendOps::operator_equal(Matrix *w, const Matrix &m) {
         }
     }
 }
+
+void CPUBackendOps::operator_at(Matrix *res, Matrix *w, const Matrix &m) {
+
+    auto shape = w->getShape();
+    auto mshape = m.getShape();
+    DATATYPE *A = w->getData();
+    DATATYPE *B = m.getData();
+    DATATYPE *C = res->getData();
+    #pragma omp parallel for num_threads(OMP_THREADS)
+    for (uint i = 0; i < shape.rowCnt; ++i) {
+        for (uint k = 0; k < shape.colCnt; ++k) {
+            for (uint j = 0; j < mshape.colCnt; ++j) {
+                C[i * mshape.colCnt + j] += A[i * shape.colCnt + k] * B[k * mshape.colCnt + j];
+            }
+        }
+    }    
+}
