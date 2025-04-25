@@ -8,6 +8,7 @@
 #include <random>
 #include <chrono>
 #include "backends/cpu/cpu_ops.cuh"
+#include "backends/gpu/cuda_ops.cuh"
 
 #define INPUT_LAYER_SIZE 784
 
@@ -133,6 +134,7 @@ int main(int argc, char *argv[]) {
     int use_dropout = atoi(argv[3]);
     int eval = atoi(argv[4]);
     g_backend_ops = new CPUBackendOps();
+    g_gpu_backend_ops = new GPUBackendOps();
     train(epochs, batch_size, use_dropout == 1, eval == 1);
     freeTmpMatrix();
     return 0;

@@ -76,4 +76,5 @@ class BackendOps {
 };
 
 extern BackendOps *g_backend_ops;
+extern BackendOps *g_gpu_backend_ops;
 #endif
