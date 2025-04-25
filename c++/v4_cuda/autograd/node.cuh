@@ -299,35 +299,7 @@ namespace autograd_cuda {
                 const std::vector<CrosEntropyInfo> &_info
             ): Edge(CrossEntropyMask, _node), labels(_labels), mask(_mask), info(_info) {}
             virtual ~CrossEntropyMaskEdge() {}
-            void backward(Matrix *) override {
-                assert(node->is_require_grad());
-                uint mask_cnt = 0;
-                #pragma omp parallel for reduction(+:mask_cnt)
-                for (uint i = 0; i < mask.size(); ++ i) {
-                    mask_cnt += mask[i];
-                }
-                if (mask_cnt == 0) {
-                    return;
-                }
-                assert(false);
-                // #pragma omp parallel for
-                // for (uint j = 0; j < node->get_weight()->getShape().colCnt; ++ j) {
-                //     if (!mask[j]) {
-                //         continue;
-                //     }
-                //     auto target = labels[j];
-                //     DATATYPE max = info[j].max;
-                //     DATATYPE sum = info[j].sum;
-                //     for (uint i = 0; i < node->get_weight()->getShape().rowCnt; ++ i) {
-                //         if (i == target) {
-                //             continue;
-                //         }
-                //         auto &_grad = (*node->get_grad())[i][j];
-                //         _grad = std::exp((*node->get_weight())[i][j] - max) / sum / mask_cnt;
-                //     }
-                //     (*node->get_grad())[target][j] = (std::exp((*node->get_weight())[target][j] - max) / sum - 1) / mask_cnt;
-                // }
-            }
+            void backward(Matrix *) override;
         private:
             std::vector<uint> labels;
             std::vector<bool> mask;

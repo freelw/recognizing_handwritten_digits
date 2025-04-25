@@ -28,6 +28,12 @@ class BackendOps {
             Matrix *grad,
             const std::vector<uint> &labels,
             const std::vector<autograd_cuda::CrosEntropyInfo> &info) = 0;
+        virtual void CrossEntropyMaskEdgeBackward(
+            Matrix *w,
+            Matrix *grad,
+            const std::vector<uint> &labels,
+            const std::vector<autograd_cuda::CrosEntropyInfo> &info,
+            const std::vector<bool> &mask) = 0;
 };
 
 extern BackendOps *g_backend_ops;

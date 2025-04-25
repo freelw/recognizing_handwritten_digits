@@ -28,6 +28,12 @@ class CPUBackendOps : public BackendOps {
             Matrix *grad,
             const std::vector<uint> &labels,
             const std::vector<autograd_cuda::CrosEntropyInfo> &info) override;
+        virtual void CrossEntropyMaskEdgeBackward(
+            Matrix *w,
+            Matrix *grad,
+            const std::vector<uint> &labels,
+            const std::vector<autograd_cuda::CrosEntropyInfo> &info,
+            const std::vector<bool> &mask) override;
 };
 
 #endif

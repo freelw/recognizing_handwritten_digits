@@ -193,3 +193,37 @@ void CPUBackendOps::CrossEntropyEdgeBackward(
         (*grad)[target][i] = (std::exp((*w)[target][i] - max) / sum - 1) / labels.size();
     }
 }
+
+void CPUBackendOps::CrossEntropyMaskEdgeBackward(
+    Matrix *w,
+    Matrix *grad,
+    const std::vector<uint> &labels,
+    const std::vector<autograd_cuda::CrosEntropyInfo> &info,
+    const std::vector<bool> &mask) {
+    uint mask_cnt = 0;
+    #pragma omp parallel for reduction(+:mask_cnt)
+    for (uint i = 0; i < mask.size(); ++ i) {
+        mask_cnt += mask[i];
+    }
+    if (mask_cnt == 0) {
+        return;
+    }
+    Shape shape = w->getShape();
+    #pragma omp parallel for
+    for (uint j = 0; j < shape.colCnt; ++ j) {
+        if (!mask[j]) {
+            continue;
+        }
+        auto target = labels[j];
+        DATATYPE max = info[j].max;
+        DATATYPE sum = info[j].sum;
+        for (uint i = 0; i < shape.rowCnt; ++ i) {
+            if (i == target) {
+                continue;
+            }
+            auto &_grad = (*grad)[i][j];
+            _grad = std::exp((*w)[i][j] - max) / sum / mask_cnt;
+        }
+        (*grad)[target][j] = (std::exp((*w)[target][j] - max) / sum - 1) / mask_cnt;
+    }
+}

@@ -356,7 +356,6 @@ namespace autograd_cuda {
         }
     }
 
-
     void CrossEntropyEdge::backward(Matrix *) {
         assert(node->is_require_grad());
         g_backend_ops->CrossEntropyEdgeBackward(
@@ -364,6 +363,17 @@ namespace autograd_cuda {
             node->get_grad(),
             labels,
             info
+        );
+    }
+
+    void CrossEntropyMaskEdge::backward(Matrix *) {
+        assert(node->is_require_grad());
+        g_backend_ops->CrossEntropyMaskEdgeBackward(
+            node->get_weight(),
+            node->get_grad(),
+            labels,
+            info,
+            mask
         );
     }
 
