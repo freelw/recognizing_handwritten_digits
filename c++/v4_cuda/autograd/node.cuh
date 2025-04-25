@@ -76,11 +76,7 @@ namespace autograd_cuda {
 
             void zero_grad() {
                 if (requires_grad) {
-                    if (grad) {
-                        grad->zero();
-                    } else {
-                        grad = allocTmpMatrix(w->getShape());
-                    }
+                    grad = allocTmpMatrix(w->getShape());
                 }
             }
 

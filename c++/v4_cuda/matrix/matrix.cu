@@ -21,6 +21,7 @@ Matrix::Matrix(Shape _shape)
     data_device = g_gpu_backend_ops->allocDeviceMem(shape.size() * sizeof(DATATYPE));
     allocated = true;
     zero();
+    increase_cpu_ver();
     this->cp_to_device();
 }
 
@@ -37,6 +38,7 @@ Matrix::Matrix(const Matrix &m):
     data_device = g_gpu_backend_ops->allocDeviceMem(shape.size() * sizeof(DATATYPE));
     allocated = true;
     memcpy(data, m.data, sizeof(DATATYPE) * shape.rowCnt * shape.colCnt);
+    increase_cpu_ver();
     this->cp_to_device();
 }
 
@@ -55,6 +57,7 @@ Matrix::Matrix(const std::vector<DATATYPE> &v):
     }
     data_device = g_gpu_backend_ops->allocDeviceMem(shape.size() * sizeof(DATATYPE));
     initialized = true;
+    increase_cpu_ver();
     this->cp_to_device();
 }
 

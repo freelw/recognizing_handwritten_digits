@@ -319,6 +319,21 @@
             "type": "cuda-gdb",
             "request": "launch",
             "program": "/home/cs/project/recognizing_handwritten_digits/build/matrixmul/matrix_opt1",
-        }
+        },
+        {
+            "name": "(gdb) Launch mnist_cuda",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "/home/cs/project/recognizing_handwritten_digits/c++/v4_cuda/mnist_cuda",
+            "args": [
+                "10",
+                "16",
+                "1",
+                "1"
+            ],
+            "cwd": "/home/cs/project/recognizing_handwritten_digits/c++/v4_cuda/",
+            "stopAtEntry": false,
+            "environment": []
+        },
     ]
 }
