@@ -275,24 +275,7 @@ namespace autograd_cuda {
             CrossEntropyEdge(Node *_node, const std::vector<uint> &_labels, const std::vector<CrosEntropyInfo> &_info)
                 : Edge(CrossEntropy, _node), labels(_labels), info(_info) {}
             virtual ~CrossEntropyEdge() {}
-            void backward(Matrix *) override {
-                assert(node->is_require_grad());
-                assert(false);
-                // #pragma omp parallel for
-                // for (uint i = 0; i < labels.size(); ++i) {
-                //     auto target = labels[i];
-                //     DATATYPE max = info[i].max;
-                //     DATATYPE sum = info[i].sum;
-                //     for (uint j = 0; j < node->get_weight()->getShape().rowCnt; ++j) {
-                //         if (j == target) {
-                //             continue;
-                //         }
-                //         auto &_grad = (*node->get_grad())[j][i];
-                //         _grad = std::exp((*node->get_weight())[j][i] - max) / sum / labels.size();
-                //     }
-                //     (*node->get_grad())[target][i] = (std::exp((*node->get_weight())[target][i] - max) / sum - 1) / labels.size();
-                // }
-            }
+            void backward(Matrix *) override;
         private:
             std::vector<uint> labels;
             std::vector<CrosEntropyInfo> info;

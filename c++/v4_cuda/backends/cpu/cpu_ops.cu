@@ -171,3 +171,25 @@ std::vector<Matrix*> CPUBackendOps::split1(Matrix *w, uint step) {
     }
     return ret;
 }
+
+void CPUBackendOps::CrossEntropyEdgeBackward(
+    Matrix *w,
+    Matrix *grad,
+    const std::vector<uint> &labels,
+    const std::vector<autograd_cuda::CrosEntropyInfo> &info) {
+    
+    #pragma omp parallel for
+    for (uint i = 0; i < labels.size(); ++i) {
+        auto target = labels[i];
+        DATATYPE max = info[i].max;
+        DATATYPE sum = info[i].sum;
+        for (uint j = 0; j < w->getShape().rowCnt; ++j) {
+            if (j == target) {
+                continue;
+            }
+            auto &_grad = (*grad)[j][i];
+            _grad = std::exp((*w)[j][i] - max) / sum / labels.size();
+        }
+        (*grad)[target][i] = (std::exp((*w)[target][i] - max) / sum - 1) / labels.size();
+    }
+}

@@ -23,6 +23,11 @@ class BackendOps {
         virtual Matrix *Softmax(Matrix *w) = 0;
         virtual std::vector<Matrix*> split0(Matrix *w) = 0;
         virtual std::vector<Matrix*> split1(Matrix *w, uint step) = 0;
+        virtual void CrossEntropyEdgeBackward(
+            Matrix *w,
+            Matrix *grad,
+            const std::vector<uint> &labels,
+            const std::vector<autograd_cuda::CrosEntropyInfo> &info) = 0;
 };
 
 extern BackendOps *g_backend_ops;

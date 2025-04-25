@@ -23,6 +23,11 @@ class CPUBackendOps : public BackendOps {
         virtual Matrix *Softmax(Matrix *w) override;
         virtual std::vector<Matrix*> split0(Matrix *w) override;
         virtual std::vector<Matrix*> split1(Matrix *w, uint step) override;
+        virtual void CrossEntropyEdgeBackward(
+            Matrix *w,
+            Matrix *grad,
+            const std::vector<uint> &labels,
+            const std::vector<autograd_cuda::CrosEntropyInfo> &info) override;
 };
 
 #endif
