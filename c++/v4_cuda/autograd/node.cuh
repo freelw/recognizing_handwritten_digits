@@ -3,6 +3,7 @@
 
 #include <assert.h>
 #include <vector>
+#include <iostream>
 
 #include "matrix/matrix.cuh"
 
@@ -349,14 +350,8 @@ namespace autograd_cuda {
                 : Edge(OpType::Cat0, _node), offset(_offset){}
             virtual ~CatEdge0() {}
             void backward(Matrix *grad) override {
-                assert(node->is_require_grad());
-                Shape shape = node->get_weight()->getShape();
-                for (uint i = 0; i < shape.rowCnt; ++ i) {
-                    for (uint j = 0; j < shape.colCnt; ++ j) {
-                        assert(false);
-                        // (*node->get_grad())[i][j] += (*grad)[i][j+offset];
-                    }
-                }
+                std::cerr << "CatEdge0 backward not implemented" << std::endl;
+                assert(false);
             }
         private:
             uint offset;
@@ -373,21 +368,8 @@ namespace autograd_cuda {
                 : Edge(OpType::Split1, _node), index(_index), step(_step){}
             virtual ~SplitEdge1() {}
             void backward(Matrix *grad) override {
-                assert(node->is_require_grad());
-                assert(node->get_grad()->getShape().colCnt == grad->getShape().colCnt); 
-                Shape shape = grad->getShape();
-                assert(shape.rowCnt == step);
-                uint rowBase = index * step;
-                for (uint i = 0; i < shape.rowCnt; i ++) {
-                    for (uint j = 0; j < shape.colCnt; ++ j) {
-                        assert(i + rowBase < node->get_grad()->getShape().rowCnt);
-                        assert(i < shape.rowCnt);
-                        assert(j < shape.colCnt);
-                        assert(j < node->get_grad()->getShape().colCnt);
-                        assert(false);
-                        // (*node->get_grad())[i + rowBase][j] += (*grad)[i][j];
-                    }
-                }
+                std::cerr << "SplitEdge1 backward not implemented" << std::endl;
+                assert(false);
             }
         private:
             uint index;
@@ -443,35 +425,8 @@ namespace autograd_cuda {
                 eps(_eps) {}
             virtual ~NormEdge() {}
             void backward(Matrix *grad) override {
-                assert(grad->getShape().colCnt == node->getShape().colCnt);
-                assert(node->is_require_grad());
-                std::vector<Node *> v_w;
+                std::cerr << "NormEdge backward not implemented" << std::endl;
                 assert(false);
-                // for (uint k = 0; k < grad->getShape().colCnt; k++) {
-                //     uint rowCnt = grad->getShape().rowCnt;
-                //     Matrix *mw = allocTmpMatrix(Shape(rowCnt, rowCnt));
-                //     for (uint i = 0; i < rowCnt; i++) {
-                //         for (uint j = 0; j < rowCnt; j++) {
-                //             int eq = i == j;
-                //             auto sigma = std::sqrt(var_res[k] + eps);
-                //             auto x_hat_i = (*w_hat)[i][k];
-                //             auto x_hat_j = (*w_hat)[j][k];
-                //             // (*mw)[i][j] = (eq - 1.0 / rowCnt - 1.0 / rowCnt * x_hat_i * x_hat_j) / sigma;
-                //             // 上面的计算精度降低很多，下面的计算精度更高
-                //             auto part1 = eq * (int)rowCnt - 1 - x_hat_i * x_hat_j;
-                //             auto part2 = (int)rowCnt * sigma;
-                //             (*mw)[i][j] = part1 / part2;
-                //         }
-                //     }
-                //     v_w.push_back(allocNode(mw));
-                // }
-                std::vector<Node *> v_grads = allocNode(grad)->split(0);
-                assert(v_w.size() == v_grads.size());
-                std::vector<Node *> v_res;
-                for (uint i = 0; i < v_w.size(); i++) {
-                    v_res.push_back(v_w[i]->at(v_grads[i]));
-                }
-                *node->get_grad() += *(cat(v_res, 0)->get_weight());
             }
         private:
             Matrix *w_hat;
@@ -491,25 +446,8 @@ namespace autograd_cuda {
                 : Edge(Softmax, _node), res(_res) {}
             virtual ~SoftmaxEdge() {}
             void backward(Matrix *grad) override {
-                assert(grad->getShape().colCnt == node->getShape().colCnt);
-                assert(node->is_require_grad());
-                Matrix *softmax_grad = allocTmpMatrix(grad->getShape());
+                std::cerr << "SoftmaxEdge backward not implemented" << std::endl;
                 assert(false);
-                // uint rowCnt = grad->getShape().rowCnt;
-                // uint colCnt = grad->getShape().colCnt;
-                // for (uint k = 0; k < colCnt; k++) {
-                //     for (uint target = 0; target < rowCnt; target++) {
-                //         for (uint i = 0; i < rowCnt; i++) {
-                //             if (i != target) {
-                //                 (*softmax_grad)[i][k] += -(*res->get_weight())[target][k] * (*res->get_weight())[i][k] * (*grad)[target][k];
-                //             } else {
-                //                 (*softmax_grad)[i][k] += (*res->get_weight())[i][k] * (1 - (*res->get_weight())[i][k]) * (*grad)[i][k];
-                //             }
-                //         }
-                //     }
-                // }
-                assert(softmax_grad->checkShape(grad->getShape()));
-                *node->get_grad() += *softmax_grad;
             }
         private:
             Node *res;
