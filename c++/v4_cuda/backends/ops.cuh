@@ -49,6 +49,8 @@ class BackendOps {
         virtual void operator_add_val(Matrix *w, DATATYPE v) = 0;
         virtual void operator_minus_val(Matrix *w, DATATYPE v) = 0;
         virtual void operator_negative(Matrix *w) = 0;
+        virtual void operator_val_minus(DATATYPE v, Matrix *w) = 0;
+        virtual void operator_minus(Matrix *w, const Matrix &m) = 0;
 };
 
 extern BackendOps *g_backend_ops;

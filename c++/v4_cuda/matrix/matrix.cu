@@ -151,33 +151,20 @@ Matrix *Matrix::operator-() {
 
 Matrix *operator-(DATATYPE v, const Matrix &m) {
     Matrix *res = allocTmpMatrix(m);
-    for (uint i = 0; i < m.shape.rowCnt; ++i) {
-        for (uint j = 0; j < m.shape.colCnt; ++j) {
-            auto &r = (*res)[i][j];
-            r = v-r;
-        }
-    }
+    g_backend_ops->operator_val_minus(v, res);
     return res;
 }
 
 Matrix *Matrix::operator-(const Matrix &m) {
     checkShape(m);
     Matrix *res = allocTmpMatrix(this);
-    for (uint i = 0; i < shape.rowCnt; ++i) {
-        for (uint j = 0; j < shape.colCnt; ++j) {
-            (*res)[i][j] -= m[i][j];
-        }
-    }
+    g_backend_ops->operator_minus(res, m);
     return res;
 }
 
-Matrix *Matrix::operator-= (const Matrix &m) {
+Matrix *Matrix::operator-=(const Matrix &m) {
     checkShape(m);
-    for (uint i = 0; i < shape.rowCnt; ++i) {
-        for (uint j = 0; j < shape.colCnt; ++j) {
-            (*this)[i][j] -= m[i][j];
-        }
-    }
+    g_backend_ops->operator_minus(this, m);
     return this;
 }
 

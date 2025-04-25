@@ -299,3 +299,21 @@ void CPUBackendOps::operator_negative(Matrix *w) {
         }
     }
 }
+
+void CPUBackendOps::operator_val_minus(DATATYPE v, Matrix *w) {
+    auto shape = w->getShape();
+    for (uint i = 0; i < shape.rowCnt; ++i) {
+        for (uint j = 0; j < shape.colCnt; ++j) {
+            (*w)[i][j] = v - (*w)[i][j];
+        }
+    }
+}
+
+void CPUBackendOps::operator_minus(Matrix *w, const Matrix &m) {
+    auto shape = w->getShape();
+    for (uint i = 0; i < shape.rowCnt; ++i) {
+        for (uint j = 0; j < shape.colCnt; ++j) {
+            (*w)[i][j] -= m[i][j];
+        }
+    }
+}

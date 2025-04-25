@@ -49,5 +49,7 @@ class CPUBackendOps : public BackendOps {
         virtual void operator_add_val(Matrix *w, DATATYPE v) override;
         virtual void operator_minus_val(Matrix *w, DATATYPE v) override;
         virtual void operator_negative(Matrix *w) override;
+        virtual void operator_val_minus(DATATYPE v, Matrix *w) override;
+        virtual void operator_minus(Matrix *w, const Matrix &m) override;
 };
 #endif
