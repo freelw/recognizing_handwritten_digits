@@ -392,11 +392,11 @@ DATATYPE Matrix::get_val(int i, int j) const {
 void Matrix::cp_to_device() {
     assert(allocated && initialized);
     commited = true;
-    g_backend_ops->cp_to_device(data_device, data, shape.size());
+    g_gpu_backend_ops->cp_to_device(data_device, data, shape.size());
 }
 
 void Matrix::cp_from_device() {
-    g_backend_ops->cp_from_device(data, data_device, shape.size());
+    g_gpu_backend_ops->cp_from_device(data, data_device, shape.size());
 }
 
 TrainingData::TrainingData(int input_layer_size, int _y)

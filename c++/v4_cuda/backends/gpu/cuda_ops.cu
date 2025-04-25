@@ -6,13 +6,11 @@ bool GPUBackendOps::is_gpu() {
 }
 
 void GPUBackendOps::cp_to_device(void* dst, const void* src, size_t size) {
-    std::cerr << "cp_to_device unimplemented" << std::endl;
-    assert(false);
+    cudaMemcpy(dst, src, size, cudaMemcpyHostToDevice);
 }
 
 void GPUBackendOps::cp_from_device(void* dst, const void* src, size_t size) {
-    std::cerr << "cp_from_device unimplemented" << std::endl;
-    assert(false);
+    cudaMemcpy(dst, src, size, cudaMemcpyDeviceToHost);
 }
 
 Matrix *GPUBackendOps::CrossEntropyLoss(
