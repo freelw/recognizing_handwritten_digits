@@ -51,6 +51,10 @@ class BackendOps {
         virtual void operator_negative(Matrix *w) = 0;
         virtual void operator_val_minus(DATATYPE v, Matrix *w) = 0;
         virtual void operator_minus(Matrix *w, const Matrix &m) = 0;
+        virtual void operator_multiply(Matrix *w, const Matrix &m) = 0;
+        virtual void operator_multiply_val(Matrix *w, DATATYPE v) = 0;
+        virtual void operator_divide(Matrix *w, const Matrix &m) = 0;
+        virtual void operator_divide_val(Matrix *w, DATATYPE v) = 0;
 };
 
 extern BackendOps *g_backend_ops;

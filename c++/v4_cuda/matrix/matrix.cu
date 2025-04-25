@@ -171,40 +171,24 @@ Matrix *Matrix::operator-=(const Matrix &m) {
 Matrix *Matrix::operator*(const Matrix &m) {
     checkShape(m);
     Matrix *res = allocTmpMatrix(this);
-    for (uint i = 0; i < shape.rowCnt; ++i) {
-        for (uint j = 0; j < shape.colCnt; ++j) {
-            (*res)[i][j] *= m[i][j];
-        }
-    }
+    g_backend_ops->operator_multiply(res, m);
     return res;
 }
 
 Matrix *Matrix::operator*(DATATYPE v) {
     Matrix *res = allocTmpMatrix(this);
-    for (uint i = 0; i < shape.rowCnt; ++i) {
-        for (uint j = 0; j < shape.colCnt; ++j) {
-            (*res)[i][j] *= v;
-        }
-    }
+    g_backend_ops->operator_multiply_val(res, v);
     return res;
 }
 
 Matrix *Matrix::operator*=(DATATYPE v) {
-    for (uint i = 0; i < shape.rowCnt; ++i) {
-        for (uint j = 0; j < shape.colCnt; ++j) {
-            (*this)[i][j] *= v;
-        }
-    }
+    g_backend_ops->operator_multiply_val(this, v);
     return this;
 }
 
 Matrix *Matrix::operator/(DATATYPE v) {
     Matrix *res = allocTmpMatrix(this);
-    for (uint i = 0; i < shape.rowCnt; ++i) {
-        for (uint j = 0; j < shape.colCnt; ++j) {
-            (*res)[i][j] /= v;
-        }
-    }
+    g_backend_ops->operator_divide_val(res, v);
     return res;
 }
 
