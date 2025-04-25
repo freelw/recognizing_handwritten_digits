@@ -417,5 +417,18 @@ void CPUBackendOps::operator_at(Matrix *res, Matrix *w, const Matrix &m) {
                 C[i * mshape.colCnt + j] += A[i * shape.colCnt + k] * B[k * mshape.colCnt + j];
             }
         }
-    }    
+    }
+}
+
+void CPUBackendOps::operator_transpose(Matrix *res, Matrix *w) {
+    auto shape = w->getShape();
+    auto rshape = res->getShape();
+    assert(shape.rowCnt == rshape.colCnt);
+    assert(shape.colCnt == rshape.rowCnt);
+    #pragma omp parallel for
+    for (uint i = 0; i < shape.rowCnt; ++i) {
+        for (uint j = 0; j < shape.colCnt; ++j) {
+            (*res)[j][i] = (*w)[i][j];
+        }
+    }
 }

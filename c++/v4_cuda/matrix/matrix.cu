@@ -242,13 +242,7 @@ Matrix *Matrix::at(const Matrix &m) {
 
 Matrix *Matrix::transpose() {
     Matrix *res = allocTmpMatrix(Shape(shape.colCnt, shape.rowCnt));
-    #pragma omp parallel for num_threads(OMP_THREADS)
-    for (uint i = 0; i < shape.colCnt; ++ i) {
-        DATATYPE *data = (*res)[i];
-        for (uint j = 0; j < shape.rowCnt; ++ j) {
-            data[j] = (*this)[j][i];
-        }
-    }
+    g_backend_ops->operator_transpose(res, this);
     return res;
 }
 
