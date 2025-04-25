@@ -224,3 +224,12 @@ void CPUBackendOps::CrossEntropyMaskEdgeBackward(
         (*grad)[target][j] = (std::exp((*w)[target][j] - max) / sum - 1) / mask_cnt;
     }
 }
+
+void CPUBackendOps::NormEdgeBackward(
+    Matrix *w,
+    Matrix *grad,
+    const std::vector<DATATYPE> &avg_res,
+    const std::vector<DATATYPE> &var_res,
+    DATATYPE eps) {
+    assert(false);
+}

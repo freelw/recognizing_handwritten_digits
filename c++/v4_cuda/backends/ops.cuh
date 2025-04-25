@@ -34,6 +34,12 @@ class BackendOps {
             const std::vector<uint> &labels,
             const std::vector<autograd_cuda::CrosEntropyInfo> &info,
             const std::vector<bool> &mask) = 0;
+        virtual void NormEdgeBackward(
+            Matrix *w,
+            Matrix *grad,
+            const std::vector<DATATYPE> &avg_res,
+            const std::vector<DATATYPE> &var_res,
+            DATATYPE eps) = 0;
 };
 
 extern BackendOps *g_backend_ops;

@@ -423,17 +423,23 @@ namespace autograd_cuda {
             static Edge* create(
                 Node *_node,
                 Matrix *w_hat,
+                const std::vector<DATATYPE> &_avg_res,
+                const std::vector<DATATYPE> &_var_res,
                 DATATYPE eps) {
-                Edge *edge = new NormEdge(_node, w_hat, eps);
+                Edge *edge = new NormEdge(_node, w_hat, _avg_res, _var_res, eps);
                 edges.push_back(edge);
                 return edge;
             }
             NormEdge(
                 Node *_node,
                 Matrix *_w_hat,
+                const std::vector<DATATYPE> &_avg_res,
+                const std::vector<DATATYPE> &_var_res,
                 DATATYPE _eps
             ) : Edge(OpType::Norm, _node),
                 w_hat(_w_hat),
+                avg_res(_avg_res),
+                var_res(_var_res),
                 eps(_eps) {}
             virtual ~NormEdge() {}
             void backward(Matrix *grad) override {
@@ -469,6 +475,8 @@ namespace autograd_cuda {
             }
         private:
             Matrix *w_hat;
+            std::vector<DATATYPE> avg_res;
+            std::vector<DATATYPE> var_res;
             DATATYPE eps;
     };
 

@@ -26,7 +26,7 @@ namespace autograd_cuda {
         auto *node = allocNode(tmp);
         if (is_require_grad()) {
             node->require_grad();
-            node->edges.push_back(NormEdge::create(this, tmp, eps));
+            node->edges.push_back(NormEdge::create(this, tmp, avg_res, var_res, eps));
         }
         return node;
     }
