@@ -244,3 +244,12 @@ DATATYPE *CPUBackendOps::allocDeviceMem(size_t size) {
 void CPUBackendOps::releaseDeviceMem(DATATYPE *ptr) {
     assert(ptr == nullptr);
 }
+
+void CPUBackendOps::expand_add(Matrix *w, const Matrix &m) {
+    auto shape = w->getShape();
+    for (uint i = 0; i < shape.rowCnt; ++i) {
+        for (uint j = 0; j < shape.colCnt; ++j) {
+            (*w)[i][j] += m[i][0];
+        }
+    }
+}

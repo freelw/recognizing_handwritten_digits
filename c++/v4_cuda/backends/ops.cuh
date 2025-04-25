@@ -43,6 +43,7 @@ class BackendOps {
             DATATYPE eps) = 0;
         virtual DATATYPE *allocDeviceMem(size_t size) = 0;
         virtual void releaseDeviceMem(DATATYPE *ptr) = 0;
+        virtual void expand_add(Matrix *w, const Matrix &m) = 0;
 };
 
 extern BackendOps *g_backend_ops;

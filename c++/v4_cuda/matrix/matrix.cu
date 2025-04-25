@@ -10,11 +10,11 @@
 #include "backends/cpu/cpu_ops.cuh"
 
 Matrix::Matrix(Shape _shape)
-        : initialized(false),
-        allocated(false),
-        shape(_shape),
-        commited(false),
-        data_device(nullptr) {
+    : initialized(false),
+    allocated(false),
+    shape(_shape),
+    commited(false),
+    data_device(nullptr) {
     data = new DATATYPE[shape.size()];
     data_device = g_backend_ops->allocDeviceMem(shape.size() * sizeof(DATATYPE));
     allocated = true;
@@ -108,11 +108,7 @@ Matrix *Matrix::expand_add(const Matrix &m) {
     assert(m.shape.rowCnt == shape.rowCnt);
     assert(m.shape.colCnt == 1);
     Matrix *res = allocTmpMatrix(this);
-    for (uint i = 0; i < shape.rowCnt; ++i) {
-        for (uint j = 0; j < shape.colCnt; ++j) {
-            (*res)[i][j] += m[i][0];
-        }
-    }
+    g_backend_ops->expand_add(res, m);
     return res;
 }
 

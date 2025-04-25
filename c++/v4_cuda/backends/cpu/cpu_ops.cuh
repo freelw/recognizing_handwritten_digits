@@ -43,6 +43,7 @@ class CPUBackendOps : public BackendOps {
             DATATYPE eps) override;
         virtual DATATYPE *allocDeviceMem(size_t size) override;
         virtual void releaseDeviceMem(DATATYPE *ptr) override;
+        virtual void expand_add(Matrix *w, const Matrix &m) override;
 };
 
 #endif
