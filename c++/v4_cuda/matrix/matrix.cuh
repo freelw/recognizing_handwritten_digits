@@ -23,7 +23,6 @@ struct Shape {
     }
 };
 
-// typedef double DATATYPE;
 typedef float DATATYPE;
 
 class Matrix {

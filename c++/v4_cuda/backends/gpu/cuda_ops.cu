@@ -92,14 +92,14 @@ void GPUBackendOps::NormEdgeBackward(
 }
 
 DATATYPE *GPUBackendOps::allocDeviceMem(size_t size) {
-    std::cerr << "allocDeviceMem unimplemented" << std::endl;
-    assert(false);
-    return nullptr;
+    DATATYPE *ret = nullptr;
+    cudaMalloc((void **)&ret, size);
+    return ret;
 }
 
 void GPUBackendOps::releaseDeviceMem(DATATYPE *ptr) {
-    std::cerr << "releaseDeviceMem unimplemented" << std::endl;
-    assert(false);
+    assert(ptr != nullptr);
+    cudaFree(ptr);
 }
 
 void GPUBackendOps::expand_add(Matrix *w, const Matrix &m) {

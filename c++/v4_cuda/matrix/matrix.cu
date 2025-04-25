@@ -16,7 +16,7 @@ Matrix::Matrix(Shape _shape)
     commited(false),
     data_device(nullptr) {
     data = new DATATYPE[shape.size()];
-    data_device = g_backend_ops->allocDeviceMem(shape.size() * sizeof(DATATYPE));
+    data_device = g_gpu_backend_ops->allocDeviceMem(shape.size() * sizeof(DATATYPE));
     allocated = true;
     zero();
     this->cp_to_device();
@@ -30,7 +30,7 @@ Matrix::Matrix(const Matrix &m):
     data_device(nullptr) {
     assert(initialized);
     data = new DATATYPE[shape.size()];
-    data_device = g_backend_ops->allocDeviceMem(shape.size() * sizeof(DATATYPE));
+    data_device = g_gpu_backend_ops->allocDeviceMem(shape.size() * sizeof(DATATYPE));
     allocated = true;
     memcpy(data, m.data, sizeof(DATATYPE) * shape.rowCnt * shape.colCnt);
     this->cp_to_device();
@@ -47,6 +47,7 @@ Matrix::Matrix(const std::vector<DATATYPE> &v):
     for (uint i = 0; i < shape.rowCnt; ++ i) {
         data[i] = v[i];
     }
+    data_device = g_gpu_backend_ops->allocDeviceMem(shape.size() * sizeof(DATATYPE));
     initialized = true;
     this->cp_to_device();
 }
@@ -55,7 +56,7 @@ Matrix::~Matrix() {
     assert(initialized && allocated);
     delete [] data;
     data = nullptr;
-    g_backend_ops->releaseDeviceMem(data_device);
+    g_gpu_backend_ops->releaseDeviceMem(data_device);
     data_device = nullptr;
 }
 
@@ -253,11 +254,11 @@ bool Matrix::valid(uint x, uint y) const {
 void Matrix::reShape(Shape _shape) {
     assert(allocated && initialized);
     delete []data;
-    g_backend_ops->releaseDeviceMem(data_device);
+    g_gpu_backend_ops->releaseDeviceMem(data_device);
     shape = _shape;
     data = new DATATYPE[shape.size()];
     zero();
-    data_device = g_backend_ops->allocDeviceMem(shape.size() * sizeof(DATATYPE));
+    data_device = g_gpu_backend_ops->allocDeviceMem(shape.size() * sizeof(DATATYPE));
     cp_to_device();
 }
 
