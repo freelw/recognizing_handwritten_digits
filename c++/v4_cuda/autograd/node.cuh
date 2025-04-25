@@ -76,7 +76,11 @@ namespace autograd_cuda {
 
             void zero_grad() {
                 if (requires_grad) {
-                    grad = allocTmpMatrix(w->getShape());                
+                    if (grad) {
+                        grad->zero();
+                    } else {
+                        grad = allocTmpMatrix(w->getShape());
+                    }
                 }
             }
 
@@ -387,14 +391,8 @@ namespace autograd_cuda {
                 : Edge(OpType::Cat1, _node), offset(_offset){}
             virtual ~CatEdge1() {}
             void backward(Matrix *grad) override {
-                assert(node->is_require_grad());
-                assert(grad->getShape().colCnt == node->getShape().colCnt);
-                Shape shape = node->getShape();
-                DATATYPE *m_buffer = node->get_grad()->getData();
-                DATATYPE *grad_buffer = grad->getData() + offset;
-                for (uint i = 0; i < shape.size(); ++ i) {
-                    m_buffer[i] += grad_buffer[i];
-                }
+                std::cerr << "CatEdge1 backward not implemented" << std::endl;
+                assert(false);
             }
         private:
             uint offset;

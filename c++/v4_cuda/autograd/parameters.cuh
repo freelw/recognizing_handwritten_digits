@@ -19,6 +19,8 @@ namespace autograd_cuda {
             void deserialize(char *buffer);
             bool require_grad();
         private:
+            void sync();
+        private:
             Node *w;
             Matrix *m;
             Matrix *v;

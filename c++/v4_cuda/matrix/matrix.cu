@@ -14,7 +14,9 @@ Matrix::Matrix(Shape _shape)
     allocated(false),
     shape(_shape),
     commited(false),
-    data_device(nullptr) {
+    data_device(nullptr),
+    cpu_ver(0),
+    gpu_ver(0) {
     data = new DATATYPE[shape.size()];
     data_device = g_gpu_backend_ops->allocDeviceMem(shape.size() * sizeof(DATATYPE));
     allocated = true;
@@ -27,7 +29,9 @@ Matrix::Matrix(const Matrix &m):
     allocated(false),
     shape(m.shape),
     commited(false),
-    data_device(nullptr) {
+    data_device(nullptr),
+    cpu_ver(0),
+    gpu_ver(0) {
     assert(initialized);
     data = new DATATYPE[shape.size()];
     data_device = g_gpu_backend_ops->allocDeviceMem(shape.size() * sizeof(DATATYPE));
@@ -41,7 +45,9 @@ Matrix::Matrix(const std::vector<DATATYPE> &v):
     allocated(false),
     shape(Shape(v.size(), 1)),
     commited(false),
-    data_device(nullptr) {
+    data_device(nullptr),
+    cpu_ver(0),
+    gpu_ver(0) {
     data = new DATATYPE[shape.size()];
     allocated = true;
     for (uint i = 0; i < shape.rowCnt; ++ i) {
@@ -293,7 +299,7 @@ std::vector<Matrix *> Matrix::split(uint dim) {
     return {};
 }
 
-DATATYPE *Matrix::getData() const {
+DATATYPE *Matrix::getLowLevelData() const {
     assert(!g_backend_ops->is_gpu());
     return data;
 }
@@ -390,13 +396,33 @@ DATATYPE Matrix::get_val(int i, int j) const {
 }
 
 void Matrix::cp_to_device() {
+    assert(cpu_ver > gpu_ver);
     assert(allocated && initialized);
     commited = true;
     g_gpu_backend_ops->cp_to_device(data_device, data, shape.size());
+    gpu_ver = cpu_ver;
 }
 
 void Matrix::cp_from_device() {
+    assert(cpu_ver < gpu_ver);
     g_gpu_backend_ops->cp_from_device(data, data_device, shape.size());
+    cpu_ver = gpu_ver;
+}
+
+void Matrix::sync() {
+    if (cpu_ver < gpu_ver) {
+        cp_from_device();
+    } else if (cpu_ver > gpu_ver) {
+        cp_to_device();
+    }
+}
+
+void Matrix::increase_cpu_ver() {
+    cpu_ver++;
+}
+
+void Matrix::increase_gpu_ver() {
+    gpu_ver++;
 }
 
 TrainingData::TrainingData(int input_layer_size, int _y)

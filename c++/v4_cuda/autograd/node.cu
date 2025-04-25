@@ -189,93 +189,15 @@ namespace autograd_cuda {
     }
 
     Node *cat0(const std::vector<Node *> &nodes) {
-        Shape shape = nodes[0]->get_weight()->getShape();
-        for (uint i = 0; i < nodes.size(); ++ i) {
-            nodes[i]->checkShape(shape);
-        }
-        Matrix *m = allocTmpMatrix(Shape(shape.rowCnt, shape.colCnt * nodes.size()));
-        Node *node = allocNode(m);
-        
-        auto m_buffer = m->getData();
-        auto m_shape = m->getShape();
-        
-        for (uint i = 0; i < nodes.size(); ++ i) {
-            auto node_i_buffer = nodes[i]->get_weight()->getData();
-            
-            int k = 0;
-
-            for (; k < (int)shape.rowCnt - 7; k += 8) {
-
-                DATATYPE *m_buffer_0 = m_buffer + k*m_shape.colCnt+i*shape.colCnt;
-                DATATYPE *m_buffer_1 = m_buffer + (k+1)*m_shape.colCnt+i*shape.colCnt;
-                DATATYPE *m_buffer_2 = m_buffer + (k+2)*m_shape.colCnt+i*shape.colCnt;
-                DATATYPE *m_buffer_3 = m_buffer + (k+3)*m_shape.colCnt+i*shape.colCnt;
-                DATATYPE *m_buffer_4 = m_buffer + (k+4)*m_shape.colCnt+i*shape.colCnt;
-                DATATYPE *m_buffer_5 = m_buffer + (k+5)*m_shape.colCnt+i*shape.colCnt;
-                DATATYPE *m_buffer_6 = m_buffer + (k+6)*m_shape.colCnt+i*shape.colCnt;
-                DATATYPE *m_buffer_7 = m_buffer + (k+7)*m_shape.colCnt+i*shape.colCnt;
-
-                DATATYPE *node_i_buffer_0 = node_i_buffer + k*shape.colCnt;
-                DATATYPE *node_i_buffer_1 = node_i_buffer + (k+1)*shape.colCnt;
-                DATATYPE *node_i_buffer_2 = node_i_buffer + (k+2)*shape.colCnt;
-                DATATYPE *node_i_buffer_3 = node_i_buffer + (k+3)*shape.colCnt;
-                DATATYPE *node_i_buffer_4 = node_i_buffer + (k+4)*shape.colCnt;
-                DATATYPE *node_i_buffer_5 = node_i_buffer + (k+5)*shape.colCnt;
-                DATATYPE *node_i_buffer_6 = node_i_buffer + (k+6)*shape.colCnt;
-                DATATYPE *node_i_buffer_7 = node_i_buffer + (k+7)*shape.colCnt;
-
-                DATATYPE *m_buffers[8] = {
-                    m_buffer_0, m_buffer_1, m_buffer_2, m_buffer_3,
-                    m_buffer_4, m_buffer_5, m_buffer_6, m_buffer_7
-                };
-
-                DATATYPE *node_i_buffers[8] = {
-                    node_i_buffer_0, node_i_buffer_1, node_i_buffer_2, node_i_buffer_3,
-                    node_i_buffer_4, node_i_buffer_5, node_i_buffer_6, node_i_buffer_7
-                };
-
-                #pragma omp parallel for num_threads(8)
-                for (uint j = 0; j < 8; ++ j) {
-                    memcpy(m_buffers[j], node_i_buffers[j], shape.colCnt * sizeof(DATATYPE));
-                }
-            }
-            for (; k < (int)shape.rowCnt; ++ k) {
-                for (uint j = 0; j < shape.colCnt; ++ j) {
-                    m_buffer[k*m_shape.colCnt+i*shape.colCnt+j] = node_i_buffer[k*shape.colCnt+j];
-                }
-            }
-        }
-        for (uint i = 0; i < nodes.size(); ++ i) {
-            if (nodes[i]->is_require_grad()) {
-                node->require_grad();
-                node->edges.push_back(CatEdge0::create(nodes[i], i*shape.colCnt));
-            }
-        }
-        return node;
+        std::cerr << "cat0 not implemented" << std::endl;
+        assert(false);
+        return nullptr;
     }
 
     Node *cat1(const std::vector<Node *> &nodes) {
-        Shape shape = nodes[0]->get_weight()->getShape();
-        uint rowCntSum = 0;
-        for (uint i = 0; i < nodes.size(); ++ i) {
-            // nodes[i]->checkShape(shape);
-            assert(nodes[i]->getShape().colCnt == shape.colCnt);
-            rowCntSum += nodes[i]->getShape().rowCnt;
-        }
-        Matrix *m = allocTmpMatrix(Shape(rowCntSum, shape.colCnt));
-        Node *node = allocNode(m);
-        auto m_buffer = m->getData();
-        uint offset = 0;
-        for (uint i = 0; i < nodes.size(); ++ i) {
-            auto node_i_buffer = nodes[i]->get_weight()->getData();
-            memcpy(m_buffer + offset, node_i_buffer, nodes[i]->getShape().size() * sizeof(DATATYPE));
-            if (nodes[i]->is_require_grad()) {
-                node->require_grad();
-                node->edges.push_back(CatEdge1::create(nodes[i], offset));
-            }
-            offset += nodes[i]->getShape().size();
-        }
-        return node;
+        std::cerr << "cat1 not implemented" << std::endl;
+        assert(false);
+        return nullptr;
     }
 
     Node *cat(const std::vector<Node *> &nodes, uint dim) {
