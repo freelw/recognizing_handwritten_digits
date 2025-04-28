@@ -413,10 +413,12 @@ void freeTmpMatrix() {
 
 void Matrix::init_weight(DATATYPE sigma, DATATYPE mean) {
     g_backend_ops->operator_init_weight(this, sigma, mean);
+    cp_to_device();
 }
 
 void Matrix::init_weight_uniform(DATATYPE sigma) {
     g_backend_ops->operator_init_weight_uniform(this, sigma);
+    cp_to_device();
 }
 
 void Matrix::set_val(int i, int j, DATATYPE val) {

@@ -357,8 +357,9 @@ void GPUBackendOps::operator_at(Matrix *res, Matrix *w, Matrix &m) {
 }
 
 void GPUBackendOps::operator_transpose(Matrix *res, Matrix *w) {
-    res->sync();
-    w->sync();
+    // res->sync();
+    // assert(w->cpu_ver == w->gpu_ver);
+    // w->sync();
 
     auto wshape = w->getShape();
     auto rshape = res->getShape();
@@ -384,8 +385,8 @@ void GPUBackendOps::operator_transpose(Matrix *res, Matrix *w) {
         M, N
     );
 
-    res->increase_gpu_ver();
-    res->sync();
+    // res->increase_gpu_ver();
+    // res->sync();
 }
 
 void GPUBackendOps::operator_assign(Matrix *res, Matrix *w) {
