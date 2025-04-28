@@ -218,7 +218,8 @@ Matrix *Matrix::Relu() {
 
 Matrix *Matrix::Relu_prime() {
     Matrix *res = allocTmpMatrix(this);
-    g_backend_ops->operator_relu_prime(res);
+    // g_backend_ops->operator_relu_prime(res);
+    g_gpu_backend_ops->operator_relu_prime(res);
     return res;
 }
 

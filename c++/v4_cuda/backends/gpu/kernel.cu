@@ -149,3 +149,13 @@ __global__ void transpose(float *Md, float *Nd, int M, int N) {
         Nd[col * M + row] = Md[row * N + col];
     }
 }
+
+__global__ void relu_prime(float *Md, int M) {
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+
+    if (index >= M) {
+        return ;
+    } else {
+        Md[index] = Md[index] > 0 ? 1 : 0;
+    }
+}

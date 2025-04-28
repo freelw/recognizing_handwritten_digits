@@ -289,8 +289,21 @@ void GPUBackendOps::operator_relu(Matrix *w) {
 }
 
 void GPUBackendOps::operator_relu_prime(Matrix *w) {
-    std::cerr << "operator_relu_prime unimplemented" << std::endl;
-    assert(false);
+    w->sync();
+
+    auto shape = w->getShape();
+    const int M = shape.size();
+
+    dim3 gridDim(
+        (M + TILE_WIDTH - 1) / TILE_WIDTH
+    );
+    dim3 blockDim(
+        TILE_WIDTH
+    );
+
+    relu_prime<<<gridDim, blockDim>>>((DATATYPE *)w->getLowLevelDataDevice(), M);
+    w->increase_gpu_ver();
+    w->sync();
 }
 
 void GPUBackendOps::operator_tanh(Matrix *w) {

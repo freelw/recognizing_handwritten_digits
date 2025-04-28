@@ -21,5 +21,6 @@ __global__ void cross_entropy_loss_backward(
     int N, int C);
 __global__ void sum(float *Md, float *Nd, int M, int N);
 __global__ void transpose(float *Md, float *Nd, int M, int N);
+__global__ void relu_prime(float *Md, int M);
 
 #endif
