@@ -162,8 +162,8 @@ void GPUBackendOps::releaseDeviceMem(void *ptr) {
 
 void GPUBackendOps::expand_add(Matrix *w, Matrix &m) {
     // __global__ void expand_add(float *Md, float *Nd, int M, int N);
-    w->sync();
-    m.sync();
+    // w->sync();
+    // m.sync();
 
     auto wshape = w->getShape();
     auto mshape = m.getShape();
@@ -187,8 +187,8 @@ void GPUBackendOps::expand_add(Matrix *w, Matrix &m) {
 
     expand_add_kernel<<<gridDim, blockDim>>>((DATATYPE *)w->getLowLevelDataDevice(), (DATATYPE *)m.getLowLevelDataDevice(), M, N);
 
-    w->increase_gpu_ver();
-    w->sync();
+    // w->increase_gpu_ver();
+    // w->sync();
 }
 
 void GPUBackendOps::operator_add(Matrix *w, Matrix &m) {
