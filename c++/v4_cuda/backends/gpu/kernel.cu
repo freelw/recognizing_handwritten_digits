@@ -77,13 +77,13 @@ __global__ void cross_entropy_loss(
         float max_val = -1e10;
         
         for (int i = 0; i < C; ++i) {
-            float z = input[i*C + index];
+            float z = input[i*N + index];
             max_val = fmaxf(max_val, z);
         }
         maxs[index] = max_val;
         float sum = 0;
         for (int i = 0; i < C; ++i) {
-            float z = input[i*C + index];
+            float z = input[i*N + index];
             sum += expf(z - max_val);
         }
         sums[index] = sum;

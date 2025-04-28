@@ -7,7 +7,8 @@
 namespace autograd_cuda {
 
     Matrix *CrossEntropyLoss(Matrix *input, const std::vector<uint> &labels, Matrix *&maxs, Matrix *&sums) { 
-        return g_backend_ops->CrossEntropyLoss(input, labels, maxs, sums);
+        // return g_backend_ops->CrossEntropyLoss(input, labels, maxs, sums);
+        return g_gpu_backend_ops->CrossEntropyLoss(input, labels, maxs, sums);
     }
 
     Matrix *CrossEntropyLossMask(
