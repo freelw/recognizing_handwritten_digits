@@ -271,7 +271,7 @@ void GPUBackendOps::operator_divide_val(Matrix *w, DATATYPE v) {
 }
 
 void GPUBackendOps::operator_relu(Matrix *w) {
-    w->sync();
+    // w->sync();
 
     auto shape = w->getShape();
     const int M = shape.size();
@@ -284,8 +284,8 @@ void GPUBackendOps::operator_relu(Matrix *w) {
     );
 
     relu_kernel<<<gridDim, blockDim>>>((DATATYPE *)w->getLowLevelDataDevice(), M);
-    w->increase_gpu_ver();
-    w->sync();
+    // w->increase_gpu_ver();
+    // w->sync();
 }
 
 void GPUBackendOps::operator_relu_prime(Matrix *w) {
