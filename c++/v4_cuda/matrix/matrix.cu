@@ -117,11 +117,12 @@ ostream &operator<<(ostream &output, const Matrix &m) {
     return output;
 }
 
-Matrix *Matrix::expand_add(const Matrix &m) {
+Matrix *Matrix::expand_add(Matrix &m) {
     assert(m.shape.rowCnt == shape.rowCnt);
     assert(m.shape.colCnt == 1);
     Matrix *res = allocTmpMatrix(this);
-    g_backend_ops->expand_add(res, m);
+    // g_backend_ops->expand_add(res, m);
+    g_gpu_backend_ops->expand_add(res, m);
     return res;
 }
 

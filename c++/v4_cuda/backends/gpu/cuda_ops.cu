@@ -105,9 +105,35 @@ void GPUBackendOps::releaseDeviceMem(DATATYPE *ptr) {
     cudaFree(ptr);
 }
 
-void GPUBackendOps::expand_add(Matrix *w, const Matrix &m) {
-    std::cerr << "expand_add unimplemented" << std::endl;
-    assert(false);
+void GPUBackendOps::expand_add(Matrix *w, Matrix &m) {
+    // __global__ void expand_add(float *Md, float *Nd, int M, int N);
+    w->sync();
+    m.sync();
+
+    auto wshape = w->getShape();
+    auto mshape = m.getShape();
+
+
+    const int M = wshape.rowCnt;
+    const int N = wshape.colCnt;
+
+    assert(m.shape.rowCnt == M);
+    assert(m.shape.colCnt == 1);
+
+    dim3 gridDim(
+        (N + TILE_WIDTH - 1) / TILE_WIDTH,
+        (M + TILE_WIDTH - 1) / TILE_WIDTH
+    );
+
+    dim3 blockDim(
+        TILE_WIDTH,
+        TILE_WIDTH
+    );
+
+    expand_add_kernel<<<gridDim, blockDim>>>(w->getLowLevelDataDevice(), m.getLowLevelDataDevice(), M, N);
+
+    w->increase_gpu_ver();
+    w->sync();
 }
 
 void GPUBackendOps::operator_add(Matrix *w, const Matrix &m) {

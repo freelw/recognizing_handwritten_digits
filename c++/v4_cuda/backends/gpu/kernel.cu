@@ -26,3 +26,16 @@ __global__ void matrixmul(
         __syncthreads();
     }
 }
+
+__global__ void expand_add_kernel(
+    float *Md, float *Nd, int M, int N) {
+
+    int row = blockIdx.y * blockDim.y + threadIdx.y;
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
+
+    if (row >= M || col >= N) {
+            
+    } else {
+       Md[row * N + col] += Nd[row];
+    }
+}
