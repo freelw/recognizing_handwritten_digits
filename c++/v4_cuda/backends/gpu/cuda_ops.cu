@@ -165,13 +165,9 @@ void GPUBackendOps::zero(void *ptr, size_t size) {
 }
 
 void GPUBackendOps::expand_add(Matrix *w, Matrix &m) {
-    // __global__ void expand_add(float *Md, float *Nd, int M, int N);
-    // w->sync();
-    // m.sync();
 
     auto wshape = w->getShape();
     auto mshape = m.getShape();
-
 
     const int M = wshape.rowCnt;
     const int N = wshape.colCnt;
@@ -189,16 +185,14 @@ void GPUBackendOps::expand_add(Matrix *w, Matrix &m) {
         TILE_WIDTH
     );
 
-    expand_add_kernel<<<gridDim, blockDim>>>((DATATYPE *)w->getLowLevelDataDevice(), (DATATYPE *)m.getLowLevelDataDevice(), M, N);
-
-    // w->increase_gpu_ver();
-    // w->sync();
+    expand_add_kernel<<<gridDim, blockDim>>>(
+        (DATATYPE *)w->getLowLevelDataDevice(),
+        (DATATYPE *)m.getLowLevelDataDevice(),
+        M, N
+    );
 }
 
 void GPUBackendOps::operator_add(Matrix *w, Matrix &m) {
-    // w->sync();
-    // m.sync();
-
     auto wshape = w->getShape();
     auto mshape = m.getShape();
 
@@ -218,10 +212,11 @@ void GPUBackendOps::operator_add(Matrix *w, Matrix &m) {
         TILE_WIDTH
     );
 
-    add_eq_kernel<<<gridDim, blockDim>>>((DATATYPE *)w->getLowLevelDataDevice(), (DATATYPE *)m.getLowLevelDataDevice(), M, N);
-
-    // w->increase_gpu_ver();
-    // w->sync();
+    add_eq_kernel<<<gridDim, blockDim>>>(
+        (DATATYPE *)w->getLowLevelDataDevice(),
+        (DATATYPE *)m.getLowLevelDataDevice(),
+        M, N
+    );
 }
 
 void GPUBackendOps::pow2(Matrix *w) {
@@ -275,26 +270,19 @@ void GPUBackendOps::operator_divide_val(Matrix *w, DATATYPE v) {
 }
 
 void GPUBackendOps::operator_relu(Matrix *w) {
-    // w->sync();
 
     auto shape = w->getShape();
     const int M = shape.size();
-
     dim3 gridDim(
         (M + TILE_WIDTH - 1) / TILE_WIDTH
     );
     dim3 blockDim(
         TILE_WIDTH
     );
-
     relu_kernel<<<gridDim, blockDim>>>((DATATYPE *)w->getLowLevelDataDevice(), M);
-    // w->increase_gpu_ver();
-    // w->sync();
 }
 
 void GPUBackendOps::operator_relu_prime(Matrix *w) {
-    // w->sync();
-
     auto shape = w->getShape();
     const int M = shape.size();
 
@@ -304,10 +292,7 @@ void GPUBackendOps::operator_relu_prime(Matrix *w) {
     dim3 blockDim(
         TILE_WIDTH
     );
-
     relu_prime<<<gridDim, blockDim>>>((DATATYPE *)w->getLowLevelDataDevice(), M);
-    // w->increase_gpu_ver();
-    // w->sync();
 }
 
 void GPUBackendOps::operator_tanh(Matrix *w) {
@@ -326,8 +311,6 @@ void GPUBackendOps::operator_equal(Matrix *w, const Matrix &m) {
 }
 
 void GPUBackendOps::operator_at(Matrix *res, Matrix *w, Matrix &m) {
-    // w->sync();
-    // m.sync();
 
     auto wshape = w->getShape();
     auto mshape = m.getShape();
@@ -353,14 +336,9 @@ void GPUBackendOps::operator_at(Matrix *res, Matrix *w, Matrix &m) {
     DATATYPE *d_Pd = (DATATYPE *)res->getLowLevelDataDevice();
 
     matrixmul<<<gridDim, blockDim>>>(d_Md, d_Nd, d_Pd, M, N, P);
-    // res->increase_gpu_ver();
 }
 
 void GPUBackendOps::operator_transpose(Matrix *res, Matrix *w) {
-    // res->sync();
-    // assert(w->cpu_ver == w->gpu_ver);
-    // w->sync();
-
     auto wshape = w->getShape();
     auto rshape = res->getShape();
 
@@ -384,9 +362,6 @@ void GPUBackendOps::operator_transpose(Matrix *res, Matrix *w) {
         (DATATYPE *)res->getLowLevelDataDevice(),
         M, N
     );
-
-    // res->increase_gpu_ver();
-    // res->sync();
 }
 
 void GPUBackendOps::operator_assign(Matrix *res, Matrix *w) {
@@ -395,9 +370,6 @@ void GPUBackendOps::operator_assign(Matrix *res, Matrix *w) {
 }
 
 void GPUBackendOps::operator_sum(Matrix *res, Matrix *w) {    
-    // res->sync();
-    // w->sync();
-
     auto wshape = w->getShape();
     auto rshape = res->getShape();
 
@@ -418,9 +390,6 @@ void GPUBackendOps::operator_sum(Matrix *res, Matrix *w) {
         (DATATYPE *)res->getLowLevelDataDevice(),
         M, N
     );
-
-    // res->increase_gpu_ver();
-    // res->sync();
 }
 
 void GPUBackendOps::operator_split(std::vector<Matrix *> &res, Matrix *w) {
