@@ -76,6 +76,7 @@ Matrix::~Matrix() {
 Matrix *Matrix::zero() {
     assert(allocated);
     memset(data, 0, sizeof(DATATYPE) * shape.size());
+    g_gpu_backend_ops->zero(data_device, shape.size() * sizeof(DATATYPE));
     initialized = true;
     return this;
 }
@@ -430,9 +431,9 @@ DATATYPE Matrix::get_val(int i, int j) const {
 }
 
 void Matrix::cp_to_device() {
-    assert(cpu_ver > gpu_ver);
+    // assert(cpu_ver > gpu_ver);
     assert(allocated && initialized);
-    commited = true;
+    // commited = true;
     g_gpu_backend_ops->cp_to_device(data_device, data, shape.size()*sizeof(DATATYPE));
     gpu_ver = cpu_ver;
 }

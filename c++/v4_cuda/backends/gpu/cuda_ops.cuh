@@ -44,6 +44,7 @@ class GPUBackendOps : public BackendOps {
         virtual void *allocDeviceMem(size_t size) override;
         virtual void deviceMemcpy(void *dst, const void *src, size_t size) override;
         virtual void releaseDeviceMem(void *ptr) override;
+        virtual void zero(void *ptr, size_t size) override;
         virtual void expand_add(Matrix *w, Matrix &m) override;
         virtual void operator_add(Matrix *w, Matrix &m) override;
         virtual void pow2(Matrix *w) override;

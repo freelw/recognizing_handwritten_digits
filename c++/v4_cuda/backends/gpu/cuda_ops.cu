@@ -160,6 +160,10 @@ void GPUBackendOps::releaseDeviceMem(void *ptr) {
     cudaFree(ptr);
 }
 
+void GPUBackendOps::zero(void *ptr, size_t size) {
+    cudaMemset(ptr, 0, size);
+}
+
 void GPUBackendOps::expand_add(Matrix *w, Matrix &m) {
     // __global__ void expand_add(float *Md, float *Nd, int M, int N);
     // w->sync();
@@ -192,8 +196,8 @@ void GPUBackendOps::expand_add(Matrix *w, Matrix &m) {
 }
 
 void GPUBackendOps::operator_add(Matrix *w, Matrix &m) {
-    w->sync();
-    m.sync();
+    // w->sync();
+    // m.sync();
 
     auto wshape = w->getShape();
     auto mshape = m.getShape();
@@ -216,8 +220,8 @@ void GPUBackendOps::operator_add(Matrix *w, Matrix &m) {
 
     add_eq_kernel<<<gridDim, blockDim>>>((DATATYPE *)w->getLowLevelDataDevice(), (DATATYPE *)m.getLowLevelDataDevice(), M, N);
 
-    w->increase_gpu_ver();
-    w->sync();
+    // w->increase_gpu_ver();
+    // w->sync();
 }
 
 void GPUBackendOps::pow2(Matrix *w) {

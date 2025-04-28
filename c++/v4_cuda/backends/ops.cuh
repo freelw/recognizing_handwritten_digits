@@ -44,6 +44,7 @@ class BackendOps {
         virtual void *allocDeviceMem(size_t size) = 0;
         virtual void deviceMemcpy(void *dst, const void *src, size_t size) = 0;
         virtual void releaseDeviceMem(void *ptr) = 0;
+        virtual void zero(void *ptr, size_t size) = 0;
         virtual void expand_add(Matrix *w, Matrix &m) = 0;
         virtual void operator_add(Matrix *w, Matrix &m) = 0;
         virtual void pow2(Matrix *w) = 0;

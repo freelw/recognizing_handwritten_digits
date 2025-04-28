@@ -263,6 +263,11 @@ void CPUBackendOps::releaseDeviceMem(void *ptr) {
     assert(ptr == nullptr);
 }
 
+void CPUBackendOps::zero(void *ptr, size_t size) {
+    assert(ptr == nullptr);
+    assert(size == 0);
+}
+
 void CPUBackendOps::expand_add(Matrix *w, Matrix &m) {
     auto shape = w->getShape();
     for (uint i = 0; i < shape.rowCnt; ++i) {
