@@ -340,8 +340,35 @@ void GPUBackendOps::operator_at(Matrix *res, Matrix *w, Matrix &m) {
 }
 
 void GPUBackendOps::operator_transpose(Matrix *res, Matrix *w) {
-    std::cerr << "operator_transpose unimplemented" << std::endl;
-    assert(false);
+    res->sync();
+    w->sync();
+
+    auto wshape = w->getShape();
+    auto rshape = res->getShape();
+
+    assert(wshape.rowCnt == rshape.colCnt);
+    assert(wshape.colCnt == rshape.rowCnt);
+
+    const int M = wshape.rowCnt;
+    const int N = wshape.colCnt;
+    dim3 gridDim(
+        (N + TILE_WIDTH - 1) / TILE_WIDTH,
+        (M + TILE_WIDTH - 1) / TILE_WIDTH
+    );
+
+    dim3 blockDim(
+        TILE_WIDTH,
+        TILE_WIDTH
+    );
+
+    transpose<<<gridDim, blockDim>>>(
+        (DATATYPE *)w->getLowLevelDataDevice(),
+        (DATATYPE *)res->getLowLevelDataDevice(),
+        M, N
+    );
+
+    res->increase_gpu_ver();
+    res->sync();
 }
 
 void GPUBackendOps::operator_assign(Matrix *res, Matrix *w) {

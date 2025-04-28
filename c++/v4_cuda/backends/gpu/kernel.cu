@@ -137,3 +137,15 @@ __global__ void sum(float *Md, float *Nd, int M, int N) {
         Nd[index] = sum;
     }
 }
+
+__global__ void transpose(float *Md, float *Nd, int M, int N) {
+
+    int row = blockIdx.y * blockDim.y + threadIdx.y;
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
+
+    if (row >= M || col >= N) {
+        return ;
+    } else {
+        Nd[col * M + row] = Md[row * N + col];
+    }
+}

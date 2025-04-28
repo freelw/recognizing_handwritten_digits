@@ -279,7 +279,8 @@ Matrix *Matrix::at(Matrix &m) {
 
 Matrix *Matrix::transpose() {
     Matrix *res = allocTmpMatrix(Shape(shape.colCnt, shape.rowCnt));
-    g_backend_ops->operator_transpose(res, this);
+    // g_backend_ops->operator_transpose(res, this);
+    g_gpu_backend_ops->operator_transpose(res, this);
     return res;
 }
 
