@@ -36,10 +36,11 @@ Matrix::Matrix(const Matrix &m):
     assert(initialized);
     // assert(m.is_sync());
     data = new DATATYPE[shape.size()];
-    data_device = g_gpu_backend_ops->allocDeviceMem(shape.size() * sizeof(DATATYPE));
-    g_gpu_backend_ops->deviceMemcpy(data_device, m.data_device, shape.size() * sizeof(DATATYPE));
+    auto size = shape.size() * sizeof(DATATYPE);
+    data_device = g_gpu_backend_ops->allocDeviceMem(size);
+    g_gpu_backend_ops->deviceMemcpy(data_device, m.data_device, size);
     allocated = true;
-    memcpy(data, m.data, sizeof(DATATYPE) * shape.rowCnt * shape.colCnt);
+    memcpy(data, m.data, size);
     increase_cpu_ver();
     sync();
 }
@@ -245,12 +246,29 @@ Shape Matrix::getShape() const {
     return shape;
 }
 
+bool check(float *h_output, float *res, int size) {
+    for (int i = 0; i < size; ++i) {
+        if (fabs(h_output[i] - res[i]) > 1e-2) {
+            std::cout << "Error: " << "[" << i << "] " << h_output[i] << " != " << res[i] << std::endl;
+            return false;
+        }
+    }
+    return true;
+}
+
 Matrix *Matrix::at(Matrix &m) {
     assert(m.shape.rowCnt == shape.colCnt);
+    // Matrix *res_gpu = allocTmpMatrix(Shape(shape.rowCnt, m.shape.colCnt));
     Matrix *res = allocTmpMatrix(Shape(shape.rowCnt, m.shape.colCnt));
+    this->sync();
+    m.sync();
+    assert(this->is_sync());
+    assert(m.is_sync());
+    assert(res->is_sync());
     g_gpu_backend_ops->operator_at(res, this, m);
     // g_backend_ops->operator_at(res, this, m);
     res->sync();
+    // assert(check(res_gpu->getLowLevelData(), res->getLowLevelData(), shape.rowCnt * m.shape.colCnt));
     return res;
 }
 
@@ -272,7 +290,8 @@ void Matrix::reShape(Shape _shape) {
     data = new DATATYPE[shape.size()];
     zero();
     data_device = g_gpu_backend_ops->allocDeviceMem(shape.size() * sizeof(DATATYPE));
-    cp_to_device();
+    increase_cpu_ver();
+    sync();
 }
 
 Matrix *Matrix::assign(Matrix *other) {
@@ -433,11 +452,11 @@ bool Matrix::is_sync() const {
 }
 
 void Matrix::increase_cpu_ver() {
-    cpu_ver++;
+    cpu_ver = gpu_ver + 1;
 }
 
 void Matrix::increase_gpu_ver() {
-    gpu_ver++;
+    gpu_ver = cpu_ver + 1;
 }
 
 TrainingData::TrainingData(int input_layer_size, int _y)
