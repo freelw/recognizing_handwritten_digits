@@ -64,9 +64,8 @@ __global__ void add_eq_kernel(float *Md, float *Nd, int M, int N) {
 }
 
 __global__ void cross_entropy_loss(
-    float *input,
-    uint *labels,
-    float *loss,
+    float *input, uint *labels, float *loss,
+    float *maxs, float *sums,
     int N, int C) {
 
     int index = blockIdx.x * blockDim.x + threadIdx.x;
@@ -81,11 +80,13 @@ __global__ void cross_entropy_loss(
             float z = input[i*C + index];
             max_val = fmaxf(max_val, z);
         }
+        maxs[index] = max_val;
         float sum = 0;
         for (int i = 0; i < C; ++i) {
             float z = input[i*C + index];
             sum += expf(z - max_val);
         }
+        sums[index] = sum;
         float zt = input[label * N + index];
         tmp_loss = -zt + max_val + logf(sum);
     }

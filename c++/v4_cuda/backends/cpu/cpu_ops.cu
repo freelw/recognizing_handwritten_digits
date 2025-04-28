@@ -17,14 +17,17 @@ void CPUBackendOps::cp_from_device(void* dst, const void* src, size_t size) {
 Matrix *CPUBackendOps::CrossEntropyLoss(
     Matrix *input,
     const std::vector<uint> &labels,
-    std::vector<autograd_cuda::CrosEntropyInfo> &info) {
+    Matrix *&maxs, Matrix *&sums) {
 
     input->increase_cpu_ver();
     assert(input->getShape().colCnt == labels.size());
-    assert(info.size() == 0);
+    
     Matrix *loss = allocTmpMatrix(Shape(1,1));
     DATATYPE loss_value = 0;
-    info.resize(input->getShape().colCnt);
+
+    auto shape = input->getShape();
+    maxs = allocTmpMatrix(Shape(shape.colCnt, 1));
+    sums = allocTmpMatrix(Shape(shape.colCnt, 1));
 
     #pragma omp parallel for reduction(+:loss_value)
     for (uint j = 0; j < input->getShape().colCnt; ++ j) {
@@ -43,9 +46,8 @@ Matrix *CPUBackendOps::CrossEntropyLoss(
             e = std::exp(e-max);
             sum += e;
         }
-        autograd_cuda::CrosEntropyInfo &p = info[j];
-        p.sum = sum;
-        p.max = max;
+        (*maxs)[j][0] = max;
+        (*sums)[j][0] = sum;
         loss_value += -(zt - max - log(sum));
     }
     (*loss)[0][0] = loss_value/labels.size();
@@ -186,13 +188,13 @@ void CPUBackendOps::CrossEntropyEdgeBackward(
     Matrix *w,
     Matrix *grad,
     const std::vector<uint> &labels,
-    const std::vector<autograd_cuda::CrosEntropyInfo> &info) {
+    Matrix *maxs, Matrix *sums) {
     
     #pragma omp parallel for
     for (uint i = 0; i < labels.size(); ++i) {
         auto target = labels[i];
-        DATATYPE max = info[i].max;
-        DATATYPE sum = info[i].sum;
+        DATATYPE max = maxs->get_val(i, 0);
+        DATATYPE sum = sums->get_val(i, 0);
         for (uint j = 0; j < w->getShape().rowCnt; ++j) {
             if (j == target) {
                 continue;

@@ -11,7 +11,7 @@ class CPUBackendOps : public BackendOps {
         virtual Matrix *CrossEntropyLoss(
             Matrix *input,
             const std::vector<uint> &labels,
-            std::vector<autograd_cuda::CrosEntropyInfo> &info) override;
+            Matrix *&maxs, Matrix *&sums) override;
         virtual Matrix *CrossEntropyLossMask(
             Matrix *input,
             const std::vector<uint> &labels,
@@ -28,7 +28,7 @@ class CPUBackendOps : public BackendOps {
             Matrix *w,
             Matrix *grad,
             const std::vector<uint> &labels,
-            const std::vector<autograd_cuda::CrosEntropyInfo> &info) override;
+            Matrix *maxs, Matrix *sums) override;
         virtual void CrossEntropyMaskEdgeBackward(
             Matrix *w,
             Matrix *grad,
