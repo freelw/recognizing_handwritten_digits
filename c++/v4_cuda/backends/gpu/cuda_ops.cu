@@ -394,8 +394,8 @@ void GPUBackendOps::operator_assign(Matrix *res, Matrix *w) {
 }
 
 void GPUBackendOps::operator_sum(Matrix *res, Matrix *w) {    
-    res->sync();
-    w->sync();
+    // res->sync();
+    // w->sync();
 
     auto wshape = w->getShape();
     auto rshape = res->getShape();
@@ -418,8 +418,8 @@ void GPUBackendOps::operator_sum(Matrix *res, Matrix *w) {
         M, N
     );
 
-    res->increase_gpu_ver();
-    res->sync();
+    // res->increase_gpu_ver();
+    // res->sync();
 }
 
 void GPUBackendOps::operator_split(std::vector<Matrix *> &res, Matrix *w) {
