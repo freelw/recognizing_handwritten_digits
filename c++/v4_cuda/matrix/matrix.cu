@@ -335,7 +335,7 @@ DATATYPE *Matrix::getLowLevelData() const {
     return data;
 }
 
-DATATYPE *Matrix::getLowLevelDataDevice() const {
+void *Matrix::getLowLevelDataDevice() const {
     return data_device;
 }
 

@@ -249,7 +249,7 @@ void CPUBackendOps::NormEdgeBackward(
     assert(false);
 }
 
-DATATYPE *CPUBackendOps::allocDeviceMem(size_t size) {
+void *CPUBackendOps::allocDeviceMem(size_t size) {
     return nullptr;
 }
 
@@ -257,7 +257,7 @@ void CPUBackendOps::deviceMemcpy(void *dst, const void *src, size_t size) {
     assert(false);
 }
 
-void CPUBackendOps::releaseDeviceMem(DATATYPE *ptr) {
+void CPUBackendOps::releaseDeviceMem(void *ptr) {
     assert(ptr == nullptr);
 }
 

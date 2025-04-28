@@ -18,9 +18,29 @@ Matrix *GPUBackendOps::CrossEntropyLoss(
     Matrix *input,
     const std::vector<uint> &labels,
     std::vector<autograd_cuda::CrosEntropyInfo> &info) {
-    std::cerr << "CrossEntropyLoss unimplemented" << std::endl;
-    assert(false);
-    return nullptr;
+    
+    uint *d_labels = (uint *)g_gpu_backend_ops->allocDeviceMem(labels.size() * sizeof(uint));
+    cp_to_device(d_labels, labels.data(), labels.size() * sizeof(uint));
+    Matrix *loss = allocTmpMatrix(Shape(1,1));
+    input->sync();
+    auto shape = input->getShape();
+    const int N = shape.colCnt;
+    const int C = shape.rowCnt;
+    dim3 gridDim(
+        (N + TILE_WIDTH - 1) / TILE_WIDTH
+    );
+    dim3 blockDim(
+        TILE_WIDTH
+    );
+    cross_entropy_loss<<<gridDim, blockDim>>>(
+        (DATATYPE *)input->getLowLevelDataDevice(),
+        d_labels,
+        (DATATYPE *)loss->getLowLevelDataDevice(),
+        N, C);
+    releaseDeviceMem(d_labels);
+    loss->increase_gpu_ver();
+    loss->sync();
+    return loss;
 }
 
 Matrix *GPUBackendOps::CrossEntropyLossMask(
@@ -90,8 +110,8 @@ void GPUBackendOps::NormEdgeBackward(
     assert(false);
 }
 
-DATATYPE *GPUBackendOps::allocDeviceMem(size_t size) {
-    DATATYPE *ret = nullptr;
+void *GPUBackendOps::allocDeviceMem(size_t size) {
+    void *ret = nullptr;
     cudaMalloc((void **)&ret, size);
     return ret;
 }
@@ -100,7 +120,7 @@ void GPUBackendOps::deviceMemcpy(void *dst, const void *src, size_t size) {
     cudaMemcpy(dst, src, size, cudaMemcpyDeviceToDevice);
 }
 
-void GPUBackendOps::releaseDeviceMem(DATATYPE *ptr) {
+void GPUBackendOps::releaseDeviceMem(void *ptr) {
     assert(ptr != nullptr);
     cudaFree(ptr);
 }
@@ -130,7 +150,7 @@ void GPUBackendOps::expand_add(Matrix *w, Matrix &m) {
         TILE_WIDTH
     );
 
-    expand_add_kernel<<<gridDim, blockDim>>>(w->getLowLevelDataDevice(), m.getLowLevelDataDevice(), M, N);
+    expand_add_kernel<<<gridDim, blockDim>>>((DATATYPE *)w->getLowLevelDataDevice(), (DATATYPE *)m.getLowLevelDataDevice(), M, N);
 
     w->increase_gpu_ver();
     w->sync();
@@ -159,7 +179,7 @@ void GPUBackendOps::operator_add(Matrix *w, Matrix &m) {
         TILE_WIDTH
     );
 
-    add_eq_kernel<<<gridDim, blockDim>>>(w->getLowLevelDataDevice(), m.getLowLevelDataDevice(), M, N);
+    add_eq_kernel<<<gridDim, blockDim>>>((DATATYPE *)w->getLowLevelDataDevice(), (DATATYPE *)m.getLowLevelDataDevice(), M, N);
 
     w->increase_gpu_ver();
     w->sync();
@@ -228,7 +248,7 @@ void GPUBackendOps::operator_relu(Matrix *w) {
         TILE_WIDTH
     );
 
-    relu_kernel<<<gridDim, blockDim>>>(w->getLowLevelDataDevice(), M);
+    relu_kernel<<<gridDim, blockDim>>>((DATATYPE *)w->getLowLevelDataDevice(), M);
     w->increase_gpu_ver();
     w->sync();
 }
@@ -276,9 +296,9 @@ void GPUBackendOps::operator_at(Matrix *res, Matrix *w, Matrix &m) {
         TILE_WIDTH,
         TILE_WIDTH
     );
-    DATATYPE *d_Md = w->getLowLevelDataDevice();
-    DATATYPE *d_Nd = m.getLowLevelDataDevice();
-    DATATYPE *d_Pd = res->getLowLevelDataDevice();
+    DATATYPE *d_Md = (DATATYPE *)w->getLowLevelDataDevice();
+    DATATYPE *d_Nd = (DATATYPE *)m.getLowLevelDataDevice();
+    DATATYPE *d_Pd = (DATATYPE *)res->getLowLevelDataDevice();
 
     matrixmul<<<gridDim, blockDim>>>(d_Md, d_Nd, d_Pd, M, N, P);
     res->increase_gpu_ver();

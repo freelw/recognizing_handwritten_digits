@@ -62,3 +62,37 @@ __global__ void add_eq_kernel(float *Md, float *Nd, int M, int N) {
        Md[row * N + col] += Nd[row * N + col];
     }
 }
+
+__global__ void cross_entropy_loss(
+    float *input,
+    uint *labels,
+    float *loss,
+    int N, int C) {
+
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    float tmp_loss = 0;
+    if (index >= N) {
+        return ;
+    } else {
+        uint label = labels[index];
+        float max_val = -1e10;
+        
+        for (int i = 0; i < C; ++i) {
+            float z = input[i*C + index];
+            max_val = fmaxf(max_val, z);
+        }
+        float sum = 0;
+        for (int i = 0; i < C; ++i) {
+            float z = input[i*C + index];
+            sum += expf(z - max_val);
+        }
+        float zt = input[label * N + index];
+        tmp_loss = -zt + max_val + logf(sum);
+    }
+    atomicAdd(loss, tmp_loss);
+    __syncthreads();
+    // reduce avg tmp_loss
+    if (blockIdx.x == 0 && threadIdx.x == 0) {
+        *loss = (*loss) / N;
+    }
+}

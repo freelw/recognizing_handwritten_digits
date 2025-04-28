@@ -78,7 +78,7 @@ public:
     void increase_cpu_ver();
     void increase_gpu_ver();
     DATATYPE *getLowLevelData() const;
-    DATATYPE *getLowLevelDataDevice() const;
+    void *getLowLevelDataDevice() const;
     
 private:
     DATATYPE* operator[](unsigned int index) const;
@@ -90,7 +90,7 @@ private:
     bool allocated;
     Shape shape;
     DATATYPE *data;
-    DATATYPE *data_device;
+    void *data_device;
     bool commited;
     int cpu_ver;
     int gpu_ver;

@@ -41,9 +41,9 @@ class CPUBackendOps : public BackendOps {
             const std::vector<DATATYPE> &avg_res,
             const std::vector<DATATYPE> &var_res,
             DATATYPE eps) override;
-        virtual DATATYPE *allocDeviceMem(size_t size) override;
+        virtual void *allocDeviceMem(size_t size) override;
         virtual void deviceMemcpy(void *dst, const void *src, size_t size) override;
-        virtual void releaseDeviceMem(DATATYPE *ptr) override;
+        virtual void releaseDeviceMem(void *ptr) override;
         virtual void expand_add(Matrix *w, Matrix &m) override;
         virtual void operator_add(Matrix *w, Matrix &m) override;
         virtual void pow2(Matrix *w) override;
