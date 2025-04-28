@@ -42,6 +42,7 @@ class CPUBackendOps : public BackendOps {
             const std::vector<DATATYPE> &var_res,
             DATATYPE eps) override;
         virtual DATATYPE *allocDeviceMem(size_t size) override;
+        virtual void deviceMemcpy(void *dst, const void *src, size_t size) override;
         virtual void releaseDeviceMem(DATATYPE *ptr) override;
         virtual void expand_add(Matrix *w, const Matrix &m) override;
         virtual void operator_add(Matrix *w, const Matrix &m) override;
@@ -60,7 +61,7 @@ class CPUBackendOps : public BackendOps {
         virtual void operator_tanh(Matrix *w) override;
         virtual void operator_tanh_prime(Matrix *w) override;
         virtual void operator_equal(Matrix *w, const Matrix &m) override;
-        virtual void operator_at(Matrix *res, Matrix *w, const Matrix &m) override;
+        virtual void operator_at(Matrix *res, Matrix *w, Matrix &m) override;
         virtual void operator_transpose(Matrix *res, Matrix *w) override;
         virtual void operator_assign(Matrix *res, Matrix *w) override;
         virtual void operator_sum(Matrix *res, Matrix *w) override;
@@ -73,6 +74,5 @@ class CPUBackendOps : public BackendOps {
         virtual void operator_sigmoid_prime(Matrix *w) override;
         virtual void operator_init_weight(Matrix *w, DATATYPE sigma, DATATYPE mean = 0) override;
         virtual void operator_init_weight_uniform(Matrix *w, DATATYPE sigma) override;
-
 };
 #endif

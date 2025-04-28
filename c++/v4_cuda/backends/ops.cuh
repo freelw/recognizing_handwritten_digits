@@ -42,6 +42,7 @@ class BackendOps {
             const std::vector<DATATYPE> &var_res,
             DATATYPE eps) = 0;
         virtual DATATYPE *allocDeviceMem(size_t size) = 0;
+        virtual void deviceMemcpy(void *dst, const void *src, size_t size) = 0;
         virtual void releaseDeviceMem(DATATYPE *ptr) = 0;
         virtual void expand_add(Matrix *w, const Matrix &m) = 0;
         virtual void operator_add(Matrix *w, const Matrix &m) = 0;
@@ -60,7 +61,7 @@ class BackendOps {
         virtual void operator_tanh(Matrix *w) = 0;
         virtual void operator_tanh_prime(Matrix *w) = 0;
         virtual void operator_equal(Matrix *w, const Matrix &m) = 0;
-        virtual void operator_at(Matrix *res, Matrix *w, const Matrix &m) = 0;
+        virtual void operator_at(Matrix *res, Matrix *w, Matrix &m) = 0;
         virtual void operator_transpose(Matrix *res, Matrix *w) = 0;
         virtual void operator_assign(Matrix *w, Matrix *m) = 0;
         virtual void operator_sum(Matrix *res, Matrix *w) = 0;
@@ -76,4 +77,5 @@ class BackendOps {
 };
 
 extern BackendOps *g_backend_ops;
+extern BackendOps *g_gpu_backend_ops;
 #endif

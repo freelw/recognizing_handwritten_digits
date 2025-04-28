@@ -19,6 +19,7 @@ Matrix *CPUBackendOps::CrossEntropyLoss(
     const std::vector<uint> &labels,
     std::vector<autograd_cuda::CrosEntropyInfo> &info) {
 
+    input->increase_cpu_ver();
     assert(input->getShape().colCnt == labels.size());
     assert(info.size() == 0);
     Matrix *loss = allocTmpMatrix(Shape(1,1));
@@ -48,6 +49,7 @@ Matrix *CPUBackendOps::CrossEntropyLoss(
         loss_value += -(zt - max - log(sum));
     }
     (*loss)[0][0] = loss_value/labels.size();
+    loss->increase_cpu_ver();
     return loss;
 }
 
@@ -56,6 +58,7 @@ Matrix *CPUBackendOps::CrossEntropyLossMask(
     const std::vector<uint> &labels,
     std::vector<autograd_cuda::CrosEntropyInfo> &info,
     const std::vector<bool> &mask) {
+    input->increase_cpu_ver();
     assert(input->getShape().colCnt == labels.size());
     assert(input->getShape().colCnt == mask.size());
     assert(info.size() == 0);
@@ -99,6 +102,7 @@ Matrix *CPUBackendOps::CrossEntropyLossMask(
         loss_value += -(zt - max - log(sum));
     }
     (*loss)[0][0] = loss_value/mask_cnt;
+    loss->increase_cpu_ver();
     return loss;
 }
 
@@ -114,6 +118,7 @@ Matrix *CPUBackendOps::Norm(
             (*tmp)[i][j] = ((*w)[i][j] - avg_res[j]) / sqrt(var_res[j] + eps);
         }
     }
+    tmp->increase_cpu_ver();
     return tmp;
 }
 
@@ -137,6 +142,7 @@ Matrix *CPUBackendOps::Softmax(Matrix *w) {
             (*tmp)[i][j] /= sum;
         }
     }
+    tmp->increase_cpu_ver();
     return tmp;
 }
 
@@ -152,6 +158,7 @@ std::vector<Matrix*> CPUBackendOps::split0(Matrix *w) {
             (*m)[j][0] = (*w)[j][i];
         }
         ret.emplace_back(m);
+        m->increase_cpu_ver();
     }
     return ret;
 }
@@ -169,6 +176,7 @@ std::vector<Matrix*> CPUBackendOps::split1(Matrix *w, uint step) {
                 (*m)[j][k] = (*w)[i+j][k];
             }
         }
+        m->increase_cpu_ver();
         ret.push_back(m);
     }
     return ret;
@@ -194,6 +202,7 @@ void CPUBackendOps::CrossEntropyEdgeBackward(
         }
         (*grad)[target][i] = (std::exp((*w)[target][i] - max) / sum - 1) / labels.size();
     }
+    grad->increase_cpu_ver();
 }
 
 void CPUBackendOps::CrossEntropyMaskEdgeBackward(
@@ -228,6 +237,7 @@ void CPUBackendOps::CrossEntropyMaskEdgeBackward(
         }
         (*grad)[target][j] = (std::exp((*w)[target][j] - max) / sum - 1) / mask_cnt;
     }
+    grad->increase_cpu_ver();
 }
 
 void CPUBackendOps::NormEdgeBackward(
@@ -243,6 +253,10 @@ DATATYPE *CPUBackendOps::allocDeviceMem(size_t size) {
     return nullptr;
 }
 
+void CPUBackendOps::deviceMemcpy(void *dst, const void *src, size_t size) {
+    assert(false);
+}
+
 void CPUBackendOps::releaseDeviceMem(DATATYPE *ptr) {
     assert(ptr == nullptr);
 }
@@ -254,6 +268,7 @@ void CPUBackendOps::expand_add(Matrix *w, const Matrix &m) {
             (*w)[i][j] += m[i][0];
         }
     }
+    w->increase_cpu_ver();
 }
 
 void CPUBackendOps::operator_add(Matrix *w, const Matrix &m) {
@@ -263,6 +278,7 @@ void CPUBackendOps::operator_add(Matrix *w, const Matrix &m) {
             (*w)[i][j] += m[i][j];
         }
     }
+    w->increase_cpu_ver();
 }
 
 void CPUBackendOps::pow2(Matrix *w) {
@@ -273,6 +289,7 @@ void CPUBackendOps::pow2(Matrix *w) {
             r = std::pow(r, 2);
         }
     }
+    w->increase_cpu_ver();
 }
 
 void CPUBackendOps::operator_add_val(Matrix *w, DATATYPE v) {
@@ -282,6 +299,7 @@ void CPUBackendOps::operator_add_val(Matrix *w, DATATYPE v) {
             (*w)[i][j] += v;
         }
     }
+    w->increase_cpu_ver();
 }
 
 void CPUBackendOps::operator_minus_val(Matrix *w, DATATYPE v) {
@@ -291,6 +309,7 @@ void CPUBackendOps::operator_minus_val(Matrix *w, DATATYPE v) {
             (*w)[i][j] -= v;
         }
     }
+    w->increase_cpu_ver();
 }
 
 void CPUBackendOps::operator_negative(Matrix *w) {
@@ -300,6 +319,7 @@ void CPUBackendOps::operator_negative(Matrix *w) {
             (*w)[i][j] = -(*w)[i][j];
         }
     }
+    w->increase_cpu_ver();
 }
 
 void CPUBackendOps::operator_val_minus(DATATYPE v, Matrix *w) {
@@ -309,6 +329,7 @@ void CPUBackendOps::operator_val_minus(DATATYPE v, Matrix *w) {
             (*w)[i][j] = v - (*w)[i][j];
         }
     }
+    w->increase_cpu_ver();
 }
 
 void CPUBackendOps::operator_minus(Matrix *w, const Matrix &m) {
@@ -318,6 +339,7 @@ void CPUBackendOps::operator_minus(Matrix *w, const Matrix &m) {
             (*w)[i][j] -= m[i][j];
         }
     }
+    w->increase_cpu_ver();
 }
 
 void CPUBackendOps::operator_multiply(Matrix *w, const Matrix &m) {
@@ -336,6 +358,7 @@ void CPUBackendOps::operator_multiply_val(Matrix *w, DATATYPE v) {
             (*w)[i][j] *= v;
         }
     }
+    w->increase_cpu_ver();
 }
 
 void CPUBackendOps::operator_divide(Matrix *w, const Matrix &m) {
@@ -345,6 +368,7 @@ void CPUBackendOps::operator_divide(Matrix *w, const Matrix &m) {
             (*w)[i][j] /= m[i][j];
         }
     }
+    w->increase_cpu_ver();
 }
 
 void CPUBackendOps::operator_divide_val(Matrix *w, DATATYPE v) {
@@ -354,6 +378,7 @@ void CPUBackendOps::operator_divide_val(Matrix *w, DATATYPE v) {
             (*w)[i][j] /= v;
         }
     }
+    w->increase_cpu_ver();
 }
 
 void CPUBackendOps::operator_relu(Matrix *w) {
@@ -364,6 +389,7 @@ void CPUBackendOps::operator_relu(Matrix *w) {
             r = r > 0 ? r : 0;
         }
     }
+    w->increase_cpu_ver();
 }
 
 void CPUBackendOps::operator_relu_prime(Matrix *w) {
@@ -374,6 +400,7 @@ void CPUBackendOps::operator_relu_prime(Matrix *w) {
             r = r > 0 ? 1 : 0;
         }
     }
+    w->increase_cpu_ver();
 }
 
 void CPUBackendOps::operator_tanh(Matrix *w) {
@@ -384,6 +411,7 @@ void CPUBackendOps::operator_tanh(Matrix *w) {
             r = std::tanh(r);
         }
     }
+    w->increase_cpu_ver();
 }
 
 void CPUBackendOps::operator_tanh_prime(Matrix *w) {
@@ -394,6 +422,7 @@ void CPUBackendOps::operator_tanh_prime(Matrix *w) {
             r = 1 - std::pow(std::tanh(r), 2);
         }
     }
+    w->increase_cpu_ver();
 }
 
 void CPUBackendOps::operator_equal(Matrix *w, const Matrix &m) {
@@ -403,15 +432,16 @@ void CPUBackendOps::operator_equal(Matrix *w, const Matrix &m) {
             (*w)[i][j] = m[i][j];
         }
     }
+    w->increase_cpu_ver();
 }
 
-void CPUBackendOps::operator_at(Matrix *res, Matrix *w, const Matrix &m) {
+void CPUBackendOps::operator_at(Matrix *res, Matrix *w, Matrix &m) {
 
     auto shape = w->getShape();
     auto mshape = m.getShape();
-    DATATYPE *A = w->getData();
-    DATATYPE *B = m.getData();
-    DATATYPE *C = res->getData();
+    DATATYPE *A = w->getLowLevelData();
+    DATATYPE *B = m.getLowLevelData();
+    DATATYPE *C = res->getLowLevelData();
     #pragma omp parallel for num_threads(OMP_THREADS)
     for (uint i = 0; i < shape.rowCnt; ++i) {
         for (uint k = 0; k < shape.colCnt; ++k) {
@@ -420,6 +450,7 @@ void CPUBackendOps::operator_at(Matrix *res, Matrix *w, const Matrix &m) {
             }
         }
     }
+    res->increase_cpu_ver();
 }
 
 void CPUBackendOps::operator_transpose(Matrix *res, Matrix *w) {
@@ -433,12 +464,14 @@ void CPUBackendOps::operator_transpose(Matrix *res, Matrix *w) {
             (*res)[j][i] = (*w)[i][j];
         }
     }
+    res->increase_cpu_ver();
 }
 
 void CPUBackendOps::operator_assign(Matrix *w, Matrix *m) {
     auto shape = w->getShape();
     assert(shape == m->getShape());
     memcpy(w->data, m->data, sizeof(DATATYPE) * shape.size());
+    w->increase_cpu_ver();
 }
 
 void CPUBackendOps::operator_sum(Matrix *res, Matrix *w) {
@@ -451,6 +484,7 @@ void CPUBackendOps::operator_sum(Matrix *res, Matrix *w) {
             (*res)[i][0] += (*w)[i][j];
         }
     }
+    res->increase_cpu_ver();
 }
 
 void CPUBackendOps::operator_split(std::vector<Matrix *> &res, Matrix *w) {
@@ -462,6 +496,7 @@ void CPUBackendOps::operator_split(std::vector<Matrix *> &res, Matrix *w) {
         for (uint j = 0; j < rowCnt; ++ j) {
             (*res[i])[j][0] = (*w)[j][i];
         }
+        res[i]->increase_cpu_ver();
     }
 }
 
@@ -472,6 +507,7 @@ void CPUBackendOps::operator_fill(Matrix *w, DATATYPE value) {
             (*w)[i][j] = value;
         }
     }
+    w->increase_cpu_ver();
 }
 
 void CPUBackendOps::operator_argMax(std::vector<uint> &res, Matrix *w) {
@@ -532,6 +568,7 @@ void CPUBackendOps::operator_sigmoid(Matrix *w) {
             (*w)[i][j] = _sigmoid((*w)[i][j]);
         }
     }
+    w->increase_cpu_ver();
 }
 
 void CPUBackendOps::operator_sigmoid_prime(Matrix *w) {
@@ -542,6 +579,7 @@ void CPUBackendOps::operator_sigmoid_prime(Matrix *w) {
             r = r * (1 - r);
         }
     }
+    w->increase_cpu_ver();
 }
 
 void CPUBackendOps::operator_init_weight(Matrix *w, DATATYPE sigma, DATATYPE mean) {
@@ -554,6 +592,7 @@ void CPUBackendOps::operator_init_weight(Matrix *w, DATATYPE sigma, DATATYPE mea
             (*w)[i][j] = distribution_w(generator_w) + mean;
         }
     }
+    w->increase_cpu_ver();
 }
 
 void CPUBackendOps::operator_init_weight_uniform(Matrix *w, DATATYPE sigma) {
@@ -566,4 +605,5 @@ void CPUBackendOps::operator_init_weight_uniform(Matrix *w, DATATYPE sigma) {
             (*w)[i][j] = distribution_w(generator_w);
         }
     }
+    w->increase_cpu_ver();
 }

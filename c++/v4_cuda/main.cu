@@ -8,6 +8,7 @@
 #include <random>
 #include <chrono>
 #include "backends/cpu/cpu_ops.cuh"
+#include "backends/gpu/cuda_ops.cuh"
 
 #define INPUT_LAYER_SIZE 784
 
@@ -25,7 +26,8 @@ DATATYPE update_mini_batch(
             input->set_val(i, j, mini_batch[j]->x[i]);
         }
     }
-    input->cp_to_device();
+    input->increase_cpu_ver();
+    input->sync();
     labels.reserve(mini_batch.size());
     for (uint j = 0; j < mini_batch.size(); ++ j) {
         labels.emplace_back(mini_batch[j]->y);
@@ -34,7 +36,7 @@ DATATYPE update_mini_batch(
     auto loss = m.forward(autograd_cuda::allocNode(input))->CrossEntropy(labels);
     assert(loss->get_weight()->getShape().rowCnt == 1);
     assert(loss->get_weight()->getShape().colCnt == 1);
-    loss->get_weight()->cp_from_device();
+    loss->get_weight()->sync();
     DATATYPE ret = loss->get_weight()->get_val(0, 0);
     loss->backward();
     optimizer.step();
@@ -49,7 +51,7 @@ int evaluate(autograd_cuda::MLP &m, std::vector<TrainingData*> &v_test_data) {
     for (uint i = 0; i < v_test_data.size(); ++ i) {
         Matrix *input = allocTmpMatrix(v_test_data[i]->x);
         Matrix *res = m.forward(autograd_cuda::allocNode(input))->get_weight();
-        res->cp_from_device();
+        res->sync();
         res->checkShape(Shape(10, 1));
         uint index = res->argMax()[0];
         if (index == v_test_data[i]->y) {
@@ -133,6 +135,7 @@ int main(int argc, char *argv[]) {
     int use_dropout = atoi(argv[3]);
     int eval = atoi(argv[4]);
     g_backend_ops = new CPUBackendOps();
+    g_gpu_backend_ops = new GPUBackendOps();
     train(epochs, batch_size, use_dropout == 1, eval == 1);
     freeTmpMatrix();
     return 0;

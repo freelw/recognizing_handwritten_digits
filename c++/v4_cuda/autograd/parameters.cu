@@ -46,13 +46,14 @@ namespace autograd_cuda {
     }
 
     std::string Parameters::serialize() {
+        sync();
+
         Shape shape = w->getShape();
-        DATATYPE *w_data = w->get_weight()->getData();
-        DATATYPE *m_data = m->getData();
-        DATATYPE *v_data = v->getData();
+        DATATYPE *w_data = w->get_weight()->getLowLevelData();
+        DATATYPE *m_data = m->getLowLevelData();
+        DATATYPE *v_data = v->getLowLevelData();
         int data_width = sizeof(DATATYPE);
         int data_size = shape.size() * data_width;
-        
 
         int tot_size = 0;
         tot_size += sizeof(data_width);
@@ -113,14 +114,26 @@ namespace autograd_cuda {
         #pragma GCC diagnostic ignored "-Wsign-compare"    
         assert(data_size == shape.size() * data_width);
         #pragma GCC diagnostic pop
-        memcpy(w->get_weight()->getData(), buffer + offset, data_size);
+        memcpy(w->get_weight()->getLowLevelData(), buffer + offset, data_size);
         offset += data_size;
-        memcpy(m->getData(), buffer + offset, data_size);
+        memcpy(m->getLowLevelData(), buffer + offset, data_size);
         offset += data_size;
-        memcpy(v->getData(), buffer + offset, data_size);
+        memcpy(v->getLowLevelData(), buffer + offset, data_size);
+
+        w->get_weight()->increase_cpu_ver();
+        m->increase_cpu_ver();
+        v->increase_cpu_ver();
+
+        sync();
     }
 
     bool Parameters::require_grad() {
         return w->is_require_grad();
+    }
+
+    void Parameters::sync() {
+        w->get_weight()->sync();
+        m->sync();
+        v->sync();
     }
 } // namespace autograd

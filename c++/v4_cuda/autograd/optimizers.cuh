@@ -16,6 +16,9 @@ namespace autograd_cuda {
             void zero_grad();
             bool clip_grad(DATATYPE grad_clip_val);
         private:
+            void sync();
+            void increase_cpu_ver();
+        private:
             std::vector<Parameters*> parameters;
             DATATYPE lr; 
             DATATYPE beta1;

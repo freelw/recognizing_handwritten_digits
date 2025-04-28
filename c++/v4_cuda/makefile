@@ -3,7 +3,7 @@ DIR_INC += -I../utils/
 
 DIR_LIB = -L./
 TARGET	= mnist_cuda
-CFLAGS = $(DIR_INC) $(DIR_LIB)
+CFLAGS = $(DIR_INC) $(DIR_LIB) -g -G
 SRCDIR := ./matrix
 SRCDIR += ./autograd
 SRCDIR += ./backends/cpu

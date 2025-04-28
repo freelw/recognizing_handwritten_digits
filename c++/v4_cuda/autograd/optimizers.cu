@@ -3,6 +3,8 @@
 
 namespace autograd_cuda {
     void Adam::step() {
+
+        sync();
         
         for (auto p : parameters) {
             if (!p->require_grad()) {
@@ -21,10 +23,10 @@ namespace autograd_cuda {
             for (uint i = 0; i < shape.rowCnt; ++ i) {
                 for (uint j = 0; j < shape.colCnt; ++ j) {
                     // 下面的都应该是device data
-                    auto weight_data = weight->getData();
-                    auto grad_data = grad->getData();
-                    auto mm_data = mm->getData();
-                    auto mv_data = mv->getData();
+                    auto weight_data = weight->getLowLevelData();
+                    auto grad_data = grad->getLowLevelData();
+                    auto mm_data = mm->getLowLevelData();
+                    auto mv_data = mv->getLowLevelData();
                     auto &value = weight_data[i*shape.colCnt + j];
                     auto &m = mm_data[i*shape.colCnt + j];
                     auto &v = mv_data[i*shape.colCnt + j];
@@ -42,6 +44,9 @@ namespace autograd_cuda {
                 }
             }
         }
+
+        increase_cpu_ver();
+        sync();
     }
 
     void Adam::zero_grad() {
@@ -51,9 +56,12 @@ namespace autograd_cuda {
             }
             p->zero_grad();
         }
+        increase_cpu_ver();
+        sync();
     }
 
     bool Adam::clip_grad(DATATYPE grad_clip_val) {
+        sync();
         DATATYPE norm = 0;
         
         for (auto param : parameters) {
@@ -62,7 +70,7 @@ namespace autograd_cuda {
             }
             
             auto grad = param->get_grad();
-            auto grad_data = grad->getData();
+            auto grad_data = grad->getLowLevelData();
             Shape shape = grad->getShape();
             for (uint i = 0; i < shape.rowCnt; ++ i) {
                 for (uint j = 0; j < shape.colCnt; ++ j) {
@@ -83,7 +91,33 @@ namespace autograd_cuda {
                 *grad *= grad_clip_val / norm;
             }
         }
+        increase_cpu_ver();
+        sync();
         return norm > grad_clip_val;
+    }
+
+    void Adam::sync() {
+        for (auto p : parameters) {
+            if (!p->require_grad()) {
+                continue;
+            }
+            p->get_weight()->sync();
+            p->get_grad()->sync();
+            p->get_m()->sync();
+            p->get_v()->sync();
+        }
+    }
+
+    void Adam::increase_cpu_ver() {
+        for (auto p : parameters) {
+            if (!p->require_grad()) {
+                continue;
+            }
+            p->get_weight()->increase_cpu_ver();
+            p->get_grad()->increase_cpu_ver();
+            p->get_m()->increase_cpu_ver();
+            p->get_v()->increase_cpu_ver();
+        }
     }
 
 } // namespace autograd

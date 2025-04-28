@@ -23,7 +23,6 @@ struct Shape {
     }
 };
 
-// typedef double DATATYPE;
 typedef float DATATYPE;
 
 class Matrix {
@@ -56,7 +55,7 @@ public:
     Matrix& operator=(const Matrix &m);
     Matrix *pow2();
     Shape getShape() const;
-    Matrix *at(const Matrix &m);
+    Matrix *at(Matrix &m);
     Matrix *transpose();
     bool valid(uint x, uint y) const;
     void reShape(Shape shape);
@@ -64,7 +63,6 @@ public:
     bool checkShape(const Matrix &m);
     Matrix *sum(uint dim);
     std::vector<Matrix *> split(uint dim);
-    DATATYPE *getData() const;
     Matrix *fill(DATATYPE value);
     std::vector<uint> argMax();
     std::vector<DATATYPE> avg();
@@ -74,10 +72,19 @@ public:
     void init_weight_uniform(DATATYPE sigma);
     void set_val(int i, int j, DATATYPE val);
     DATATYPE get_val(int i, int j) const;
-    void cp_to_device();
-    void cp_from_device();
+    
+    void sync();
+    bool is_sync() const;
+    void increase_cpu_ver();
+    void increase_gpu_ver();
+    DATATYPE *getLowLevelData() const;
+    DATATYPE *getLowLevelDataDevice() const;
+    
 private:
     DATATYPE* operator[](unsigned int index) const;
+    void cp_to_device();
+    void cp_from_device();
+
 private:
     bool initialized;
     bool allocated;
@@ -85,8 +92,11 @@ private:
     DATATYPE *data;
     DATATYPE *data_device;
     bool commited;
+    int cpu_ver;
+    int gpu_ver;
 
 friend class CPUBackendOps;
+friend class GPUBackendOps;
 };
 
 Matrix *sigmoid(const Matrix &m);
