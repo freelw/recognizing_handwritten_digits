@@ -97,3 +97,29 @@ __global__ void cross_entropy_loss(
         *loss = (*loss) / N;
     }
 }
+
+__global__ void cross_entropy_loss_backward(
+    float *w, float *grad, uint *labels,
+    float *maxs, float *sums,
+    int N, int C) {
+    
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index >= N) {
+        return ;
+    } else {
+        uint label = labels[index];
+        float max_val = maxs[index];
+        float sum = sums[index];
+        for (int i = 0; i < C; ++i) {
+            float z = w[i*N + index];
+            float res = 0;
+            if (i == label) {
+                res = expf(z - max_val) / sum - 1;
+            } else {
+                res = expf(z - max_val) / sum;
+            }
+            res /= N;
+            grad[i*N + index] = res;
+        }
+    }
+}

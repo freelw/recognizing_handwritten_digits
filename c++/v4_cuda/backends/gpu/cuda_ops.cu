@@ -19,7 +19,7 @@ Matrix *GPUBackendOps::CrossEntropyLoss(
     const std::vector<uint> &labels,
     Matrix *&maxs, Matrix *&sums) {
     
-    uint *d_labels = (uint *)g_gpu_backend_ops->allocDeviceMem(labels.size() * sizeof(uint));
+    uint *d_labels = (uint *)allocDeviceMem(labels.size() * sizeof(uint));
     cp_to_device(d_labels, labels.data(), labels.size() * sizeof(uint));
     auto shape = input->getShape();
     maxs = allocTmpMatrix(Shape(shape.colCnt, 1));
@@ -94,8 +94,35 @@ void GPUBackendOps::CrossEntropyEdgeBackward(
     Matrix *grad,
     const std::vector<uint> &labels,
     Matrix *maxs, Matrix *sums) {
-    std::cerr << "CrossEntropyEdgeBackward unimplemented" << std::endl;
-    assert(false);
+    w->sync();
+    grad->sync();
+    maxs->sync();
+    sums->sync();
+
+    uint *d_labels = (uint *)allocDeviceMem(labels.size() * sizeof(uint));
+
+    cp_to_device(d_labels, labels.data(), labels.size() * sizeof(uint));
+
+    auto shape = w->getShape();
+    const int N = shape.colCnt;
+    const int C = shape.rowCnt;
+    dim3 gridDim(
+        (N + TILE_WIDTH - 1) / TILE_WIDTH
+    );
+    dim3 blockDim(
+        TILE_WIDTH
+    );
+    cross_entropy_loss_backward<<<gridDim, blockDim>>>(
+        (DATATYPE *)w->getLowLevelDataDevice(),
+        (DATATYPE *)grad->getLowLevelDataDevice(),
+        d_labels,
+        (DATATYPE *)maxs->getLowLevelDataDevice(),
+        (DATATYPE *)sums->getLowLevelDataDevice(),
+        N, C);
+    releaseDeviceMem(d_labels);
+
+    grad->increase_gpu_ver();
+    grad->sync();
 }
 
 void GPUBackendOps::CrossEntropyMaskEdgeBackward(
