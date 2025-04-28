@@ -37,14 +37,13 @@ Matrix::Matrix(const Matrix &m):
     gpu_ver(m.gpu_ver) {
     assert(initialized);
     // assert(m.is_sync());
+    assert(gpu_ver >= cpu_ver);
     data = new DATATYPE[shape.size()];
     auto size = shape.size() * sizeof(DATATYPE);
     data_device = g_gpu_backend_ops->allocDeviceMem(size);
     g_gpu_backend_ops->deviceMemcpy(data_device, m.data_device, size);
     allocated = true;
     memcpy(data, m.data, size);
-    increase_cpu_ver();
-    sync();
 }
 
 Matrix::Matrix(const std::vector<DATATYPE> &v):
@@ -264,17 +263,14 @@ bool check(float *h_output, float *res, int size) {
 
 Matrix *Matrix::at(Matrix &m) {
     assert(m.shape.rowCnt == shape.colCnt);
-    // Matrix *res_gpu = allocTmpMatrix(Shape(shape.rowCnt, m.shape.colCnt));
     Matrix *res = allocTmpMatrix(Shape(shape.rowCnt, m.shape.colCnt));
-    this->sync();
-    m.sync();
-    assert(this->is_sync());
-    assert(m.is_sync());
-    assert(res->is_sync());
+    // this->sync();
+    // m.sync();
+    // assert(this->is_sync());
+    // assert(m.is_sync());
+    // assert(res->is_sync());
     g_gpu_backend_ops->operator_at(res, this, m);
-    // g_backend_ops->operator_at(res, this, m);
-    res->sync();
-    // assert(check(res_gpu->getLowLevelData(), res->getLowLevelData(), shape.rowCnt * m.shape.colCnt));
+    // res->sync();
     return res;
 }
 
