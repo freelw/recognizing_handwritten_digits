@@ -79,11 +79,12 @@ public:
     void increase_gpu_ver();
     DATATYPE *getLowLevelData() const;
     void *getLowLevelDataDevice() const;
+    void cp_to_device();
+    void cp_from_device();
     
 private:
     DATATYPE* operator[](unsigned int index) const;
-    void cp_to_device();
-    void cp_from_device();
+    
 
 private:
     bool initialized;

@@ -438,7 +438,7 @@ void Matrix::cp_to_device() {
 }
 
 void Matrix::cp_from_device() {
-    assert(cpu_ver < gpu_ver);
+    // assert(cpu_ver < gpu_ver);
     g_gpu_backend_ops->cp_from_device(data, data_device, shape.size()*sizeof(DATATYPE));
     cpu_ver = gpu_ver;
 }

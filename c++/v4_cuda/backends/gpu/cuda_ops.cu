@@ -322,8 +322,8 @@ void GPUBackendOps::operator_equal(Matrix *w, const Matrix &m) {
 }
 
 void GPUBackendOps::operator_at(Matrix *res, Matrix *w, Matrix &m) {
-    w->sync();
-    m.sync();
+    // w->sync();
+    // m.sync();
 
     auto wshape = w->getShape();
     auto mshape = m.getShape();
@@ -349,7 +349,7 @@ void GPUBackendOps::operator_at(Matrix *res, Matrix *w, Matrix &m) {
     DATATYPE *d_Pd = (DATATYPE *)res->getLowLevelDataDevice();
 
     matrixmul<<<gridDim, blockDim>>>(d_Md, d_Nd, d_Pd, M, N, P);
-    res->increase_gpu_ver();
+    // res->increase_gpu_ver();
 }
 
 void GPUBackendOps::operator_transpose(Matrix *res, Matrix *w) {
