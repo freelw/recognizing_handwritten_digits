@@ -310,7 +310,8 @@ Matrix *Matrix::sum(uint dim) {
     assert(dim == 1);
     if (dim == 1) {
         Matrix *res = allocTmpMatrix(Shape(shape.rowCnt, 1));
-        g_backend_ops->operator_sum(res, this);
+        // g_backend_ops->operator_sum(res, this);
+        g_gpu_backend_ops->operator_sum(res, this);
         return res;
     }
     return nullptr;

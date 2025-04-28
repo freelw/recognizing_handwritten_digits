@@ -123,3 +123,17 @@ __global__ void cross_entropy_loss_backward(
         }
     }
 }
+
+__global__ void sum(float *Md, float *Nd, int M, int N) {
+
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index >= M) {
+        return ;
+    } else {
+        float sum = 0;
+        for (int i = 0; i < N; ++i) {
+            sum += Md[index * N + i];
+        }
+        Nd[index] = sum;
+    }
+}

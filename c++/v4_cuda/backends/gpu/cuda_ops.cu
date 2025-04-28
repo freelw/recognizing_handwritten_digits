@@ -349,9 +349,33 @@ void GPUBackendOps::operator_assign(Matrix *res, Matrix *w) {
     assert(false);
 }
 
-void GPUBackendOps::operator_sum(Matrix *res, Matrix *w) {
-    std::cerr << "operator_sum unimplemented" << std::endl;
-    assert(false);
+void GPUBackendOps::operator_sum(Matrix *res, Matrix *w) {    
+    res->sync();
+    w->sync();
+
+    auto wshape = w->getShape();
+    auto rshape = res->getShape();
+
+    assert(rshape.rowCnt == wshape.rowCnt);
+    assert(rshape.colCnt == 1);
+
+    const int M = wshape.rowCnt;
+    const int N = wshape.colCnt;
+    dim3 gridDim(
+        (M + TILE_WIDTH - 1) / TILE_WIDTH
+    );
+    dim3 blockDim(
+        TILE_WIDTH
+    );
+
+    sum<<<gridDim, blockDim>>>(
+        (DATATYPE *)w->getLowLevelDataDevice(),
+        (DATATYPE *)res->getLowLevelDataDevice(),
+        M, N
+    );
+
+    res->increase_gpu_ver();
+    res->sync();
 }
 
 void GPUBackendOps::operator_split(std::vector<Matrix *> &res, Matrix *w) {
