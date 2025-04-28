@@ -161,18 +161,6 @@ void GPUBackendOps::operator_add(Matrix *w, Matrix &m) {
 
     add_eq_kernel<<<gridDim, blockDim>>>(w->getLowLevelDataDevice(), m.getLowLevelDataDevice(), M, N);
 
-    // auto shape = w->getShape();
-    // const int M = shape.size();
-
-    // dim3 gridDim(
-    //     (M + TILE_WIDTH - 1) / TILE_WIDTH
-    // );
-    // dim3 blockDim(
-    //     TILE_WIDTH
-    // );
-
-    // kahan_sum<<<gridDim, blockDim>>>(w->getLowLevelDataDevice(), m.getLowLevelDataDevice(), M);
-
     w->increase_gpu_ver();
     w->sync();
 }

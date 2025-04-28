@@ -62,27 +62,3 @@ __global__ void add_eq_kernel(float *Md, float *Nd, int M, int N) {
        Md[row * N + col] += Nd[row * N + col];
     }
 }
-
-__global__ void kahan_sum(float *input, float *output, int n) {
-    __shared__ float s_partial_sum;
-    __shared__ float s_c;
-
-    int idx = threadIdx.x + blockIdx.x * blockDim.x;
-    if (threadIdx.x == 0) {
-        s_partial_sum = 0.0f;
-        s_c = 0.0f;
-    }
-    __syncthreads();
-
-    if (idx < n) {
-        float y = input[idx] - s_c;
-        float t = s_partial_sum + y;
-        s_c = (t - s_partial_sum) - y;
-        s_partial_sum = t;
-    }
-    __syncthreads();
-
-    if (threadIdx.x == 0) {
-        atomicAdd(output, s_partial_sum);
-    }
-}
