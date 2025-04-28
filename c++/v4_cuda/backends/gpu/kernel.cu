@@ -39,3 +39,15 @@ __global__ void expand_add_kernel(
        Md[row * N + col] += Nd[row];
     }
 }
+
+__global__ void relu_kernel(float *Md, int M) {
+
+    int row = blockIdx.y * blockDim.y + threadIdx.y;
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
+
+    if (row >= M) {
+            
+    } else {
+        Md[row * M + col] = fmaxf(0, Md[row * M + col]);
+    }
+}

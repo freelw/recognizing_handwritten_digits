@@ -208,7 +208,8 @@ Matrix *Matrix::operator/(DATATYPE v) {
 
 Matrix *Matrix::Relu() {
     Matrix *res = allocTmpMatrix(this);
-    g_backend_ops->operator_relu(res);
+    // g_backend_ops->operator_relu(res);
+    g_gpu_backend_ops->operator_relu(res);
     return res;
 }
 

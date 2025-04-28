@@ -192,8 +192,21 @@ void GPUBackendOps::operator_divide_val(Matrix *w, DATATYPE v) {
 }
 
 void GPUBackendOps::operator_relu(Matrix *w) {
-    std::cerr << "operator_relu unimplemented" << std::endl;
-    assert(false);
+    w->sync();
+
+    auto shape = w->getShape();
+    const int M = shape.size();
+
+    dim3 gridDim(
+        (M + TILE_WIDTH - 1) / TILE_WIDTH
+    );
+    dim3 blockDim(
+        TILE_WIDTH
+    );
+
+    relu_kernel<<<gridDim, blockDim>>>(w->getLowLevelDataDevice(), M);
+    w->increase_gpu_ver();
+    w->sync();
 }
 
 void GPUBackendOps::operator_relu_prime(Matrix *w) {
