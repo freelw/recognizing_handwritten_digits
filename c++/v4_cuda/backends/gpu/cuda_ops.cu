@@ -136,9 +136,45 @@ void GPUBackendOps::expand_add(Matrix *w, Matrix &m) {
     w->sync();
 }
 
-void GPUBackendOps::operator_add(Matrix *w, const Matrix &m) {
-    std::cerr << "operator_add unimplemented" << std::endl;
-    assert(false);
+void GPUBackendOps::operator_add(Matrix *w, Matrix &m) {
+    w->sync();
+    m.sync();
+
+    auto wshape = w->getShape();
+    auto mshape = m.getShape();
+
+    const int M = wshape.rowCnt;
+    const int N = wshape.colCnt;
+
+    assert(mshape.rowCnt == M);
+    assert(mshape.colCnt == N);
+
+    dim3 gridDim(
+        (N + TILE_WIDTH - 1) / TILE_WIDTH,
+        (M + TILE_WIDTH - 1) / TILE_WIDTH
+    );
+
+    dim3 blockDim(
+        TILE_WIDTH,
+        TILE_WIDTH
+    );
+
+    add_eq_kernel<<<gridDim, blockDim>>>(w->getLowLevelDataDevice(), m.getLowLevelDataDevice(), M, N);
+
+    // auto shape = w->getShape();
+    // const int M = shape.size();
+
+    // dim3 gridDim(
+    //     (M + TILE_WIDTH - 1) / TILE_WIDTH
+    // );
+    // dim3 blockDim(
+    //     TILE_WIDTH
+    // );
+
+    // kahan_sum<<<gridDim, blockDim>>>(w->getLowLevelDataDevice(), m.getLowLevelDataDevice(), M);
+
+    w->increase_gpu_ver();
+    w->sync();
 }
 
 void GPUBackendOps::pow2(Matrix *w) {

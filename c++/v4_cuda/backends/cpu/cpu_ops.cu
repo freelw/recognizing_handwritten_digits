@@ -271,7 +271,7 @@ void CPUBackendOps::expand_add(Matrix *w, Matrix &m) {
     w->increase_cpu_ver();
 }
 
-void CPUBackendOps::operator_add(Matrix *w, const Matrix &m) {
+void CPUBackendOps::operator_add(Matrix *w, Matrix &m) {
     auto shape = w->getShape();
     for (uint i = 0; i < shape.rowCnt; ++i) {
         for (uint j = 0; j < shape.colCnt; ++j) {

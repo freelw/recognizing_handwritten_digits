@@ -9,6 +9,8 @@
 #include <chrono>
 #include "backends/cpu/cpu_ops.cuh"
 
+bool check(float *h_output, float *res, int size);
+
 Matrix::Matrix(Shape _shape)
     : initialized(false),
     allocated(false),
@@ -126,16 +128,25 @@ Matrix *Matrix::expand_add(Matrix &m) {
     return res;
 }
 
-Matrix *Matrix::operator+(const Matrix &m) {
+Matrix *Matrix::operator+(Matrix &m) {
     checkShape(m);
     Matrix *res = allocTmpMatrix(this);
     g_backend_ops->operator_add(res, m);
+    // g_gpu_backend_ops->operator_add(res, m);
     return res;
 }
 
-Matrix *Matrix::operator+=(const Matrix &m) {
+Matrix *Matrix::operator+=(Matrix &m) {
     checkShape(m);
-    g_backend_ops->operator_add(this, m);
+    // Matrix *res_gpu = allocTmpMatrix(this);
+    // g_gpu_backend_ops->operator_add(res_gpu, m);
+    // g_backend_ops->operator_add(this, m);
+    // assert(check(res_gpu->getLowLevelData(), this->getLowLevelData(), shape.size()));
+
+    // Matrix *res_cpu = allocTmpMatrix(this);
+    // g_backend_ops->operator_add(res_cpu, m);
+    g_gpu_backend_ops->operator_add(this, m);
+    // assert(check(res_cpu->getLowLevelData(), this->getLowLevelData(), shape.size()));
     return this;
 }
 

@@ -45,7 +45,7 @@ class CPUBackendOps : public BackendOps {
         virtual void deviceMemcpy(void *dst, const void *src, size_t size) override;
         virtual void releaseDeviceMem(DATATYPE *ptr) override;
         virtual void expand_add(Matrix *w, Matrix &m) override;
-        virtual void operator_add(Matrix *w, const Matrix &m) override;
+        virtual void operator_add(Matrix *w, Matrix &m) override;
         virtual void pow2(Matrix *w) override;
         virtual void operator_add_val(Matrix *w, DATATYPE v) override;
         virtual void operator_minus_val(Matrix *w, DATATYPE v) override;

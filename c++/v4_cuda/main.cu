@@ -99,7 +99,7 @@ void train(int epochs, int batch_size, bool use_dropout, bool eval) {
     for (auto i = 0; i < TRAIN_IMAGES_NUM; ++ i) {
         TrainingData *p = new TrainingData(INPUT_LAYER_SIZE, loader.getTrainLabels()[i]);
         for (auto j = 0; j < INPUT_LAYER_SIZE; ++ j) {
-            p->x.emplace_back(loader.getTrainImages()[i][j]);
+            p->x.emplace_back(loader.getTrainImages()[i][j]*1./256);
         }
         v_training_data.emplace_back(p);
     }
@@ -107,7 +107,7 @@ void train(int epochs, int batch_size, bool use_dropout, bool eval) {
         int index = i + TRAIN_IMAGES_NUM;
         TrainingData *p = new TrainingData(INPUT_LAYER_SIZE, loader.getTrainLabels()[index]);
         for (auto j = 0; j < INPUT_LAYER_SIZE; ++ j) {
-            p->x.emplace_back(loader.getTrainImages()[index][j]);
+            p->x.emplace_back(loader.getTrainImages()[index][j]*1./256);
         }
         v_test_data.emplace_back(p);
     }

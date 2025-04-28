@@ -11,8 +11,8 @@ __global__ void matrixmul(
     
     for (int m = 0; m < (N + TILE_WIDTH - 1)/ TILE_WIDTH; ++m) {
         // Load data into shared memory
-        s_Md[threadIdx.y][threadIdx.x] = row < M && m * TILE_WIDTH + threadIdx.x < N ? Md[row * N + m * TILE_WIDTH + threadIdx.x] : 0;
-        s_Nd[threadIdx.y][threadIdx.x] = col < P && m * TILE_WIDTH + threadIdx.y < N ? Nd[(m * TILE_WIDTH + threadIdx.y) * P + col] : 0;
+        s_Md[threadIdx.y][threadIdx.x] = row < M && m * TILE_WIDTH + threadIdx.x < N ? Md[row * N + m * TILE_WIDTH + threadIdx.x] : 0.f;
+        s_Nd[threadIdx.y][threadIdx.x] = col < P && m * TILE_WIDTH + threadIdx.y < N ? Nd[(m * TILE_WIDTH + threadIdx.y) * P + col] : 0.f;
         __syncthreads();
         if (row >= M || col >= P) {
             
@@ -42,12 +42,47 @@ __global__ void expand_add_kernel(
 
 __global__ void relu_kernel(float *Md, int M) {
 
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+
+    if (index >= M) {
+            
+    } else {
+        Md[index] = fmaxf(0, Md[index]);
+    }
+}
+
+__global__ void add_eq_kernel(float *Md, float *Nd, int M, int N) {
+
     int row = blockIdx.y * blockDim.y + threadIdx.y;
     int col = blockIdx.x * blockDim.x + threadIdx.x;
 
-    if (row >= M) {
+    if (row >= M || col >= N) {
             
     } else {
-        Md[row * M + col] = fmaxf(0, Md[row * M + col]);
+       Md[row * N + col] += Nd[row * N + col];
+    }
+}
+
+__global__ void kahan_sum(float *input, float *output, int n) {
+    __shared__ float s_partial_sum;
+    __shared__ float s_c;
+
+    int idx = threadIdx.x + blockIdx.x * blockDim.x;
+    if (threadIdx.x == 0) {
+        s_partial_sum = 0.0f;
+        s_c = 0.0f;
+    }
+    __syncthreads();
+
+    if (idx < n) {
+        float y = input[idx] - s_c;
+        float t = s_partial_sum + y;
+        s_c = (t - s_partial_sum) - y;
+        s_partial_sum = t;
+    }
+    __syncthreads();
+
+    if (threadIdx.x == 0) {
+        atomicAdd(output, s_partial_sum);
     }
 }

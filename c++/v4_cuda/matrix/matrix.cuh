@@ -35,8 +35,8 @@ public:
     Matrix *zero();
     friend ostream &operator<<(ostream &output, const Matrix &m);
     Matrix *expand_add(Matrix &m);
-    Matrix *operator+(const Matrix &m);
-    Matrix *operator+=(const Matrix &m);
+    Matrix *operator+(Matrix &m);
+    Matrix *operator+=(Matrix &m);
     Matrix *operator+(DATATYPE dt);
     Matrix *operator-(DATATYPE dt);
     Matrix *operator-();
