@@ -39,3 +39,4 @@
 ### cuda
 
 * [reduce](https://github.com/freelw/recognizing_handwritten_digits/tree/main/cuda/playground)
+* [mnist](https://github.com/freelw/recognizing_handwritten_digits/tree/main//c++/v4_cuda)
