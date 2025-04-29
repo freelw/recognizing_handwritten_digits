@@ -14,5 +14,6 @@ int main() {
     freeAllTensorViews();
     graph::freeAllEdges();
     graph::freeAllNodes();
+    freeAllActions();
     return 0;
 }

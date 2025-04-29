@@ -4,7 +4,24 @@
 namespace graph {
 
     void Node::backward() {
-        
+        assert(ref_cnt == 0);
+        if (!is_require_grad()) {
+            return;
+        }
+        assert(grad != nullptr);
+        for (auto edge : edges) {
+            edge->node->dec_ref();
+            if (!edge->node->is_require_grad()) {
+                continue;
+            }
+            edge->backward(grad);
+        }
+        for (auto edge : edges) {
+            if (edge->node->is_require_grad() && 
+                edge->node->get_ref() == 0) {
+                edge->node->backward();
+            }
+        }
     }
 
     Node *Node::expand_add(Node *rhs) {

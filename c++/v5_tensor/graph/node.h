@@ -3,6 +3,7 @@
 
 #include "tensor/tensor.h"
 #include <vector>
+#include "actions.h"
 
 namespace graph {
     class Edge;
@@ -12,6 +13,7 @@ namespace graph {
             Node(Tensor *_t)
                 : t(_t),
                 ref_cnt(0) {
+                grad = allocGradTensor(t->get_shape());
             }
             void inc_ref() {
                 ref_cnt++;
@@ -25,6 +27,12 @@ namespace graph {
             Tensor *get_tensor() const {
                 return t;
             }
+            Tensor *get_grad() const {
+                return grad;
+            }
+            bool is_require_grad() const {
+                return true;
+            }
             void backward();
             Node *expand_add(Node *rhs);
             // Node *operator*(Node *rhs);
@@ -33,6 +41,7 @@ namespace graph {
             // Node *transpose_2d();
         private:
             Tensor *t;
+            Tensor *grad;
             std::vector<Edge *> edges;
             int ref_cnt;
     };
@@ -92,8 +101,9 @@ namespace graph {
                 : Edge(Add, _node) {}
             virtual ~AddEdge() {}
             void backward(Tensor *grad) override {
-                // assert(node->is_require_grad());
-                // *node->get_grad() += *grad;
+                gCreateAction(
+                    new AddEqAction(node->get_grad(), grad)
+                );
             }
     };
 
