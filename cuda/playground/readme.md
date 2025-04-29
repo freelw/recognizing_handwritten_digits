@@ -16,6 +16,7 @@
 * [cuda 调试 ](https://zhuanlan.zhihu.com/p/508810115)
 * [使用Vscode调试cuda代码](https://fancyerii.github.io/2024/01/17/vscode-cuda-debug/)
 * [block grid 维度](???)
+* [cuda stream](https://zhuanlan.zhihu.com/p/51402722)
 
 ## reduce
 ### sanitizer
