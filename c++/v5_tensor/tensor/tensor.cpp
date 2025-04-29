@@ -56,6 +56,10 @@ void Tensor::set_data(void *ptr) {
     data = ptr;
 }
 
+void Tensor::set_grad(void *ptr) {
+    grad = ptr;
+}
+
 int Tensor::size() const {
     int total_size = 1;
     for (int dim : shape) {

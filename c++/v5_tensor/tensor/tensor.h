@@ -58,7 +58,9 @@ class Tensor {
         Tensor(std::vector<int> _shape);
         ~Tensor();
         virtual void set_data(void *ptr);
+        virtual void set_grad(void *ptr);
         virtual void *get_data() const { return data; }
+        virtual void *get_grad() const { return grad; }
         virtual int size() const;
         virtual int capacity() const;
         virtual bool sanitize() const;
@@ -74,6 +76,7 @@ class Tensor {
         std::vector<int> strides;
     private:
         void *data;
+        void *grad;
 };
 
 class TensorView : public Tensor {
@@ -85,8 +88,15 @@ class TensorView : public Tensor {
             std::cerr << "Error: Cannot set data for TensorView" << std::endl;
             assert(false);
         }
+        void set_grad(void *ptr) override {
+            std::cerr << "Error: Cannot set grad for TensorView" << std::endl;
+            assert(false);
+        }
         void *get_data() const override {
             return parent->get_data();
+        }
+        void *get_grad() const override {
+            return parent->get_grad();
         }
         int size() const override {
             return parent->size();
