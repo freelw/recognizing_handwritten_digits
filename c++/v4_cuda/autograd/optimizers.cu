@@ -1,5 +1,6 @@
 #include "autograd/optimizers.cuh"
-#include <iostream> 
+#include <iostream>
+#include "backends/ops.cuh"
 
 namespace autograd_cuda {
     void Adam::step() {
@@ -48,6 +49,17 @@ namespace autograd_cuda {
         cp_to_device();
     }
 
+    void Adam::cuda_step() {
+        for (auto p : parameters) {
+            if (!p->require_grad()) {
+                continue;
+            }
+            p->inc_t();
+            auto t = p->get_t();
+            g_gpu_backend_ops->step(lr, t, p->get_weight(), p->get_grad(), p->get_m(), p->get_v());
+        }
+    }
+
     void Adam::zero_grad() {
         for (auto p : parameters) {
             if (!p->require_grad()) {
@@ -90,6 +102,12 @@ namespace autograd_cuda {
         }
         cp_to_device();
         return norm > grad_clip_val;
+    }
+
+    bool Adam::cuda_clip_grad(DATATYPE grad_clip_val) {
+        std::cerr << "Not implemented yet!" << std::endl;
+        assert(false);
+        return false;
     }
 
     void Adam::cp_from_device() {

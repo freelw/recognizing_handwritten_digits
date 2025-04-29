@@ -75,6 +75,7 @@ class BackendOps {
         virtual void operator_sigmoid_prime(Matrix *w) = 0;
         virtual void operator_init_weight(Matrix *w, DATATYPE sigma, DATATYPE mean) = 0;
         virtual void operator_init_weight_uniform(Matrix *w, DATATYPE sigma) = 0;
+        virtual void step(float lr, int t, Matrix *w, Matrix *grad, Matrix *mm, Matrix *mv) = 0;
 };
 
 extern BackendOps *g_backend_ops;

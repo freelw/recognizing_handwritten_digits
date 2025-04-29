@@ -614,3 +614,8 @@ void CPUBackendOps::operator_init_weight_uniform(Matrix *w, DATATYPE sigma) {
     }
     w->increase_cpu_ver();
 }
+
+void CPUBackendOps::step(float lr, int t, Matrix *w, Matrix *grad, Matrix *mm, Matrix *mv) {
+    std::cerr << "CPUBackendOps::step not implemented" << std::endl;
+    assert(false);
+}

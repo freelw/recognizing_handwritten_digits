@@ -421,3 +421,22 @@ void GPUBackendOps::operator_init_weight_uniform(Matrix *w, DATATYPE sigma) {
     std::cerr << "operator_init_weight_uniform unimplemented" << std::endl;
     assert(false);
 }
+
+void GPUBackendOps::step(float lr, int t, Matrix *w, Matrix *grad, Matrix *mm, Matrix *mv) {
+    auto shape = w->getShape();
+    const int M = shape.size();
+    dim3 gridDim(
+        (M + TILE_WIDTH - 1) / TILE_WIDTH
+    );
+    dim3 blockDim(
+        TILE_WIDTH
+    );
+    step_kernel<<<gridDim, blockDim>>>(
+        lr, t,
+        (DATATYPE *)w->getLowLevelDataDevice(),
+        (DATATYPE *)grad->getLowLevelDataDevice(),
+        (DATATYPE *)mm->getLowLevelDataDevice(),
+        (DATATYPE *)mv->getLowLevelDataDevice(),
+        M
+    );
+}

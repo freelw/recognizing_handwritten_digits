@@ -22,5 +22,6 @@ __global__ void cross_entropy_loss_backward(
 __global__ void sum(float *Md, float *Nd, int M, int N);
 __global__ void transpose(float *Md, float *Nd, int M, int N);
 __global__ void relu_prime(float *Md, int M);
+__global__ void step_kernel(float lr, int t, float *w, float *grad, float *mm, float *mv, int M);
 
 #endif

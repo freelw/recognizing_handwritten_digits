@@ -159,3 +159,30 @@ __global__ void relu_prime(float *Md, int M) {
         Md[index] = Md[index] > 0 ? 1 : 0;
     }
 }
+
+__global__ void step_kernel(
+    float lr, int t, float *w, float *grad,
+    float *mm, float *mv,
+    int M) {
+
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index >= M) {
+        return ;
+    } else {
+        const float beta1 = 0.9;
+        const float beta2 = 0.999;
+        const float eps = 1e-8;
+
+        float g = grad[index];
+        float _mm = mm[index];
+        float _mv = mv[index];
+
+        _mm = beta1 * _mm + (1 - beta1) * g;
+        _mv = beta2 * _mv + (1 - beta2) * powf(g, 2);
+        float mmt = _mm / (1 - powf(beta1, t));
+        float mvt = _mv / (1 - powf(beta2, t));
+        w[index] -= lr * mmt / (sqrtf(mvt) + eps);
+        mm[index] = _mm;
+        mv[index] = _mv;
+    }
+}

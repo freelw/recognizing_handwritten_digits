@@ -39,7 +39,7 @@ DATATYPE update_mini_batch(
     loss->get_weight()->cp_from_device();
     DATATYPE ret = loss->get_weight()->get_val(0, 0);
     loss->backward();
-    optimizer.step();
+    optimizer.cuda_step();
     autograd_cuda::freeAllNodes();
     autograd_cuda::freeAllEdges();
     freeTmpMatrix();

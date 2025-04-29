@@ -13,8 +13,10 @@ namespace autograd_cuda {
                     beta1(_beta1), beta2(_beta2), epsilon(_epsilon)
                 {}
             void step();
+            void cuda_step();
             void zero_grad();
             bool clip_grad(DATATYPE grad_clip_val);
+            bool cuda_clip_grad(DATATYPE grad_clip_val);
         private:
             void cp_from_device();
             void cp_to_device();
