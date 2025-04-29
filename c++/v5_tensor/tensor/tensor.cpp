@@ -1,4 +1,44 @@
 #include "tensor.h"
+#include "backends/backend_ops.h"
+
+void AddEqAction::execute() {
+    g_backend_ops->addEq(lhs, rhs);
+}
+
+void AtAction::execute() {
+    assert(lhs != nullptr);
+    assert(rhs != nullptr);
+    g_backend_ops->at(lhs, rhs, res);
+}
+
+void MulAction::execute() {
+    assert(lhs != nullptr);
+    assert(rhs != nullptr);
+    g_backend_ops->mul(lhs, rhs, res);
+}
+
+void SumAction::execute() {
+    assert(lhs != nullptr);
+    assert(rhs == nullptr);
+    if (dim < 0 || dim >= lhs->get_rank()) {
+        std::cerr << "Error: Invalid dimension for sum operation" << std::endl;
+        abort();
+    }
+    g_backend_ops->sum(lhs, dim, res);
+}
+
+std::vector<Action*> g_actions;
+
+void gCreateAction(Action *action) {
+    g_actions.push_back(action);
+}
+
+void freeAllActions() {
+    for (Action *action : g_actions) {
+        delete action;
+    }
+    g_actions.clear();
+}
 
 Tensor::Tensor(std::vector<int> _shape) : shape(_shape), data(nullptr) {
     strides.resize(shape.size());
@@ -56,6 +96,8 @@ Tensor *Tensor::transpose_2d() {
     transposed_tensor->shape[1] = shape[0];
     transposed_tensor->strides[0] = strides[1];
     transposed_tensor->strides[1] = strides[0];
+
+    // no action here
     return transposed_tensor;
 }
 
@@ -64,6 +106,7 @@ Tensor *Tensor::operator+=(const Tensor *other) {
         std::cerr << "Error: Tensor sizes do not match for addition" << std::endl;
         abort();
     }
+    gCreateAction(new AddEqAction(this, other));
     return this;
 }
 
@@ -72,6 +115,7 @@ Tensor *Tensor::at(const Tensor *other) {
     assert(other->shape.size() == 2);
     assert(this->shape[1] == other->shape[0]);
     Tensor *res = allocTensor({this->shape[0], other->shape[1]});
+    gCreateAction(new AtAction(this, other, res));
     return res;
 }
 
@@ -81,6 +125,7 @@ Tensor *Tensor::operator*(const Tensor *other) {
     assert(this->shape[0] == other->shape[0]);
     assert(this->shape[1] == other->shape[1]);
     Tensor *res = allocTensor(this->shape);
+    gCreateAction(new MulAction(this, other, res));
     return res;
 }
 
