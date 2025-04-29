@@ -65,6 +65,21 @@ Tensor *allocGradTensor(const std::vector<int> &shape) {
     return grad_tensor;
 }
 
+void printAllTensors() {
+    std::cout << "Tensors:" << std::endl;
+    for (Tensor *tensor : g_tensors) {
+        std::cout << "\t" << *tensor << std::endl;
+    }
+    std::cout << "Tensor Views:" << std::endl;
+    for (Tensor *tensor_view : g_tensor_views) {
+        std::cout << "\t" << *tensor_view << std::endl;
+    }
+    std::cout << "Grad Tensors:" << std::endl;
+    for (Tensor *grad_tensor : g_grad_tensors) {
+        std::cout << "\t" << *grad_tensor << std::endl;
+    }
+}
+
 void freeAllTensors() {
     for (Tensor *tensor : g_tensors) {
         delete tensor;

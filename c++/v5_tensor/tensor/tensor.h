@@ -4,6 +4,7 @@
 #include <iostream>
 #include <vector>
 #include <cassert>
+#include <ostream>
 
 #define TENSOR_PADDING_SIZE 16
 
@@ -19,6 +20,17 @@ class Tensor {
         virtual bool is_view() const { return false; }
         std::vector<int> get_shape() const { return shape; }
         virtual int get_rank() const { return shape.size(); }
+        friend std::ostream &operator<<(std::ostream &output, const Tensor &s) {
+            output << "Tensor(";
+            for (size_t i = 0; i < s.shape.size(); ++i) {
+                output << s.shape[i];
+                if (i != s.shape.size() - 1) {
+                    output << ", ";
+                }
+            }
+            output << ")";
+            return output;
+        }
     protected:
         std::vector<int> shape;
         std::vector<int> strides;
@@ -54,9 +66,14 @@ class TensorView : public Tensor {
         Tensor *parent;
 };
 
+extern std::vector<Tensor*> g_tensors;
+extern std::vector<Tensor*> g_tensor_views;
+extern std::vector<Tensor*> g_grad_tensors;
+
 Tensor *allocTensor(const std::vector<int> &shape);
 Tensor *allocTensorView(Tensor *parent);
 Tensor *allocGradTensor(const std::vector<int> &shape);
+void printAllTensors();
 
 void freeAllTensors();
 void freeAllTensorViews();
