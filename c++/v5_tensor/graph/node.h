@@ -46,9 +46,6 @@ namespace graph {
             int ref_cnt;
     };
 
-    // extern std::vector<Edge *> edges;
-    // extern std::vector<Node *> nodes;
-
     enum OpType {
         Add,
         Minus,
