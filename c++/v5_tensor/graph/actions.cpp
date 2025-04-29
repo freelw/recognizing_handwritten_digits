@@ -1,4 +1,9 @@
 #include "actions.h"
+#include <vector>
+#include <iostream>
+#include <stdlib.h>
+#include <assert.h>
+#include "backends/backend_ops.h"
 
 void AddAction::execute() {
     assert(lhs != nullptr);
@@ -36,4 +41,11 @@ std::vector<Action*> g_actions;
 
 void gCreateAction(Action *action) {
     g_actions.push_back(action);
+}
+
+void freeAllActions() {
+    for (Action *action : g_actions) {
+        delete action;
+    }
+    g_actions.clear();
 }

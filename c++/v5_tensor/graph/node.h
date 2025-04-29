@@ -5,11 +5,12 @@
 #include <vector>
 
 namespace graph {
-    class Edege;
+    class Edge;
+    void gAddEdge(Edge *edge);
     class Node {
         public:
             Node(Tensor *_t)
-                : t(_t)
+                : t(_t),
                 ref_cnt(0) {
             }
             void inc_ref() {
@@ -21,19 +22,23 @@ namespace graph {
             int get_ref() const {
                 return ref_cnt;
             }
+            Tensor *get_tensor() const {
+                return t;
+            }
             void backward();
-            Node *operator+(Node *rhs);
-            Node *operator+=(Node *rhs);
-            Node *operator*(Node *rhs);
             Node *expand_add(Node *rhs);
+            // Node *operator*(Node *rhs);
             Node *at(Node *rhs);
             Node *relu();
-            Node *transpose_2d();
+            // Node *transpose_2d();
         private:
-            Matrix *t;
+            Tensor *t;
             std::vector<Edge *> edges;
             int ref_cnt;
     };
+
+    // extern std::vector<Edge *> edges;
+    // extern std::vector<Node *> nodes;
 
     enum OpType {
         Add,
@@ -69,11 +74,43 @@ namespace graph {
                     node->inc_ref();
                 }
             virtual ~Edge() {};
-            virtual void backward(Matrix *grad) = 0;
+            virtual void backward(Tensor *grad) = 0;
         protected:
             OpType type;
             Node *node; // node that this edge points to
         friend class Node;
+    };
+
+    class AddEdge : public Edge {
+        public:
+            static Edge* create(Node *_node) {
+                Edge *edge = new AddEdge(_node);
+                graph::gAddEdge(edge);
+                return edge;
+            }
+            AddEdge(Node *_node)
+                : Edge(Add, _node) {}
+            virtual ~AddEdge() {}
+            void backward(Tensor *grad) override {
+                // assert(node->is_require_grad());
+                // *node->get_grad() += *grad;
+            }
+    };
+
+    class ExpandAddEdge : public Edge {
+        public:
+            static Edge* create(Node *_node) {
+                Edge *edge = new ExpandAddEdge(_node);
+                graph::gAddEdge(edge);
+                return edge;
+            }
+            ExpandAddEdge(Node *_node)
+                : Edge(ExpandAdd, _node) {}
+            virtual ~ExpandAddEdge() {}
+            void backward(Tensor *grad) override {
+                // assert(node->is_require_grad());
+                // *node->get_grad() += *(grad->sum(1));
+            }
     };
 
     Node *allocNode(Tensor *t);

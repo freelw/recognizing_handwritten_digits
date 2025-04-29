@@ -1,4 +1,5 @@
 #include "node.h"
+#include "actions.h"
 
 namespace graph {
 
@@ -6,17 +7,28 @@ namespace graph {
         
     }
 
-    // Node *operator+(Node *rhs);
-    // Node *operator+=(Node *rhs);
-    // Node *operator*(Node *rhs);
-    // Node *expand_add(Node *rhs);
-    // Node *at(Node *rhs);
-    // Node *relu();
-    // Node *transpose_2d();
+    Node *Node::expand_add(Node *rhs) {
+        Tensor *res_tensor = allocTensor(t->get_shape());
+        Tensor *r_tensor = rhs->get_tensor();
+        gCreateAction(
+            new AddAction(
+                this->get_tensor(),
+                rhs->get_tensor(),
+                res_tensor
+            )
+        );
+        Node *res_node = allocNode(res_tensor);
+        res_node->edges.push_back(AddEdge::create(this));
+        res_node->edges.push_back(ExpandAddEdge::create(rhs));
+        return res_node;
+    }
 
-    Node *Node::operator+(Node *rhs) {
-        Tensor *res = allocTensor(t->get_shape());
-        gCreadeAction(new AddAction(this, rhs, res));
+    Node *Node::at(Node *rhs) {
+        return nullptr;
+    }
+
+    Node *Node::relu() {
+        return nullptr;
     }
 
     std::vector<Edge *> edges;
@@ -26,5 +38,9 @@ namespace graph {
         Node *node = new Node(t);
         nodes.push_back(node);
         return node;
+    }
+
+    void gAddEdge(Edge *edge) {
+        edges.push_back(edge);
     }
 } // namespace graph

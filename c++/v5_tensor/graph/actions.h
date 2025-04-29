@@ -1,6 +1,8 @@
 #ifndef ACTIONS_H
 #define ACTIONS_H
 
+#include "tensor/tensor.h"
+
 class Action {
     public:
         Action(Tensor *_lhs, const Tensor *_rhs, Tensor *_res)

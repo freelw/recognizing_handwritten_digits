@@ -1,13 +1,13 @@
 DIR_INC = -I./
-DIR_INC += -I../utils/
 DIR_INC += -I./tensor
+DIR_INC += -I./graph
 
 DIR_LIB = -L./
 TARGET	= mnist_cuda
 #CFLAGS = $(DIR_INC) $(DIR_LIB) -g -G
 CFLAGS = $(DIR_INC) $(DIR_LIB)
 SRCDIR := ./tensor
-SRCDIR += ./autograd
+SRCDIR += ./graph
 SRCDIR += ./backends/cpu
 SRCDIR += ./backends/gpu
 SRCDIR += ./backends/

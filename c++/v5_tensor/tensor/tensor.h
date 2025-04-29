@@ -20,10 +20,11 @@ class Tensor {
         virtual bool sanitize() const;
         virtual bool is_view() const { return false; }
         std::vector<int> get_shape() const { return shape; }
-        Tensor *transpose_2d();
-        Tensor *operator+=(const Tensor *other);
-        Tensor *at(const Tensor *other);
-        Tensor *operator*(const Tensor *other);
+        // Tensor *transpose_2d();
+        // Tensor *expand_add(const Tensor *other);
+        // Tensor *operator+=(const Tensor *other);
+        // Tensor *at(const Tensor *other);
+        // Tensor *operator*(const Tensor *other);
         virtual int get_rank() const { return shape.size(); }
     protected:
         std::vector<int> shape;

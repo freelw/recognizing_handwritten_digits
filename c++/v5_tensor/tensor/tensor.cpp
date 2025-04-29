@@ -1,12 +1,6 @@
 #include "tensor.h"
 #include "backends/backend_ops.h"
-
-void freeAllActions() {
-    for (Action *action : g_actions) {
-        delete action;
-    }
-    g_actions.clear();
-}
+#include "graph/actions.h"
 
 Tensor::Tensor(std::vector<int> _shape) : shape(_shape), data(nullptr) {
     strides.resize(shape.size());
@@ -53,53 +47,62 @@ bool Tensor::sanitize() const {
     return true;
 }
 
-Tensor *Tensor::transpose_2d() {
-    if (shape.size() != 2) {
-        std::cerr << "Error: Transpose only supported for 2D tensors" << std::endl;
-        abort();
-    }
-    if (data != nullptr) {
-        std::cerr << "Error: Transpose not supported for non-null data" << std::endl;
-        abort();
-    }
+// Tensor *Tensor::transpose_2d() {
+//     if (shape.size() != 2) {
+//         std::cerr << "Error: Transpose only supported for 2D tensors" << std::endl;
+//         abort();
+//     }
+//     if (data != nullptr) {
+//         std::cerr << "Error: Transpose not supported for non-null data" << std::endl;
+//         abort();
+//     }
     
-    Tensor *transposed_tensor = allocTensorView(this);
-    transposed_tensor->shape[0] = shape[1];
-    transposed_tensor->shape[1] = shape[0];
-    transposed_tensor->strides[0] = strides[1];
-    transposed_tensor->strides[1] = strides[0];
+//     Tensor *transposed_tensor = allocTensorView(this);
+//     transposed_tensor->shape[0] = shape[1];
+//     transposed_tensor->shape[1] = shape[0];
+//     transposed_tensor->strides[0] = strides[1];
+//     transposed_tensor->strides[1] = strides[0];
 
-    // no action here
-    return transposed_tensor;
-}
+//     // no action here
+//     return transposed_tensor;
+// }
 
-Tensor *Tensor::operator+=(const Tensor *other) {
-    if (this->size() != other->size()) {
-        std::cerr << "Error: Tensor sizes do not match for addition" << std::endl;
-        abort();
-    }
-    gCreateAction(new AddEqAction(this, other));
-    return this;
-}
+// Tensor *Tensor::expand_add(const Tensor *other) {
+//     assert(othser->shape.size() == 1);
+//     assert(this->shape.size() == 2);
+//     assert(other->shape[0] == this->shape[1]);
 
-Tensor *Tensor::at(const Tensor *other) {
-    assert(this->shape.size() == 2);
-    assert(other->shape.size() == 2);
-    assert(this->shape[1] == other->shape[0]);
-    Tensor *res = allocTensor({this->shape[0], other->shape[1]});
-    gCreateAction(new AtAction(this, other, res));
-    return res;
-}
 
-Tensor *Tensor::operator*(const Tensor *other) {
-    assert(this->shape.size() == 2);
-    assert(other->shape.size() == 2);
-    assert(this->shape[0] == other->shape[0]);
-    assert(this->shape[1] == other->shape[1]);
-    Tensor *res = allocTensor(this->shape);
-    gCreateAction(new MulAction(this, other, res));
-    return res;
-}
+
+// }
+
+// Tensor *Tensor::operator+=(const Tensor *other) {
+//     if (this->size() != other->size()) {
+//         std::cerr << "Error: Tensor sizes do not match for addition" << std::endl;
+//         abort();
+//     }
+//     gCreateAction(new AddEqAction(this, other));
+//     return this;
+// }
+
+// Tensor *Tensor::at(const Tensor *other) {
+//     assert(this->shape.size() == 2);
+//     assert(other->shape.size() == 2);
+//     assert(this->shape[1] == other->shape[0]);
+//     Tensor *res = allocTensor({this->shape[0], other->shape[1]});
+//     gCreateAction(new AtAction(this, other, res));
+//     return res;
+// }
+
+// Tensor *Tensor::operator*(const Tensor *other) {
+//     assert(this->shape.size() == 2);
+//     assert(other->shape.size() == 2);
+//     assert(this->shape[0] == other->shape[0]);
+//     assert(this->shape[1] == other->shape[1]);
+//     Tensor *res = allocTensor(this->shape);
+//     gCreateAction(new MulAction(this, other, res));
+//     return res;
+// }
 
 std::vector<Tensor*> g_tensors;
 std::vector<Tensor*> g_tensor_views;
