@@ -10,7 +10,7 @@ class BackendOps {
         virtual void expandAdd(Tensor *lhs, const Tensor *rhs, Tensor *res) = 0;
         virtual void at(Tensor *lhs, const Tensor *rhs, Tensor *res) = 0;
         virtual void mul(Tensor *lhs, const Tensor *rhs, Tensor *res) = 0;
-        virtual void sum(Tensor *lhs, int dim, Tensor *res) = 0;
+        virtual void sum(Tensor *lhs, Tensor *res, int dim) = 0;
 };
 
 extern BackendOps *g_backend_ops;

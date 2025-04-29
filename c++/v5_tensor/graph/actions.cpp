@@ -46,7 +46,7 @@ void SumAction::execute() {
         std::cerr << "Error: Invalid dimension for sum operation" << std::endl;
         abort();
     }
-    g_backend_ops->sum(lhs, dim, res);
+    g_backend_ops->sum(lhs, res, dim);
 }
 
 std::vector<Action*> g_actions;

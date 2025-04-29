@@ -28,7 +28,7 @@ namespace graph {
         Tensor *res_tensor = allocTensor(t->get_shape());
         Tensor *r_tensor = rhs->get_tensor();
         gCreateAction(
-            new AddAction(
+            new ExpandAddAction(
                 this->get_tensor(),
                 rhs->get_tensor(),
                 res_tensor

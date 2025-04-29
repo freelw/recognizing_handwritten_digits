@@ -5,10 +5,17 @@
 
 BackendOps *g_backend_ops = nullptr;
 
-int main() {
+
+void test_plan() {
     Tensor t({2, 2});
 
-    std::cout << "hello tensor" << std::endl;
+
+}
+
+int main() {
+    
+
+    test_plan();
 
     freeAllTensors();
     freeAllTensorViews();

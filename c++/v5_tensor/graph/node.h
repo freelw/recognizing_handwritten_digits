@@ -118,8 +118,16 @@ namespace graph {
                 : Edge(ExpandAdd, _node) {}
             virtual ~ExpandAddEdge() {}
             void backward(Tensor *grad) override {
-                // assert(node->is_require_grad());
-                // *node->get_grad() += *(grad->sum(1));
+                assert(grad->get_shape().size() == 2);
+                std::vector<int> shape = {grad->get_shape()[1]};
+                Tensor *tmp = allocTensor(shape); // 行向量
+                gCreateAction(
+                    new SumAction(
+                        grad,
+                        tmp,
+                        1
+                    )
+                );
             }
     };
 
