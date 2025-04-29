@@ -47,3 +47,7 @@ real    0m31.345s
 user    0m30.905s
 sys     0m0.421s
 ```
+
+## perf
+
+![alt text](perf/p_2121790.svg)
