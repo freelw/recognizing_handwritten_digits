@@ -34,9 +34,9 @@ public:
     ~Matrix();
     Matrix *zero();
     friend ostream &operator<<(ostream &output, const Matrix &m);
-    Matrix *expand_add(const Matrix &m);
-    Matrix *operator+(const Matrix &m);
-    Matrix *operator+=(const Matrix &m);
+    Matrix *expand_add(Matrix &m);
+    Matrix *operator+(Matrix &m);
+    Matrix *operator+=(Matrix &m);
     Matrix *operator+(DATATYPE dt);
     Matrix *operator-(DATATYPE dt);
     Matrix *operator-();
@@ -78,19 +78,20 @@ public:
     void increase_cpu_ver();
     void increase_gpu_ver();
     DATATYPE *getLowLevelData() const;
-    DATATYPE *getLowLevelDataDevice() const;
+    void *getLowLevelDataDevice() const;
+    void cp_to_device();
+    void cp_from_device();
     
 private:
     DATATYPE* operator[](unsigned int index) const;
-    void cp_to_device();
-    void cp_from_device();
+    
 
 private:
     bool initialized;
     bool allocated;
     Shape shape;
     DATATYPE *data;
-    DATATYPE *data_device;
+    void *data_device;
     bool commited;
     int cpu_ver;
     int gpu_ver;

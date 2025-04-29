@@ -17,10 +17,31 @@ void GPUBackendOps::cp_from_device(void* dst, const void* src, size_t size) {
 Matrix *GPUBackendOps::CrossEntropyLoss(
     Matrix *input,
     const std::vector<uint> &labels,
-    std::vector<autograd_cuda::CrosEntropyInfo> &info) {
-    std::cerr << "CrossEntropyLoss unimplemented" << std::endl;
-    assert(false);
-    return nullptr;
+    Matrix *&maxs, Matrix *&sums) {
+    
+    uint *d_labels = (uint *)allocDeviceMem(labels.size() * sizeof(uint));
+    cp_to_device(d_labels, labels.data(), labels.size() * sizeof(uint));
+    auto shape = input->getShape();
+    maxs = allocTmpMatrix(Shape(shape.colCnt, 1));
+    sums = allocTmpMatrix(Shape(shape.colCnt, 1));
+    Matrix *loss = allocTmpMatrix(Shape(1,1));
+    const int N = shape.colCnt;
+    const int C = shape.rowCnt;
+    dim3 gridDim(
+        (N + TILE_WIDTH - 1) / TILE_WIDTH
+    );
+    dim3 blockDim(
+        TILE_WIDTH
+    );
+    cross_entropy_loss<<<gridDim, blockDim>>>(
+        (DATATYPE *)input->getLowLevelDataDevice(),
+        d_labels,
+        (DATATYPE *)loss->getLowLevelDataDevice(),
+        (DATATYPE *)maxs->getLowLevelDataDevice(),
+        (DATATYPE *)sums->getLowLevelDataDevice(),
+        N, C);
+    releaseDeviceMem(d_labels);
+    return loss;
 }
 
 Matrix *GPUBackendOps::CrossEntropyLossMask(
@@ -65,9 +86,28 @@ void GPUBackendOps::CrossEntropyEdgeBackward(
     Matrix *w,
     Matrix *grad,
     const std::vector<uint> &labels,
-    const std::vector<autograd_cuda::CrosEntropyInfo> &info) {
-    std::cerr << "CrossEntropyEdgeBackward unimplemented" << std::endl;
-    assert(false);
+    Matrix *maxs, Matrix *sums) {
+
+    uint *d_labels = (uint *)allocDeviceMem(labels.size() * sizeof(uint));
+    cp_to_device(d_labels, labels.data(), labels.size() * sizeof(uint));
+
+    auto shape = w->getShape();
+    const int N = shape.colCnt;
+    const int C = shape.rowCnt;
+    dim3 gridDim(
+        (N + TILE_WIDTH - 1) / TILE_WIDTH
+    );
+    dim3 blockDim(
+        TILE_WIDTH
+    );
+    cross_entropy_loss_backward<<<gridDim, blockDim>>>(
+        (DATATYPE *)w->getLowLevelDataDevice(),
+        (DATATYPE *)grad->getLowLevelDataDevice(),
+        d_labels,
+        (DATATYPE *)maxs->getLowLevelDataDevice(),
+        (DATATYPE *)sums->getLowLevelDataDevice(),
+        N, C);
+    releaseDeviceMem(d_labels);
 }
 
 void GPUBackendOps::CrossEntropyMaskEdgeBackward(
@@ -90,8 +130,8 @@ void GPUBackendOps::NormEdgeBackward(
     assert(false);
 }
 
-DATATYPE *GPUBackendOps::allocDeviceMem(size_t size) {
-    DATATYPE *ret = nullptr;
+void *GPUBackendOps::allocDeviceMem(size_t size) {
+    void *ret = nullptr;
     cudaMalloc((void **)&ret, size);
     return ret;
 }
@@ -100,19 +140,68 @@ void GPUBackendOps::deviceMemcpy(void *dst, const void *src, size_t size) {
     cudaMemcpy(dst, src, size, cudaMemcpyDeviceToDevice);
 }
 
-void GPUBackendOps::releaseDeviceMem(DATATYPE *ptr) {
+void GPUBackendOps::releaseDeviceMem(void *ptr) {
     assert(ptr != nullptr);
     cudaFree(ptr);
 }
 
-void GPUBackendOps::expand_add(Matrix *w, const Matrix &m) {
-    std::cerr << "expand_add unimplemented" << std::endl;
-    assert(false);
+void GPUBackendOps::zero(void *ptr, size_t size) {
+    cudaMemset(ptr, 0, size);
 }
 
-void GPUBackendOps::operator_add(Matrix *w, const Matrix &m) {
-    std::cerr << "operator_add unimplemented" << std::endl;
-    assert(false);
+void GPUBackendOps::expand_add(Matrix *w, Matrix &m) {
+
+    auto wshape = w->getShape();
+    auto mshape = m.getShape();
+
+    const int M = wshape.rowCnt;
+    const int N = wshape.colCnt;
+
+    assert(m.shape.rowCnt == M);
+    assert(m.shape.colCnt == 1);
+
+    dim3 gridDim(
+        (N + TILE_WIDTH - 1) / TILE_WIDTH,
+        (M + TILE_WIDTH - 1) / TILE_WIDTH
+    );
+
+    dim3 blockDim(
+        TILE_WIDTH,
+        TILE_WIDTH
+    );
+
+    expand_add_kernel<<<gridDim, blockDim>>>(
+        (DATATYPE *)w->getLowLevelDataDevice(),
+        (DATATYPE *)m.getLowLevelDataDevice(),
+        M, N
+    );
+}
+
+void GPUBackendOps::operator_add(Matrix *w, Matrix &m) {
+    auto wshape = w->getShape();
+    auto mshape = m.getShape();
+
+    const int M = wshape.rowCnt;
+    const int N = wshape.colCnt;
+
+    assert(mshape.rowCnt == M);
+    assert(mshape.colCnt == N);
+
+    dim3 gridDim(
+        (N + TILE_WIDTH - 1) / TILE_WIDTH,
+        (M + TILE_WIDTH - 1) / TILE_WIDTH
+    );
+
+    dim3 blockDim(
+        TILE_WIDTH,
+        TILE_WIDTH
+    );
+
+    add_eq_kernel<<<gridDim, blockDim>>>(
+        (DATATYPE *)w->getLowLevelDataDevice(),
+        (DATATYPE *)m.getLowLevelDataDevice(),
+        M, N
+    );
 }
 
 void GPUBackendOps::pow2(Matrix *w) {
@@ -166,13 +255,29 @@ void GPUBackendOps::operator_divide_val(Matrix *w, DATATYPE v) {
 }
 
 void GPUBackendOps::operator_relu(Matrix *w) {
-    std::cerr << "operator_relu unimplemented" << std::endl;
-    assert(false);
+
+    auto shape = w->getShape();
+    const int M = shape.size();
+    dim3 gridDim(
+        (M + TILE_WIDTH - 1) / TILE_WIDTH
+    );
+    dim3 blockDim(
+        TILE_WIDTH
+    );
+    relu_kernel<<<gridDim, blockDim>>>((DATATYPE *)w->getLowLevelDataDevice(), M);
 }
 
 void GPUBackendOps::operator_relu_prime(Matrix *w) {
-    std::cerr << "operator_relu_prime unimplemented" << std::endl;
-    assert(false);
+    auto shape = w->getShape();
+    const int M = shape.size();
+
+    dim3 gridDim(
+        (M + TILE_WIDTH - 1) / TILE_WIDTH
+    );
+    dim3 blockDim(
+        TILE_WIDTH
+    );
+    relu_prime<<<gridDim, blockDim>>>((DATATYPE *)w->getLowLevelDataDevice(), M);
 }
 
 void GPUBackendOps::operator_tanh(Matrix *w) {
@@ -191,8 +296,6 @@ void GPUBackendOps::operator_equal(Matrix *w, const Matrix &m) {
 }
 
 void GPUBackendOps::operator_at(Matrix *res, Matrix *w, Matrix &m) {
-    w->sync();
-    m.sync();
 
     auto wshape = w->getShape();
     auto mshape = m.getShape();
@@ -213,17 +316,37 @@ void GPUBackendOps::operator_at(Matrix *res, Matrix *w, Matrix &m) {
         TILE_WIDTH,
         TILE_WIDTH
     );
-    DATATYPE *d_Md = w->getLowLevelDataDevice();
-    DATATYPE *d_Nd = m.getLowLevelDataDevice();
-    DATATYPE *d_Pd = res->getLowLevelDataDevice();
+    DATATYPE *d_Md = (DATATYPE *)w->getLowLevelDataDevice();
+    DATATYPE *d_Nd = (DATATYPE *)m.getLowLevelDataDevice();
+    DATATYPE *d_Pd = (DATATYPE *)res->getLowLevelDataDevice();
 
     matrixmul<<<gridDim, blockDim>>>(d_Md, d_Nd, d_Pd, M, N, P);
-    res->increase_gpu_ver();
 }
 
 void GPUBackendOps::operator_transpose(Matrix *res, Matrix *w) {
-    std::cerr << "operator_transpose unimplemented" << std::endl;
-    assert(false);
+    auto wshape = w->getShape();
+    auto rshape = res->getShape();
+
+    assert(wshape.rowCnt == rshape.colCnt);
+    assert(wshape.colCnt == rshape.rowCnt);
+
+    const int M = wshape.rowCnt;
+    const int N = wshape.colCnt;
+    dim3 gridDim(
+        (N + TILE_WIDTH - 1) / TILE_WIDTH,
+        (M + TILE_WIDTH - 1) / TILE_WIDTH
+    );
+
+    dim3 blockDim(
+        TILE_WIDTH,
+        TILE_WIDTH
+    );
+
+    transpose<<<gridDim, blockDim>>>(
+        (DATATYPE *)w->getLowLevelDataDevice(),
+        (DATATYPE *)res->getLowLevelDataDevice(),
+        M, N
+    );
 }
 
 void GPUBackendOps::operator_assign(Matrix *res, Matrix *w) {
@@ -231,9 +354,27 @@ void GPUBackendOps::operator_assign(Matrix *res, Matrix *w) {
     assert(false);
 }
 
-void GPUBackendOps::operator_sum(Matrix *res, Matrix *w) {
-    std::cerr << "operator_sum unimplemented" << std::endl;
-    assert(false);
+void GPUBackendOps::operator_sum(Matrix *res, Matrix *w) {    
+    auto wshape = w->getShape();
+    auto rshape = res->getShape();
+
+    assert(rshape.rowCnt == wshape.rowCnt);
+    assert(rshape.colCnt == 1);
+
+    const int M = wshape.rowCnt;
+    const int N = wshape.colCnt;
+    dim3 gridDim(
+        (M + TILE_WIDTH - 1) / TILE_WIDTH
+    );
+    dim3 blockDim(
+        TILE_WIDTH
+    );
+
+    sum<<<gridDim, blockDim>>>(
+        (DATATYPE *)w->getLowLevelDataDevice(),
+        (DATATYPE *)res->getLowLevelDataDevice(),
+        M, N
+    );
 }
 
 void GPUBackendOps::operator_split(std::vector<Matrix *> &res, Matrix *w) {
@@ -279,4 +420,23 @@ void GPUBackendOps::operator_init_weight(Matrix *w, DATATYPE sigma, DATATYPE mea
 void GPUBackendOps::operator_init_weight_uniform(Matrix *w, DATATYPE sigma) {
     std::cerr << "operator_init_weight_uniform unimplemented" << std::endl;
     assert(false);
+}
+
+void GPUBackendOps::step(float lr, int t, Matrix *w, Matrix *grad, Matrix *mm, Matrix *mv) {
+    auto shape = w->getShape();
+    const int M = shape.size();
+    dim3 gridDim(
+        (M + TILE_WIDTH - 1) / TILE_WIDTH
+    );
+    dim3 blockDim(
+        TILE_WIDTH
+    );
+    step_kernel<<<gridDim, blockDim>>>(
+        lr, t,
+        (DATATYPE *)w->getLowLevelDataDevice(),
+        (DATATYPE *)grad->getLowLevelDataDevice(),
+        (DATATYPE *)mm->getLowLevelDataDevice(),
+        (DATATYPE *)mv->getLowLevelDataDevice(),
+        M
+    );
 }

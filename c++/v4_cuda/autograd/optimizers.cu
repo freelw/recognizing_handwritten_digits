@@ -1,10 +1,11 @@
 #include "autograd/optimizers.cuh"
-#include <iostream> 
+#include <iostream>
+#include "backends/ops.cuh"
 
 namespace autograd_cuda {
     void Adam::step() {
 
-        sync();
+        cp_from_device();
         
         for (auto p : parameters) {
             if (!p->require_grad()) {
@@ -45,8 +46,18 @@ namespace autograd_cuda {
             }
         }
 
-        increase_cpu_ver();
-        sync();
+        cp_to_device();
+    }
+
+    void Adam::cuda_step() {
+        for (auto p : parameters) {
+            if (!p->require_grad()) {
+                continue;
+            }
+            p->inc_t();
+            auto t = p->get_t();
+            g_gpu_backend_ops->step(lr, t, p->get_weight(), p->get_grad(), p->get_m(), p->get_v());
+        }
     }
 
     void Adam::zero_grad() {
@@ -56,12 +67,10 @@ namespace autograd_cuda {
             }
             p->zero_grad();
         }
-        increase_cpu_ver();
-        sync();
     }
 
     bool Adam::clip_grad(DATATYPE grad_clip_val) {
-        sync();
+        cp_from_device();
         DATATYPE norm = 0;
         
         for (auto param : parameters) {
@@ -91,32 +100,37 @@ namespace autograd_cuda {
                 *grad *= grad_clip_val / norm;
             }
         }
-        increase_cpu_ver();
-        sync();
+        cp_to_device();
         return norm > grad_clip_val;
     }
 
-    void Adam::sync() {
+    bool Adam::cuda_clip_grad(DATATYPE grad_clip_val) {
+        std::cerr << "Not implemented yet!" << std::endl;
+        assert(false);
+        return false;
+    }
+
+    void Adam::cp_from_device() {
         for (auto p : parameters) {
+            p->get_weight()->cp_from_device();
             if (!p->require_grad()) {
                 continue;
             }
-            p->get_weight()->sync();
-            p->get_grad()->sync();
-            p->get_m()->sync();
-            p->get_v()->sync();
+            p->get_grad()->cp_from_device();
+            p->get_m()->cp_from_device();
+            p->get_v()->cp_from_device();
         }
     }
 
-    void Adam::increase_cpu_ver() {
+    void Adam::cp_to_device() {
         for (auto p : parameters) {
+            p->get_weight()->cp_to_device();
             if (!p->require_grad()) {
                 continue;
             }
-            p->get_weight()->increase_cpu_ver();
-            p->get_grad()->increase_cpu_ver();
-            p->get_m()->increase_cpu_ver();
-            p->get_v()->increase_cpu_ver();
+            p->get_grad()->cp_to_device();
+            p->get_m()->cp_to_device();
+            p->get_v()->cp_to_device();
         }
     }
 

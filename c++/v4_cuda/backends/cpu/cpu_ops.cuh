@@ -11,7 +11,7 @@ class CPUBackendOps : public BackendOps {
         virtual Matrix *CrossEntropyLoss(
             Matrix *input,
             const std::vector<uint> &labels,
-            std::vector<autograd_cuda::CrosEntropyInfo> &info) override;
+            Matrix *&maxs, Matrix *&sums) override;
         virtual Matrix *CrossEntropyLossMask(
             Matrix *input,
             const std::vector<uint> &labels,
@@ -28,7 +28,7 @@ class CPUBackendOps : public BackendOps {
             Matrix *w,
             Matrix *grad,
             const std::vector<uint> &labels,
-            const std::vector<autograd_cuda::CrosEntropyInfo> &info) override;
+            Matrix *maxs, Matrix *sums) override;
         virtual void CrossEntropyMaskEdgeBackward(
             Matrix *w,
             Matrix *grad,
@@ -41,11 +41,12 @@ class CPUBackendOps : public BackendOps {
             const std::vector<DATATYPE> &avg_res,
             const std::vector<DATATYPE> &var_res,
             DATATYPE eps) override;
-        virtual DATATYPE *allocDeviceMem(size_t size) override;
+        virtual void *allocDeviceMem(size_t size) override;
         virtual void deviceMemcpy(void *dst, const void *src, size_t size) override;
-        virtual void releaseDeviceMem(DATATYPE *ptr) override;
-        virtual void expand_add(Matrix *w, const Matrix &m) override;
-        virtual void operator_add(Matrix *w, const Matrix &m) override;
+        virtual void releaseDeviceMem(void *ptr) override;
+        virtual void zero(void *ptr, size_t size) override;
+        virtual void expand_add(Matrix *w, Matrix &m) override;
+        virtual void operator_add(Matrix *w, Matrix &m) override;
         virtual void pow2(Matrix *w) override;
         virtual void operator_add_val(Matrix *w, DATATYPE v) override;
         virtual void operator_minus_val(Matrix *w, DATATYPE v) override;
@@ -74,5 +75,6 @@ class CPUBackendOps : public BackendOps {
         virtual void operator_sigmoid_prime(Matrix *w) override;
         virtual void operator_init_weight(Matrix *w, DATATYPE sigma, DATATYPE mean = 0) override;
         virtual void operator_init_weight_uniform(Matrix *w, DATATYPE sigma) override;
+        virtual void step(float lr, int t, Matrix *w, Matrix *grad, Matrix *mm, Matrix *mv) override;
 };
 #endif

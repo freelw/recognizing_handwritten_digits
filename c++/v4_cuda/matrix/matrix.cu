@@ -9,6 +9,8 @@
 #include <chrono>
 #include "backends/cpu/cpu_ops.cuh"
 
+bool check(float *h_output, float *res, int size);
+
 Matrix::Matrix(Shape _shape)
     : initialized(false),
     allocated(false),
@@ -35,14 +37,13 @@ Matrix::Matrix(const Matrix &m):
     gpu_ver(m.gpu_ver) {
     assert(initialized);
     // assert(m.is_sync());
+    assert(gpu_ver >= cpu_ver);
     data = new DATATYPE[shape.size()];
     auto size = shape.size() * sizeof(DATATYPE);
     data_device = g_gpu_backend_ops->allocDeviceMem(size);
     g_gpu_backend_ops->deviceMemcpy(data_device, m.data_device, size);
     allocated = true;
     memcpy(data, m.data, size);
-    increase_cpu_ver();
-    sync();
 }
 
 Matrix::Matrix(const std::vector<DATATYPE> &v):
@@ -75,6 +76,7 @@ Matrix::~Matrix() {
 Matrix *Matrix::zero() {
     assert(allocated);
     memset(data, 0, sizeof(DATATYPE) * shape.size());
+    g_gpu_backend_ops->zero(data_device, shape.size() * sizeof(DATATYPE));
     initialized = true;
     return this;
 }
@@ -117,24 +119,26 @@ ostream &operator<<(ostream &output, const Matrix &m) {
     return output;
 }
 
-Matrix *Matrix::expand_add(const Matrix &m) {
+Matrix *Matrix::expand_add(Matrix &m) {
     assert(m.shape.rowCnt == shape.rowCnt);
     assert(m.shape.colCnt == 1);
     Matrix *res = allocTmpMatrix(this);
-    g_backend_ops->expand_add(res, m);
+    // g_backend_ops->expand_add(res, m);
+    g_gpu_backend_ops->expand_add(res, m);
     return res;
 }
 
-Matrix *Matrix::operator+(const Matrix &m) {
+Matrix *Matrix::operator+(Matrix &m) {
     checkShape(m);
     Matrix *res = allocTmpMatrix(this);
-    g_backend_ops->operator_add(res, m);
+    // g_backend_ops->operator_add(res, m);
+    g_gpu_backend_ops->operator_add(res, m);
     return res;
 }
 
-Matrix *Matrix::operator+=(const Matrix &m) {
+Matrix *Matrix::operator+=(Matrix &m) {
     checkShape(m);
-    g_backend_ops->operator_add(this, m);
+    g_gpu_backend_ops->operator_add(this, m);
     return this;
 }
 
@@ -207,13 +211,15 @@ Matrix *Matrix::operator/(DATATYPE v) {
 
 Matrix *Matrix::Relu() {
     Matrix *res = allocTmpMatrix(this);
-    g_backend_ops->operator_relu(res);
+    // g_backend_ops->operator_relu(res);
+    g_gpu_backend_ops->operator_relu(res);
     return res;
 }
 
 Matrix *Matrix::Relu_prime() {
     Matrix *res = allocTmpMatrix(this);
-    g_backend_ops->operator_relu_prime(res);
+    // g_backend_ops->operator_relu_prime(res);
+    g_gpu_backend_ops->operator_relu_prime(res);
     return res;
 }
 
@@ -258,23 +264,21 @@ bool check(float *h_output, float *res, int size) {
 
 Matrix *Matrix::at(Matrix &m) {
     assert(m.shape.rowCnt == shape.colCnt);
-    // Matrix *res_gpu = allocTmpMatrix(Shape(shape.rowCnt, m.shape.colCnt));
     Matrix *res = allocTmpMatrix(Shape(shape.rowCnt, m.shape.colCnt));
-    this->sync();
-    m.sync();
-    assert(this->is_sync());
-    assert(m.is_sync());
-    assert(res->is_sync());
+    // this->sync();
+    // m.sync();
+    // assert(this->is_sync());
+    // assert(m.is_sync());
+    // assert(res->is_sync());
     g_gpu_backend_ops->operator_at(res, this, m);
-    // g_backend_ops->operator_at(res, this, m);
-    res->sync();
-    // assert(check(res_gpu->getLowLevelData(), res->getLowLevelData(), shape.rowCnt * m.shape.colCnt));
+    // res->sync();
     return res;
 }
 
 Matrix *Matrix::transpose() {
     Matrix *res = allocTmpMatrix(Shape(shape.colCnt, shape.rowCnt));
-    g_backend_ops->operator_transpose(res, this);
+    // g_backend_ops->operator_transpose(res, this);
+    g_gpu_backend_ops->operator_transpose(res, this);
     return res;
 }
 
@@ -305,7 +309,8 @@ Matrix *Matrix::sum(uint dim) {
     assert(dim == 1);
     if (dim == 1) {
         Matrix *res = allocTmpMatrix(Shape(shape.rowCnt, 1));
-        g_backend_ops->operator_sum(res, this);
+        // g_backend_ops->operator_sum(res, this);
+        g_gpu_backend_ops->operator_sum(res, this);
         return res;
     }
     return nullptr;
@@ -330,7 +335,7 @@ DATATYPE *Matrix::getLowLevelData() const {
     return data;
 }
 
-DATATYPE *Matrix::getLowLevelDataDevice() const {
+void *Matrix::getLowLevelDataDevice() const {
     return data_device;
 }
 
@@ -408,10 +413,12 @@ void freeTmpMatrix() {
 
 void Matrix::init_weight(DATATYPE sigma, DATATYPE mean) {
     g_backend_ops->operator_init_weight(this, sigma, mean);
+    cp_to_device();
 }
 
 void Matrix::init_weight_uniform(DATATYPE sigma) {
     g_backend_ops->operator_init_weight_uniform(this, sigma);
+    cp_to_device();
 }
 
 void Matrix::set_val(int i, int j, DATATYPE val) {
@@ -426,15 +433,15 @@ DATATYPE Matrix::get_val(int i, int j) const {
 }
 
 void Matrix::cp_to_device() {
-    assert(cpu_ver > gpu_ver);
+    // assert(cpu_ver > gpu_ver);
     assert(allocated && initialized);
-    commited = true;
+    // commited = true;
     g_gpu_backend_ops->cp_to_device(data_device, data, shape.size()*sizeof(DATATYPE));
     gpu_ver = cpu_ver;
 }
 
 void Matrix::cp_from_device() {
-    assert(cpu_ver < gpu_ver);
+    // assert(cpu_ver < gpu_ver);
     g_gpu_backend_ops->cp_from_device(data, data_device, shape.size()*sizeof(DATATYPE));
     cpu_ver = gpu_ver;
 }

@@ -36,10 +36,10 @@ DATATYPE update_mini_batch(
     auto loss = m.forward(autograd_cuda::allocNode(input))->CrossEntropy(labels);
     assert(loss->get_weight()->getShape().rowCnt == 1);
     assert(loss->get_weight()->getShape().colCnt == 1);
-    loss->get_weight()->sync();
+    loss->get_weight()->cp_from_device();
     DATATYPE ret = loss->get_weight()->get_val(0, 0);
     loss->backward();
-    optimizer.step();
+    optimizer.cuda_step();
     autograd_cuda::freeAllNodes();
     autograd_cuda::freeAllEdges();
     freeTmpMatrix();
@@ -51,7 +51,8 @@ int evaluate(autograd_cuda::MLP &m, std::vector<TrainingData*> &v_test_data) {
     for (uint i = 0; i < v_test_data.size(); ++ i) {
         Matrix *input = allocTmpMatrix(v_test_data[i]->x);
         Matrix *res = m.forward(autograd_cuda::allocNode(input))->get_weight();
-        res->sync();
+        res->cp_from_device();
+        
         res->checkShape(Shape(10, 1));
         uint index = res->argMax()[0];
         if (index == v_test_data[i]->y) {
@@ -99,7 +100,7 @@ void train(int epochs, int batch_size, bool use_dropout, bool eval) {
     for (auto i = 0; i < TRAIN_IMAGES_NUM; ++ i) {
         TrainingData *p = new TrainingData(INPUT_LAYER_SIZE, loader.getTrainLabels()[i]);
         for (auto j = 0; j < INPUT_LAYER_SIZE; ++ j) {
-            p->x.emplace_back(loader.getTrainImages()[i][j]);
+            p->x.emplace_back(loader.getTrainImages()[i][j]*1./256);
         }
         v_training_data.emplace_back(p);
     }
@@ -107,7 +108,7 @@ void train(int epochs, int batch_size, bool use_dropout, bool eval) {
         int index = i + TRAIN_IMAGES_NUM;
         TrainingData *p = new TrainingData(INPUT_LAYER_SIZE, loader.getTrainLabels()[index]);
         for (auto j = 0; j < INPUT_LAYER_SIZE; ++ j) {
-            p->x.emplace_back(loader.getTrainImages()[index][j]);
+            p->x.emplace_back(loader.getTrainImages()[index][j]*1./256);
         }
         v_test_data.emplace_back(p);
     }

@@ -17,14 +17,17 @@ void CPUBackendOps::cp_from_device(void* dst, const void* src, size_t size) {
 Matrix *CPUBackendOps::CrossEntropyLoss(
     Matrix *input,
     const std::vector<uint> &labels,
-    std::vector<autograd_cuda::CrosEntropyInfo> &info) {
+    Matrix *&maxs, Matrix *&sums) {
 
     input->increase_cpu_ver();
     assert(input->getShape().colCnt == labels.size());
-    assert(info.size() == 0);
+    
     Matrix *loss = allocTmpMatrix(Shape(1,1));
     DATATYPE loss_value = 0;
-    info.resize(input->getShape().colCnt);
+
+    auto shape = input->getShape();
+    maxs = allocTmpMatrix(Shape(shape.colCnt, 1));
+    sums = allocTmpMatrix(Shape(shape.colCnt, 1));
 
     #pragma omp parallel for reduction(+:loss_value)
     for (uint j = 0; j < input->getShape().colCnt; ++ j) {
@@ -43,9 +46,8 @@ Matrix *CPUBackendOps::CrossEntropyLoss(
             e = std::exp(e-max);
             sum += e;
         }
-        autograd_cuda::CrosEntropyInfo &p = info[j];
-        p.sum = sum;
-        p.max = max;
+        (*maxs)[j][0] = max;
+        (*sums)[j][0] = sum;
         loss_value += -(zt - max - log(sum));
     }
     (*loss)[0][0] = loss_value/labels.size();
@@ -186,13 +188,13 @@ void CPUBackendOps::CrossEntropyEdgeBackward(
     Matrix *w,
     Matrix *grad,
     const std::vector<uint> &labels,
-    const std::vector<autograd_cuda::CrosEntropyInfo> &info) {
+    Matrix *maxs, Matrix *sums) {
     
     #pragma omp parallel for
     for (uint i = 0; i < labels.size(); ++i) {
         auto target = labels[i];
-        DATATYPE max = info[i].max;
-        DATATYPE sum = info[i].sum;
+        DATATYPE max = maxs->get_val(i, 0);
+        DATATYPE sum = sums->get_val(i, 0);
         for (uint j = 0; j < w->getShape().rowCnt; ++j) {
             if (j == target) {
                 continue;
@@ -249,7 +251,7 @@ void CPUBackendOps::NormEdgeBackward(
     assert(false);
 }
 
-DATATYPE *CPUBackendOps::allocDeviceMem(size_t size) {
+void *CPUBackendOps::allocDeviceMem(size_t size) {
     return nullptr;
 }
 
@@ -257,11 +259,16 @@ void CPUBackendOps::deviceMemcpy(void *dst, const void *src, size_t size) {
     assert(false);
 }
 
-void CPUBackendOps::releaseDeviceMem(DATATYPE *ptr) {
+void CPUBackendOps::releaseDeviceMem(void *ptr) {
     assert(ptr == nullptr);
 }
 
-void CPUBackendOps::expand_add(Matrix *w, const Matrix &m) {
+void CPUBackendOps::zero(void *ptr, size_t size) {
+    assert(ptr == nullptr);
+    assert(size == 0);
+}
+
+void CPUBackendOps::expand_add(Matrix *w, Matrix &m) {
     auto shape = w->getShape();
     for (uint i = 0; i < shape.rowCnt; ++i) {
         for (uint j = 0; j < shape.colCnt; ++j) {
@@ -271,7 +278,7 @@ void CPUBackendOps::expand_add(Matrix *w, const Matrix &m) {
     w->increase_cpu_ver();
 }
 
-void CPUBackendOps::operator_add(Matrix *w, const Matrix &m) {
+void CPUBackendOps::operator_add(Matrix *w, Matrix &m) {
     auto shape = w->getShape();
     for (uint i = 0; i < shape.rowCnt; ++i) {
         for (uint j = 0; j < shape.colCnt; ++j) {
@@ -606,4 +613,9 @@ void CPUBackendOps::operator_init_weight_uniform(Matrix *w, DATATYPE sigma) {
         }
     }
     w->increase_cpu_ver();
+}
+
+void CPUBackendOps::step(float lr, int t, Matrix *w, Matrix *grad, Matrix *mm, Matrix *mv) {
+    std::cerr << "CPUBackendOps::step not implemented" << std::endl;
+    assert(false);
 }

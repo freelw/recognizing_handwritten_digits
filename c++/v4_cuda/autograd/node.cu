@@ -6,8 +6,9 @@
 
 namespace autograd_cuda {
 
-    Matrix *CrossEntropyLoss(Matrix *input, const std::vector<uint> &labels, std::vector<CrosEntropyInfo> &info) { 
-        return g_backend_ops->CrossEntropyLoss(input, labels, info);
+    Matrix *CrossEntropyLoss(Matrix *input, const std::vector<uint> &labels, Matrix *&maxs, Matrix *&sums) { 
+        // return g_backend_ops->CrossEntropyLoss(input, labels, maxs, sums);
+        return g_gpu_backend_ops->CrossEntropyLoss(input, labels, maxs, sums);
     }
 
     Matrix *CrossEntropyLossMask(
@@ -138,12 +139,12 @@ namespace autograd_cuda {
 
     Node *Node::CrossEntropy(const std::vector<uint> &labels) {
         assert(w->getShape().colCnt == labels.size());
-        std::vector<CrosEntropyInfo> info;
-        auto *node = allocNode(::autograd_cuda::CrossEntropyLoss(w, labels, info));
-        assert(info.size() == w->getShape().colCnt);
+        Matrix *maxs = nullptr;
+        Matrix *sums = nullptr;
+        auto *node = allocNode(::autograd_cuda::CrossEntropyLoss(w, labels, maxs, sums));
         if (is_require_grad()) {
             node->require_grad();
-            node->edges.push_back(CrossEntropyEdge::create(this, labels, info));
+            node->edges.push_back(CrossEntropyEdge::create(this, labels, maxs, sums));
         }
         return node;
     }
@@ -280,11 +281,12 @@ namespace autograd_cuda {
 
     void CrossEntropyEdge::backward(Matrix *) {
         assert(node->is_require_grad());
-        g_backend_ops->CrossEntropyEdgeBackward(
+        g_gpu_backend_ops->CrossEntropyEdgeBackward(
             node->get_weight(),
             node->get_grad(),
             labels,
-            info
+            maxs,
+            sums
         );
     }
 

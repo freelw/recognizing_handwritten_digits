@@ -268,18 +268,24 @@ namespace autograd_cuda {
 
     class CrossEntropyEdge : public Edge {
         public:
-            static Edge* create(Node *_node, const std::vector<uint> &_labels, const std::vector<CrosEntropyInfo> &_info) { 
-                Edge *edge = new CrossEntropyEdge(_node, _labels, _info);
+            static Edge* create(
+                Node *_node, const std::vector<uint> &_labels,
+                Matrix *_maxs, Matrix *_sums
+            ) { 
+                Edge *edge = new CrossEntropyEdge(_node, _labels, _maxs, _sums);
                 edges.push_back(edge);
                 return edge;
             }
-            CrossEntropyEdge(Node *_node, const std::vector<uint> &_labels, const std::vector<CrosEntropyInfo> &_info)
-                : Edge(CrossEntropy, _node), labels(_labels), info(_info) {}
+            CrossEntropyEdge(
+                Node *_node, const std::vector<uint> &_labels,
+                Matrix *_maxs, Matrix *_sums
+            ) : Edge(CrossEntropy, _node), labels(_labels), maxs(_maxs), sums(_sums){}
             virtual ~CrossEntropyEdge() {}
             void backward(Matrix *) override;
         private:
             std::vector<uint> labels;
-            std::vector<CrosEntropyInfo> info;
+            Matrix *maxs;
+            Matrix *sums;
     };
 
     class CrossEntropyMaskEdge: public Edge {

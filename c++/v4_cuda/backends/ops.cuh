@@ -10,7 +10,7 @@ class BackendOps {
         virtual Matrix *CrossEntropyLoss(
             Matrix *input,
             const std::vector<uint> &labels,
-            std::vector<autograd_cuda::CrosEntropyInfo> &info
+            Matrix *&maxs, Matrix *&sums
         ) = 0;
         virtual Matrix *CrossEntropyLossMask(
             Matrix *input,
@@ -28,7 +28,7 @@ class BackendOps {
             Matrix *w,
             Matrix *grad,
             const std::vector<uint> &labels,
-            const std::vector<autograd_cuda::CrosEntropyInfo> &info) = 0;
+            Matrix *maxs, Matrix *sums) = 0;
         virtual void CrossEntropyMaskEdgeBackward(
             Matrix *w,
             Matrix *grad,
@@ -41,11 +41,12 @@ class BackendOps {
             const std::vector<DATATYPE> &avg_res,
             const std::vector<DATATYPE> &var_res,
             DATATYPE eps) = 0;
-        virtual DATATYPE *allocDeviceMem(size_t size) = 0;
+        virtual void *allocDeviceMem(size_t size) = 0;
         virtual void deviceMemcpy(void *dst, const void *src, size_t size) = 0;
-        virtual void releaseDeviceMem(DATATYPE *ptr) = 0;
-        virtual void expand_add(Matrix *w, const Matrix &m) = 0;
-        virtual void operator_add(Matrix *w, const Matrix &m) = 0;
+        virtual void releaseDeviceMem(void *ptr) = 0;
+        virtual void zero(void *ptr, size_t size) = 0;
+        virtual void expand_add(Matrix *w, Matrix &m) = 0;
+        virtual void operator_add(Matrix *w, Matrix &m) = 0;
         virtual void pow2(Matrix *w) = 0;
         virtual void operator_add_val(Matrix *w, DATATYPE v) = 0;
         virtual void operator_minus_val(Matrix *w, DATATYPE v) = 0;
@@ -74,6 +75,7 @@ class BackendOps {
         virtual void operator_sigmoid_prime(Matrix *w) = 0;
         virtual void operator_init_weight(Matrix *w, DATATYPE sigma, DATATYPE mean) = 0;
         virtual void operator_init_weight_uniform(Matrix *w, DATATYPE sigma) = 0;
+        virtual void step(float lr, int t, Matrix *w, Matrix *grad, Matrix *mm, Matrix *mv) = 0;
 };
 
 extern BackendOps *g_backend_ops;
