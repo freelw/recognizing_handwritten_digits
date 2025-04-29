@@ -19,6 +19,9 @@ class Tensor {
         virtual bool is_view() const { return false; }
         std::vector<int> get_shape() const { return shape; }
         Tensor *transpose_2d();
+        Tensor *operator+=(const Tensor *other);
+        Tensor *at(const Tensor *other);
+        Tensor *operator*(const Tensor *other);
     protected:
         std::vector<int> shape;
         std::vector<int> strides;

@@ -44,7 +44,7 @@ bool Tensor::sanitize() const {
 Tensor *Tensor::transpose_2d() {
     if (shape.size() != 2) {
         std::cerr << "Error: Transpose only supported for 2D tensors" << std::endl;
-        return nullptr;
+        abort();
     }
     if (data != nullptr) {
         std::cerr << "Error: Transpose not supported for non-null data" << std::endl;
@@ -57,6 +57,31 @@ Tensor *Tensor::transpose_2d() {
     transposed_tensor->strides[0] = strides[1];
     transposed_tensor->strides[1] = strides[0];
     return transposed_tensor;
+}
+
+Tensor *Tensor::operator+=(const Tensor *other) {
+    if (this->size() != other->size()) {
+        std::cerr << "Error: Tensor sizes do not match for addition" << std::endl;
+        abort();
+    }
+    return this;
+}
+
+Tensor *Tensor::at(const Tensor *other) {
+    assert(this->shape.size() == 2);
+    assert(other->shape.size() == 2);
+    assert(this->shape[1] == other->shape[0]);
+    Tensor *res = allocTensor({this->shape[0], other->shape[1]});
+    return res;
+}
+
+Tensor *Tensor::operator*(const Tensor *other) {
+    assert(this->shape.size() == 2);
+    assert(other->shape.size() == 2);
+    assert(this->shape[0] == other->shape[0]);
+    assert(this->shape[1] == other->shape[1]);
+    Tensor *res = allocTensor(this->shape);
+    return res;
 }
 
 std::vector<Tensor*> g_tensors;
