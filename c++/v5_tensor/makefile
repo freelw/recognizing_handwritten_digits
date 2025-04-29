@@ -1,5 +1,6 @@
 DIR_INC = -I./
 DIR_INC += -I../utils/
+DIR_INC += -I./tensor
 
 DIR_LIB = -L./
 TARGET	= mnist_cuda
