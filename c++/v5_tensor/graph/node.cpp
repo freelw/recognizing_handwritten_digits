@@ -43,4 +43,18 @@ namespace graph {
     void gAddEdge(Edge *edge) {
         edges.push_back(edge);
     }
+
+    void freeAllNodes() {
+        for (Node *node : nodes) {
+            delete node;
+        }
+        nodes.clear();
+    }
+
+    void freeAllEdges() {
+        for (Edge *edge : edges) {
+            delete edge;
+        }
+        edges.clear();
+    }
 } // namespace graph

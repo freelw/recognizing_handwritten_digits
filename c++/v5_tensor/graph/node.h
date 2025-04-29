@@ -114,5 +114,7 @@ namespace graph {
     };
 
     Node *allocNode(Tensor *t);
+    void freeAllNodes();
+    void freeAllEdges();
 }
 #endif
