@@ -54,4 +54,7 @@ class TensorView : public Tensor {
 Tensor *allocTensor(const std::vector<int> &shape);
 Tensor *allocTensorView(Tensor *parent);
 
+void freeAllTensors();
+void freeAllTensorViews();
+
 #endif

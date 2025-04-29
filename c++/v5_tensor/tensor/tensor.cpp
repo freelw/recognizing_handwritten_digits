@@ -59,7 +59,6 @@ Tensor *Tensor::transpose_2d() {
     return transposed_tensor;
 }
 
-
 std::vector<Tensor*> g_tensors;
 std::vector<Tensor*> g_tensor_views;
 
@@ -73,4 +72,18 @@ Tensor *allocTensorView(Tensor *parent) {
     Tensor *tensor_view = new TensorView(parent);
     g_tensor_views.push_back(tensor_view);
     return tensor_view;
+}
+
+void freeAllTensors() {
+    for (Tensor *tensor : g_tensors) {
+        delete tensor;
+    }
+    g_tensors.clear();
+}
+
+void freeAllTensorViews() {
+    for (Tensor *tensor_view : g_tensor_views) {
+        delete tensor_view;
+    }
+    g_tensor_views.clear();
 }
