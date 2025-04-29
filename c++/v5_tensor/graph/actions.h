@@ -28,6 +28,13 @@ class AddEqAction : public Action {
         void execute() override;
 };
 
+class ExpandAddAction : public Action {
+    public:
+        ExpandAddAction(Tensor *_lhs, const Tensor *_rhs, Tensor *_res)
+            : Action(_lhs, _rhs, _res) {}
+        void execute() override;
+};
+
 class AtAction : public Action {
     public:
         AtAction(Tensor *_lhs, const Tensor *_rhs, Tensor *_res)

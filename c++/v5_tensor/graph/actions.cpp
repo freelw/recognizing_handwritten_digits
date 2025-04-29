@@ -8,22 +8,34 @@
 void AddAction::execute() {
     assert(lhs != nullptr);
     assert(rhs != nullptr);
+    assert(res != nullptr);
     g_backend_ops->add(lhs, rhs, res);
 }
 
 void AddEqAction::execute() {
+    assert(lhs != nullptr);
+    assert(rhs != nullptr);
     g_backend_ops->addEq(lhs, rhs);
+}
+
+void ExpandAddAction::execute() {
+    assert(lhs != nullptr);
+    assert(rhs != nullptr);
+    assert(res != nullptr);
+    g_backend_ops->expandAdd(lhs, rhs, res);
 }
 
 void AtAction::execute() {
     assert(lhs != nullptr);
     assert(rhs != nullptr);
+    assert(res != nullptr);
     g_backend_ops->at(lhs, rhs, res);
 }
 
 void MulAction::execute() {
     assert(lhs != nullptr);
     assert(rhs != nullptr);
+    assert(res != nullptr);
     g_backend_ops->mul(lhs, rhs, res);
 }
 
