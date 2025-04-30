@@ -1,6 +1,8 @@
 #ifndef BACKEND_OPS_H
 #define BACKEND_OPS_H
 
+#include "tensor/tensor.h"
+
 class BackendOps {
     public:
         BackendOps() = default;
@@ -15,9 +17,10 @@ class BackendOps {
         virtual void reluPrime(Tensor *lhs, Tensor *res) = 0;
         virtual void crossEntropy(Tensor *lhs, const Tensor *labels, Tensor *maxs, Tensor *sums, Tensor *res) = 0;
         virtual void crossEntropyBackward(Tensor *lhs, const Tensor *labels, Tensor *maxs, Tensor *sums, Tensor *res) = 0;
-        virtual void zero_grad();
-        virtual void *alloc(int64_t size) = 0;
-        virtual void *memset(void *ptr, int value, int64_t size) = 0;
+        virtual void *alloc(size_t size) = 0;
+        virtual void memset(void *ptr, int value, size_t size) = 0;
+        virtual void memcpy(void *dst, const void *src, size_t size) = 0;
+        virtual void free(void *ptr) = 0;
 };
 
 extern BackendOps *g_backend_ops;

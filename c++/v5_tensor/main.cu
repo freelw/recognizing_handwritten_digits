@@ -1,5 +1,5 @@
 #include "tensor.h"
-#include "backends/backend_ops.h"
+#include "backends/cpu/cpu_ops.h"
 #include "graph/node.h"
 #include <iostream>
 
@@ -11,7 +11,17 @@ void zero_grad() {
     );
 }
 
+void init_backend() {
+    g_backend_ops = new CPUOps();
+}
+
+void release_backend() {
+    delete g_backend_ops;
+    g_backend_ops = nullptr;
+}
+
 void test_plan() {
+    init_backend();
     Tensor *input = allocTensor({3, 2}, "input");
     Tensor *w = allocTensor({2, 2}, "w");
     Tensor *bias = allocTensor({2}, "bias");
@@ -24,6 +34,9 @@ void test_plan() {
     nres->backward();
     printAllTensors();
     printAllActions();
+    allocMemAndInitTensors();
+    freeAllTensors();
+    release_backend();
 }
 
 int main() {

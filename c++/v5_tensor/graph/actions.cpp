@@ -149,7 +149,7 @@ std::string CrossEntropyBackwardAction::to_string() const {
 }
 
 void ZeroGradAction::execute() {
-    g_backend_ops->zero_grad();
+    g_backend_ops->memset(grad_tensors_data, 0, grad_tensors_data_capacity);
 }
 
 std::string ZeroGradAction::to_string() const {

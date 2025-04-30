@@ -162,8 +162,8 @@ void freeAllGradTensors() {
 
 void *tensors_data = nullptr;
 void *grad_tensors_data = nullptr;
-int64_t tensors_data_capacity = 0;
-int64_t grad_tensors_data_capacity = 0;
+size_t tensors_data_capacity = 0;
+size_t grad_tensors_data_capacity = 0;
 
 void allocMemAndInitTensors() {
     assert(tensors_data == nullptr);
@@ -194,4 +194,11 @@ void allocMemAndInitTensors() {
         tensor->set_data(reinterpret_cast<char*>(grad_tensors_data) + offset);
         offset += tensor->capacity();
     }
+}
+
+void releaseTensorMem() {
+    assert(tensors_data != nullptr);
+    assert(grad_tensors_data != nullptr);
+    g_backend_ops->free(tensors_data);
+    g_backend_ops->free(grad_tensors_data);
 }
