@@ -61,7 +61,17 @@ namespace graph {
     }
 
     Node *Node::relu() {
-        return nullptr;
+        Tensor *l_tensor = this->get_tensor();
+        Tensor *res_tensor = allocTensor(l_tensor->get_shape(), "relu_res");
+        gCreateAction(
+            new ReluAction(
+                l_tensor,
+                res_tensor
+            )
+        );
+        Node *res_node = allocNode(res_tensor);
+        res_node->edges.push_back(ReluEdge::create(this));
+        return res_node;
     }
 
     std::vector<Edge *> edges;

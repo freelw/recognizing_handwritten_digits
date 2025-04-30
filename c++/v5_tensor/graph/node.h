@@ -196,6 +196,51 @@ namespace graph {
             Node *lhs;
     };
 
+    class ReluEdge : public Edge {
+        public:
+            static Edge* create(Node *_node) {
+                Edge *edge = new ReluEdge(_node);
+                gAddEdge(edge);
+                return edge;
+            }
+            ReluEdge(Node *_node)
+                : Edge(Relu, _node) {}
+            virtual ~ReluEdge() {}
+            void backward(Tensor *grad) override {
+                Tensor *relu_prime_tensor = allocTensor(
+                    node->get_tensor()->get_shape(),
+                    "relu_prime"
+                );
+
+                gCreateAction(
+                    new ReluPrimeAction(
+                        node->get_tensor(),
+                        relu_prime_tensor
+                    )
+                );
+
+                Tensor *grad_mul_relu_prime = allocTensor(
+                    node->get_tensor()->get_shape(),
+                    "grad_mul_relu_prime"
+                );
+
+                gCreateAction(
+                    new MulAction(
+                        relu_prime_tensor,
+                        grad,
+                        grad_mul_relu_prime
+                    )
+                );
+
+                gCreateAction(
+                    new AddEqAction(
+                        node->get_grad(),
+                        grad_mul_relu_prime
+                    )
+                );
+            }
+    };
+
     Node *allocNode(Tensor *t);
     void freeAllNodes();
     void freeAllEdges();

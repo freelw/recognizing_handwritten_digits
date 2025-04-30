@@ -91,6 +91,30 @@ std::string SumAction::to_string() const {
     return oss.str();
 }
 
+void ReluAction::execute() {
+    assert(lhs != nullptr);
+    assert(res != nullptr);
+    g_backend_ops->relu(lhs, res);
+}
+
+std::string ReluAction::to_string() const {
+    std::ostringstream oss;
+    oss << "ReluAction: " << *lhs << " -> " << *res;
+    return oss.str();
+}
+
+void ReluPrimeAction::execute() {
+    assert(lhs != nullptr);
+    assert(res != nullptr);
+    g_backend_ops->reluPrime(lhs, res);
+}
+
+std::string ReluPrimeAction::to_string() const {
+    std::ostringstream oss;
+    oss << "ReluPrimeAction: " << *lhs << " -> " << *res;
+    return oss.str();
+}
+
 std::vector<Action*> g_actions;
 
 void gCreateAction(Action *action) {

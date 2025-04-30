@@ -11,6 +11,8 @@ class BackendOps {
         virtual void at(Tensor *lhs, const Tensor *rhs, Tensor *res) = 0;
         virtual void mul(Tensor *lhs, const Tensor *rhs, Tensor *res) = 0;
         virtual void sum(Tensor *lhs, Tensor *res, int dim) = 0;
+        virtual void relu(Tensor *lhs, Tensor *res) = 0;
+        virtual void reluPrime(Tensor *lhs, Tensor *res) = 0;
 };
 
 extern BackendOps *g_backend_ops;

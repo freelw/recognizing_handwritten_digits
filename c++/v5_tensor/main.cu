@@ -14,7 +14,7 @@ void test_plan() {
     graph::Node *ni = graph::allocNode(input);
     graph::Node *nw = graph::allocNode(w);
     graph::Node *nb = graph::allocNode(bias);
-    auto nres = ni->at(nw)->expand_add(nb);
+    auto nres = ni->at(nw)->expand_add(nb)->relu();
     // std::cout << " print 2 " << std::endl;
     // printAllTensors();
     nres->backward();

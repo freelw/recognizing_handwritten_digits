@@ -70,6 +70,22 @@ class SumAction : public Action {
         int dim;
 };
 
+class ReluAction : public Action {
+    public:
+        ReluAction(Tensor *_lhs, Tensor *_res)
+            : Action(_lhs, nullptr, _res) {}
+        void execute() override;
+        std::string to_string() const override;
+};
+
+class ReluPrimeAction : public Action {
+    public:
+        ReluPrimeAction(Tensor *_lhs, Tensor *_res)
+            : Action(_lhs, nullptr, _res) {}
+        void execute() override;
+        std::string to_string() const override;
+};
+
 void gCreateAction(Action *action);
 void printAllActions();
 void freeAllActions();
