@@ -2,12 +2,18 @@
 #include "backends/backend_ops.h"
 #include "graph/actions.h"
 
-Tensor::Tensor(std::vector<int> _shape) : shape(_shape), data(nullptr) {
+Tensor::Tensor(std::vector<int> _shape, const std::string &_name)
+    : shape(_shape), data(nullptr), name(_name) {
     strides.resize(shape.size());
     strides[shape.size() - 1] = 1;
     for (int i = shape.size() - 2; i >= 0; --i) {
         strides[i] = strides[i + 1] * shape[i + 1];
     }
+}
+
+Tensor::Tensor(std::vector<int> _shape)
+    : Tensor(_shape, "") {
+    
 }
 
 Tensor::~Tensor() {
@@ -47,10 +53,14 @@ std::vector<Tensor*> g_tensors;
 std::vector<Tensor*> g_tensor_views;
 std::vector<Tensor*> g_grad_tensors;
 
-Tensor *allocTensor(const std::vector<int> &shape) {
-    Tensor *tensor = new Tensor(shape);
+Tensor *allocTensor(const std::vector<int> &shape, const std::string &name) {
+    Tensor *tensor = new Tensor(shape, name);
     g_tensors.push_back(tensor);
     return tensor;
+}
+
+Tensor *allocTensor(const std::vector<int> &shape) {
+    return allocTensor(shape, "tensor_autoname");
 }
 
 Tensor *allocTensorView(Tensor *parent) {
@@ -59,10 +69,14 @@ Tensor *allocTensorView(Tensor *parent) {
     return tensor_view;
 }
 
-Tensor *allocGradTensor(const std::vector<int> &shape) {
-    Tensor *grad_tensor = new Tensor(shape);
+Tensor *allocGradTensor(const std::vector<int> &shape, const std::string &name) {
+    Tensor *grad_tensor = new Tensor(shape, name);
     g_grad_tensors.push_back(grad_tensor);
     return grad_tensor;
+}
+
+Tensor *allocGradTensor(const std::vector<int> &shape) {
+    return allocGradTensor(shape, "grad_autoname");
 }
 
 void printAllTensors() {

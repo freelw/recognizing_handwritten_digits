@@ -25,7 +25,7 @@ namespace graph {
     }
 
     Node *Node::expand_add(Node *rhs) {
-        Tensor *res_tensor = allocTensor(t->get_shape());
+        Tensor *res_tensor = allocTensor(t->get_shape(), "expand_add");
         Tensor *r_tensor = rhs->get_tensor();
         gCreateAction(
             new ExpandAddAction(

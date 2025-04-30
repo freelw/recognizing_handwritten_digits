@@ -13,7 +13,7 @@ namespace graph {
             Node(Tensor *_t)
                 : t(_t),
                 ref_cnt(0) {
-                grad = allocGradTensor(t->get_shape());
+                grad = allocGradTensor(t->get_shape(), t->get_name()+"_grad");
             }
             void inc_ref() {
                 ref_cnt++;
@@ -117,7 +117,7 @@ namespace graph {
             void backward(Tensor *grad) override {
                 assert(grad->get_shape().size() == 2);
                 std::vector<int> shape = {grad->get_shape()[1]};
-                Tensor *tmp = allocTensor(shape); // 行向量
+                Tensor *tmp = allocTensor(shape, "sum_tmp"); // 行向量
                 gCreateAction(
                     new SumAction(
                         grad,

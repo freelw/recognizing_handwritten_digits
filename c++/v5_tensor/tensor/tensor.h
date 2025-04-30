@@ -5,11 +5,13 @@
 #include <vector>
 #include <cassert>
 #include <ostream>
+#include <string>
 
 #define TENSOR_PADDING_SIZE 16
 
 class Tensor {
     public:
+        Tensor(std::vector<int> _shape, const std::string &_name);
         Tensor(std::vector<int> _shape);
         ~Tensor();
         virtual void set_data(void *ptr);
@@ -20,8 +22,9 @@ class Tensor {
         virtual bool is_view() const { return false; }
         std::vector<int> get_shape() const { return shape; }
         virtual int get_rank() const { return shape.size(); }
+        virtual std::string get_name() const { return name; }
         friend std::ostream &operator<<(std::ostream &output, const Tensor &s) {
-            output << "Tensor(";
+            output << "Tensor(" << s.get_name() << ")(";
             for (size_t i = 0; i < s.shape.size(); ++i) {
                 output << s.shape[i];
                 if (i != s.shape.size() - 1) {
@@ -34,6 +37,7 @@ class Tensor {
     protected:
         std::vector<int> shape;
         std::vector<int> strides;
+        std::string name;
     private:
         void *data;
 };
@@ -62,6 +66,7 @@ class TensorView : public Tensor {
         int get_rank() const override {
             return parent->get_rank();
         }
+        virtual std::string get_name() const { return name + "_view"; }
     private:
         Tensor *parent;
 };
@@ -70,8 +75,10 @@ extern std::vector<Tensor*> g_tensors;
 extern std::vector<Tensor*> g_tensor_views;
 extern std::vector<Tensor*> g_grad_tensors;
 
+Tensor *allocTensor(const std::vector<int> &shape, const std::string &name);
 Tensor *allocTensor(const std::vector<int> &shape);
 Tensor *allocTensorView(Tensor *parent);
+Tensor *allocGradTensor(const std::vector<int> &shape, const std::string &name);
 Tensor *allocGradTensor(const std::vector<int> &shape);
 void printAllTensors();
 
