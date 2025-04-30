@@ -46,7 +46,7 @@ namespace graph {
         assert(l_tensor->get_rank() == 2);
         assert(r_tensor->get_rank() == 2);
         assert(l_tensor->get_shape()[1] == r_tensor->get_shape()[0]);
-        Tensor *res_tensor = allocTensor({l_tensor->get_shape()[0], r_tensor->get_shape()[1]}, "at");
+        Tensor *res_tensor = allocTensor({l_tensor->get_shape()[0], r_tensor->get_shape()[1]}, "res_at");
         gCreateAction(
             new AtAction(
                 this->get_tensor(),
