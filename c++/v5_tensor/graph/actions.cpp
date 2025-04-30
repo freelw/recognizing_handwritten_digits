@@ -148,6 +148,14 @@ std::string CrossEntropyBackwardAction::to_string() const {
     return oss.str();
 }
 
+void ZeroGradAction::execute() {
+    g_backend_ops->zero_grad();
+}
+
+std::string ZeroGradAction::to_string() const {
+    return "ZeroGradAction: zeroing gradients";
+}
+
 std::vector<Action*> g_actions;
 
 void gCreateAction(Action *action) {

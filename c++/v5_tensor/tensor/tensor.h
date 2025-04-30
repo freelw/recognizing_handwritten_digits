@@ -39,6 +39,8 @@ class Tensor {
         virtual std::string get_name() const { return name; }
         friend std::ostream &operator<<(std::ostream &output, const Tensor &s);
     protected:
+        int cell_size() const;
+    protected:
         std::vector<int> shape;
         std::vector<int> strides;
         std::string name;
@@ -90,5 +92,6 @@ void printAllTensors();
 void freeAllTensors();
 void freeAllTensorViews();
 void freeAllGradTensors();
+void allocMemAndInitTensors();
 
 #endif

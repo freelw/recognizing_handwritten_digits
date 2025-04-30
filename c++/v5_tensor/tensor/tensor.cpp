@@ -43,7 +43,21 @@ int Tensor::size() const {
     for (int dim : shape) {
         total_size *= dim;
     }
-    return total_size;
+    return total_size * cell_size();
+}
+
+int Tensor::cell_size() const {
+    switch (dtype) {
+        case INT8: return 1;
+        case INT16: return 2;
+        case INT32: return 4;
+        case INT64: return 8;
+        case FLOAT16: return 2;
+        case FLOAT32: return 4;
+        case FLOAT64: return 8;
+        case BOOL: return sizeof(bool);
+        default: assert(false); return 0;
+    }
 }
 
 int Tensor::capacity() const {
@@ -144,4 +158,40 @@ void freeAllGradTensors() {
         delete grad_tensor;
     }
     g_grad_tensors.clear();
+}
+
+void *tensors_data = nullptr;
+void *grad_tensors_data = nullptr;
+int64_t tensors_data_capacity = 0;
+int64_t grad_tensors_data_capacity = 0;
+
+void allocMemAndInitTensors() {
+    assert(tensors_data == nullptr);
+    assert(grad_tensors_data == nullptr);
+    assert(tensors_data_capacity == 0);
+    assert(grad_tensors_data_capacity == 0);
+    
+    for (Tensor *tensor : g_tensors) {
+        tensors_data_capacity += tensor->capacity();
+    }
+    for (Tensor *tensor : g_grad_tensors) {
+        grad_tensors_data_capacity += tensor->capacity();
+    }
+    tensors_data = g_backend_ops->alloc(tensors_data_capacity);
+    grad_tensors_data = g_backend_ops->alloc(grad_tensors_data_capacity);
+
+    g_backend_ops->memset(tensors_data, 0, tensors_data_capacity);
+    g_backend_ops->memset(grad_tensors_data, 0, grad_tensors_data_capacity);
+
+    int64_t offset = 0;
+    for (Tensor *tensor : g_tensors) {
+        tensor->set_data(reinterpret_cast<char*>(tensors_data) + offset);
+        offset += tensor->capacity();
+    }
+
+    offset = 0;
+    for (Tensor *tensor : g_grad_tensors) {
+        tensor->set_data(reinterpret_cast<char*>(grad_tensors_data) + offset);
+        offset += tensor->capacity();
+    }
 }

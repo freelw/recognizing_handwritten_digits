@@ -5,6 +5,12 @@
 
 BackendOps *g_backend_ops = nullptr;
 
+void zero_grad() {
+    gCreateAction(
+        new ZeroGradAction()
+    );
+}
+
 void test_plan() {
     Tensor *input = allocTensor({3, 2}, "input");
     Tensor *w = allocTensor({2, 2}, "w");
@@ -14,6 +20,7 @@ void test_plan() {
     graph::Node *nb = graph::allocNode(bias);
     Tensor *labels = allocTensor({3}, "labels", INT8);
     auto nres = ni->at(nw)->expand_add(nb)->relu()->CrossEntropy(labels);
+    zero_grad();
     nres->backward();
     printAllTensors();
     printAllActions();
