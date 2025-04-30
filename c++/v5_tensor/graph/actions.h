@@ -2,12 +2,18 @@
 #define ACTIONS_H
 
 #include "tensor/tensor.h"
+#include <ostream>
+#include <string>
 
 class Action {
     public:
         Action(Tensor *_lhs, const Tensor *_rhs, Tensor *_res)
             : lhs(_lhs), rhs(_rhs), res(_res) {}
         virtual void execute() = 0;
+        virtual std::string to_string() const {
+            return "Action not implemented";
+        }
+        friend std::ostream &operator<<(std::ostream &output, const Action &);
     protected:
         Tensor *lhs;
         const Tensor *rhs;
@@ -19,6 +25,7 @@ class AddAction : public Action {
         AddAction(Tensor *_lhs, const Tensor *_rhs, Tensor *_res)
             : Action(_lhs, _rhs, _res) {}
         void execute() override;
+        std::string to_string() const override;
 };
 
 class AddEqAction : public Action {
@@ -26,6 +33,7 @@ class AddEqAction : public Action {
         AddEqAction(Tensor *_lhs, const Tensor *_rhs)
             : Action(_lhs, _rhs, nullptr) {}
         void execute() override;
+        std::string to_string() const override;
 };
 
 class ExpandAddAction : public Action {
@@ -33,6 +41,7 @@ class ExpandAddAction : public Action {
         ExpandAddAction(Tensor *_lhs, const Tensor *_rhs, Tensor *_res)
             : Action(_lhs, _rhs, _res) {}
         void execute() override;
+        std::string to_string() const override;
 };
 
 class AtAction : public Action {
@@ -40,6 +49,7 @@ class AtAction : public Action {
         AtAction(Tensor *_lhs, const Tensor *_rhs, Tensor *_res)
             : Action(_lhs, _rhs, _res) {}
         void execute() override;
+        std::string to_string() const override;
 };
 
 class MulAction : public Action {
@@ -47,6 +57,7 @@ class MulAction : public Action {
         MulAction(Tensor *_lhs, const Tensor *_rhs, Tensor *_res)
             : Action(_lhs, _rhs, _res) {}
         void execute() override;
+        std::string to_string() const override;
 };
 
 class SumAction : public Action {
@@ -54,11 +65,13 @@ class SumAction : public Action {
         SumAction(Tensor *_lhs, Tensor *_res, int _dim)
             : Action(_lhs, nullptr, _res), dim(_dim) {}
         void execute() override;
+        std::string to_string() const override;
     private:
         int dim;
 };
 
 void gCreateAction(Action *action);
+void printAllActions();
 void freeAllActions();
 
 #endif

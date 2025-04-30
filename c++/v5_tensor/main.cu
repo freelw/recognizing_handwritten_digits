@@ -18,6 +18,7 @@ void test_plan() {
     n->backward();
     std::cout << " print 3 " << std::endl;
     printAllTensors();
+    printAllActions();
 }
 
 int main() {
