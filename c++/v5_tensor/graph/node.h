@@ -122,7 +122,13 @@ namespace graph {
                     new SumAction(
                         grad,
                         tmp,
-                        1
+                        0
+                    )
+                );
+                gCreateAction(
+                    new AddEqAction(
+                        node->get_grad(),
+                        tmp
                     )
                 );
             }
