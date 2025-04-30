@@ -55,11 +55,8 @@ namespace graph {
             )
         );
         Node *res_node = allocNode(res_tensor);
-        
-
         res_node->edges.push_back(MatMulLEdge::create(this, rhs));
-        // node->edges.push_back(MatMulLEdge::create(this, rhs->get_weight()));    
-        // node->edges.push_back(MatMulREdge::create(rhs, w));
+        res_node->edges.push_back(MatMulREdge::create(rhs, this));
         return res_node;
     }
 

@@ -160,17 +160,40 @@ namespace graph {
                         node->get_grad()
                     )
                 );
-
-                // gCreateAction(
-                //     new MatMulLEqAction(
-                //         node->get_grad(),
-                //         grad,
-                //         r_tensor
-                //     )
-                // );
             }
         private:
             Node *rhs;
+    };
+
+    class MatMulREdge : public Edge {
+        public:
+            static Edge* create(Node *_node, Node *_lhs) {
+                Edge *edge = new MatMulREdge(_node, _lhs);
+                gAddEdge(edge);
+                return edge;
+            }
+            MatMulREdge(Node *_node, Node *_lhs)
+                : Edge(MatMulR, _node), lhs(_lhs) {}
+            virtual ~MatMulREdge() {}
+            void backward(Tensor *grad) override {
+                Tensor *l_tensor = lhs->get_tensor();
+                Tensor *r_tensor = node->get_tensor();
+                Tensor *l_transpose_view = allocTensorView(
+                    l_tensor,
+                    {l_tensor->get_shape()[1], l_tensor->get_shape()[0]},
+                    l_tensor->get_name() + "_transpose"
+                );
+
+                gCreateAction(
+                    new AtAction(
+                        l_transpose_view,
+                        grad,
+                        node->get_grad()
+                    )
+                );
+            }
+        private:
+            Node *lhs;
     };
 
     Node *allocNode(Tensor *t);

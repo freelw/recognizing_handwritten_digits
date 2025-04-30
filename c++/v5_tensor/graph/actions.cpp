@@ -3,6 +3,7 @@
 #include <iostream>
 #include <stdlib.h>
 #include <assert.h>
+#include <sstream>
 #include "backends/backend_ops.h"
 
 std::ostream &operator<<(std::ostream &output, const Action &a) {
@@ -18,7 +19,9 @@ void AddAction::execute() {
 }
 
 std::string AddAction::to_string() const {
-    return "AddAction: " + lhs->get_name() + " + " + rhs->get_name() + " -> " + res->get_name();
+    std::ostringstream oss;
+    oss << "AddAction: " << *lhs << " + " << *rhs << " -> " << *res;
+    return oss.str();
 }
 
 void AddEqAction::execute() {
@@ -28,7 +31,9 @@ void AddEqAction::execute() {
 }
 
 std::string AddEqAction::to_string() const {
-    return "AddEqAction: " + lhs->get_name() + " += " + rhs->get_name();
+    std::ostringstream oss;
+    oss << "AddEqAction: " << *lhs << " += " << *rhs;
+    return oss.str();
 }
 
 void ExpandAddAction::execute() {
@@ -39,7 +44,9 @@ void ExpandAddAction::execute() {
 }
 
 std::string ExpandAddAction::to_string() const {
-    return "ExpandAddAction: " + lhs->get_name() + " + " + rhs->get_name() + " -> " + res->get_name();
+    std::ostringstream oss;
+    oss << "ExpandAddAction: " << *lhs << " + " << *rhs << " -> " << *res;
+    return oss.str();
 }
 
 void AtAction::execute() {
@@ -50,7 +57,9 @@ void AtAction::execute() {
 }
 
 std::string AtAction::to_string() const {
-    return "AtAction: " + lhs->get_name() + " at " + rhs->get_name() + " -> " + res->get_name();
+    std::ostringstream oss;
+    oss << "AtAction: " << *lhs << " at " << *rhs << " -> " << *res;
+    return oss.str();
 }
 
 void MulAction::execute() {
@@ -61,7 +70,9 @@ void MulAction::execute() {
 }
 
 std::string MulAction::to_string() const {
-    return "MulAction: " + lhs->get_name() + " * " + rhs->get_name() + " -> " + res->get_name();
+    std::ostringstream oss;
+    oss << "MulAction: " << *lhs << " * " << *rhs << " -> " << *res;
+    return oss.str();
 }
 
 void SumAction::execute() {
@@ -75,7 +86,9 @@ void SumAction::execute() {
 }
 
 std::string SumAction::to_string() const {
-    return "SumAction: " + lhs->get_name() + " -> " + res->get_name() + " along dim " + std::to_string(dim);
+    std::ostringstream oss;
+    oss << "SumAction: " << *lhs << " -> " << *res << " along dim " << dim;
+    return oss.str();
 }
 
 std::vector<Action*> g_actions;
