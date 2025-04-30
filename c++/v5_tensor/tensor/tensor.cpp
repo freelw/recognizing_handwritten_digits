@@ -2,8 +2,22 @@
 #include "backends/backend_ops.h"
 #include "graph/actions.h"
 
-Tensor::Tensor(std::vector<int> _shape, const std::string &_name)
-    : shape(_shape), data(nullptr), name(_name) {
+std::string TensorDtype_to_string(TensorDType dtype) {
+    switch (dtype) {
+        case INT8: return "INT8";
+        case INT16: return "INT16";
+        case INT32: return "INT32";
+        case INT64: return "INT64";
+        case FLOAT16: return "FLOAT16";
+        case FLOAT32: return "FLOAT32";
+        case FLOAT64: return "FLOAT64";
+        case BOOL: return "BOOL";
+        default: return "UNKNOWN";
+    }
+}
+
+Tensor::Tensor(std::vector<int> _shape, const std::string &_name, TensorDType _dtype)
+    : shape(_shape), data(nullptr), name(_name), dtype(_dtype) {
     strides.resize(shape.size());
     strides[shape.size() - 1] = 1;
     for (int i = shape.size() - 2; i >= 0; --i) {
@@ -11,8 +25,8 @@ Tensor::Tensor(std::vector<int> _shape, const std::string &_name)
     }
 }
 
-Tensor::Tensor(std::vector<int> _shape)
-    : Tensor(_shape, "") {
+Tensor::Tensor(std::vector<int> _shape, TensorDType _dtype)
+    : Tensor(_shape, "", _dtype) {
     
 }
 
@@ -49,18 +63,35 @@ bool Tensor::sanitize() const {
     return true;
 }
 
+std::ostream &operator<<(std::ostream &output, const Tensor &s) {
+    output << "Tensor";
+    if (s.get_dtype() != FLOAT32) {
+        std::string dtype_str = TensorDtype_to_string(s.get_dtype());
+        output << "(" << dtype_str << ")";
+    }
+    output << "(" << s.get_name() << ")(";
+    for (size_t i = 0; i < s.shape.size(); ++i) {
+        output << s.shape[i];
+        if (i != s.shape.size() - 1) {
+            output << ", ";
+        }
+    }
+    output << ")";
+    return output;
+}
+
 std::vector<Tensor*> g_tensors;
 std::vector<Tensor*> g_tensor_views;
 std::vector<Tensor*> g_grad_tensors;
 
-Tensor *allocTensor(const std::vector<int> &shape, const std::string &name) {
-    Tensor *tensor = new Tensor(shape, name);
+Tensor *allocTensor(const std::vector<int> &shape, const std::string &name, TensorDType dtype) {
+    Tensor *tensor = new Tensor(shape, name, dtype);
     g_tensors.push_back(tensor);
     return tensor;
 }
 
-Tensor *allocTensor(const std::vector<int> &shape) {
-    return allocTensor(shape, "tensor_autoname");
+Tensor *allocTensor(const std::vector<int> &shape, TensorDType dtype) {
+    return allocTensor(shape, "tensor_autoname", dtype);
 }
 
 Tensor *allocTensorView(Tensor *parent, const std::vector<int> &shape, const std::string &name) {
@@ -70,7 +101,7 @@ Tensor *allocTensorView(Tensor *parent, const std::vector<int> &shape, const std
 }
 
 Tensor *allocGradTensor(const std::vector<int> &shape, const std::string &name) {
-    Tensor *grad_tensor = new Tensor(shape, name);
+    Tensor *grad_tensor = new Tensor(shape, name, FLOAT32);
     g_grad_tensors.push_back(grad_tensor);
     return grad_tensor;
 }
