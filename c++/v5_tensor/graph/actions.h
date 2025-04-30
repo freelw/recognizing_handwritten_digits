@@ -86,6 +86,28 @@ class ReluPrimeAction : public Action {
         std::string to_string() const override;
 };
 
+class CrossEntropyAction : public Action {
+    public:
+        CrossEntropyAction(Tensor *_lhs, const Tensor *labels, Tensor *_maxs, Tensor *_sums, Tensor *_res)
+            : Action(_lhs, labels, _res), maxs(_maxs), sums(_sums) {}
+        void execute() override;
+        std::string to_string() const override;
+    private:
+        Tensor *maxs;
+        Tensor *sums;
+};
+
+class CrossEntropyBackwardAction : public Action {
+    public:
+        CrossEntropyBackwardAction(Tensor *_lhs, const Tensor *labels, Tensor *_maxs, Tensor *_sums, Tensor *_res)
+            : Action(_lhs, labels, _res), maxs(_maxs), sums(_sums) {}
+        void execute() override;
+        std::string to_string() const override;
+    private:
+        Tensor *maxs;
+        Tensor *sums;
+};
+
 void gCreateAction(Action *action);
 void printAllActions();
 void freeAllActions();

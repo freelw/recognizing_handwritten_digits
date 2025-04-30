@@ -6,19 +6,15 @@
 BackendOps *g_backend_ops = nullptr;
 
 void test_plan() {
-    // std::cout << " print 1 " << std::endl;
-    // printAllTensors();
     Tensor *input = allocTensor({3, 2}, "input");
     Tensor *w = allocTensor({2, 2}, "w");
     Tensor *bias = allocTensor({2}, "bias");
     graph::Node *ni = graph::allocNode(input);
     graph::Node *nw = graph::allocNode(w);
     graph::Node *nb = graph::allocNode(bias);
-    auto nres = ni->at(nw)->expand_add(nb)->relu();
-    // std::cout << " print 2 " << std::endl;
-    // printAllTensors();
+    Tensor *labels = allocTensor({3}, "labels", INT8);
+    auto nres = ni->at(nw)->expand_add(nb)->relu()->CrossEntropy(labels);
     nres->backward();
-    // std::cout << " print 3 " << std::endl;
     printAllTensors();
     printAllActions();
 }

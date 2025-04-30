@@ -115,6 +115,39 @@ std::string ReluPrimeAction::to_string() const {
     return oss.str();
 }
 
+void CrossEntropyAction::execute() {
+    assert(lhs != nullptr);
+    assert(rhs != nullptr);
+    assert(res != nullptr);
+    assert(maxs != nullptr);
+    assert(sums != nullptr);
+    g_backend_ops->crossEntropy(lhs, rhs, maxs, sums, res);
+}
+
+std::string CrossEntropyAction::to_string() const {
+    std::ostringstream oss;
+    oss << "CrossEntropyAction: " << *lhs << " with labels " << *rhs << " -> " << *res << " context : " << *maxs << ", " << *sums;
+    return oss.str();
+}
+
+void CrossEntropyBackwardAction::execute() {
+    assert(lhs != nullptr);
+    assert(rhs != nullptr);
+    assert(res != nullptr);
+    assert(maxs != nullptr);
+    assert(sums != nullptr);
+    // lhs is zt
+    // rhs is labels
+    // res is grad
+    g_backend_ops->crossEntropyBackward(lhs, rhs, maxs, sums, res);
+}
+
+std::string CrossEntropyBackwardAction::to_string() const {
+    std::ostringstream oss;
+    oss << "CrossEntropyBackwardAction: " << *lhs << " with labels " << *rhs << " -> " << *res << " context : " << *maxs << ", " << *sums;
+    return oss.str();
+}
+
 std::vector<Action*> g_actions;
 
 void gCreateAction(Action *action) {

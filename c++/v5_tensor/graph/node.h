@@ -35,10 +35,9 @@ namespace graph {
             }
             void backward();
             Node *expand_add(Node *rhs);
-            // Node *operator*(Node *rhs);
             Node *at(Node *rhs);
             Node *relu();
-            // Node *transpose_2d();
+            Node *CrossEntropy(Tensor *labels);
         private:
             Tensor *t;
             Tensor *grad;
@@ -239,6 +238,28 @@ namespace graph {
                     )
                 );
             }
+    };
+
+    class CrossEntropyEdge : public Edge {
+        public:
+            static Edge* create(
+                Node *_node, Tensor *_labels,
+                Tensor *_maxs, Tensor *_sums
+            ) { 
+                Edge *edge = new CrossEntropyEdge(_node, _labels, _maxs, _sums);
+                gAddEdge(edge);
+                return edge;
+            }
+            CrossEntropyEdge(
+                Node *_node, Tensor *_labels,
+                Tensor *_maxs, Tensor *_sums
+            ) : Edge(CrossEntropy, _node), labels(_labels), maxs(_maxs), sums(_sums){}
+            virtual ~CrossEntropyEdge() {}
+            void backward(Tensor *) override;
+        private:
+            Tensor *labels;
+            Tensor *maxs;
+            Tensor *sums;
     };
 
     Node *allocNode(Tensor *t);

@@ -13,6 +13,8 @@ class BackendOps {
         virtual void sum(Tensor *lhs, Tensor *res, int dim) = 0;
         virtual void relu(Tensor *lhs, Tensor *res) = 0;
         virtual void reluPrime(Tensor *lhs, Tensor *res) = 0;
+        virtual void crossEntropy(Tensor *lhs, const Tensor *labels, Tensor *maxs, Tensor *sums, Tensor *res) = 0;
+        virtual void crossEntropyBackward(Tensor *lhs, const Tensor *labels, Tensor *maxs, Tensor *sums, Tensor *res) = 0;
 };
 
 extern BackendOps *g_backend_ops;

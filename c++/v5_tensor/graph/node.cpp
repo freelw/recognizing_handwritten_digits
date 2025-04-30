@@ -74,6 +74,46 @@ namespace graph {
         return res_node;
     }
 
+    Node *Node::CrossEntropy(Tensor *labels) {
+        assert(labels->get_rank() == 1);
+        assert(
+            labels->get_dtype() == INT8 ||
+            labels->get_dtype() == INT16 ||
+            labels->get_dtype() == INT32 ||
+            labels->get_dtype() == INT64
+        );
+        assert(labels->get_shape()[0] == this->get_tensor()->get_shape()[0]);
+        Tensor *tensor_maxs = allocTensor(labels->get_shape(), "maxs");
+        Tensor *tensor_sums = allocTensor(labels->get_shape(), "sums");
+        Tensor *ce_res = allocTensor({1}, "cross_entropy");
+
+        gCreateAction(
+            new CrossEntropyAction(
+                this->get_tensor(),
+                labels,
+                tensor_maxs,
+                tensor_sums,
+                ce_res
+            )
+        );
+        Node *res_node = allocNode(ce_res);
+
+        res_node->edges.push_back(CrossEntropyEdge::create(this, labels, tensor_maxs, tensor_sums));
+        return res_node;
+    }
+
+    void CrossEntropyEdge::backward(Tensor *) {
+        gCreateAction(
+            new CrossEntropyBackwardAction(
+                node->get_tensor(),
+                labels,
+                maxs,
+                sums,
+                node->get_grad()
+            )
+        );
+    }
+
     std::vector<Edge *> edges;
     std::vector<Node *> nodes;
 
