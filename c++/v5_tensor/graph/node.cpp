@@ -41,7 +41,26 @@ namespace graph {
     }
 
     Node *Node::at(Node *rhs) {
-        return nullptr;
+        Tensor *r_tensor = rhs->get_tensor();
+        Tensor *l_tensor = this->get_tensor();
+        assert(l_tensor->get_rank() == 2);
+        assert(r_tensor->get_rank() == 2);
+        assert(l_tensor->get_shape()[1] == r_tensor->get_shape()[0]);
+        Tensor *res_tensor = allocTensor({l_tensor->get_shape()[0], r_tensor->get_shape()[1]}, "at");
+        gCreateAction(
+            new AtAction(
+                this->get_tensor(),
+                rhs->get_tensor(),
+                res_tensor
+            )
+        );
+        Node *res_node = allocNode(res_tensor);
+        
+
+        res_node->edges.push_back(MatMulLEdge::create(this, rhs));
+        // node->edges.push_back(MatMulLEdge::create(this, rhs->get_weight()));    
+        // node->edges.push_back(MatMulREdge::create(rhs, w));
+        return res_node;
     }
 
     Node *Node::relu() {

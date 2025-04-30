@@ -63,8 +63,8 @@ Tensor *allocTensor(const std::vector<int> &shape) {
     return allocTensor(shape, "tensor_autoname");
 }
 
-Tensor *allocTensorView(Tensor *parent) {
-    Tensor *tensor_view = new TensorView(parent);
+Tensor *allocTensorView(Tensor *parent, const std::vector<int> &shape, const std::string &name) {
+    Tensor *tensor_view = new TensorView(parent, shape, name);
     g_tensor_views.push_back(tensor_view);
     return tensor_view;
 }

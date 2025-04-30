@@ -44,8 +44,8 @@ class Tensor {
 
 class TensorView : public Tensor {
     public:
-        TensorView(Tensor *parent)
-            : Tensor(parent->get_shape()), parent(parent) {}
+        TensorView(Tensor *parent, const std::vector<int> &shape, const std::string &name)
+            : Tensor(shape, name), parent(parent) {}
         bool is_view() const override { return true; }
         void set_data(void *ptr) override {
             std::cerr << "Error: Cannot set data for TensorView" << std::endl;
@@ -77,7 +77,7 @@ extern std::vector<Tensor*> g_grad_tensors;
 
 Tensor *allocTensor(const std::vector<int> &shape, const std::string &name);
 Tensor *allocTensor(const std::vector<int> &shape);
-Tensor *allocTensorView(Tensor *parent);
+Tensor *allocTensorView(Tensor *parent, const std::vector<int> &shape, const std::string &name);
 Tensor *allocGradTensor(const std::vector<int> &shape, const std::string &name);
 Tensor *allocGradTensor(const std::vector<int> &shape);
 void printAllTensors();

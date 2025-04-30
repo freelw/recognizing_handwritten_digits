@@ -134,6 +134,45 @@ namespace graph {
             }
     };
 
+    class MatMulLEdge : public Edge {
+        public:
+            static Edge* create(Node *_node, Node *_rhs) {
+                Edge *edge = new MatMulLEdge(_node, _rhs);
+                gAddEdge(edge);
+                return edge;
+            }
+            MatMulLEdge(Node *_node, Node *_rhs)
+                : Edge(MatMulL, _node), rhs(_rhs) {}
+            virtual ~MatMulLEdge() {}
+            void backward(Tensor *grad) override {
+                Tensor *r_tensor = rhs->get_tensor();
+                Tensor *l_tensor = node->get_tensor();
+                Tensor *r_transpose_view = allocTensorView(
+                    r_tensor,
+                    {r_tensor->get_shape()[1], r_tensor->get_shape()[0]},
+                    r_tensor->get_name() + "_transpose"
+                );
+
+                gCreateAction(
+                    new AtAction(
+                        grad,
+                        r_transpose_view,
+                        node->get_grad()
+                    )
+                );
+
+                // gCreateAction(
+                //     new MatMulLEqAction(
+                //         node->get_grad(),
+                //         grad,
+                //         r_tensor
+                //     )
+                // );
+            }
+        private:
+            Node *rhs;
+    };
+
     Node *allocNode(Tensor *t);
     void freeAllNodes();
     void freeAllEdges();
