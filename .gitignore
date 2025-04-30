@@ -22,3 +22,4 @@ c++/transformer/dbg.log
 c++/transformer/checkpoint_20250402_150847_40.bin
 build/
 c++/v4_cuda/mnist_cuda
+c++/v5_tensor/mnist_cuda

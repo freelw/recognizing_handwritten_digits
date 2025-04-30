@@ -40,3 +40,4 @@
 
 * [reduce](https://github.com/freelw/recognizing_handwritten_digits/tree/main/cuda/playground)
 * [mnist](https://github.com/freelw/recognizing_handwritten_digits/tree/main//c++/v4_cuda)
+* [重构tensor/内存提前计算](https://github.com/freelw/recognizing_handwritten_digits/tree/main//c++/v5_tensor)
