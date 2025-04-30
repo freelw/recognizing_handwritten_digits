@@ -6,8 +6,8 @@
 BackendOps *g_backend_ops = nullptr;
 
 void test_plan() {
-    std::cout << " print 1 " << std::endl;
-    printAllTensors();
+    // std::cout << " print 1 " << std::endl;
+    // printAllTensors();
     Tensor *input = allocTensor({3, 2}, "input");
     Tensor *w = allocTensor({2, 2}, "w");
     Tensor *bias = allocTensor({2}, "bias");
@@ -15,10 +15,10 @@ void test_plan() {
     graph::Node *nw = graph::allocNode(w);
     graph::Node *nb = graph::allocNode(bias);
     auto nres = ni->at(nw)->expand_add(nb);
-    std::cout << " print 2 " << std::endl;
-    printAllTensors();
+    // std::cout << " print 2 " << std::endl;
+    // printAllTensors();
     nres->backward();
-    std::cout << " print 3 " << std::endl;
+    // std::cout << " print 3 " << std::endl;
     printAllTensors();
     printAllActions();
 }
