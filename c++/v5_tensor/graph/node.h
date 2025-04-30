@@ -117,7 +117,7 @@ namespace graph {
             void backward(Tensor *grad) override {
                 assert(grad->get_shape().size() == 2);
                 std::vector<int> shape = {grad->get_shape()[1]};
-                Tensor *tmp = allocTensor(shape, "sum_tmp"); // 行向量
+                Tensor *tmp = allocGradTensor(shape, "sum_tmp"); // 行向量
                 gCreateAction(
                     new SumAction(
                         grad,
