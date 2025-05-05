@@ -28,7 +28,7 @@ void test_plan() {
     graph::Node *ni = graph::allocNode(input);
     graph::Node *nw = graph::allocNode(w);
     graph::Node *nb = graph::allocNode(bias);
-    Tensor *labels = allocTensor({3}, "labels", INT8);
+    Tensor *labels = allocTensor({3}, "labels", INT32);
     auto nres = ni->at(nw)->expand_add(nb)->relu()->CrossEntropy(labels);
     zero_grad();
     nres->backward();

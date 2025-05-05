@@ -77,10 +77,7 @@ namespace graph {
     Node *Node::CrossEntropy(Tensor *labels) {
         assert(labels->get_rank() == 1);
         assert(
-            labels->get_dtype() == INT8 ||
-            labels->get_dtype() == INT16 ||
-            labels->get_dtype() == INT32 ||
-            labels->get_dtype() == INT64
+            labels->get_dtype() == INT32 
         );
         assert(labels->get_shape()[0] == this->get_tensor()->get_shape()[0]);
         Tensor *tensor_maxs = allocTensor(labels->get_shape(), "maxs");
