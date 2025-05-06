@@ -13,6 +13,7 @@ def test1():
     # input from 0 to 9
     x = [[i+10 for i in range(2)]]
     x = torch.tensor(x, dtype=torch.float32).view(1, 2)
+    print("x: ", x)
     # target is 1
     y = [1]
     y = torch.tensor(y, dtype=torch.long).view(1)

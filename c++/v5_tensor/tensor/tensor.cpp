@@ -39,11 +39,15 @@ void Tensor::set_data(void *ptr) {
 }
 
 int Tensor::size() const {
-    int total_size = 1;
+    return length() * cell_size();
+}
+
+int Tensor::length() const {
+    int total_length = 1;
     for (int dim : shape) {
-        total_size *= dim;
+        total_length *= dim;
     }
-    return total_size * cell_size();
+    return total_length;
 }
 
 int Tensor::cell_size() const {

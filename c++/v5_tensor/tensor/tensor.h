@@ -30,6 +30,7 @@ class Tensor {
         virtual void set_data(void *ptr);
         virtual void *get_data() const { return data; }
         virtual int size() const;
+        virtual int length() const;
         virtual int capacity() const;
         virtual bool sanitize() const;
         virtual bool is_view() const { return false; }
@@ -63,6 +64,9 @@ class TensorView : public Tensor {
         }
         int size() const override {
             return parent->size();
+        }
+        int length() const override {
+            return parent->length();
         }
         int capacity() const override {
             return parent->capacity();
