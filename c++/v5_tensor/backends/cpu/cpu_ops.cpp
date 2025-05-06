@@ -106,7 +106,6 @@ void CPUOps::sum(Tensor *lhs, Tensor *res, int dim) {
     }
 }
 
-// void relu(Tensor *lhs, Tensor *res) override;
 void CPUOps::relu(Tensor *lhs, Tensor *res) {
     assert(lhs != nullptr);
     assert(res != nullptr);
@@ -118,7 +117,6 @@ void CPUOps::relu(Tensor *lhs, Tensor *res) {
     }
 }
 
-// void reluPrime(Tensor *lhs, Tensor *res) override;
 void CPUOps::reluPrime(Tensor *lhs, Tensor *res) {
     assert(lhs != nullptr);
     assert(res != nullptr);
