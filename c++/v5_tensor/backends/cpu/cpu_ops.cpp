@@ -63,13 +63,21 @@ void CPUOps::at(Tensor *lhs, const Tensor *rhs, Tensor *res) {
     assert(res_shape[0] == lshape[0]);
     assert(res_shape[1] == rshape[1]);
 
+    float *res_data = static_cast<float*>(res->get_data());
+    float *lhs_data = static_cast<float*>(lhs->get_data());
+    float *rhs_data = static_cast<float*>(rhs->get_data());
+
+    auto lstrides = lhs->get_strides();
+    auto rstrides = rhs->get_strides();
+    auto res_strides = res->get_strides();
+
     for (int i = 0; i < lshape[0]; ++i) {
         for (int j = 0; j < rshape[1]; ++j) {
-            static_cast<float*>(res->get_data())[i * rshape[1] + j] = 0;
+            res_data[i * res_strides[0] + j * res_strides[1]] = 0;
             for (int k = 0; k < lshape[1]; ++k) {
-                static_cast<float*>(res->get_data())[i * rshape[1] + j] += 
-                    static_cast<float*>(lhs->get_data())[i * lshape[1] + k] * 
-                    static_cast<float*>(rhs->get_data())[k * rshape[1] + j];
+                res_data[i * res_strides[0] + j * res_strides[1]] += 
+                    lhs_data[i * lstrides[0] + k * lstrides[1]] * 
+                    rhs_data[k * rstrides[0] + j * rstrides[1]];
             }
         }
     }

@@ -16,7 +16,7 @@ std::string TensorDtype_to_string(TensorDType dtype) {
     }
 }
 
-Tensor::Tensor(std::vector<int> _shape, const std::string &_name, TensorDType _dtype)
+Tensor::Tensor(const std::vector<int> &_shape, const std::string &_name, TensorDType _dtype)
     : shape(_shape), data(nullptr), name(_name), dtype(_dtype) {
     strides.resize(shape.size());
     strides[shape.size() - 1] = 1;
@@ -25,9 +25,14 @@ Tensor::Tensor(std::vector<int> _shape, const std::string &_name, TensorDType _d
     }
 }
 
-Tensor::Tensor(std::vector<int> _shape, TensorDType _dtype)
+Tensor::Tensor(const std::vector<int> &_shape, TensorDType _dtype)
     : Tensor(_shape, "", _dtype) {
     
+}
+
+Tensor::Tensor(const std::vector<int> &_shape, const std::vector<int> &_strides, const std::string &_name, TensorDType _dtype)
+    : shape(_shape), strides(_strides), data(nullptr), name(_name), dtype(_dtype) {
+    assert(shape.size() == strides.size());
 }
 
 Tensor::~Tensor() {
@@ -81,6 +86,16 @@ bool Tensor::sanitize() const {
     return true;
 }
 
+Tensor *Tensor::transpose() {
+    Tensor *transpose_view = allocTensorView(
+        this,
+        {this->get_shape()[1], this->get_shape()[0]},
+        {this->get_strides()[1], this->get_strides()[0]},
+        this->get_name() + "_transpose"
+    );
+    return transpose_view;
+}
+
 std::ostream &operator<<(std::ostream &output, const Tensor &s) {
     output << "Tensor";
     if (s.get_dtype() != FLOAT32) {
@@ -112,8 +127,8 @@ Tensor *allocTensor(const std::vector<int> &shape, TensorDType dtype) {
     return allocTensor(shape, "tensor_autoname", dtype);
 }
 
-Tensor *allocTensorView(Tensor *parent, const std::vector<int> &shape, const std::string &name) {
-    Tensor *tensor_view = new TensorView(parent, shape, name);
+Tensor *allocTensorView(Tensor *parent, const std::vector<int> &shape, const std::vector<int> &strides, const std::string &name) {
+    Tensor *tensor_view = new TensorView(parent, shape, strides, name);
     g_tensor_views.push_back(tensor_view);
     return tensor_view;
 }
