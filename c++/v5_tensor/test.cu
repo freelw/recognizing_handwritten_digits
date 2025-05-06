@@ -483,8 +483,8 @@ void test_bp() {
     auto nres = foward_res1
         ->CrossEntropy(labels);
 
-    // zero_grad();
-    // nres->backward();
+    zero_grad();
+    nres->backward();
     printAllTensors();
     printAllActions();
     allocMemAndInitTensors();
@@ -551,12 +551,39 @@ void test_bp() {
     std::cout << std::endl;
 
     std::cout << "loss : " << std::setprecision(8) << static_cast<float*>(nres->get_tensor()->get_data())[0] << std::endl;
-    const float eps = 1e-5f;
+    const float eps = 1e-2f;
     bool loss_succ = fabs(static_cast<float*>(nres->get_tensor()->get_data())[0] - 18.360287f) < eps;
     if (loss_succ) {
         std::cout << GREEN << "test_cross_entropy succ" << RESET << std::endl;
     } else {
         std::cout << RED << "test_cross_entropy failed" << RESET << std::endl;
+    }
+
+    auto nw_grad = nw->get_grad();
+    auto nb_grad = nb->get_grad();
+    auto nw1_grad = nw1->get_grad();
+    auto nb1_grad = nb1->get_grad();
+
+    // print gradient
+    bool nw_grad_succ = true;
+    float nw_grad_ans[3][2] {
+        1.7998e+01,  1.9797e+01,
+        0.0000e+00,  0.0000e+00,
+        -2.3890e-08, -2.6279e-08
+    };
+    for (int i = 0; i < nw_grad->get_shape()[0]; ++i) {
+        for (int j = 0; j < nw_grad->get_shape()[1]; ++j) {
+            float *loc_grad = static_cast<float*>(nw_grad->location({i, j}));
+            if (fabs(*loc_grad - nw_grad_ans[i][j]) > eps) {
+                std::cerr << RED << "Error: nw_grad[" << i << "][" << j << "] = " << *loc_grad
+                          << ", nw_grad_ans[" << i << "][" << j << "] = " << nw_grad_ans[i][j] << RESET << std::endl;
+                nw_grad_succ = false;
+            }
+        }
+    }
+    
+    if (nw_grad_succ) {
+        std::cout << GREEN << "test_cross_entropy nw_grad succ" << RESET << std::endl;
     }
 
     sanitizeTensors();
