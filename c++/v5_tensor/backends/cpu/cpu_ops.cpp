@@ -39,11 +39,21 @@ void CPUOps::addEq(Tensor *lhs, const Tensor *rhs) {
 
     auto lstrides = lhs->get_strides();
     auto rstrides = rhs->get_strides();
-    
-    for (int i = 0; i < lshape[0]; ++i) {
-        for (int j = 0; j < lshape[1]; ++j) {
-            static_cast<float*>(lhs->get_data())[i * lstrides[0] + j * lstrides[1]] += 
-                static_cast<float*>(rhs->get_data())[i * rstrides[0] + j * rstrides[1]];
+
+    int rank = lhs->get_rank();
+
+    assert(rank <= 2);
+    if (rank == 1) {
+        for (int i = 0; i < lshape[0]; ++i) {
+            static_cast<float*>(lhs->get_data())[i * lstrides[0]] += 
+                static_cast<float*>(rhs->get_data())[i * rstrides[0]];
+        }
+    } else if (rank == 2) {
+        for (int i = 0; i < lshape[0]; ++i) {
+            for (int j = 0; j < lshape[1]; ++j) {
+                static_cast<float*>(lhs->get_data())[i * lstrides[0] + j * lstrides[1]] += 
+                    static_cast<float*>(rhs->get_data())[i * rstrides[0] + j * rstrides[1]];
+            }
         }
     }
     

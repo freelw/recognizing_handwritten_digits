@@ -27,7 +27,8 @@ std::string AddAction::to_string() const {
 void AddEqAction::execute() {
     assert(lhs != nullptr);
     assert(rhs != nullptr);
-    g_backend_ops->addEq(lhs, rhs);
+    assert(lhs->get_shape() == rhs->get_shape());
+    g_backend_ops->addEq(lhs, rhs);    
 }
 
 std::string AddEqAction::to_string() const {

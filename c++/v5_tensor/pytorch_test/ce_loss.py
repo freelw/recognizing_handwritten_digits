@@ -21,23 +21,23 @@ def test1():
     # model
     model = nn.Sequential(
         nn.Linear(2, 3),
-        # nn.ReLU(),
-        # nn.Linear(3, 3)
+        nn.ReLU(),
+        nn.Linear(3, 3)
     )
     # initialize the weights to 0.1
     # initialize the bias to 0
     model[0].weight.data.fill_(0.1)
     model[0].bias.data.fill_(0.1)
-    # model[2].weight.data.fill_(0.1)
-    # model[2].bias.data.fill_(0.1)
+    model[2].weight.data.fill_(0.1)
+    model[2].bias.data.fill_(0.1)
 
     model[0].weight.data[0, 0] = 0.9
     model[0].weight.data[1, 0] = -0.9
 
     print("model[0].weight : ", model[0].weight)
 
-    # model[2].weight.data[0, 0] = 0.9
-    # model[2].weight.data[1, 0] = -0.9
+    model[2].weight.data[0, 0] = 0.9
+    model[2].weight.data[1, 0] = -0.9
 
 
     # loss function
