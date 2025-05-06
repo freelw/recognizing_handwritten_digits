@@ -188,7 +188,26 @@ void CPUOps::crossEntropyBackward(Tensor *lhs, const Tensor *labels, Tensor *max
     assert(sums != nullptr);
     assert(res != nullptr);
 
-    assert(false);
+    
+    int batch_size = lhs->get_shape()[0];
+    int size = lhs->get_shape()[1];
+    float *data = static_cast<float*>(lhs->get_data());
+    float *res_data = static_cast<float*>(res->get_data());
+
+    for (int j = 0; j < batch_size; ++j) {
+        float max = static_cast<float*>(maxs->get_data())[j];
+        float sum = static_cast<float*>(sums->get_data())[j];
+        auto target = static_cast<int32_t*>(labels->get_data())[j];
+        for (int i = 0; i < size; ++i) {
+            if (i == target) {
+                res_data[j * size + i] = 
+                    (std::exp(data[j * size + i] - max) / sum - 1) / batch_size;
+            } else {
+                res_data[j * size + i] = 
+                    (std::exp(data[j * size + i] - max) / sum) / batch_size;
+            }
+        }
+    }
 }
 
 void* CPUOps::alloc(size_t size) {
