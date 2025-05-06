@@ -200,19 +200,20 @@ void CPUOps::crossEntropy(Tensor *lhs, const Tensor *labels, Tensor *maxs, Tenso
     // maxs and sums are out params
     float *data = static_cast<float*>(lhs->get_data());
     int32_t *labels_data = static_cast<int32_t*>(labels->get_data());
+    auto lstrides = lhs->get_strides();
     for (int j = 0; j < batch_size; ++j) {
-        float max = data[j * size];
+        float max = data[j * lstrides[0]];
         for (int i = 0; i < size; ++i) {
-            auto e = data[j * size + i];
+            auto e = data[j * lstrides[0] + i * lstrides[1]];
             if (max < e) {
                 max = e;
             }
         }
         float sum = 0;
         auto target = labels_data[j];
-        float zt = data[j * size + target];
+        float zt = data[j * lstrides[0] + target * lstrides[1]];
         for (int i = 0; i < size; ++i) {
-            float e = data[j* size + i];
+            float e = data[j* lstrides[0] + i * lstrides[1]];
             e = std::exp(e - max);
             sum += e;
         }

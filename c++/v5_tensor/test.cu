@@ -335,6 +335,64 @@ void test_sum() {
     release_backend();
 }
 
+void test_cross_entropy() {
+    init_backend();
+    Tensor *labels = allocTensor({3}, "input", INT32);
+    Tensor *w = allocTensor({3, 4}, "w");
+    Tensor *wt = allocTensor({4, 3}, "wt");
+    Tensor *res_wi_tensor = allocTensor({1}, "res_wi");
+    Tensor *res_wti_tensor = allocTensor({1}, "res_wti");
+    Tensor *maxs_wi = allocTensor({3}, "maxs_wi");
+    Tensor *sums_wi = allocTensor({3}, "sums_wi");
+    Tensor *maxs_wti = allocTensor({3}, "maxs_wti");
+    Tensor *sums_wti = allocTensor({3}, "sums_wti");
+    gCreateAction(
+        new CrossEntropyAction(w, labels, maxs_wi, sums_wi, res_wi_tensor)
+    );
+    gCreateAction(
+        new CrossEntropyAction(wt->transpose(), labels, maxs_wti, sums_wti, res_wti_tensor)
+    );
+    // printAllTensors();
+    // printAllActions();
+    allocMemAndInitTensors();
+    for (int i = 0; i < 3; ++ i) {
+        int32_t *loc_labels = reinterpret_cast<int32_t*>(labels->location({i}));
+        *loc_labels = i;
+    }
+    for (int i = 0; i < 3; ++ i) {
+        for (int j = 0; j < 4; ++ j) {
+            float *loc_w = w->location({i, j});
+            float *loc_wt = wt->location({j, i});
+            float v = i * 4 + j;
+            *loc_w = v;
+            *loc_wt = v;
+        }
+    }
+    
+    gDoActions();
+    auto res_wi_data = static_cast<float*>(res_wi_tensor->get_data());
+    auto res_wti_data = static_cast<float*>(res_wti_tensor->get_data());
+    const float eps = 1e-5f;
+    bool succ = true;
+    for (int i = 0; i < res_wi_tensor->length(); ++ i) {
+        if (fabs(res_wi_data[i] - res_wti_data[i]) > eps) {
+            succ = false;
+            std::cerr << RED << "Error: res_wi[" << i << "] = " << res_wi_data[i]
+                      << ", res_wti[" << i << "] = " << res_wti_data[i] << RESET << std::endl;
+        }
+    }
+    if (succ) {
+        std::cout << GREEN << "test_cross_entropy succ" << RESET << std::endl;
+    }
+
+    sanitizeTensors();
+
+    freeAllActions();
+    freeAllTensors();
+    releaseTensorMem();
+    release_backend();
+}
+
 void test() {
     test_at();
     test_add();
@@ -342,6 +400,7 @@ void test() {
     test_expand_add();
     test_mul();
     test_sum();
+    test_cross_entropy();
 }
 
 int main() {
