@@ -117,6 +117,7 @@ class ZeroGradAction : public Action {
 };
 
 void gCreateAction(Action *action);
+void gDoActions();
 void printAllActions();
 void freeAllActions();
 

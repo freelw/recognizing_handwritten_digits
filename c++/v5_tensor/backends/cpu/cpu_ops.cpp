@@ -88,7 +88,6 @@ void CPUOps::mul(Tensor *lhs, const Tensor *rhs, Tensor *res) {
     }
 }
 
-// void sum(Tensor *lhs, Tensor *res, int dim) override;
 void CPUOps::sum(Tensor *lhs, Tensor *res, int dim) {
     assert(lhs != nullptr);
     assert(res != nullptr);
@@ -97,10 +96,6 @@ void CPUOps::sum(Tensor *lhs, Tensor *res, int dim) {
     auto shape = lhs->get_shape();
     auto res_shape = res->get_shape();
     assert(dim == 0);
-
-    assert(shape.size() == res_shape.size());
-    assert(shape[1] == res_shape[1]);
-    assert(res_shape[0] == 1);
 
     for (int i = 0; i < shape[1]; ++i) {
         static_cast<float*>(res->get_data())[i] = 0;

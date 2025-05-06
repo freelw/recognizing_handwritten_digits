@@ -162,6 +162,12 @@ void gCreateAction(Action *action) {
     g_actions.push_back(action);
 }
 
+void gDoActions() {
+    for (Action *action : g_actions) {
+        action->execute();
+    }
+}
+
 void printAllActions() {
     std::cout << "Actions:" << std::endl;
     for (Action *action : g_actions) {

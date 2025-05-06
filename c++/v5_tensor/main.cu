@@ -35,6 +35,7 @@ void test_plan() {
     printAllTensors();
     printAllActions();
     allocMemAndInitTensors();
+    gDoActions();
     freeAllTensors();
     release_backend();
 }
