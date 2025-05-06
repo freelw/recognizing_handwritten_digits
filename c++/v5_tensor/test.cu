@@ -36,13 +36,17 @@ void test_at() {
     auto res_wi_data = static_cast<float*>(res_wi_tensor->get_data());
     auto res_wti_data = static_cast<float*>(res_wti_tensor->get_data());
     const float eps = 1e-5f;
+    bool succ = true;
     for (int i = 0; i < res_wi_tensor->length(); ++ i) {
         if (fabs(res_wi_data[i] - res_wti_data[i]) > eps) {
+            succ = false;
             std::cerr << RED << "Error: res_wi[" << i << "] = " << res_wi_data[i]
                       << ", res_wti[" << i << "] = " << res_wti_data[i] << RESET << std::endl;
         }
     }
-    std::cout << "res_wi == res_wti_tensor " << std::endl;
+    if (succ) {
+        std::cout << GREEN << "res_wi == res_wti_tensor " << RESET << std::endl;
+    }
     // print res_wi shape
     std::cout << "res_wi shape: ";
     assert(res_wi_tensor->get_shape().size() == 2);
@@ -61,6 +65,7 @@ void test_at() {
     }
 
     freeAllTensors();
+    releaseTensorMem();
     release_backend();
 }
 
@@ -70,12 +75,12 @@ void test_add() {
     Tensor *w = allocTensor({3, 4}, "w");
     Tensor *wt = allocTensor({4, 3}, "wt");
     Tensor *res_wi_tensor = allocTensor({3, 4}, "res_wi");
-    Tensor *res_wti_tensor = allocTensor({4, 3}, "res_wti");
+    Tensor *res_wti_tensor = allocTensor({3, 4}, "res_wti");
     gCreateAction(
         new AddAction(input, w, res_wi_tensor)
     );
     gCreateAction(
-        new AddAction(input, wt, res_wti_tensor)
+        new AddAction(input, wt->transpose(), res_wti_tensor)
     );
     printAllTensors();
     printAllActions();
@@ -94,15 +99,21 @@ void test_add() {
     auto res_wi_data = static_cast<float*>(res_wi_tensor->get_data());
     auto res_wti_data = static_cast<float*>(res_wti_tensor->get_data());
     const float eps = 1e-5f;
+    bool succ = true;
     for (int i = 0; i < res_wi_tensor->length(); ++ i) {
         if (fabs(res_wi_data[i] - res_wti_data[i]) > eps) {
-            std::cerr << "Error: res_wi[" << i << "] = " << res_wi_data[i]
-                      << ", res_wti[" << i << "] = " << res_wti_data[i] << std::endl;
+            succ = false;
+            std::cerr << RED << "Error: res_wi[" << i << "] = " << res_wi_data[i]
+                      << ", res_wti[" << i << "] = " << res_wti_data[i] << RESET << std::endl;
         }
     }
-    std::cout << "res_wi == res_wti_tensor " << std::endl;
+    if (succ) {
+        std::cout << GREEN << "res_wi == res_wti_tensor " << RESET << std::endl;
+    }
+
+    sanitizeTensors();
     // print res_wi shape
-    std::cout << "res_wi shape: ";
+    std::cout << "res_wi shape: " << res_wi_tensor->get_shape().size() << std::endl; 
     assert(res_wi_tensor->get_shape().size() == 2);
     for (int i = 0; i < res_wi_tensor->get_shape().size(); ++ i) {
         std::cout << res_wi_tensor->get_shape()[i] << " ";
@@ -117,10 +128,14 @@ void test_add() {
         }
         std::cout << std::endl;
     }
+
+    freeAllTensors();
+    releaseTensorMem();
+    release_backend();
 }
 
 void test_transpose() {
-    test_at();
+    // test_at();
     test_add();
 }
 

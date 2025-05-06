@@ -117,6 +117,7 @@ void test_bp() {
 
     // std::cout << "loss : " << static_cast<float*>(nres->get_tensor()->get_data())[0] << std::endl;
     freeAllTensors();
+    releaseTensorMem();
     release_backend();
 }
 

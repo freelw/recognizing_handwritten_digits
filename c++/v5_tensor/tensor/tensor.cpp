@@ -241,4 +241,20 @@ void releaseTensorMem() {
     assert(grad_tensors_data != nullptr);
     g_backend_ops->free(tensors_data);
     g_backend_ops->free(grad_tensors_data);
+    tensors_data = nullptr;
+    grad_tensors_data = nullptr;
+    tensors_data_capacity = 0;
+    grad_tensors_data_capacity = 0;
+}
+
+void sanitizeTensors() {
+    for (Tensor *tensor : g_tensors) {
+        assert(tensor->sanitize());
+    }
+    for (Tensor *tensor_view : g_tensor_views) {
+        assert(tensor_view->sanitize());
+    }
+    for (Tensor *grad_tensor : g_grad_tensors) {
+        assert(grad_tensor->sanitize());
+    }
 }

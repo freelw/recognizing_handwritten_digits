@@ -103,5 +103,6 @@ extern void *grad_tensors_data;
 extern size_t grad_tensors_data_capacity;
 void allocMemAndInitTensors();
 void releaseTensorMem();
+void sanitizeTensors();
 
 #endif
