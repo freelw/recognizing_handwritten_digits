@@ -47,6 +47,7 @@ void test_at() {
     if (succ) {
         std::cout << GREEN << "test_at succ " << RESET << std::endl;
     }
+    sanitizeTensors();
     // // print res_wi shape
     // std::cout << "res_wi shape: ";
     // assert(res_wi_tensor->get_shape().size() == 2);
