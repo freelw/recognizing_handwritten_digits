@@ -17,8 +17,8 @@ void test_at() {
     graph::Node *nwt = graph::allocNode(wt);
     auto res_wi = ni->at(nw);
     auto res_wti = ni->at(nwt->transpose());
-    printAllTensors();
-    printAllActions();
+    // printAllTensors();
+    // printAllActions();
     allocMemAndInitTensors();
     input->fill(1.0f);
     for (int i = 0; i < 3; ++ i) {
@@ -45,25 +45,25 @@ void test_at() {
         }
     }
     if (succ) {
-        std::cout << GREEN << "res_wi == res_wti_tensor " << RESET << std::endl;
+        std::cout << GREEN << "test_at succ " << RESET << std::endl;
     }
-    // print res_wi shape
-    std::cout << "res_wi shape: ";
-    assert(res_wi_tensor->get_shape().size() == 2);
-    for (int i = 0; i < res_wi_tensor->get_shape().size(); ++ i) {
-        std::cout << res_wi_tensor->get_shape()[i] << " ";
-    }
-    std::cout << std::endl;
+    // // print res_wi shape
+    // std::cout << "res_wi shape: ";
+    // assert(res_wi_tensor->get_shape().size() == 2);
+    // for (int i = 0; i < res_wi_tensor->get_shape().size(); ++ i) {
+    //     std::cout << res_wi_tensor->get_shape()[i] << " ";
+    // }
+    // std::cout << std::endl;
 
-    // print res_wi data
-    std::cout << "res_wi data: " << std::endl;
-    for (int i = 0; i < res_wi_tensor->get_shape()[0]; ++ i) {
-        for (int j = 0; j < res_wi_tensor->get_shape()[1]; ++ j) {
-            std::cout << res_wi_data[i * res_wi_tensor->get_shape()[1] + j] << " ";
-        }
-        std::cout << std::endl;
-    }
-
+    // // print res_wi data
+    // std::cout << "res_wi data: " << std::endl;
+    // for (int i = 0; i < res_wi_tensor->get_shape()[0]; ++ i) {
+    //     for (int j = 0; j < res_wi_tensor->get_shape()[1]; ++ j) {
+    //         std::cout << res_wi_data[i * res_wi_tensor->get_shape()[1] + j] << " ";
+    //     }
+    //     std::cout << std::endl;
+    // }
+    freeAllActions();
     freeAllTensors();
     releaseTensorMem();
     release_backend();
@@ -82,8 +82,8 @@ void test_add() {
     gCreateAction(
         new AddAction(input, wt->transpose(), res_wti_tensor)
     );
-    printAllTensors();
-    printAllActions();
+    // printAllTensors();
+    // printAllActions();
     allocMemAndInitTensors();
     input->fill(0.1f);
     for (int i = 0; i < 3; ++ i) {
@@ -108,34 +108,35 @@ void test_add() {
         }
     }
     if (succ) {
-        std::cout << GREEN << "res_wi == res_wti_tensor " << RESET << std::endl;
+        std::cout << GREEN << "test_add succ" << RESET << std::endl;
     }
 
     sanitizeTensors();
-    // print res_wi shape
-    std::cout << "res_wi shape: " << res_wi_tensor->get_shape().size() << std::endl; 
-    assert(res_wi_tensor->get_shape().size() == 2);
-    for (int i = 0; i < res_wi_tensor->get_shape().size(); ++ i) {
-        std::cout << res_wi_tensor->get_shape()[i] << " ";
-    }
-    std::cout << std::endl;
+    // // print res_wi shape
+    // std::cout << "res_wi shape: " << res_wi_tensor->get_shape().size() << std::endl; 
+    // assert(res_wi_tensor->get_shape().size() == 2);
+    // for (int i = 0; i < res_wi_tensor->get_shape().size(); ++ i) {
+    //     std::cout << res_wi_tensor->get_shape()[i] << " ";
+    // }
+    // std::cout << std::endl;
 
-    // print res_wi data
-    std::cout << "res_wi data: " << std::endl;
-    for (int i = 0; i < res_wi_tensor->get_shape()[0]; ++ i) {
-        for (int j = 0; j < res_wi_tensor->get_shape()[1]; ++ j) {
-            std::cout << res_wi_data[i * res_wi_tensor->get_shape()[1] + j] << " ";
-        }
-        std::cout << std::endl;
-    }
+    // // print res_wi data
+    // std::cout << "res_wi data: " << std::endl;
+    // for (int i = 0; i < res_wi_tensor->get_shape()[0]; ++ i) {
+    //     for (int j = 0; j < res_wi_tensor->get_shape()[1]; ++ j) {
+    //         std::cout << res_wi_data[i * res_wi_tensor->get_shape()[1] + j] << " ";
+    //     }
+    //     std::cout << std::endl;
+    // }
 
+    freeAllActions();
     freeAllTensors();
     releaseTensorMem();
     release_backend();
 }
 
 void test_transpose() {
-    // test_at();
+    test_at();
     test_add();
 }
 
