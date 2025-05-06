@@ -157,19 +157,20 @@ void CPUOps::crossEntropy(Tensor *lhs, const Tensor *labels, Tensor *maxs, Tenso
     float loss_value = 0;
 
     // maxs and sums are out params
+    float *data = static_cast<float*>(lhs->get_data());
     for (int j = 0; j < batch_size; ++j) {
-        float max = static_cast<float*>(lhs->get_data())[j * size];
+        float max = data[j * size];
         for (int i = 0; i < size; ++i) {
-            auto e = static_cast<float*>(lhs->get_data())[j * size + i];
+            auto e = data[j * size + i];
             if (max < e) {
                 max = e;
             }
         }
         float sum = 0;
         auto target = static_cast<int32_t*>(labels->get_data())[j];
-        float zt = static_cast<float*>(lhs->get_data())[j * size + target];
+        float zt = data[j * size + target];
         for (int i = 0; i < size; ++i) {
-            float e = static_cast<float*>(lhs->get_data())[j* size + i];
+            float e = data[j* size + i];
             e = std::exp(e - max);
             sum += e;
         }
@@ -177,9 +178,9 @@ void CPUOps::crossEntropy(Tensor *lhs, const Tensor *labels, Tensor *maxs, Tenso
         static_cast<float*>(sums->get_data())[j] = sum;
         loss_value += -(zt - max - std::log(sum));
     }
-    res->get_shape()[0] = loss_value / batch_size;
+    static_cast<float*>(res->get_data())[0] = loss_value / batch_size;
 }
-// void crossEntropyBackward(Tensor *lhs, const Tensor *labels, Tensor *maxs, Tensor *sums, Tensor *res) override;
+
 void CPUOps::crossEntropyBackward(Tensor *lhs, const Tensor *labels, Tensor *maxs, Tensor *sums, Tensor *res) {
     assert(lhs != nullptr);
     assert(labels != nullptr);
