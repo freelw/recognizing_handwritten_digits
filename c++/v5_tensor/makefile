@@ -4,7 +4,8 @@ DIR_INC += -I./tensor
 DIR_INC += -I./graph
 
 DIR_LIB = -L./
-TARGET	= mnist_cuda
+TARGET = mnist_cuda
+TEST_TARGET = test
 CFLAGS = $(DIR_INC) $(DIR_LIB) -g -G
 #CFLAGS = $(DIR_INC) $(DIR_LIB)
 SRCDIR := ./tensor \
@@ -16,9 +17,13 @@ SRCDIR := ./tensor \
 SRCS := $(wildcard *.cpp) $(wildcard $(addsuffix /*.cpp, $(SRCDIR)))
 SRCS += $(wildcard *.cu) $(wildcard $(addsuffix /*.cu, $(SRCDIR)))
 OBJECTS := $(patsubst %.c,%.o,$(patsubst %.cpp,%.o,$(patsubst %.cu,%.o,$(SRCS))))
+OBJECTS_MAIN := $(filter-out test.o,$(OBJECTS))
+OBJECTS_TEST := $(filter-out main.o,$(OBJECTS))
 NVCC = nvcc
 
-$(TARGET) : $(OBJECTS)
+$(TARGET) : $(OBJECTS_MAIN)
+	${NVCC} $(CFLAGS) $^ -o $@ $(LDFLAGS)
+$(TEST_TARGET) : $(OBJECTS_TEST)
 	${NVCC} $(CFLAGS) $^ -o $@ $(LDFLAGS)
 %.o : %.cu
 	${NVCC} -c $(CFLAGS) $< -o $@

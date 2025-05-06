@@ -24,3 +24,4 @@ build/
 c++/v4_cuda/mnist_cuda
 c++/v5_tensor/mnist_cuda
 c++/**/*.o
+c++/v5_tensor/test
