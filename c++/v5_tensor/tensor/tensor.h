@@ -40,7 +40,9 @@ class Tensor {
         virtual int get_rank() const { return shape.size(); }
         TensorDType get_dtype() const { return dtype; }
         virtual std::string get_name() const { return name; }
+        float *location(const std::vector<int> &indices) const;
         Tensor *transpose();
+        Tensor *fill(float value);
         friend std::ostream &operator<<(std::ostream &output, const Tensor &s);
     protected:
         int cell_size() const;

@@ -86,6 +86,16 @@ bool Tensor::sanitize() const {
     return true;
 }
 
+float *Tensor::location(const std::vector<int> &indices) const {
+    assert(indices.size() == shape.size());
+    int offset = 0;
+    for (size_t i = 0; i < indices.size(); ++i) {
+        assert(indices[i] >= 0 && indices[i] < shape[i]);
+        offset += indices[i] * strides[i];
+    }
+    return reinterpret_cast<float*>(data) + offset;
+}
+
 Tensor *Tensor::transpose() {
     Tensor *transpose_view = allocTensorView(
         this,
@@ -95,6 +105,17 @@ Tensor *Tensor::transpose() {
     );
     return transpose_view;
 }
+
+Tensor *Tensor::fill(float value) {
+    assert(!is_view());
+    assert(dtype == FLOAT32);
+    float *data_ptr = reinterpret_cast<float*>(data);
+    for (int i = 0; i < length(); ++i) {
+        data_ptr[i] = value;
+    }
+    return this;
+}
+
 
 std::ostream &operator<<(std::ostream &output, const Tensor &s) {
     output << "Tensor";
