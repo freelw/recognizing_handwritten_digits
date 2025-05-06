@@ -13,8 +13,8 @@ void test_at() {
     graph::Node *nwt = graph::allocNode(wt);
     auto res_wi = ni->at(nw);
     auto res_wti = ni->at(nwt->transpose());
-    // printAllTensors();
-    // printAllActions();
+    printAllTensors();
+    printAllActions();
     allocMemAndInitTensors();
     input->fill(1.0f);
     for (int i = 0; i < 3; ++ i) {
@@ -39,6 +39,23 @@ void test_at() {
         }
     }
     std::cout << "res_wi == res_wti_tensor " << std::endl;
+    // print res_wi shape
+    std::cout << "res_wi shape: ";
+    assert(res_wi_tensor->get_shape().size() == 2);
+    for (int i = 0; i < res_wi_tensor->get_shape().size(); ++ i) {
+        std::cout << res_wi_tensor->get_shape()[i] << " ";
+    }
+    std::cout << std::endl;
+
+    // print res_wi data
+    std::cout << "res_wi data: " << std::endl;
+    for (int i = 0; i < res_wi_tensor->get_shape()[0]; ++ i) {
+        for (int j = 0; j < res_wi_tensor->get_shape()[1]; ++ j) {
+            std::cout << res_wi_data[i * res_wi_tensor->get_shape()[1] + j] << " ";
+        }
+        std::cout << std::endl;
+    }
+
     freeAllTensors();
     release_backend();
 }
