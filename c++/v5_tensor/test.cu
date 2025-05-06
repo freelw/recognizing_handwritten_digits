@@ -135,9 +135,60 @@ void test_add() {
     release_backend();
 }
 
+void test_add_eq() {
+    init_backend();
+    Tensor *input = allocTensor({3, 4}, "input");
+    Tensor *input1 = allocTensor({3, 4}, "input1");
+    Tensor *w = allocTensor({3, 4}, "w");
+    Tensor *wt = allocTensor({4, 3}, "wt");
+    gCreateAction(
+        new AddEqAction(input, w)
+    );
+    gCreateAction(
+        new AddEqAction(input1, wt->transpose())
+    );
+    // printAllTensors();
+    // printAllActions();
+    allocMemAndInitTensors();
+    input->fill(0.1f);
+    input1->fill(0.1f);
+    for (int i = 0; i < 3; ++ i) {
+        for (int j = 0; j < 4; ++ j) {
+            float *loc_w = w->location({i, j});
+            float *loc_wt = wt->location({j, i});
+            float v = i * 4 + j;
+            *loc_w = v;
+            *loc_wt = v;
+        }
+    }
+    gDoActions();
+    auto input_data = static_cast<float*>(input->get_data());
+    auto input1_data = static_cast<float*>(input1->get_data());
+    const float eps = 1e-5f;
+    bool succ = true;
+    for (int i = 0; i < input->length(); ++ i) {
+        if (fabs(input_data[i] - input1_data[i]) > eps) {
+            succ = false;
+            std::cerr << RED << "Error: res_wi[" << i << "] = " << input_data[i]
+                      << ", res_wti[" << i << "] = " << input1_data[i] << RESET << std::endl;
+        }
+    }
+    if (succ) {
+        std::cout << GREEN << "test_add_eq succ" << RESET << std::endl;
+    }
+
+    sanitizeTensors();
+
+    freeAllActions();
+    freeAllTensors();
+    releaseTensorMem();
+    release_backend();
+}
+
 void test_transpose() {
     test_at();
     test_add();
+    test_add_eq();
 }
 
 int main() {
