@@ -36,6 +36,7 @@ void test_plan() {
     printAllActions();
     allocMemAndInitTensors();
     gDoActions();
+    std::cout << "loss : " << static_cast<float*>(nres->get_tensor()->get_data())[0] << std::endl;
     freeAllTensors();
     release_backend();
 }
