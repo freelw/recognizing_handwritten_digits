@@ -287,16 +287,65 @@ void test_mul() {
     release_backend();
 }
 
-void test_transpose() {
+void test_sum() {
+    init_backend();
+    Tensor *w = allocTensor({3, 4}, "w");
+    Tensor *wt = allocTensor({4, 3}, "wt");
+    Tensor *res_wi_tensor = allocTensor({3, 4}, "res_wi");
+    Tensor *res_wti_tensor = allocTensor({3, 4}, "res_wti");
+    gCreateAction(
+        new SumAction(w, res_wi_tensor, 0)
+    );
+    gCreateAction(
+        new SumAction(wt->transpose(), res_wti_tensor, 0)
+    );
+    // printAllTensors();
+    // printAllActions();
+    allocMemAndInitTensors();
+    for (int i = 0; i < 3; ++ i) {
+        for (int j = 0; j < 4; ++ j) {
+            float *loc_w = w->location({i, j});
+            float *loc_wt = wt->location({j, i});
+            float v = i * 4 + j;
+            *loc_w = v;
+            *loc_wt = v;
+        }
+    }
+    gDoActions();
+    auto res_wi_data = static_cast<float*>(res_wi_tensor->get_data());
+    auto res_wti_data = static_cast<float*>(res_wti_tensor->get_data());
+    const float eps = 1e-5f;
+    bool succ = true;
+    for (int i = 0; i < res_wi_tensor->length(); ++ i) {
+        if (fabs(res_wi_data[i] - res_wti_data[i]) > eps) {
+            succ = false;
+            std::cerr << RED << "Error: res_wi[" << i << "] = " << res_wi_data[i]
+                      << ", res_wti[" << i << "] = " << res_wti_data[i] << RESET << std::endl;
+        }
+    }
+    if (succ) {
+        std::cout << GREEN << "test_sum succ" << RESET << std::endl;
+    }
+
+    sanitizeTensors();
+
+    freeAllActions();
+    freeAllTensors();
+    releaseTensorMem();
+    release_backend();
+}
+
+void test() {
     test_at();
     test_add();
     test_add_eq();
     test_expand_add();
     test_mul();
+    test_sum();
 }
 
 int main() {
-    test_transpose();
+    test();
     freeAllTensors();
     freeAllTensorViews();
     graph::freeAllEdges();

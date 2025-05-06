@@ -143,11 +143,13 @@ void CPUOps::sum(Tensor *lhs, Tensor *res, int dim) {
     auto res_shape = res->get_shape();
     assert(dim == 0);
 
+    auto lstrides = lhs->get_strides();
+
     for (int i = 0; i < shape[1]; ++i) {
         static_cast<float*>(res->get_data())[i] = 0;
         for (int j = 0; j < shape[0]; ++j) {
             static_cast<float*>(res->get_data())[i] += 
-                static_cast<float*>(lhs->get_data())[j * shape[1] + i];
+                static_cast<float*>(lhs->get_data())[j * lstrides[0] + i * lstrides[1]];
         }
     }
 }
