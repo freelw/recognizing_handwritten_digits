@@ -237,11 +237,62 @@ void test_expand_add() {
     release_backend();
 }
 
+void test_mul() {
+    init_backend();
+    Tensor *input = allocTensor({3, 4}, "input");
+    Tensor *w = allocTensor({3, 4}, "w");
+    Tensor *wt = allocTensor({4, 3}, "wt");
+    Tensor *res_wi_tensor = allocTensor({3, 4}, "res_wi");
+    Tensor *res_wti_tensor = allocTensor({3, 4}, "res_wti");
+    gCreateAction(
+        new MulAction(input, w, res_wi_tensor)
+    );
+    gCreateAction(
+        new MulAction(input, wt->transpose(), res_wti_tensor)
+    );
+    // printAllTensors();
+    // printAllActions();
+    allocMemAndInitTensors();
+    input->fill(0.1f);
+    for (int i = 0; i < 3; ++ i) {
+        for (int j = 0; j < 4; ++ j) {
+            float *loc_w = w->location({i, j});
+            float *loc_wt = wt->location({j, i});
+            float v = i * 4 + j;
+            *loc_w = v;
+            *loc_wt = v;
+        }
+    }
+    gDoActions();
+    auto res_wi_data = static_cast<float*>(res_wi_tensor->get_data());
+    auto res_wti_data = static_cast<float*>(res_wti_tensor->get_data());
+    const float eps = 1e-5f;
+    bool succ = true;
+    for (int i = 0; i < res_wi_tensor->length(); ++ i) {
+        if (fabs(res_wi_data[i] - res_wti_data[i]) > eps) {
+            succ = false;
+            std::cerr << RED << "Error: res_wi[" << i << "] = " << res_wi_data[i]
+                      << ", res_wti[" << i << "] = " << res_wti_data[i] << RESET << std::endl;
+        }
+    }
+    if (succ) {
+        std::cout << GREEN << "test_mul succ" << RESET << std::endl;
+    }
+
+    sanitizeTensors();
+
+    freeAllActions();
+    freeAllTensors();
+    releaseTensorMem();
+    release_backend();
+}
+
 void test_transpose() {
     test_at();
     test_add();
     test_add_eq();
     test_expand_add();
+    test_mul();
 }
 
 int main() {

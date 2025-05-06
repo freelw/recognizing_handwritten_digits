@@ -114,11 +114,23 @@ void CPUOps::mul(Tensor *lhs, const Tensor *rhs, Tensor *res) {
     assert(rhs != nullptr);
     assert(res != nullptr);
 
-    int size = lhs->size();
-    for (int i = 0; i < size; ++i) {
-        static_cast<float*>(res->get_data())[i] = 
-            static_cast<float*>(lhs->get_data())[i] * 
-            static_cast<float*>(rhs->get_data())[i];
+    auto lshape = lhs->get_shape();
+    auto rshape = rhs->get_shape();
+    auto res_shape = res->get_shape();
+
+    assert(lshape == rshape);
+    assert(res_shape == lshape);
+
+    auto lstrides = lhs->get_strides();
+    auto rstrides = rhs->get_strides();
+    auto res_strides = res->get_strides();
+
+    for (int i = 0; i < lshape[0]; ++i) {
+        for (int j = 0; j < lshape[1]; ++j) {
+            static_cast<float*>(res->get_data())[i * res_strides[0] + j * res_strides[1]] = 
+                static_cast<float*>(lhs->get_data())[i * lstrides[0] + j * lstrides[1]] * 
+                static_cast<float*>(rhs->get_data())[i * rstrides[0] + j * rstrides[1]];
+        }
     }
 }
 
