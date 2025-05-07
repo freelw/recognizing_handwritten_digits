@@ -27,6 +27,10 @@ void destruct_env() {
     releaseParameters();
     freeAllActions();
     freeAllTensors();
+    freeAllTensorViews();
+    freeAllGradTensors();
+    graph::freeAllNodes();
+    graph::freeAllEdges();
     releaseTensorMem();
     release_backend();
 }

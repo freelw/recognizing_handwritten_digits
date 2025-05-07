@@ -6,6 +6,7 @@
 #include "model/mlp.h"
 #include "common.h"
 #include <iomanip>
+#include <cmath>
 
 const std::string RED = "\033[31m";
 const std::string GREEN = "\033[32m";

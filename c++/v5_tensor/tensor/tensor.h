@@ -27,7 +27,7 @@ class Tensor {
         Tensor(const std::vector<int> &_shape, const std::string &_name, TensorDType _dtype);
         Tensor(const std::vector<int> &_shape, TensorDType _dtype);
         Tensor(const std::vector<int> &_shape, const std::vector<int> &_strides, const std::string &_name, TensorDType _dtype);
-        ~Tensor();
+        virtual ~Tensor() = default;
         virtual void set_data(void *ptr);
         virtual void *get_data() const { return data; }
         virtual int size() const;

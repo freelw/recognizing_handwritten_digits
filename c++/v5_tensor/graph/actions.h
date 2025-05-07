@@ -11,6 +11,7 @@ class Action {
     public:
         Action(Tensor *_lhs, const Tensor *_rhs, Tensor *_res)
             : lhs(_lhs), rhs(_rhs), res(_res), exec_times(0) {}
+        virtual ~Action() = default;
         virtual void execute() = 0;
         virtual std::string to_string() const {
             return "Action not implemented";

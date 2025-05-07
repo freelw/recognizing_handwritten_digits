@@ -170,8 +170,8 @@ void CPUOps::relu(Tensor *lhs, Tensor *res) {
     assert(lhs != nullptr);
     assert(res != nullptr);
 
-    int size = lhs->size();
-    for (int i = 0; i < size; ++i) {
+    int length = lhs->length();
+    for (int i = 0; i < length; ++i) {
         static_cast<float*>(res->get_data())[i] = 
             std::max(0.0f, static_cast<float*>(lhs->get_data())[i]);
     }
@@ -181,8 +181,8 @@ void CPUOps::reluPrime(Tensor *lhs, Tensor *res) {
     assert(lhs != nullptr);
     assert(res != nullptr);
 
-    int size = lhs->size();
-    for (int i = 0; i < size; ++i) {
+    int length = lhs->length();
+    for (int i = 0; i < length; ++i) {
         static_cast<float*>(res->get_data())[i] = 
             static_cast<float*>(lhs->get_data())[i] > 0 ? 1.0f : 0.0f;
     }
