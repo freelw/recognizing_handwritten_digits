@@ -1,4 +1,3 @@
-$(info "Makefile for mnist_cuda")
 DIR_INC = -I./
 DIR_INC += -I./tensor
 DIR_INC += -I./graph
@@ -31,7 +30,7 @@ $(TEST_TARGET) : $(OBJECTS_TEST)
 	${NVCC} -c $(CFLAGS) $< -o $@
 
 clean:
-	@rm -f ${OBJECTS} $(TARGET)
+	@rm -f ${OBJECTS} $(TARGET) $(TEST_TARGET)
 
 .PHONY: clean prepare_data
 prepare_data:
