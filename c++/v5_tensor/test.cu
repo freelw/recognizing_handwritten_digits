@@ -1,6 +1,8 @@
 #include "tensor.h"
 #include "backends/cpu/cpu_ops.h"
 #include "graph/node.h"
+#include "optimizers/parameter.h"
+#include "optimizers/adam.h"
 #include "common.h"
 #include <iomanip>
 
@@ -634,6 +636,97 @@ void test_bp() {
     release_backend();
 }
 
+
+void test_adam() {
+    init_backend();
+    Tensor *input = allocTensor({1, 2}, "input");
+    Tensor *w = allocTensor({3, 2}, "w");
+    Tensor *bias = allocTensor({3}, "bias");
+    Tensor *w1 = allocTensor({3, 3}, "w1");
+    Tensor *bias1 = allocTensor({3}, "bias1");
+
+    graph::Node *ni = graph::allocNode(input);
+    graph::Node *nw = graph::allocNode(w);
+    graph::Node *nb = graph::allocNode(bias);
+    graph::Node *nw1 = graph::allocNode(w1);
+    graph::Node *nb1 = graph::allocNode(bias1);
+
+    ni->require_grad();
+    nw->require_grad();
+    nb->require_grad();
+    nw1->require_grad();
+    nb1->require_grad();
+
+    auto pnw = allocParameter(nw);
+    auto pnb = allocParameter(nb);
+    auto pnw1 = allocParameter(nw1);
+    auto pnb1 = allocParameter(nb1);
+
+    std::vector<Parameter*> params = {pnw, pnb, pnw1, pnb1};
+    Adam adam(
+        params,
+        0.01f
+    );
+
+    Tensor *labels = allocTensor({1}, "labels", INT32);
+    auto foward_res0 = ni->at(nw->transpose())
+        ->expand_add(nb)->relu();
+    auto foward_res1 = foward_res0
+        ->at(nw1->transpose())
+        ->expand_add(nb1);
+    auto nres = foward_res1
+        ->CrossEntropy(labels);
+
+    zero_grad();
+    nres->backward();
+    adam.clip_grad(1.0f);
+    printAllTensors();
+    printAllActions();
+    allocMemAndInitTensors();
+
+    float *input_data = static_cast<float*>(input->get_data());
+    input_data[0] = 10.0f;
+    input_data[1] = 11.0f;
+
+    int32_t *labels_data = static_cast<int32_t*>(labels->get_data());
+    labels_data[0] = 1;
+
+    float *w_data = static_cast<float*>(w->get_data());
+    for (int i = 0; i < w->length(); ++i) {
+        w_data[i] = 0.1f;
+    }
+
+    float *bias_data = static_cast<float*>(bias->get_data());
+    for (int i = 0; i < bias->length(); ++i) {
+        bias_data[i] = 0.1f;
+    }
+
+    float *w1_data = static_cast<float*>(w1->get_data());
+    for (int i = 0; i < w1->length(); ++i) {
+        w1_data[i] = 0.1f;
+    }
+
+    float *bias1_data = static_cast<float*>(bias1->get_data());
+    for (int i = 0; i < bias1->length(); ++i) {
+        bias1_data[i] = 0.1f;
+    }
+
+    w_data[0] = 0.9f;
+    w_data[1*w->get_shape()[1]] = -0.9f;
+
+    w1_data[0] = 0.9f;
+    w1_data[1*w1->get_shape()[1]] = -0.9f;
+
+    gDoActions();
+
+    sanitizeTensors();
+    releaseParameters();
+    freeAllActions();
+    freeAllTensors();
+    releaseTensorMem();
+    release_backend();
+}
+
 void test() {
     test_at();
     test_add();
@@ -644,6 +737,7 @@ void test() {
     test_cross_entropy();
     test_cross_entropy_backward();
     test_bp();
+    test_adam();
 }
 
 int main() {

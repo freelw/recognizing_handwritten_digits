@@ -16,4 +16,7 @@ class Parameter {
         Tensor *v;
         int t;
 };
+
+Parameter *allocParameter(graph::Node *_node);
+void releaseParameters();
 #endif

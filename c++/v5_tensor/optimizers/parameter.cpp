@@ -16,3 +16,18 @@ Tensor *Parameter::get_grad() {
 bool Parameter::is_require_grad() {
     return node->is_require_grad();
 }
+
+std::vector<Parameter *> g_parameters;
+
+Parameter *allocParameter(graph::Node *_node) {
+    Parameter *param = new Parameter(_node);
+    g_parameters.push_back(param);
+    return param;
+}
+
+void releaseParameters() {
+    for (auto param : g_parameters) {
+        delete param;
+    }
+    g_parameters.clear();
+}

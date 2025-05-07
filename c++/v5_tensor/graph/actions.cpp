@@ -150,7 +150,6 @@ std::string CrossEntropyBackwardAction::to_string() const {
 }
 
 void CalcAllGradNormAction::execute() {
-    assert(lhs != nullptr);
     assert(res != nullptr);
     g_backend_ops->calcAllGradNorm(grads, res);
 }
