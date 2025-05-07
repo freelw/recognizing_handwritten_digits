@@ -12,8 +12,10 @@ namespace graph {
         public:
             Node(Tensor *_t)
                 : t(_t),
-                ref_cnt(0) {
-                grad = allocGradTensor(t->get_shape(), t->get_name()+"_grad");
+                ref_cnt(0),
+                b_require_grad(false),
+                grad(nullptr) {
+                
             }
             void inc_ref() {
                 ref_cnt++;
@@ -31,7 +33,18 @@ namespace graph {
                 return grad;
             }
             bool is_require_grad() const {
-                return true;
+                return b_require_grad;
+            }
+            void require_grad(bool _b_require_grad = true) {
+                if (b_require_grad == _b_require_grad) {
+                    return;
+                }
+                if (_b_require_grad) {
+                    grad = allocGradTensor(t->get_shape(), t->get_name()+"_grad");
+                } else {
+                    grad = nullptr;
+                }
+                b_require_grad = _b_require_grad;
             }
             void backward();
             Node *transpose();
@@ -44,6 +57,7 @@ namespace graph {
             Tensor *grad;
             std::vector<Edge *> edges;
             int ref_cnt;
+            bool b_require_grad;
     };
 
     enum OpType {

@@ -474,6 +474,12 @@ void test_bp() {
     graph::Node *nw1 = graph::allocNode(w1);
     graph::Node *nb1 = graph::allocNode(bias1);
 
+    ni->require_grad();
+    nw->require_grad();
+    nb->require_grad();
+    nw1->require_grad();
+    nb1->require_grad();
+
     Tensor *labels = allocTensor({1}, "labels", INT32);
     auto foward_res0 = ni->at(nw->transpose())
         ->expand_add(nb)->relu();
@@ -485,8 +491,8 @@ void test_bp() {
 
     zero_grad();
     nres->backward();
-    // printAllTensors();
-    // printAllActions();
+    printAllTensors();
+    printAllActions();
     allocMemAndInitTensors();
 
     float *input_data = static_cast<float*>(input->get_data());
@@ -524,19 +530,6 @@ void test_bp() {
 
     gDoActions();
 
-    // // print forward result
-    // std::cout << "forward result0: " << std::endl;
-    // for (int i = 0; i < foward_res0->get_tensor()->length(); ++i) {
-    //     std::cout << static_cast<float*>(foward_res0->get_tensor()->get_data())[i] << " ";
-    // }
-    // std::cout << std::endl;
-    // std::cout << "forward result1: " << std::endl;
-    // for (int i = 0; i < foward_res1->get_tensor()->length(); ++i) {
-    //     std::cout << static_cast<float*>(foward_res1->get_tensor()->get_data())[i] << " ";
-    // }
-    // std::cout << std::endl;
-
-    // std::cout << "loss : " << std::setprecision(8) << static_cast<float*>(nres->get_tensor()->get_data())[0] << std::endl;
     const float eps = 1e-5f;
     bool loss_succ = fabs(static_cast<float*>(nres->get_tensor()->get_data())[0] - 18.360287f) < eps;
     if (loss_succ) {
@@ -550,7 +543,6 @@ void test_bp() {
     auto nw1_grad = nw1->get_grad();
     auto nb1_grad = nb1->get_grad();
 
-    // print gradient
     bool nw_grad_succ = true;
     float nw_grad_ans[3][2] {
         17.997713,  19.797485,
@@ -572,12 +564,6 @@ void test_bp() {
         std::cout << GREEN << "test_cross_entropy nw_grad succ" << RESET << std::endl;
     }
 
-    // print nb_grad
-
-    // for (int i = 0; i < nb_grad->get_shape()[0]; ++i) {
-    //     float *loc_grad = static_cast<float*>(nb_grad->location({i}));
-    //     std::cout << std::setprecision(8) << "nb_grad[" << i << "] = " << *loc_grad << std::endl;
-    // }
     bool nb_grad_succ = true;
     float nb_grad_ans[3] = {
         1.7997713,
