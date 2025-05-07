@@ -6,8 +6,8 @@ DIR_INC = -I./ \
 DIR_LIB = -L./
 TARGET = mnist_cuda
 TEST_TARGET = test
-#NVCC_CFLAGS = $(DIR_INC) $(DIR_LIB) -g -G
-NVCC_CFLAGS = $(DIR_INC) $(DIR_LIB) -g -fsanitize=address -fno-omit-frame-pointer
+
+
 LDFLAGS = -lstdc++
 SRCDIR := ./tensor \
           ./graph \
@@ -22,8 +22,14 @@ SRCS += $(wildcard *.cu) $(wildcard $(addsuffix /*.cu, $(SRCDIR)))
 OBJECTS := $(patsubst %.c,%.o,$(patsubst %.cpp,%.o,$(patsubst %.cu,%.o,$(SRCS))))
 OBJECTS_MAIN := $(filter-out test.o,$(OBJECTS))
 OBJECTS_TEST := $(filter-out main.o,$(OBJECTS))
-NVCC = g++
-#NVCC = nvcc
+
+ifeq ($(ASAN),1)
+	NVCC = g++
+	NVCC_CFLAGS = $(DIR_INC) $(DIR_LIB) -g -fsanitize=address -fno-omit-frame-pointer
+else
+	NVCC = nvcc
+	NVCC_CFLAGS = $(DIR_INC) $(DIR_LIB) -g -G
+endif
 
 $(TARGET) : $(OBJECTS_MAIN)
 	${NVCC} $(NVCC_CFLAGS) $^ -o $@ $(LDFLAGS)
