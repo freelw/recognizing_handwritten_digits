@@ -13,7 +13,7 @@ const std::string GREEN = "\033[32m";
 const std::string RESET = "\033[0m";
 
 void test_at() {
-    init_backend();
+    construct_env();
     Tensor *input = allocTensor({2, 3}, "input");
     Tensor *w = allocTensor({3, 4}, "w");
     Tensor *wt = allocTensor({4, 3}, "wt");
@@ -52,31 +52,11 @@ void test_at() {
     if (succ) {
         std::cout << GREEN << "test_at succ " << RESET << std::endl;
     }
-    sanitizeTensors();
-    // // print res_wi shape
-    // std::cout << "res_wi shape: ";
-    // assert(res_wi_tensor->get_shape().size() == 2);
-    // for (int i = 0; i < res_wi_tensor->get_shape().size(); ++ i) {
-    //     std::cout << res_wi_tensor->get_shape()[i] << " ";
-    // }
-    // std::cout << std::endl;
-
-    // // print res_wi data
-    // std::cout << "res_wi data: " << std::endl;
-    // for (int i = 0; i < res_wi_tensor->get_shape()[0]; ++ i) {
-    //     for (int j = 0; j < res_wi_tensor->get_shape()[1]; ++ j) {
-    //         std::cout << res_wi_data[i * res_wi_tensor->get_shape()[1] + j] << " ";
-    //     }
-    //     std::cout << std::endl;
-    // }
-    freeAllActions();
-    freeAllTensors();
-    releaseTensorMem();
-    release_backend();
+    destruct_env();
 }
 
 void test_add() {
-    init_backend();
+    construct_env();
     Tensor *input = allocTensor({3, 4}, "input");
     Tensor *w = allocTensor({3, 4}, "w");
     Tensor *wt = allocTensor({4, 3}, "wt");
@@ -116,33 +96,11 @@ void test_add() {
     if (succ) {
         std::cout << GREEN << "test_add succ" << RESET << std::endl;
     }
-
-    sanitizeTensors();
-    // // print res_wi shape
-    // std::cout << "res_wi shape: " << res_wi_tensor->get_shape().size() << std::endl; 
-    // assert(res_wi_tensor->get_shape().size() == 2);
-    // for (int i = 0; i < res_wi_tensor->get_shape().size(); ++ i) {
-    //     std::cout << res_wi_tensor->get_shape()[i] << " ";
-    // }
-    // std::cout << std::endl;
-
-    // // print res_wi data
-    // std::cout << "res_wi data: " << std::endl;
-    // for (int i = 0; i < res_wi_tensor->get_shape()[0]; ++ i) {
-    //     for (int j = 0; j < res_wi_tensor->get_shape()[1]; ++ j) {
-    //         std::cout << res_wi_data[i * res_wi_tensor->get_shape()[1] + j] << " ";
-    //     }
-    //     std::cout << std::endl;
-    // }
-
-    freeAllActions();
-    freeAllTensors();
-    releaseTensorMem();
-    release_backend();
+    destruct_env();
 }
 
 void test_add_eq() {
-    init_backend();
+    construct_env();
     Tensor *input = allocTensor({3, 4}, "input");
     Tensor *input1 = allocTensor({3, 4}, "input1");
     Tensor *w = allocTensor({3, 4}, "w");
@@ -183,17 +141,11 @@ void test_add_eq() {
         std::cout << GREEN << "test_add_eq succ" << RESET << std::endl;
     }
 
-    sanitizeTensors();
-
-    freeAllActions();
-    freeAllTensors();
-    releaseTensorMem();
-    release_backend();
+    destruct_env();
 }
 
 void test_expand_add() {
-
-    init_backend();
+    construct_env();
     Tensor *bias = allocTensor({4}, "bias");
     Tensor *w = allocTensor({3, 4}, "w");
     Tensor *wt = allocTensor({4, 3}, "wt");
@@ -233,17 +185,11 @@ void test_expand_add() {
     if (succ) {
         std::cout << GREEN << "test_expand_add succ" << RESET << std::endl;
     }
-
-    sanitizeTensors();
-
-    freeAllActions();
-    freeAllTensors();
-    releaseTensorMem();
-    release_backend();
+    destruct_env();
 }
 
 void test_mul() {
-    init_backend();
+    construct_env();
     Tensor *input = allocTensor({3, 4}, "input");
     Tensor *w = allocTensor({3, 4}, "w");
     Tensor *wt = allocTensor({4, 3}, "wt");
@@ -283,17 +229,11 @@ void test_mul() {
     if (succ) {
         std::cout << GREEN << "test_mul succ" << RESET << std::endl;
     }
-
-    sanitizeTensors();
-
-    freeAllActions();
-    freeAllTensors();
-    releaseTensorMem();
-    release_backend();
+    destruct_env();
 }
 
 void test_sum() {
-    init_backend();
+    construct_env();
     Tensor *w = allocTensor({3, 4}, "w");
     Tensor *wt = allocTensor({4, 3}, "wt");
     Tensor *res_wi_tensor = allocTensor({3, 4}, "res_wi");
@@ -331,17 +271,11 @@ void test_sum() {
     if (succ) {
         std::cout << GREEN << "test_sum succ" << RESET << std::endl;
     }
-
-    sanitizeTensors();
-
-    freeAllActions();
-    freeAllTensors();
-    releaseTensorMem();
-    release_backend();
+    destruct_env();
 }
 
 void test_cross_entropy() {
-    init_backend();
+    construct_env();
     Tensor *labels = allocTensor({3}, "input", INT32);
     Tensor *w = allocTensor({3, 4}, "w");
     Tensor *wt = allocTensor({4, 3}, "wt");
@@ -389,17 +323,11 @@ void test_cross_entropy() {
     if (succ) {
         std::cout << GREEN << "test_cross_entropy succ" << RESET << std::endl;
     }
-
-    sanitizeTensors();
-
-    freeAllActions();
-    freeAllTensors();
-    releaseTensorMem();
-    release_backend();
+    destruct_env();
 }
 
 void test_cross_entropy_backward() {
-    init_backend();
+    construct_env();
     Tensor *labels = allocTensor({3}, "input", INT32);
     Tensor *w = allocTensor({3, 4}, "w");
     Tensor *wt = allocTensor({4, 3}, "wt");
@@ -457,15 +385,11 @@ void test_cross_entropy_backward() {
     if (succ) {
         std::cout << GREEN << "test_cross_entropy_backward succ" << RESET << std::endl;
     }
-    sanitizeTensors();
-    freeAllActions();
-    freeAllTensors();
-    releaseTensorMem();
-    release_backend();
+    destruct_env();
 }
 
 void test_bp() {
-    init_backend();
+    construct_env();
     Tensor *input = allocTensor({1, 2}, "input");
     Tensor *w = allocTensor({3, 2}, "w");
     Tensor *bias = allocTensor({3}, "bias");
@@ -631,11 +555,7 @@ void test_bp() {
         std::cout << GREEN << "test_cross_entropy nb1_grad succ" << RESET << std::endl;
     }
 
-    sanitizeTensors();
-    freeAllActions();
-    freeAllTensors();
-    releaseTensorMem();
-    release_backend();
+    destruct_env();
 }
 
 Tensor *calc_norm(const std::vector<Parameter*> &params) {
@@ -651,7 +571,7 @@ Tensor *calc_norm(const std::vector<Parameter*> &params) {
 }
 
 void test_adam() {
-    init_backend();
+    construct_env();
     Tensor *input = allocTensor({1, 2}, "input");
     Tensor *w = allocTensor({3, 2}, "w");
     Tensor *bias = allocTensor({3}, "bias");
@@ -901,12 +821,7 @@ void test_adam() {
         std::cout << GREEN << "test_adam bias1 succ" << RESET << std::endl;
     }
 
-    sanitizeTensors();
-    releaseParameters();
-    freeAllActions();
-    freeAllTensors();
-    releaseTensorMem();
-    release_backend();
+    destruct_env();
 }
 
 float calc_mean(Tensor *tensor) {
@@ -929,7 +844,7 @@ float calc_std(Tensor *tensor) {
 }
 
 void test_mlp() {
-    init_backend();
+    construct_env();
 
     MLP mlp(
         784,
@@ -986,12 +901,7 @@ void test_mlp() {
     } else {
         std::cout << RED << "test_mlp once action failed" << RESET << std::endl;
     }
-    sanitizeTensors();
-    releaseParameters();
-    freeAllActions();
-    freeAllTensors();
-    releaseTensorMem();
-    release_backend();
+    destruct_env();
 }
 
 void test() {
