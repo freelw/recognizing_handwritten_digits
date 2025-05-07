@@ -85,6 +85,13 @@ void train(int epochs, float lr, int batch_size) {
                 batch_size,
                 train_images
             );
+            assign_labels(
+                labels,
+                labels_tmp_buffer,
+                offset,
+                batch_size,
+                train_labels
+            );
             offset += batch_size;
             gDoActions();
             loss_sum += g_backend_ops->get_float(loss->get_tensor(), 0);
