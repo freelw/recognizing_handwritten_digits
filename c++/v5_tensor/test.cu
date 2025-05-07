@@ -485,8 +485,8 @@ void test_bp() {
 
     zero_grad();
     nres->backward();
-    printAllTensors();
-    printAllActions();
+    // printAllTensors();
+    // printAllActions();
     allocMemAndInitTensors();
 
     float *input_data = static_cast<float*>(input->get_data());
@@ -522,35 +522,21 @@ void test_bp() {
     w1_data[0] = 0.9f;
     w1_data[1*w1->get_shape()[1]] = -0.9f;
 
-    // print w_data
-    std::cout << "w_data: " << std::endl;
-    for (int i = 0; i < w->length(); ++i) {
-        std::cout << static_cast<float*>(w->get_data())[i] << " ";
-    }
-    std::cout << std::endl;
+    gDoActions();
 
-    // print w1_data
-    // std::cout << "w1_data: " << std::endl;
-    // for (int i = 0; i < w1->length(); ++i) {
-    //     std::cout << static_cast<float*>(w1->get_data())[i] << " ";
+    // // print forward result
+    // std::cout << "forward result0: " << std::endl;
+    // for (int i = 0; i < foward_res0->get_tensor()->length(); ++i) {
+    //     std::cout << static_cast<float*>(foward_res0->get_tensor()->get_data())[i] << " ";
+    // }
+    // std::cout << std::endl;
+    // std::cout << "forward result1: " << std::endl;
+    // for (int i = 0; i < foward_res1->get_tensor()->length(); ++i) {
+    //     std::cout << static_cast<float*>(foward_res1->get_tensor()->get_data())[i] << " ";
     // }
     // std::cout << std::endl;
 
-    gDoActions();
-
-    // print forward result
-    std::cout << "forward result0: " << std::endl;
-    for (int i = 0; i < foward_res0->get_tensor()->length(); ++i) {
-        std::cout << static_cast<float*>(foward_res0->get_tensor()->get_data())[i] << " ";
-    }
-    std::cout << std::endl;
-    std::cout << "forward result1: " << std::endl;
-    for (int i = 0; i < foward_res1->get_tensor()->length(); ++i) {
-        std::cout << static_cast<float*>(foward_res1->get_tensor()->get_data())[i] << " ";
-    }
-    std::cout << std::endl;
-
-    std::cout << "loss : " << std::setprecision(8) << static_cast<float*>(nres->get_tensor()->get_data())[0] << std::endl;
+    // std::cout << "loss : " << std::setprecision(8) << static_cast<float*>(nres->get_tensor()->get_data())[0] << std::endl;
     const float eps = 1e-2f;
     bool loss_succ = fabs(static_cast<float*>(nres->get_tensor()->get_data())[0] - 18.360287f) < eps;
     if (loss_succ) {
