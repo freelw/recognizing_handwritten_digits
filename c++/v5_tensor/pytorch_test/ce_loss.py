@@ -58,9 +58,9 @@ def test1():
     # print(model[0].bias)
     print(model[0].bias.grad)
     # print(model[2].weight)
-    # print(model[2].weight.grad)
+    print(model[2].weight.grad)
     # print(model[2].bias)
-    # print(model[2].bias.grad)
+    print(model[2].bias.grad)
 
 if __name__ == "__main__":
     test1()

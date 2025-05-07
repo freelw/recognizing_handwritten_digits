@@ -598,6 +598,49 @@ void test_bp() {
         std::cout << GREEN << "test_cross_entropy nb_grad succ" << RESET << std::endl;
     }
 
+    float nw1_grad_ans[3][3] = {
+        10.197085, 0, 2.1993711,
+        -10.200001, 0, -2.1999998,
+        0.002914961, 0, 0.00062871695
+    };
+
+    bool nbw1_grad_succ = true;
+
+    for (int i = 0; i < nw1_grad->get_shape()[0]; ++i) {
+        for (int j = 0; j < nw1_grad->get_shape()[1]; ++j) {
+            float *loc_grad = static_cast<float*>(nw1_grad->location({i, j}));
+            if (fabs(*loc_grad - nw1_grad_ans[i][j]) > eps) {
+                std::cerr << std::setprecision(8) << RED << "Error: nw1_grad[" << i << "][" << j << "] = " << *loc_grad
+                          << ", nw1_grad_ans[" << i << "][" << j << "] = " << nw1_grad_ans[i][j] << RESET << std::endl;
+                nbw1_grad_succ = false;
+            }
+        }
+    }
+
+    if (nbw1_grad_succ) {
+        std::cout << GREEN << "test_cross_entropy nw1_grad succ" << RESET << std::endl;
+    }
+
+    float nb1_grad_ans[3] = {
+        0.9997142,
+        -1,
+        0.00028578046
+    };
+
+    bool nb1_grad_succ = true;
+    for (int i = 0; i < nb1_grad->get_shape()[0]; ++i) {
+        float *loc_grad = static_cast<float*>(nb1_grad->location({i}));
+        if (fabs(*loc_grad - nb1_grad_ans[i]) > eps) {
+            std::cerr << std::setprecision(8) << RED << "Error: nb1_grad[" << i << "] = " << *loc_grad
+                      << ", nb1_grad_ans[" << i << "] = " << nb1_grad_ans[i] << RESET << std::endl;
+            nb1_grad_succ = false;
+        }
+    }
+
+    if (nb1_grad_succ) {
+        std::cout << GREEN << "test_cross_entropy nb1_grad succ" << RESET << std::endl;
+    }
+
     sanitizeTensors();
     freeAllActions();
     freeAllTensors();
