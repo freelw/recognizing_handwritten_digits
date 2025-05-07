@@ -108,7 +108,16 @@ class CrossEntropyBackwardAction : public Action {
         Tensor *sums;
 };
 
+class ZeroGradAction : public Action {
+    public:
+        ZeroGradAction()
+            : Action(nullptr, nullptr, nullptr) {}
+        void execute() override;
+        std::string to_string() const override;
+};
+
 void gCreateAction(Action *action);
+void gDoActions();
 void printAllActions();
 void freeAllActions();
 

@@ -34,6 +34,7 @@ namespace graph {
                 return true;
             }
             void backward();
+            Node *transpose();
             Node *expand_add(Node *rhs);
             Node *at(Node *rhs);
             Node *relu();
@@ -146,11 +147,7 @@ namespace graph {
             void backward(Tensor *grad) override {
                 Tensor *r_tensor = rhs->get_tensor();
                 Tensor *l_tensor = node->get_tensor();
-                Tensor *r_transpose_view = allocTensorView(
-                    r_tensor,
-                    {r_tensor->get_shape()[1], r_tensor->get_shape()[0]},
-                    r_tensor->get_name() + "_transpose"
-                );
+                Tensor *r_transpose_view = r_tensor->transpose();
 
                 gCreateAction(
                     new AtAction(
@@ -177,11 +174,7 @@ namespace graph {
             void backward(Tensor *grad) override {
                 Tensor *l_tensor = lhs->get_tensor();
                 Tensor *r_tensor = node->get_tensor();
-                Tensor *l_transpose_view = allocTensorView(
-                    l_tensor,
-                    {l_tensor->get_shape()[1], l_tensor->get_shape()[0]},
-                    l_tensor->get_name() + "_transpose"
-                );
+                Tensor *l_transpose_view = l_tensor->transpose();
 
                 gCreateAction(
                     new AtAction(
@@ -260,6 +253,25 @@ namespace graph {
             Tensor *labels;
             Tensor *maxs;
             Tensor *sums;
+    };
+
+    class TransposeEdge : public Edge {
+        public:
+            static Edge* create(Node *_node) {
+                Edge *edge = new TransposeEdge(_node);
+                gAddEdge(edge);
+                return edge;
+            }
+            TransposeEdge(Node *_node)
+                : Edge(Transpose, _node) {}
+            virtual ~TransposeEdge() {}
+            void backward(Tensor *grad) override {
+                gCreateAction(
+                    new AddEqAction(
+                        node->get_grad(), grad->transpose()
+                    )
+                );
+            }        
     };
 
     Node *allocNode(Tensor *t);

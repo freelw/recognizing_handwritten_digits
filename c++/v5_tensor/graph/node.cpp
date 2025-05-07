@@ -24,6 +24,14 @@ namespace graph {
         }
     }
 
+    Node *Node::transpose() {
+        Tensor *l_tensor = this->get_tensor();
+        Tensor *res_tensor = l_tensor->transpose();
+        Node *res_node = allocNode(res_tensor);
+        res_node->edges.push_back(TransposeEdge::create(this));
+        return res_node;
+    }
+
     Node *Node::expand_add(Node *rhs) {
         Tensor *res_tensor = allocTensor(t->get_shape(), "expand_add");
         Tensor *r_tensor = rhs->get_tensor();
@@ -77,10 +85,7 @@ namespace graph {
     Node *Node::CrossEntropy(Tensor *labels) {
         assert(labels->get_rank() == 1);
         assert(
-            labels->get_dtype() == INT8 ||
-            labels->get_dtype() == INT16 ||
-            labels->get_dtype() == INT32 ||
-            labels->get_dtype() == INT64
+            labels->get_dtype() == INT32 
         );
         assert(labels->get_shape()[0] == this->get_tensor()->get_shape()[0]);
         Tensor *tensor_maxs = allocTensor(labels->get_shape(), "maxs");

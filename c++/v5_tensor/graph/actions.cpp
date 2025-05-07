@@ -27,7 +27,8 @@ std::string AddAction::to_string() const {
 void AddEqAction::execute() {
     assert(lhs != nullptr);
     assert(rhs != nullptr);
-    g_backend_ops->addEq(lhs, rhs);
+    assert(lhs->get_shape() == rhs->get_shape());
+    g_backend_ops->addEq(lhs, rhs);    
 }
 
 std::string AddEqAction::to_string() const {
@@ -148,10 +149,24 @@ std::string CrossEntropyBackwardAction::to_string() const {
     return oss.str();
 }
 
+void ZeroGradAction::execute() {
+    g_backend_ops->memset(grad_tensors_data, 0, grad_tensors_data_capacity);
+}
+
+std::string ZeroGradAction::to_string() const {
+    return "ZeroGradAction: zeroing gradients";
+}
+
 std::vector<Action*> g_actions;
 
 void gCreateAction(Action *action) {
     g_actions.push_back(action);
+}
+
+void gDoActions() {
+    for (Action *action : g_actions) {
+        action->execute();
+    }
 }
 
 void printAllActions() {

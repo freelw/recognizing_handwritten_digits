@@ -1,0 +1,283 @@
+#include "cpu_ops.h"
+#include <string.h>
+#include <cmath>
+
+void CPUOps::add(Tensor *lhs, const Tensor *rhs, Tensor *res) {
+    assert(lhs != nullptr);
+    assert(rhs != nullptr);
+    assert(res != nullptr);
+
+    auto lshape = lhs->get_shape();
+    auto rshape = rhs->get_shape();
+    auto res_shape = res->get_shape();
+
+    assert(lshape == rshape);
+    assert(res_shape == lshape);
+
+    auto lstrides = lhs->get_strides();
+    auto rstrides = rhs->get_strides();
+    auto res_strides = res->get_strides();
+    
+    for (int i = 0; i < lshape[0]; ++i) {
+        for (int j = 0; j < lshape[1]; ++j) {
+            static_cast<float*>(res->get_data())[i * res_strides[0] + j * res_strides[1]] = 
+                static_cast<float*>(lhs->get_data())[i * lstrides[0] + j * lstrides[1]] + 
+                static_cast<float*>(rhs->get_data())[i * rstrides[0] + j * rstrides[1]];
+        }
+    }
+}
+
+void CPUOps::addEq(Tensor *lhs, const Tensor *rhs) {
+    
+    assert(lhs != nullptr);
+    assert(rhs != nullptr);
+    
+    auto lshape = lhs->get_shape();
+    auto rshape = rhs->get_shape();
+    
+    assert(lshape == rshape);
+
+    auto lstrides = lhs->get_strides();
+    auto rstrides = rhs->get_strides();
+
+    int rank = lhs->get_rank();
+
+    assert(rank <= 2);
+    if (rank == 1) {
+        for (int i = 0; i < lshape[0]; ++i) {
+            static_cast<float*>(lhs->get_data())[i * lstrides[0]] += 
+                static_cast<float*>(rhs->get_data())[i * rstrides[0]];
+        }
+    } else if (rank == 2) {
+        for (int i = 0; i < lshape[0]; ++i) {
+            for (int j = 0; j < lshape[1]; ++j) {
+                static_cast<float*>(lhs->get_data())[i * lstrides[0] + j * lstrides[1]] += 
+                    static_cast<float*>(rhs->get_data())[i * rstrides[0] + j * rstrides[1]];
+            }
+        }
+    }
+    
+}
+
+void CPUOps::expandAdd(Tensor *lhs, const Tensor *rhs, Tensor *res) {
+
+    assert(lhs != nullptr);
+    assert(rhs != nullptr);
+    assert(res != nullptr);
+
+    int size = lhs->size();
+    auto shape = lhs->get_shape();
+    assert(shape.size() == 2);
+    assert(rhs->get_shape().size() == 1);   
+    assert(rhs->get_shape()[0] == shape[1]);
+    assert(shape == res->get_shape());
+
+    auto lstrides = lhs->get_strides();
+    auto res_strides = res->get_strides();
+
+    for (int i = 0; i < shape[0]; ++i) {
+        for (int j = 0; j < shape[1]; ++j) {
+            static_cast<float*>(res->get_data())[i * res_strides[0] + j * res_strides[1]] = 
+                static_cast<float*>(lhs->get_data())[i * lstrides[0] + j * lstrides[1]] + 
+                static_cast<float*>(rhs->get_data())[j];
+        }
+    }
+}
+
+void CPUOps::at(Tensor *lhs, const Tensor *rhs, Tensor *res) {
+    assert(lhs != nullptr);
+    assert(rhs != nullptr);
+    assert(res != nullptr);
+
+    auto lshape = lhs->get_shape();
+    auto rshape = rhs->get_shape();
+    auto res_shape = res->get_shape();
+    assert(lshape.size() == 2);
+    assert(rshape.size() == 2);
+    assert(res_shape.size() == 2);
+    assert(lshape[1] == rshape[0]);
+    assert(res_shape[0] == lshape[0]);
+    assert(res_shape[1] == rshape[1]);
+
+    float *res_data = static_cast<float*>(res->get_data());
+    float *lhs_data = static_cast<float*>(lhs->get_data());
+    float *rhs_data = static_cast<float*>(rhs->get_data());
+
+    auto lstrides = lhs->get_strides();
+    auto rstrides = rhs->get_strides();
+    auto res_strides = res->get_strides();
+
+    for (int i = 0; i < lshape[0]; ++i) {
+        for (int j = 0; j < rshape[1]; ++j) {
+            res_data[i * res_strides[0] + j * res_strides[1]] = 0;
+            for (int k = 0; k < lshape[1]; ++k) {
+                res_data[i * res_strides[0] + j * res_strides[1]] += 
+                    lhs_data[i * lstrides[0] + k * lstrides[1]] * 
+                    rhs_data[k * rstrides[0] + j * rstrides[1]];
+            }
+        }
+    }
+}
+
+void CPUOps::mul(Tensor *lhs, const Tensor *rhs, Tensor *res) {
+    assert(lhs != nullptr);
+    assert(rhs != nullptr);
+    assert(res != nullptr);
+
+    auto lshape = lhs->get_shape();
+    auto rshape = rhs->get_shape();
+    auto res_shape = res->get_shape();
+
+    assert(lshape == rshape);
+    assert(res_shape == lshape);
+
+    auto lstrides = lhs->get_strides();
+    auto rstrides = rhs->get_strides();
+    auto res_strides = res->get_strides();
+
+    for (int i = 0; i < lshape[0]; ++i) {
+        for (int j = 0; j < lshape[1]; ++j) {
+            static_cast<float*>(res->get_data())[i * res_strides[0] + j * res_strides[1]] = 
+                static_cast<float*>(lhs->get_data())[i * lstrides[0] + j * lstrides[1]] * 
+                static_cast<float*>(rhs->get_data())[i * rstrides[0] + j * rstrides[1]];
+        }
+    }
+}
+
+void CPUOps::sum(Tensor *lhs, Tensor *res, int dim) {
+    assert(lhs != nullptr);
+    assert(res != nullptr);
+    assert(dim >= 0 && dim < lhs->get_rank());
+
+    auto shape = lhs->get_shape();
+    auto res_shape = res->get_shape();
+    assert(dim == 0);
+
+    auto lstrides = lhs->get_strides();
+
+    for (int i = 0; i < shape[1]; ++i) {
+        static_cast<float*>(res->get_data())[i] = 0;
+        for (int j = 0; j < shape[0]; ++j) {
+            static_cast<float*>(res->get_data())[i] += 
+                static_cast<float*>(lhs->get_data())[j * lstrides[0] + i * lstrides[1]];
+        }
+    }
+}
+
+void CPUOps::relu(Tensor *lhs, Tensor *res) {
+    assert(lhs != nullptr);
+    assert(res != nullptr);
+
+    int size = lhs->size();
+    for (int i = 0; i < size; ++i) {
+        static_cast<float*>(res->get_data())[i] = 
+            std::max(0.0f, static_cast<float*>(lhs->get_data())[i]);
+    }
+}
+
+void CPUOps::reluPrime(Tensor *lhs, Tensor *res) {
+    assert(lhs != nullptr);
+    assert(res != nullptr);
+
+    int size = lhs->size();
+    for (int i = 0; i < size; ++i) {
+        static_cast<float*>(res->get_data())[i] = 
+            static_cast<float*>(lhs->get_data())[i] > 0 ? 1.0f : 0.0f;
+    }
+}
+
+void CPUOps::crossEntropy(Tensor *lhs, const Tensor *labels, Tensor *maxs, Tensor *sums, Tensor *res) {
+    assert(lhs != nullptr);
+    assert(labels != nullptr);
+    assert(maxs != nullptr);
+    assert(sums != nullptr);
+    assert(res != nullptr);
+
+    assert(lhs->get_shape().size() == 2);
+    assert(labels->get_shape().size() == 1);
+    assert(maxs->get_shape().size() == 1);
+    assert(sums->get_shape().size() == 1);
+    assert(res->get_shape().size() == 1);
+    assert(lhs->get_shape()[0] == labels->get_shape()[0]);
+    assert(lhs->get_shape()[0] == maxs->get_shape()[0]);
+    assert(lhs->get_shape()[0] == sums->get_shape()[0]);
+    assert(res->get_shape()[0] == 1);
+
+    int batch_size = lhs->get_shape()[0];
+    int size = lhs->get_shape()[1];
+    float loss_value = 0;
+
+    // maxs and sums are out params
+    float *data = static_cast<float*>(lhs->get_data());
+    int32_t *labels_data = static_cast<int32_t*>(labels->get_data());
+    auto lstrides = lhs->get_strides();
+    for (int j = 0; j < batch_size; ++j) {
+        float max = data[j * lstrides[0]];
+        for (int i = 0; i < size; ++i) {
+            auto e = data[j * lstrides[0] + i * lstrides[1]];
+            if (max < e) {
+                max = e;
+            }
+        }
+        float sum = 0;
+        auto target = labels_data[j];
+        float zt = data[j * lstrides[0] + target * lstrides[1]];
+        for (int i = 0; i < size; ++i) {
+            float e = data[j* lstrides[0] + i * lstrides[1]];
+            e = std::exp(e - max);
+            sum += e;
+        }
+        static_cast<float*>(maxs->get_data())[j] = max;
+        static_cast<float*>(sums->get_data())[j] = sum;
+        loss_value += -(zt - max - std::log(sum));
+    }
+    static_cast<float*>(res->get_data())[0] = loss_value / batch_size;
+}
+
+void CPUOps::crossEntropyBackward(Tensor *lhs, const Tensor *labels, Tensor *maxs, Tensor *sums, Tensor *res) {
+    assert(lhs != nullptr);
+    assert(labels != nullptr);
+    assert(maxs != nullptr);
+    assert(sums != nullptr);
+    assert(res != nullptr);
+
+    int batch_size = lhs->get_shape()[0];
+    int size = lhs->get_shape()[1];
+    float *data = static_cast<float*>(lhs->get_data());
+    float *res_data = static_cast<float*>(res->get_data());
+    auto lstrides = lhs->get_strides();
+    auto res_strides = res->get_strides();
+    assert(lstrides.size() == 2);
+    assert(res_strides.size() == 2);
+
+    for (int j = 0; j < batch_size; ++j) {
+        float max = static_cast<float*>(maxs->get_data())[j];
+        float sum = static_cast<float*>(sums->get_data())[j];
+        auto target = static_cast<int32_t*>(labels->get_data())[j];
+        for (int i = 0; i < size; ++i) {
+            if (i == target) {
+                res_data[j * res_strides[0] + i * res_strides[1]] = 
+                    (std::exp(data[j * lstrides[0] + i * lstrides[1]] - max) / sum - 1) / batch_size;
+            } else {
+                res_data[j * res_strides[0] + i * res_strides[1]] = 
+                    (std::exp(data[j * lstrides[0] + i * lstrides[1]] - max) / sum) / batch_size;
+            }
+        }
+    }
+}
+
+void* CPUOps::alloc(size_t size) {
+    return malloc(size);
+}
+
+void CPUOps::memset(void* ptr, int value, size_t size) {
+    ::memset(ptr, value, size);
+}
+
+void CPUOps::memcpy(void* dst, const void* src, size_t size) {
+    ::memcpy(dst, src, size);
+}
+
+void CPUOps::free(void* ptr) {
+    ::free(ptr);
+}
