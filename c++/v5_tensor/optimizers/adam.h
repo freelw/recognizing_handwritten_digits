@@ -1,11 +1,11 @@
 #ifndef ADAM_H
 #define ADAM_H
 
-#include "graph/node.h"
+#include "parameter.h"
 
 class Adam {
     public:
-        Adam(std::vector<graph::Node*> _parameters, float _lr,
+        Adam(const std::vector<Parameter*> &_parameters, float _lr,
             float _beta1 = 0.9, float _beta2 = 0.999, float _epsilon = 1e-8)
             : parameters(_parameters), lr(_lr),
                 beta1(_beta1), beta2(_beta2), epsilon(_epsilon)
@@ -14,7 +14,7 @@ class Adam {
         bool clip_grad(float grad_clip_val);
         
     private:
-        std::vector<graph::Node*> parameters;
+        std::vector<Parameter*> parameters;
         float lr; 
         float beta1;
         float beta2;
