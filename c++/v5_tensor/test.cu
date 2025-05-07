@@ -733,19 +733,6 @@ void test_adam() {
 
     gDoActions();
 
-    // std::cout << "norm_before_clip: " << g_backend_ops->get_float(norm_before_clip, 0) << std::endl;
-    // std::cout << "norm_after_clip: " << g_backend_ops->get_float(norm_after_clip, 0) << std::endl;
-
-    // bool succ = g_backend_ops->get_float(norm_before_clip, 0) > 1.0f && 
-    //             g_backend_ops->get_float(norm_after_clip, 0) <= 1.0f;
-    
-    // if (succ) {
-    //     std::cout << GREEN << "test_adam clip succ" << RESET << std::endl;
-    // } else {
-    //     std::cout << RED << "test_adam clip failed" << RESET << std::endl;
-    // }
-
-
     auto nw_grad = nw->get_grad();
     auto nb_grad = nb->get_grad();
     auto nw1_grad = nw1->get_grad();
@@ -833,6 +820,83 @@ void test_adam() {
 
     if (nb1_grad_succ) {
         std::cout << GREEN << "test_adam clip nb1_grad succ" << RESET << std::endl;
+    }
+
+    float w_ans[3][2] = {
+        0.88999999, 0.090000004,
+        -0.89999998, 0.1,
+        0.10072108, 0.10078751
+    };
+
+    bool w_succ = true;
+    for (int i = 0; i < w->get_shape()[0]; ++i) {
+        for (int j = 0; j < w->get_shape()[1]; ++j) {
+            float *loc_w = static_cast<float*>(w->location({i, j}));
+            if (fabs(*loc_w - w_ans[i][j]) > eps) {
+                std::cerr << std::setprecision(8) << RED << "Error: w[" << i << "][" << j << "] = " << *loc_w
+                          << ", w_ans[" << i << "][" << j << "] = " << w_ans[i][j] << RESET << std::endl;
+                w_succ = false;
+            }
+        }
+    }
+
+    if (w_succ) {
+        std::cout << GREEN << "test_adam w succ" << RESET << std::endl;
+    }
+
+    float bias_ans[3] = {
+        0.090000004, 0.1, 0.10007711
+    };
+    bool bias_succ = true;
+    for (int i = 0; i < bias->get_shape()[0]; ++i) {
+        float *loc_bias = static_cast<float*>(bias->location({i}));
+        if (fabs(*loc_bias - bias_ans[i]) > eps) {
+            std::cerr << std::setprecision(8) << RED << "Error: bias[" << i << "] = " << *loc_bias
+                      << ", bias_ans[" << i << "] = " << bias_ans[i] << RESET << std::endl;
+            bias_succ = false;
+        }
+    }
+
+    if (bias_succ) {
+        std::cout << GREEN << "test_adam bias succ" << RESET << std::endl;
+    }
+
+    float w1_ans[3][3] = {
+        0.88999999, 0.1, 0.090000004,
+        -0.88999999, 0.1, 0.11,
+        0.090001054, 0.1, 0.090004876
+    };
+
+    bool w1_succ = true;
+    for (int i = 0; i < w1->get_shape()[0]; ++i) {
+        for (int j = 0; j < w1->get_shape()[1]; ++j) {
+            float *loc_w1 = static_cast<float*>(w1->location({i, j}));
+            if (fabs(*loc_w1 - w1_ans[i][j]) > eps) {
+                std::cerr << std::setprecision(8) << RED << "Error: w1[" << i << "][" << j << "] = " << *loc_w1
+                          << ", w1_ans[" << i << "][" << j << "] = " << w1_ans[i][j] << RESET << std::endl;
+                w1_succ = false;
+            }
+        }
+    }
+    if (w1_succ) {
+        std::cout << GREEN << "test_adam w1 succ" << RESET << std::endl;
+    }
+
+    float bias1_ans[3] = {
+        0.090000004, 0.11, 0.09001071
+    };
+
+    bool bias1_succ = true;
+    for (int i = 0; i < bias1->get_shape()[0]; ++i) {
+        float *loc_bias1 = static_cast<float*>(bias1->location({i}));
+        if (fabs(*loc_bias1 - bias1_ans[i]) > eps) {
+            std::cerr << std::setprecision(8) << RED << "Error: bias1[" << i << "] = " << *loc_bias1
+                      << ", bias1_ans[" << i << "] = " << bias1_ans[i] << RESET << std::endl;
+            bias1_succ = false;
+        }
+    }
+    if (bias1_succ) {
+        std::cout << GREEN << "test_adam bias1 succ" << RESET << std::endl;
     }
 
     sanitizeTensors();

@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import cmath
+import torch.optim as optim
 
 def test1():
     # 3 layer neural network
@@ -43,6 +44,8 @@ def test1():
     # loss function
     loss_fn = nn.CrossEntropyLoss()
 
+    optimizer = optim.Adam(model.parameters(), lr=0.01)
+
     res = model(x)
     res.retain_grad()
     print("forward result: ", res)
@@ -51,17 +54,17 @@ def test1():
     print("loss: ", loss)
     loss.backward()
     torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+    optimizer.step()
 
-    #show the gradients
-
-    # print(model[0].weight)
     print(model[0].weight.grad)
-    # print(model[0].bias)
     print(model[0].bias.grad)
-    # print(model[2].weight)
     print(model[2].weight.grad)
-    # print(model[2].bias)
     print(model[2].bias.grad)
+
+    print(model[0].weight)
+    print(model[0].bias)
+    print(model[2].weight)
+    print(model[2].bias)
 
 if __name__ == "__main__":
     test1()
