@@ -12,6 +12,7 @@ SRCDIR := ./tensor \
           ./backends/cpu \
           ./backends/gpu \
           ./backends/ \
+		  ./optimizers \
           ../utils/dataloader
 SRCS := $(wildcard *.cpp) $(wildcard $(addsuffix /*.cpp, $(SRCDIR)))
 SRCS += $(wildcard *.cu) $(wildcard $(addsuffix /*.cu, $(SRCDIR)))
