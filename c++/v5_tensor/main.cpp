@@ -21,7 +21,7 @@ void assign_inputs(
     const std::vector<std::vector<unsigned char>> &data) {
     for (int i = 0; i < batch_size; ++i) {
         for (int j = 0; j < INPUT_LAYER_SIZE; ++j) {
-            tmp_buffer[i * INPUT_LAYER_SIZE + j] = static_cast<float>(data[offset + i][j]) / 255.0f;
+            tmp_buffer[i * INPUT_LAYER_SIZE + j] = static_cast<float>(data[offset + i][j]) / 256.0f;
         }
     }
     g_backend_ops->cp_to_device(
@@ -60,8 +60,8 @@ void train(int epochs, float lr, int batch_size) {
     Adam optimizer(m.get_parameters(), lr);
 
     auto loss = m.forward(n_inputs)->CrossEntropy(labels);
-    loss->backward();
     zero_grad();
+    loss->backward();
     optimizer.clip_grad(1.0f);
     optimizer.step();
     printAllActions();

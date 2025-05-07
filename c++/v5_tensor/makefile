@@ -6,8 +6,6 @@ DIR_INC = -I./ \
 DIR_LIB = -L./
 TARGET = mnist_cuda
 TEST_TARGET = test
-
-
 LDFLAGS = -lstdc++
 SRCDIR := ./tensor \
           ./graph \
@@ -28,7 +26,7 @@ ifeq ($(ASAN),1)
 	NVCC_CFLAGS = $(DIR_INC) $(DIR_LIB) -g -fsanitize=address -fno-omit-frame-pointer
 else
 	NVCC = nvcc
-	NVCC_CFLAGS = $(DIR_INC) $(DIR_LIB) -g -G
+	NVCC_CFLAGS = $(DIR_INC) $(DIR_LIB) -g -G -O3
 endif
 
 $(TARGET) : $(OBJECTS_MAIN)
