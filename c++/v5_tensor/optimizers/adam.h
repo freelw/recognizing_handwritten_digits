@@ -11,7 +11,7 @@ class Adam {
                 beta1(_beta1), beta2(_beta2), epsilon(_epsilon)
             {}
         void step();
-        bool clip_grad(float grad_clip_val);
+        void clip_grad(float grad_clip_val);
         
     private:
         std::vector<Parameter*> parameters;

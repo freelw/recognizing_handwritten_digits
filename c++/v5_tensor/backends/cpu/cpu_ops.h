@@ -17,6 +17,9 @@ class CPUOps : public BackendOps {
         void reluPrime(Tensor *lhs, Tensor *res) override;
         void crossEntropy(Tensor *lhs, const Tensor *labels, Tensor *maxs, Tensor *sums, Tensor *res) override;
         void crossEntropyBackward(Tensor *lhs, const Tensor *labels, Tensor *maxs, Tensor *sums, Tensor *res) override;
+        void calcAllGradNorm(const std::vector<Tensor*> &grads, Tensor *norm) override;
+
+        // Memory management
         void* alloc(size_t size) override;
         void memset(void* ptr, int value, size_t size) override;
         void memcpy(void* dst, const void* src, size_t size) override;

@@ -266,6 +266,21 @@ void CPUOps::crossEntropyBackward(Tensor *lhs, const Tensor *labels, Tensor *max
     }
 }
 
+void CPUOps::calcAllGradNorm(const std::vector<Tensor*> &grads, Tensor *norm) {
+    float tmp = 0;
+    for (auto grad : grads) {
+        float *data = static_cast<float*>(grad->get_data());
+        for (int i = 0; i < grad->length(); ++i) {
+            float &value = data[i];
+            tmp += std::pow(value, 2);
+        }
+    }
+    assert(norm->get_shape().size() == 1);
+    assert(norm->get_shape()[0] == 1);
+    float *norm_data = static_cast<float*>(norm->get_data());
+    norm_data[0] = std::sqrt(tmp);
+}
+
 void* CPUOps::alloc(size_t size) {
     return malloc(size);
 }

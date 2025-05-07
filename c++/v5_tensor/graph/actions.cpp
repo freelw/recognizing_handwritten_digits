@@ -149,6 +149,18 @@ std::string CrossEntropyBackwardAction::to_string() const {
     return oss.str();
 }
 
+void CalcAllGradNormAction::execute() {
+    assert(lhs != nullptr);
+    assert(res != nullptr);
+    g_backend_ops->calcAllGradNorm(grads, res);
+}
+
+std::string CalcAllGradNormAction::to_string() const {
+    std::ostringstream oss;
+    oss << "CalcAllGradNormAction: calculating gradient norm for " << grads.size() << " tensors" << " -> " << *res;
+    return oss.str();
+}
+
 void ZeroGradAction::execute() {
     g_backend_ops->memset(grad_tensors_data, 0, grad_tensors_data_capacity);
 }

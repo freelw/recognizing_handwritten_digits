@@ -17,6 +17,9 @@ class BackendOps {
         virtual void reluPrime(Tensor *lhs, Tensor *res) = 0;
         virtual void crossEntropy(Tensor *lhs, const Tensor *labels, Tensor *maxs, Tensor *sums, Tensor *res) = 0;
         virtual void crossEntropyBackward(Tensor *lhs, const Tensor *labels, Tensor *maxs, Tensor *sums, Tensor *res) = 0;
+        virtual void calcAllGradNorm(const std::vector<Tensor*> &grads, Tensor *norm) = 0;
+
+        // Memory management
         virtual void *alloc(size_t size) = 0;
         virtual void memset(void *ptr, int value, size_t size) = 0;
         virtual void memcpy(void *dst, const void *src, size_t size) = 0;

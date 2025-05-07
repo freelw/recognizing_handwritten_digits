@@ -6,3 +6,13 @@ Parameter::Parameter(graph::Node *_node)
     m = allocTensor(t->get_shape(), t->get_name()+"_m");
     v = allocTensor(t->get_shape(), t->get_name()+"_v");
 }
+
+Tensor *Parameter::get_grad() {
+    assert(node->is_require_grad());
+    assert(node->get_grad() != nullptr);
+    return node->get_grad();
+}
+
+bool Parameter::is_require_grad() {
+    return node->is_require_grad();
+}

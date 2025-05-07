@@ -108,6 +108,16 @@ class CrossEntropyBackwardAction : public Action {
         Tensor *sums;
 };
 
+class CalcAllGradNormAction : public Action {
+    public:
+        CalcAllGradNormAction(const std::vector<Tensor*> &_grads, Tensor *_norm)
+            : Action(nullptr, nullptr, _norm), grads(_grads) {}
+        void execute() override;
+        std::string to_string() const override;
+    private:
+        std::vector<Tensor*> grads;
+};
+
 class ZeroGradAction : public Action {
     public:
         ZeroGradAction()
