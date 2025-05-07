@@ -42,3 +42,27 @@ AddEqAction: Tensor(bias_grad)(2) += Tensor(sum_tmp)(2)
 AtAction: Tensor(res_at_grad)(3, 2) at Tensor(w_transpose_view)(2, 2) -> Tensor(input_grad)(3, 2)
 AtAction: Tensor(input_transpose_view)(2, 3) at Tensor(res_at_grad)(3, 2) -> Tensor(w_grad)(2, 2)
 ```
+
+## cpu 单核表现
+
+```
+(base) cs@cs-desktop:~/project/recognizing_handwritten_digits/c++/v5_tensor$ time ./mnist_cuda -e 10
+images magic : 2051
+label magic : 2049
+lables_num : 60000
+data loaded.
+[60000/60000]loss : 0.511462
+[60000/60000]loss : 0.255441
+[60000/60000]loss : 0.205254
+[60000/60000]loss : 0.172996
+[60000/60000]loss : 0.151014
+[60000/60000]loss : 0.134955
+[60000/60000]loss : 0.122417
+[60000/60000]loss : 0.112537
+[60000/60000]loss : 0.104287
+[60000/60000]loss : 0.0972957
+
+real    0m44.968s
+user    0m44.864s
+sys     0m0.080s
+```
