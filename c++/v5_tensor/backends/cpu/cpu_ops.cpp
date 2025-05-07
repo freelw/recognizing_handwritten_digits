@@ -281,6 +281,21 @@ void CPUOps::calcAllGradNorm(const std::vector<Tensor*> &grads, Tensor *norm) {
     norm_data[0] = std::sqrt(tmp);
 }
 
+void CPUOps::clipGrad(Tensor *grad, const Tensor *norm, float grad_clip_val) {
+    assert(grad != nullptr);
+    assert(norm != nullptr);
+    assert(norm->get_shape().size() == 1);
+    assert(norm->get_shape()[0] == 1);
+    float *data = static_cast<float*>(grad->get_data());
+    float *norm_data = static_cast<float*>(norm->get_data());
+    float norm_value = norm_data[0];
+    if (norm_value > grad_clip_val) {
+        for (int i = 0; i < grad->length(); ++i) {
+            data[i] *= grad_clip_val / norm_value;
+        }
+    }
+}
+
 void* CPUOps::alloc(size_t size) {
     return malloc(size);
 }

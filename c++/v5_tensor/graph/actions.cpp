@@ -160,6 +160,18 @@ std::string CalcAllGradNormAction::to_string() const {
     return oss.str();
 }
 
+void ClipGradAction::execute() {
+    assert(lhs != nullptr); // grad
+    assert(rhs != nullptr); // norm
+    g_backend_ops->clipGrad(lhs, rhs, grad_clip_val);
+}
+
+std::string ClipGradAction::to_string() const {
+    std::ostringstream oss;
+    oss << "ClipGradAction: clipping gradient " << *lhs << " with norm " << *rhs << " to grad_clip_val: " << grad_clip_val;
+    return oss.str();
+}
+
 void ZeroGradAction::execute() {
     g_backend_ops->memset(grad_tensors_data, 0, grad_tensors_data_capacity);
 }

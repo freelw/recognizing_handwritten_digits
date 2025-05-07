@@ -1,4 +1,5 @@
 #include "adam.h"
+#include "backends/backend_ops.h"
 
 void Adam::step() {
 
@@ -16,4 +17,9 @@ void Adam::clip_grad(float grad_clip_val) {
     gCreateAction(
         new CalcAllGradNormAction(grads, norm)
     );
+    for (auto grad: grads) {
+        gCreateAction(
+            new ClipGradAction(grad, norm, grad_clip_val)
+        );    
+    }
 }

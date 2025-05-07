@@ -118,6 +118,16 @@ class CalcAllGradNormAction : public Action {
         std::vector<Tensor*> grads;
 };
 
+class ClipGradAction : public Action {
+    public:
+        ClipGradAction(Tensor *_grad, Tensor *_norm, float _grad_clip_val)
+            : Action(_grad, _norm, nullptr), grad_clip_val(_grad_clip_val) {}
+        void execute() override;
+        std::string to_string() const override;
+    private:
+        float grad_clip_val;
+};
+
 class ZeroGradAction : public Action {
     public:
         ZeroGradAction()
