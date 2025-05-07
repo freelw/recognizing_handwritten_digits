@@ -56,7 +56,7 @@ def test1():
     # print(model[0].weight)
     print(model[0].weight.grad)
     # print(model[0].bias)
-    # print(model[0].bias.grad)
+    print(model[0].bias.grad)
     # print(model[2].weight)
     # print(model[2].weight.grad)
     # print(model[2].bias)
