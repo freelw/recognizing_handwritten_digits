@@ -908,6 +908,25 @@ void test_adam() {
     release_backend();
 }
 
+float calc_mean(Tensor *tensor) {
+    float sum = 0.0f;
+    auto data = static_cast<float*>(tensor->get_data());
+    for (int i = 0; i < tensor->length(); ++i) {
+        sum += data[i];
+    }
+    return sum / tensor->length();
+}
+
+float calc_std(Tensor *tensor) {
+    float mean = calc_mean(tensor);
+    float sum = 0.0f;
+    auto data = static_cast<float*>(tensor->get_data());
+    for (int i = 0; i < tensor->length(); ++i) {
+        sum += (data[i] - mean) * (data[i] - mean);
+    }
+    return sqrt(sum / tensor->length());
+}
+
 void test_mlp() {
     init_backend();
 
@@ -928,10 +947,44 @@ void test_mlp() {
     res->backward();
     adam.clip_grad(1.0f);
     adam.step();
-    printAllTensors();
-    printAllActions();
+    // printAllTensors();
+    // printAllActions();
     allocMemAndInitTensors();
     gDoActions();
+    gDoActions();
+
+    auto w1_tensor = mlp.get_parameters()[0]->get_w();
+    auto w2_tensor = mlp.get_parameters()[1]->get_w();
+
+    float w1_mean = calc_mean(w1_tensor);
+    float w1_std = calc_std(w1_tensor);
+    float w2_mean = calc_mean(w2_tensor);
+    float w2_std = calc_std(w2_tensor);
+
+    const float eps = 0.01f;
+    const float mean_ans = 0.0f;
+    const float std_ans = 0.02f;
+    bool w1_succ = fabs(w1_mean - mean_ans) < eps && fabs(w1_std - std_ans) < eps;
+    bool w2_succ = fabs(w2_mean - mean_ans) < eps && fabs(w2_std - std_ans) < eps;
+
+    if (w1_succ && w2_succ) {
+        std::cout << GREEN << "test_mlp init weight succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_mlp init weight failed" << RESET << std::endl;
+    }
+
+    std::vector<Action*> once_actions = getOnceActions();
+    bool succ = true;
+    for (auto action : once_actions) {
+        if (action->get_exec_times() != 1) {
+            succ = false;
+        }
+    }
+    if (succ) {
+        std::cout << GREEN << "test_mlp once action succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_mlp once action failed" << RESET << std::endl;
+    }
     sanitizeTensors();
     releaseParameters();
     freeAllActions();

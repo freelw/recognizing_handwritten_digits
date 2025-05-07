@@ -1,6 +1,8 @@
 #include "cpu_ops.h"
 #include <string.h>
 #include <cmath>
+#include <random>
+#include <chrono>
 
 void CPUOps::add(Tensor *lhs, const Tensor *rhs, Tensor *res) {
     assert(lhs != nullptr);
@@ -325,7 +327,13 @@ void CPUOps::adamStep(Tensor *w, Tensor *grad, Tensor *m, Tensor *v, int t, floa
 }
 
 void CPUOps::init_weight_gauss(Tensor *tensor, float mean, float sigma) {
-
+    unsigned seed1 = std::chrono::system_clock::now().time_since_epoch().count();
+    std::default_random_engine generator_w(seed1);
+    std::normal_distribution<float> distribution_w(0.0, sigma);
+    float *data = static_cast<float*>(tensor->get_data());
+    for (int i = 0; i < tensor->length(); ++i) {
+        data[i] = distribution_w(generator_w) + mean;
+    }
 }
 
 void CPUOps::init_weight_uniform(Tensor *tensor, float sigma) {

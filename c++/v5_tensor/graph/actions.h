@@ -18,6 +18,7 @@ class Action {
         virtual bool is_do_once() const;
         bool executed_once() const;
         void increase_exec_times();
+        int get_exec_times() const;
         friend std::ostream &operator<<(std::ostream &output, const Action &);
     protected:
         Tensor *lhs;
@@ -171,6 +172,7 @@ class InitWeightAction : public Action {
         float mean;
 };
 
+std::vector<Action *> getOnceActions();
 void gCreateAction(Action *action);
 void gDoActions();
 void printAllActions();

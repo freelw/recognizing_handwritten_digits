@@ -19,6 +19,10 @@ void Action::increase_exec_times() {
     exec_times++;
 }
 
+int Action::get_exec_times() const {
+    return exec_times;
+}
+
 std::ostream &operator<<(std::ostream &output, const Action &a) {
     output << a.to_string();
     return output;
@@ -236,6 +240,16 @@ std::string InitWeightAction::to_string() const {
 }
 
 std::vector<Action*> g_actions;
+
+std::vector<Action *> getOnceActions() {
+    std::vector<Action *> once_actions;
+    for (Action *action : g_actions) {
+        if (action->is_do_once() && !action->executed_once()) {
+            once_actions.push_back(action);
+        }
+    }
+    return once_actions;
+}
 
 void gCreateAction(Action *action) {
     g_actions.push_back(action);
