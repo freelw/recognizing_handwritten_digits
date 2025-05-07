@@ -491,8 +491,8 @@ void test_bp() {
 
     zero_grad();
     nres->backward();
-    printAllTensors();
-    printAllActions();
+    // printAllTensors();
+    // printAllActions();
     allocMemAndInitTensors();
 
     float *input_data = static_cast<float*>(input->get_data());
