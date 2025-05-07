@@ -735,13 +735,103 @@ void test_adam() {
     // std::cout << "norm_before_clip: " << g_backend_ops->get_float(norm_before_clip, 0) << std::endl;
     // std::cout << "norm_after_clip: " << g_backend_ops->get_float(norm_after_clip, 0) << std::endl;
 
-    bool succ = g_backend_ops->get_float(norm_before_clip, 0) > 1.0f && 
-                g_backend_ops->get_float(norm_after_clip, 0) <= 1.0f;
+    // bool succ = g_backend_ops->get_float(norm_before_clip, 0) > 1.0f && 
+    //             g_backend_ops->get_float(norm_after_clip, 0) <= 1.0f;
     
-    if (succ) {
-        std::cout << GREEN << "test_adam clip succ" << RESET << std::endl;
-    } else {
-        std::cout << RED << "test_adam clip failed" << RESET << std::endl;
+    // if (succ) {
+    //     std::cout << GREEN << "test_adam clip succ" << RESET << std::endl;
+    // } else {
+    //     std::cout << RED << "test_adam clip failed" << RESET << std::endl;
+    // }
+
+
+    auto nw_grad = nw->get_grad();
+    auto nb_grad = nb->get_grad();
+    auto nw1_grad = nw1->get_grad();
+    auto nb1_grad = nb1->get_grad();
+
+    const float eps = 1e-5f;
+    bool nw_grad_succ = true;
+    float nw_grad_ans[3][2] {
+        0.5873974, 0.64613718,
+        0, 0,
+        -7.771136e-10, -8.5482493e-10,
+    };
+    for (int i = 0; i < nw_grad->get_shape()[0]; ++i) {
+        for (int j = 0; j < nw_grad->get_shape()[1]; ++j) {
+            float *loc_grad = static_cast<float*>(nw_grad->location({i, j}));
+            if (fabs(*loc_grad - nw_grad_ans[i][j]) > eps) {
+                std::cerr << std::setprecision(8) << RED << "Error: nw_grad[" << i << "][" << j << "] = " << *loc_grad
+                          << ", nw_grad_ans[" << i << "][" << j << "] = " << nw_grad_ans[i][j] << RESET << std::endl;
+                nw_grad_succ = false;
+            }
+        }
+    }
+    if (nw_grad_succ) {
+        std::cout << GREEN << "test_adam clip nw_grad succ" << RESET << std::endl;
+    }
+
+    bool nb_grad_succ = true;
+    float nb_grad_ans[3] = {
+        0.05873974,
+        0.0000e+00,
+        -7.7711358e-11
+    };
+    
+    for (int i = 0; i < nb_grad->get_shape()[0]; ++i) {
+        float *loc_grad = static_cast<float*>(nb_grad->location({i}));
+        if (fabs(*loc_grad - nb_grad_ans[i]) > eps) {
+            std::cerr << std::setprecision(8) << RED << "Error: nb_grad[" << i << "] = " << *loc_grad
+                      << ", nb_grad_ans[" << i << "] = " << nb_grad_ans[i] << RESET << std::endl;
+            nb_grad_succ = false;
+        }
+    }
+
+    if (nb_grad_succ) {
+        std::cout << GREEN << "test_adam clip nb_grad succ" << RESET << std::endl;
+    }
+
+    float nw1_grad_ans[3][3] = {
+        0.33280569, 0, 0.071781613,
+        -0.33290085, 0, -0.071802132,
+        9.5136558e-05, 0, 2.0519647e-05
+    };
+
+    bool nbw1_grad_succ = true;
+
+    for (int i = 0; i < nw1_grad->get_shape()[0]; ++i) {
+        for (int j = 0; j < nw1_grad->get_shape()[1]; ++j) {
+            float *loc_grad = static_cast<float*>(nw1_grad->location({i, j}));
+            if (fabs(*loc_grad - nw1_grad_ans[i][j]) > eps) {
+                std::cerr << std::setprecision(8) << RED << "Error: nw1_grad[" << i << "][" << j << "] = " << *loc_grad
+                          << ", nw1_grad_ans[" << i << "][" << j << "] = " << nw1_grad_ans[i][j] << RESET << std::endl;
+                nbw1_grad_succ = false;
+            }
+        }
+    }
+
+    if (nbw1_grad_succ) {
+        std::cout << GREEN << "test_adam clip nw1_grad succ" << RESET << std::endl;
+    }
+
+    float nb1_grad_ans[3] = {
+        0.032628007,
+        -0.032637335,
+        9.3271128e-06
+    };
+
+    bool nb1_grad_succ = true;
+    for (int i = 0; i < nb1_grad->get_shape()[0]; ++i) {
+        float *loc_grad = static_cast<float*>(nb1_grad->location({i}));
+        if (fabs(*loc_grad - nb1_grad_ans[i]) > eps) {
+            std::cerr << std::setprecision(8) << RED << "Error: nb1_grad[" << i << "] = " << *loc_grad
+                      << ", nb1_grad_ans[" << i << "] = " << nb1_grad_ans[i] << RESET << std::endl;
+            nb1_grad_succ = false;
+        }
+    }
+
+    if (nb1_grad_succ) {
+        std::cout << GREEN << "test_adam clip nb1_grad succ" << RESET << std::endl;
     }
 
     sanitizeTensors();
