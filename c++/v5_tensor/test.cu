@@ -3,6 +3,7 @@
 #include "graph/node.h"
 #include "optimizers/parameter.h"
 #include "optimizers/adam.h"
+#include "model/mlp.h"
 #include "common.h"
 #include <iomanip>
 
@@ -907,6 +908,38 @@ void test_adam() {
     release_backend();
 }
 
+void test_mlp() {
+    init_backend();
+
+    MLP mlp(
+        784,
+        {30, 10}
+    );
+    Adam adam(
+        mlp.get_parameters(),
+        0.001f
+    );
+
+    Tensor *input = allocTensor({2, 784}, "input");
+    Tensor *labels = allocTensor({2}, "labels", INT32);
+    auto n_input = graph::allocNode(input);
+    auto res = mlp.forward(n_input)->CrossEntropy(labels);
+    zero_grad();
+    res->backward();
+    adam.clip_grad(1.0f);
+    adam.step();
+    printAllTensors();
+    printAllActions();
+    allocMemAndInitTensors();
+    gDoActions();
+    sanitizeTensors();
+    releaseParameters();
+    freeAllActions();
+    freeAllTensors();
+    releaseTensorMem();
+    release_backend();
+}
+
 void test() {
     test_at();
     test_add();
@@ -918,6 +951,7 @@ void test() {
     test_cross_entropy_backward();
     test_bp();
     test_adam();
+    test_mlp();
 }
 
 int main() {
