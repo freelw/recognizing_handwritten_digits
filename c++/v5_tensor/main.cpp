@@ -64,6 +64,7 @@ void train(int epochs, float lr, int batch_size) {
     zero_grad();
     optimizer.clip_grad(1.0f);
     optimizer.step();
+    printAllActions();
 
     allocMemAndInitTensors();
     float *inputs_tmp_buffer = static_cast<float*>(::malloc(inputs->size()));
