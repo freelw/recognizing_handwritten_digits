@@ -1,4 +1,5 @@
 #include "common.h"
+#include "optimizers/parameter.h"
 
 BackendOps *g_backend_ops = nullptr;
 
@@ -13,7 +14,19 @@ void init_backend() {
 }
 
 void release_backend() {
-    
     delete g_backend_ops;
     g_backend_ops = nullptr;
+}
+
+void construct_env() {
+    init_backend();
+}
+
+void destruct_env() {
+    sanitizeTensors();
+    releaseParameters();
+    freeAllActions();
+    freeAllTensors();
+    releaseTensorMem();
+    release_backend();
 }

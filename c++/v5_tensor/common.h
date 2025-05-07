@@ -9,5 +9,7 @@ extern BackendOps *g_backend_ops;
 void zero_grad();
 void init_backend();
 void release_backend();
+void construct_env();
+void destruct_env();
 
 #endif
