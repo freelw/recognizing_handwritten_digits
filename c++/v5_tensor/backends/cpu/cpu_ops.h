@@ -25,6 +25,7 @@ class CPUOps : public BackendOps {
         void memset(void* ptr, int value, size_t size) override;
         void memcpy(void* dst, const void* src, size_t size) override;
         void free(void* ptr) override;
+        float get_float(const Tensor *tensor, int index) override;
 };
 
 #endif

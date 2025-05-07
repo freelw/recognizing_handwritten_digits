@@ -311,3 +311,9 @@ void CPUOps::memcpy(void* dst, const void* src, size_t size) {
 void CPUOps::free(void* ptr) {
     ::free(ptr);
 }
+
+float CPUOps::get_float(const Tensor *tensor, int index) {
+    assert(tensor != nullptr);
+    assert(index >= 0 && index < tensor->length());
+    return static_cast<float*>(tensor->get_data())[index];
+}

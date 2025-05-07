@@ -636,6 +636,17 @@ void test_bp() {
     release_backend();
 }
 
+Tensor *calc_norm(const std::vector<Parameter*> &params) {
+    Tensor *res = allocTensor({1}, "tmp_norm_res");
+    std::vector<Tensor*> tensors;
+    for (auto param : params) {
+        tensors.push_back(param->get_grad());
+    }
+    gCreateAction(
+        new CalcAllGradNormAction(tensors, res)
+    );
+    return res;
+}
 
 void test_adam() {
     init_backend();
@@ -679,9 +690,11 @@ void test_adam() {
 
     zero_grad();
     nres->backward();
+    Tensor *norm_before_clip = calc_norm(params);
     adam.clip_grad(1.0f);
-    printAllTensors();
-    printAllActions();
+    Tensor *norm_after_clip = calc_norm(params);
+    // printAllTensors();
+    // printAllActions();
     allocMemAndInitTensors();
 
     float *input_data = static_cast<float*>(input->get_data());
@@ -718,6 +731,18 @@ void test_adam() {
     w1_data[1*w1->get_shape()[1]] = -0.9f;
 
     gDoActions();
+
+    // std::cout << "norm_before_clip: " << g_backend_ops->get_float(norm_before_clip, 0) << std::endl;
+    // std::cout << "norm_after_clip: " << g_backend_ops->get_float(norm_after_clip, 0) << std::endl;
+
+    bool succ = g_backend_ops->get_float(norm_before_clip, 0) > 1.0f && 
+                g_backend_ops->get_float(norm_after_clip, 0) <= 1.0f;
+    
+    if (succ) {
+        std::cout << GREEN << "test_adam clip succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_adam clip failed" << RESET << std::endl;
+    }
 
     sanitizeTensors();
     releaseParameters();
