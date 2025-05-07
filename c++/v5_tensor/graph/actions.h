@@ -5,6 +5,8 @@
 #include <ostream>
 #include <string>
 
+class Parameter;
+
 class Action {
     public:
         Action(Tensor *_lhs, const Tensor *_rhs, Tensor *_res)
@@ -126,6 +128,20 @@ class ClipGradAction : public Action {
         std::string to_string() const override;
     private:
         float grad_clip_val;
+};
+
+class AdamStepAction : public Action {
+    public:
+        AdamStepAction(Parameter *_param, float _lr, float _beta1, float _beta2, float _epsilon)
+            : Action(nullptr, nullptr, nullptr), param(_param), lr(_lr), beta1(_beta1), beta2(_beta2), epsilon(_epsilon) {}
+        void execute() override;
+        std::string to_string() const override;
+    private:
+        Parameter *param;
+        float lr;
+        float beta1;
+        float beta2;
+        float epsilon;
 };
 
 class ZeroGradAction : public Action {

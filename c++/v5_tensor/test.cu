@@ -693,8 +693,9 @@ void test_adam() {
     Tensor *norm_before_clip = calc_norm(params);
     adam.clip_grad(1.0f);
     Tensor *norm_after_clip = calc_norm(params);
-    // printAllTensors();
-    // printAllActions();
+    adam.step();
+    printAllTensors();
+    printAllActions();
     allocMemAndInitTensors();
 
     float *input_data = static_cast<float*>(input->get_data());

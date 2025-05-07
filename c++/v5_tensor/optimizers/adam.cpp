@@ -2,7 +2,13 @@
 #include "backends/backend_ops.h"
 
 void Adam::step() {
-
+    for (auto param : parameters) {
+        assert(param->is_require_grad());
+        assert(param->get_grad() != nullptr);
+        gCreateAction(
+            new AdamStepAction(param, lr, beta1, beta2, epsilon)
+        );
+    }
 }
 
 void Adam::clip_grad(float grad_clip_val) {

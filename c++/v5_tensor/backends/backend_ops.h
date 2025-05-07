@@ -19,6 +19,7 @@ class BackendOps {
         virtual void crossEntropyBackward(Tensor *lhs, const Tensor *labels, Tensor *maxs, Tensor *sums, Tensor *res) = 0;
         virtual void calcAllGradNorm(const std::vector<Tensor*> &grads, Tensor *norm) = 0;
         virtual void clipGrad(Tensor *grad, const Tensor *norm, float grad_clip_val) = 0;
+        virtual void adamStep(Tensor *w, Tensor *grad, Tensor *m, Tensor *v, int t, float lr, float beta1, float beta2, float epsilon) = 0;
 
         // Memory management
         virtual void *alloc(size_t size) = 0;

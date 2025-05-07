@@ -296,6 +296,34 @@ void CPUOps::clipGrad(Tensor *grad, const Tensor *norm, float grad_clip_val) {
     }
 }
 
+void CPUOps::adamStep(Tensor *w, Tensor *grad, Tensor *m, Tensor *v, int t, float lr, float beta1, float beta2, float epsilon) {
+    assert(w != nullptr);
+    assert(grad != nullptr);
+    assert(m != nullptr);
+    assert(v != nullptr);
+
+    assert(!w->is_view());
+    assert(!grad->is_view());
+    assert(!m->is_view());
+    assert(!v->is_view());
+
+    assert(w->get_shape() == grad->get_shape());
+    assert(w->get_shape() == m->get_shape());
+    assert(w->get_shape() == v->get_shape());
+
+    float *w_data = static_cast<float*>(w->get_data());
+    float *grad_data = static_cast<float*>(grad->get_data());
+    float *m_data = static_cast<float*>(m->get_data());
+    float *v_data = static_cast<float*>(v->get_data());
+    for (int i = 0; i < w->length(); ++i) {
+        m_data[i] = beta1 * m_data[i] + (1 - beta1) * grad_data[i];
+        v_data[i] = beta2 * v_data[i] + (1 - beta2) * std::pow(grad_data[i], 2);
+        float m_hat = m_data[i] / (1 - std::pow(beta1, t));
+        float v_hat = v_data[i] / (1 - std::pow(beta2, t));
+        w_data[i] -= lr * m_hat / (std::sqrt(v_hat) + epsilon);
+    }
+}
+
 void* CPUOps::alloc(size_t size) {
     return malloc(size);
 }

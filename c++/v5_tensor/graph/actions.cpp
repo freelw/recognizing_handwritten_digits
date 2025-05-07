@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <sstream>
 #include "backends/backend_ops.h"
+#include "optimizers/parameter.h"
 
 std::ostream &operator<<(std::ostream &output, const Action &a) {
     output << a.to_string();
@@ -169,6 +170,23 @@ void ClipGradAction::execute() {
 std::string ClipGradAction::to_string() const {
     std::ostringstream oss;
     oss << "ClipGradAction: clipping gradient " << *lhs << " with norm " << *rhs << " to grad_clip_val: " << grad_clip_val;
+    return oss.str();
+}
+
+void AdamStepAction::execute() {
+    param->inc_t();
+    int t = param->get_t();
+    Tensor *w = param->get_w();
+    Tensor *grad = param->get_grad();
+    Tensor *m = param->get_m();
+    Tensor *v = param->get_v();
+
+    g_backend_ops->adamStep(w, grad, m, v, t, lr, beta1, beta2, epsilon);
+}
+
+std::string AdamStepAction::to_string() const {
+    std::ostringstream oss;
+    oss << "AdamStepAction: updating parameter " << *param->get_w() << " with learning rate " << lr;
     return oss.str();
 }
 
