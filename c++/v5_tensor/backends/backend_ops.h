@@ -20,6 +20,8 @@ class BackendOps {
         virtual void calcAllGradNorm(const std::vector<Tensor*> &grads, Tensor *norm) = 0;
         virtual void clipGrad(Tensor *grad, const Tensor *norm, float grad_clip_val) = 0;
         virtual void adamStep(Tensor *w, Tensor *grad, Tensor *m, Tensor *v, int t, float lr, float beta1, float beta2, float epsilon) = 0;
+        virtual void init_weight_gauss(Tensor *tensor, float mean, float sigma) = 0;
+        virtual void init_weight_uniform(Tensor *tensor, float sigma) = 0;
 
         // Memory management
         virtual void *alloc(size_t size) = 0;

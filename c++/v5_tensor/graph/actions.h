@@ -10,16 +10,20 @@ class Parameter;
 class Action {
     public:
         Action(Tensor *_lhs, const Tensor *_rhs, Tensor *_res)
-            : lhs(_lhs), rhs(_rhs), res(_res) {}
+            : lhs(_lhs), rhs(_rhs), res(_res), exec_times(0) {}
         virtual void execute() = 0;
         virtual std::string to_string() const {
             return "Action not implemented";
         }
+        virtual bool is_do_once() const;
+        bool executed_once() const;
+        void increase_exec_times();
         friend std::ostream &operator<<(std::ostream &output, const Action &);
     protected:
         Tensor *lhs;
         const Tensor *rhs;
         Tensor *res;
+        int exec_times;
 };
 
 class AddAction : public Action {
@@ -150,6 +154,21 @@ class ZeroGradAction : public Action {
             : Action(nullptr, nullptr, nullptr) {}
         void execute() override;
         std::string to_string() const override;
+};
+
+class InitWeightAction : public Action {
+    public:
+        InitWeightAction(Tensor *_lhs, const std::string &_init_type, float _sigma, float _mean)
+            : Action(_lhs, nullptr, nullptr), init_type(_init_type), sigma(_sigma), mean(_mean) {}
+        void execute() override;
+        bool is_do_once() const override {
+            return true;
+        }
+        std::string to_string() const override;
+    private:
+        std::string init_type;
+        float sigma;
+        float mean;
 };
 
 void gCreateAction(Action *action);

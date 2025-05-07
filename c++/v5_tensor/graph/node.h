@@ -52,6 +52,8 @@ namespace graph {
             Node *at(Node *rhs);
             Node *relu();
             Node *CrossEntropy(Tensor *labels);
+            void init_weight_gauss(float sigma, float mean);
+            void init_weight_uniform(float sigma);
         private:
             Tensor *t;
             Tensor *grad;

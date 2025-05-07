@@ -18,6 +18,9 @@ MLP::MLP(int32_t _input, const std::vector<int32_t> &_outputs) {
     nb1->require_grad();
     nb2->require_grad();
 
+    nw1->init_weight_gauss(0.02, 0);
+    nw2->init_weight_gauss(0.02, 0);
+
     pw1 = allocParameter(nw1);
     pw2 = allocParameter(nw2);
     pb1 = allocParameter(nb1);

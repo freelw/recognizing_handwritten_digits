@@ -129,6 +129,28 @@ namespace graph {
         return res_node;
     }
 
+    void Node::init_weight_gauss(float sigma, float mean) {
+        gCreateAction(
+            new InitWeightAction(
+                this->get_tensor(),
+                "gauss",
+                sigma,
+                mean
+            )
+        );
+    }
+
+    void Node::init_weight_uniform(float sigma) {
+        gCreateAction(
+            new InitWeightAction(
+                this->get_tensor(),
+                "uniform",
+                sigma,
+                0
+            )
+        );
+    }
+
     void CrossEntropyEdge::backward(Tensor *) {
         gCreateAction(
             new CrossEntropyBackwardAction(

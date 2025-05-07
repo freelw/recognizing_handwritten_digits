@@ -324,6 +324,14 @@ void CPUOps::adamStep(Tensor *w, Tensor *grad, Tensor *m, Tensor *v, int t, floa
     }
 }
 
+void CPUOps::init_weight_gauss(Tensor *tensor, float mean, float sigma) {
+
+}
+
+void CPUOps::init_weight_uniform(Tensor *tensor, float sigma) {
+    
+}
+
 void* CPUOps::alloc(size_t size) {
     return malloc(size);
 }

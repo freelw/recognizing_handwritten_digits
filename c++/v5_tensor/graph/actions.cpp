@@ -7,6 +7,18 @@
 #include "backends/backend_ops.h"
 #include "optimizers/parameter.h"
 
+bool Action::is_do_once() const {
+    return false;
+}
+
+bool Action::executed_once() const {
+    return exec_times > 0;
+}
+
+void Action::increase_exec_times() {
+    exec_times++;
+}
+
 std::ostream &operator<<(std::ostream &output, const Action &a) {
     output << a.to_string();
     return output;
@@ -198,6 +210,31 @@ std::string ZeroGradAction::to_string() const {
     return "ZeroGradAction: zeroing gradients";
 }
 
+void InitWeightAction::execute() {
+    assert(lhs != nullptr);
+
+    if (init_type == "gauss") {
+        g_backend_ops->init_weight_gauss(lhs, mean, sigma);
+    } else if (init_type == "uniform") {
+        g_backend_ops->init_weight_uniform(lhs, sigma);
+    } else if (init_type == "xavier") {
+        assert(false);
+        // g_backend_ops->xavier(lhs);
+    } else if (init_type == "kaiming") {
+        assert(false);
+        // g_backend_ops->kaiming(lhs);
+    } else {
+        std::cerr << "Error: Unknown initialization type: " << init_type << std::endl;
+        abort();
+    }
+}
+
+std::string InitWeightAction::to_string() const {
+    std::ostringstream oss;
+    oss << "InitWeightAction: initializing " << *lhs << " with type " << init_type;
+    return oss.str();
+}
+
 std::vector<Action*> g_actions;
 
 void gCreateAction(Action *action) {
@@ -206,13 +243,20 @@ void gCreateAction(Action *action) {
 
 void gDoActions() {
     for (Action *action : g_actions) {
+        if (action->is_do_once() && action->executed_once()) {
+            continue;
+        }
         action->execute();
+        action->increase_exec_times();
     }
 }
 
 void printAllActions() {
     std::cout << "Actions:" << std::endl;
     for (Action *action : g_actions) {
+        if (action->is_do_once()) {
+            std::cout << "[once]";
+        }
         std::cout << *action << std::endl;
     }
 }
