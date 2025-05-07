@@ -1,7 +1,7 @@
 DIR_INC = -I./ \
-		-I./tensor \
-		-I./graph \
-		-I../utils/
+    -I./tensor \
+    -I./graph \
+    -I../utils/
 
 DIR_LIB = -L./
 TARGET = mnist_cuda
@@ -12,8 +12,8 @@ SRCDIR := ./tensor \
           ./backends/cpu \
           ./backends/gpu \
           ./backends/ \
-		  ./optimizers \
-		  ./model \
+          ./optimizers \
+          ./model \
           ../utils/dataloader
 SRCS := $(wildcard *.cpp) $(wildcard $(addsuffix /*.cpp, $(SRCDIR)))
 SRCS += $(wildcard *.cu) $(wildcard $(addsuffix /*.cu, $(SRCDIR)))
