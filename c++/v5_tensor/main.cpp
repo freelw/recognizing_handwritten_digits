@@ -9,9 +9,9 @@
 #include "model/mlp.h"
 
 void train(int epochs, float lr, int batch_size) {
-    // MnistLoaderBase loader;
-    // loader.load();
-    // std::cout << "data loaded." << std::endl;
+    MnistLoaderBase loader;
+    loader.load();
+    std::cout << "data loaded." << std::endl;
 
     MLP m(784, {30, 10});
     Tensor *inputs = allocTensor({batch_size, 784}, "inputs");
