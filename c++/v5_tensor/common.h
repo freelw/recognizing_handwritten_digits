@@ -6,6 +6,7 @@
 #include "graph/node.h"
 
 extern BackendOps *g_backend_ops;
+extern BackendOps *g_cpu_backend_ops;
 void zero_grad();
 void init_backend();
 void release_backend();

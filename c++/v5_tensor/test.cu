@@ -928,8 +928,8 @@ void test_mlp() {
     res->backward();
     adam.clip_grad(1.0f);
     adam.step();
-    printAllTensors();
-    printAllActions();
+    // printAllTensors();
+    // printAllActions();
     allocMemAndInitTensors();
     gDoActions();
     sanitizeTensors();
