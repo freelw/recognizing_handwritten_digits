@@ -35,10 +35,6 @@ Tensor::Tensor(const std::vector<int> &_shape, const std::vector<int> &_strides,
     assert(shape.size() == strides.size());
 }
 
-Tensor::~Tensor() {
-    
-}
-
 void Tensor::set_data(void *ptr) {
     data = ptr;
 }

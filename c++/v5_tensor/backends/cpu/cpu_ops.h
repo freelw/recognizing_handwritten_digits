@@ -17,10 +17,19 @@ class CPUOps : public BackendOps {
         void reluPrime(Tensor *lhs, Tensor *res) override;
         void crossEntropy(Tensor *lhs, const Tensor *labels, Tensor *maxs, Tensor *sums, Tensor *res) override;
         void crossEntropyBackward(Tensor *lhs, const Tensor *labels, Tensor *maxs, Tensor *sums, Tensor *res) override;
+        void calcAllGradNorm(const std::vector<Tensor*> &grads, Tensor *norm) override;
+        void clipGrad(Tensor *grad, const Tensor *norm, float grad_clip_val) override;
+        void adamStep(Tensor *w, Tensor *grad, Tensor *m, Tensor *v, int t, float lr, float beta1, float beta2, float epsilon) override;
+        void init_weight_gauss(Tensor *tensor, float mean, float sigma) override;
+        void init_weight_uniform(Tensor *tensor, float sigma) override;
+
+        // Memory management
         void* alloc(size_t size) override;
         void memset(void* ptr, int value, size_t size) override;
         void memcpy(void* dst, const void* src, size_t size) override;
         void free(void* ptr) override;
+        float get_float(const Tensor *tensor, int index) override;
+        void cp_to_device(Tensor *dst_tensor, char *src, size_t size) override;
 };
 
 #endif

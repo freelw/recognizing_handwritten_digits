@@ -1,15 +1,19 @@
 #include "tensor.h"
 #include "backends/cpu/cpu_ops.h"
 #include "graph/node.h"
+#include "optimizers/parameter.h"
+#include "optimizers/adam.h"
+#include "model/mlp.h"
 #include "common.h"
 #include <iomanip>
+#include <cmath>
 
 const std::string RED = "\033[31m";
 const std::string GREEN = "\033[32m";
 const std::string RESET = "\033[0m";
 
 void test_at() {
-    init_backend();
+    construct_env();
     Tensor *input = allocTensor({2, 3}, "input");
     Tensor *w = allocTensor({3, 4}, "w");
     Tensor *wt = allocTensor({4, 3}, "wt");
@@ -48,31 +52,11 @@ void test_at() {
     if (succ) {
         std::cout << GREEN << "test_at succ " << RESET << std::endl;
     }
-    sanitizeTensors();
-    // // print res_wi shape
-    // std::cout << "res_wi shape: ";
-    // assert(res_wi_tensor->get_shape().size() == 2);
-    // for (int i = 0; i < res_wi_tensor->get_shape().size(); ++ i) {
-    //     std::cout << res_wi_tensor->get_shape()[i] << " ";
-    // }
-    // std::cout << std::endl;
-
-    // // print res_wi data
-    // std::cout << "res_wi data: " << std::endl;
-    // for (int i = 0; i < res_wi_tensor->get_shape()[0]; ++ i) {
-    //     for (int j = 0; j < res_wi_tensor->get_shape()[1]; ++ j) {
-    //         std::cout << res_wi_data[i * res_wi_tensor->get_shape()[1] + j] << " ";
-    //     }
-    //     std::cout << std::endl;
-    // }
-    freeAllActions();
-    freeAllTensors();
-    releaseTensorMem();
-    release_backend();
+    destruct_env();
 }
 
 void test_add() {
-    init_backend();
+    construct_env();
     Tensor *input = allocTensor({3, 4}, "input");
     Tensor *w = allocTensor({3, 4}, "w");
     Tensor *wt = allocTensor({4, 3}, "wt");
@@ -112,33 +96,11 @@ void test_add() {
     if (succ) {
         std::cout << GREEN << "test_add succ" << RESET << std::endl;
     }
-
-    sanitizeTensors();
-    // // print res_wi shape
-    // std::cout << "res_wi shape: " << res_wi_tensor->get_shape().size() << std::endl; 
-    // assert(res_wi_tensor->get_shape().size() == 2);
-    // for (int i = 0; i < res_wi_tensor->get_shape().size(); ++ i) {
-    //     std::cout << res_wi_tensor->get_shape()[i] << " ";
-    // }
-    // std::cout << std::endl;
-
-    // // print res_wi data
-    // std::cout << "res_wi data: " << std::endl;
-    // for (int i = 0; i < res_wi_tensor->get_shape()[0]; ++ i) {
-    //     for (int j = 0; j < res_wi_tensor->get_shape()[1]; ++ j) {
-    //         std::cout << res_wi_data[i * res_wi_tensor->get_shape()[1] + j] << " ";
-    //     }
-    //     std::cout << std::endl;
-    // }
-
-    freeAllActions();
-    freeAllTensors();
-    releaseTensorMem();
-    release_backend();
+    destruct_env();
 }
 
 void test_add_eq() {
-    init_backend();
+    construct_env();
     Tensor *input = allocTensor({3, 4}, "input");
     Tensor *input1 = allocTensor({3, 4}, "input1");
     Tensor *w = allocTensor({3, 4}, "w");
@@ -179,17 +141,11 @@ void test_add_eq() {
         std::cout << GREEN << "test_add_eq succ" << RESET << std::endl;
     }
 
-    sanitizeTensors();
-
-    freeAllActions();
-    freeAllTensors();
-    releaseTensorMem();
-    release_backend();
+    destruct_env();
 }
 
 void test_expand_add() {
-
-    init_backend();
+    construct_env();
     Tensor *bias = allocTensor({4}, "bias");
     Tensor *w = allocTensor({3, 4}, "w");
     Tensor *wt = allocTensor({4, 3}, "wt");
@@ -229,17 +185,11 @@ void test_expand_add() {
     if (succ) {
         std::cout << GREEN << "test_expand_add succ" << RESET << std::endl;
     }
-
-    sanitizeTensors();
-
-    freeAllActions();
-    freeAllTensors();
-    releaseTensorMem();
-    release_backend();
+    destruct_env();
 }
 
 void test_mul() {
-    init_backend();
+    construct_env();
     Tensor *input = allocTensor({3, 4}, "input");
     Tensor *w = allocTensor({3, 4}, "w");
     Tensor *wt = allocTensor({4, 3}, "wt");
@@ -279,17 +229,11 @@ void test_mul() {
     if (succ) {
         std::cout << GREEN << "test_mul succ" << RESET << std::endl;
     }
-
-    sanitizeTensors();
-
-    freeAllActions();
-    freeAllTensors();
-    releaseTensorMem();
-    release_backend();
+    destruct_env();
 }
 
 void test_sum() {
-    init_backend();
+    construct_env();
     Tensor *w = allocTensor({3, 4}, "w");
     Tensor *wt = allocTensor({4, 3}, "wt");
     Tensor *res_wi_tensor = allocTensor({3, 4}, "res_wi");
@@ -327,17 +271,11 @@ void test_sum() {
     if (succ) {
         std::cout << GREEN << "test_sum succ" << RESET << std::endl;
     }
-
-    sanitizeTensors();
-
-    freeAllActions();
-    freeAllTensors();
-    releaseTensorMem();
-    release_backend();
+    destruct_env();
 }
 
 void test_cross_entropy() {
-    init_backend();
+    construct_env();
     Tensor *labels = allocTensor({3}, "input", INT32);
     Tensor *w = allocTensor({3, 4}, "w");
     Tensor *wt = allocTensor({4, 3}, "wt");
@@ -385,17 +323,11 @@ void test_cross_entropy() {
     if (succ) {
         std::cout << GREEN << "test_cross_entropy succ" << RESET << std::endl;
     }
-
-    sanitizeTensors();
-
-    freeAllActions();
-    freeAllTensors();
-    releaseTensorMem();
-    release_backend();
+    destruct_env();
 }
 
 void test_cross_entropy_backward() {
-    init_backend();
+    construct_env();
     Tensor *labels = allocTensor({3}, "input", INT32);
     Tensor *w = allocTensor({3, 4}, "w");
     Tensor *wt = allocTensor({4, 3}, "wt");
@@ -453,15 +385,11 @@ void test_cross_entropy_backward() {
     if (succ) {
         std::cout << GREEN << "test_cross_entropy_backward succ" << RESET << std::endl;
     }
-    sanitizeTensors();
-    freeAllActions();
-    freeAllTensors();
-    releaseTensorMem();
-    release_backend();
+    destruct_env();
 }
 
 void test_bp() {
-    init_backend();
+    construct_env();
     Tensor *input = allocTensor({1, 2}, "input");
     Tensor *w = allocTensor({3, 2}, "w");
     Tensor *bias = allocTensor({3}, "bias");
@@ -473,6 +401,12 @@ void test_bp() {
     graph::Node *nb = graph::allocNode(bias);
     graph::Node *nw1 = graph::allocNode(w1);
     graph::Node *nb1 = graph::allocNode(bias1);
+
+    ni->require_grad();
+    nw->require_grad();
+    nb->require_grad();
+    nw1->require_grad();
+    nb1->require_grad();
 
     Tensor *labels = allocTensor({1}, "labels", INT32);
     auto foward_res0 = ni->at(nw->transpose())
@@ -524,19 +458,6 @@ void test_bp() {
 
     gDoActions();
 
-    // // print forward result
-    // std::cout << "forward result0: " << std::endl;
-    // for (int i = 0; i < foward_res0->get_tensor()->length(); ++i) {
-    //     std::cout << static_cast<float*>(foward_res0->get_tensor()->get_data())[i] << " ";
-    // }
-    // std::cout << std::endl;
-    // std::cout << "forward result1: " << std::endl;
-    // for (int i = 0; i < foward_res1->get_tensor()->length(); ++i) {
-    //     std::cout << static_cast<float*>(foward_res1->get_tensor()->get_data())[i] << " ";
-    // }
-    // std::cout << std::endl;
-
-    // std::cout << "loss : " << std::setprecision(8) << static_cast<float*>(nres->get_tensor()->get_data())[0] << std::endl;
     const float eps = 1e-5f;
     bool loss_succ = fabs(static_cast<float*>(nres->get_tensor()->get_data())[0] - 18.360287f) < eps;
     if (loss_succ) {
@@ -550,7 +471,6 @@ void test_bp() {
     auto nw1_grad = nw1->get_grad();
     auto nb1_grad = nb1->get_grad();
 
-    // print gradient
     bool nw_grad_succ = true;
     float nw_grad_ans[3][2] {
         17.997713,  19.797485,
@@ -572,12 +492,6 @@ void test_bp() {
         std::cout << GREEN << "test_cross_entropy nw_grad succ" << RESET << std::endl;
     }
 
-    // print nb_grad
-
-    // for (int i = 0; i < nb_grad->get_shape()[0]; ++i) {
-    //     float *loc_grad = static_cast<float*>(nb_grad->location({i}));
-    //     std::cout << std::setprecision(8) << "nb_grad[" << i << "] = " << *loc_grad << std::endl;
-    // }
     bool nb_grad_succ = true;
     float nb_grad_ans[3] = {
         1.7997713,
@@ -641,11 +555,353 @@ void test_bp() {
         std::cout << GREEN << "test_cross_entropy nb1_grad succ" << RESET << std::endl;
     }
 
-    sanitizeTensors();
-    freeAllActions();
-    freeAllTensors();
-    releaseTensorMem();
-    release_backend();
+    destruct_env();
+}
+
+Tensor *calc_norm(const std::vector<Parameter*> &params) {
+    Tensor *res = allocTensor({1}, "tmp_norm_res");
+    std::vector<Tensor*> tensors;
+    for (auto param : params) {
+        tensors.push_back(param->get_grad());
+    }
+    gCreateAction(
+        new CalcAllGradNormAction(tensors, res)
+    );
+    return res;
+}
+
+void test_adam() {
+    construct_env();
+    Tensor *input = allocTensor({1, 2}, "input");
+    Tensor *w = allocTensor({3, 2}, "w");
+    Tensor *bias = allocTensor({3}, "bias");
+    Tensor *w1 = allocTensor({3, 3}, "w1");
+    Tensor *bias1 = allocTensor({3}, "bias1");
+
+    graph::Node *ni = graph::allocNode(input);
+    graph::Node *nw = graph::allocNode(w);
+    graph::Node *nb = graph::allocNode(bias);
+    graph::Node *nw1 = graph::allocNode(w1);
+    graph::Node *nb1 = graph::allocNode(bias1);
+
+    ni->require_grad();
+    nw->require_grad();
+    nb->require_grad();
+    nw1->require_grad();
+    nb1->require_grad();
+
+    auto pnw = allocParameter(nw);
+    auto pnb = allocParameter(nb);
+    auto pnw1 = allocParameter(nw1);
+    auto pnb1 = allocParameter(nb1);
+
+    std::vector<Parameter*> params = {pnw, pnb, pnw1, pnb1};
+    Adam adam(
+        params,
+        0.01f
+    );
+
+    Tensor *labels = allocTensor({1}, "labels", INT32);
+    auto foward_res0 = ni->at(nw->transpose())
+        ->expand_add(nb)->relu();
+    auto foward_res1 = foward_res0
+        ->at(nw1->transpose())
+        ->expand_add(nb1);
+    auto nres = foward_res1
+        ->CrossEntropy(labels);
+
+    zero_grad();
+    nres->backward();
+    Tensor *norm_before_clip = calc_norm(params);
+    adam.clip_grad(1.0f);
+    Tensor *norm_after_clip = calc_norm(params);
+    adam.step();
+    // printAllTensors();
+    // printAllActions();
+    allocMemAndInitTensors();
+
+    float *input_data = static_cast<float*>(input->get_data());
+    input_data[0] = 10.0f;
+    input_data[1] = 11.0f;
+
+    int32_t *labels_data = static_cast<int32_t*>(labels->get_data());
+    labels_data[0] = 1;
+
+    float *w_data = static_cast<float*>(w->get_data());
+    for (int i = 0; i < w->length(); ++i) {
+        w_data[i] = 0.1f;
+    }
+
+    float *bias_data = static_cast<float*>(bias->get_data());
+    for (int i = 0; i < bias->length(); ++i) {
+        bias_data[i] = 0.1f;
+    }
+
+    float *w1_data = static_cast<float*>(w1->get_data());
+    for (int i = 0; i < w1->length(); ++i) {
+        w1_data[i] = 0.1f;
+    }
+
+    float *bias1_data = static_cast<float*>(bias1->get_data());
+    for (int i = 0; i < bias1->length(); ++i) {
+        bias1_data[i] = 0.1f;
+    }
+
+    w_data[0] = 0.9f;
+    w_data[1*w->get_shape()[1]] = -0.9f;
+
+    w1_data[0] = 0.9f;
+    w1_data[1*w1->get_shape()[1]] = -0.9f;
+
+    gDoActions();
+
+    auto nw_grad = nw->get_grad();
+    auto nb_grad = nb->get_grad();
+    auto nw1_grad = nw1->get_grad();
+    auto nb1_grad = nb1->get_grad();
+
+    const float eps = 1e-5f;
+    bool nw_grad_succ = true;
+    float nw_grad_ans[3][2] {
+        0.5873974, 0.64613718,
+        0, 0,
+        -7.771136e-10, -8.5482493e-10,
+    };
+    for (int i = 0; i < nw_grad->get_shape()[0]; ++i) {
+        for (int j = 0; j < nw_grad->get_shape()[1]; ++j) {
+            float *loc_grad = static_cast<float*>(nw_grad->location({i, j}));
+            if (fabs(*loc_grad - nw_grad_ans[i][j]) > eps) {
+                std::cerr << std::setprecision(8) << RED << "Error: nw_grad[" << i << "][" << j << "] = " << *loc_grad
+                          << ", nw_grad_ans[" << i << "][" << j << "] = " << nw_grad_ans[i][j] << RESET << std::endl;
+                nw_grad_succ = false;
+            }
+        }
+    }
+    if (nw_grad_succ) {
+        std::cout << GREEN << "test_adam clip nw_grad succ" << RESET << std::endl;
+    }
+
+    bool nb_grad_succ = true;
+    float nb_grad_ans[3] = {
+        0.05873974,
+        0.0000e+00,
+        -7.7711358e-11
+    };
+    
+    for (int i = 0; i < nb_grad->get_shape()[0]; ++i) {
+        float *loc_grad = static_cast<float*>(nb_grad->location({i}));
+        if (fabs(*loc_grad - nb_grad_ans[i]) > eps) {
+            std::cerr << std::setprecision(8) << RED << "Error: nb_grad[" << i << "] = " << *loc_grad
+                      << ", nb_grad_ans[" << i << "] = " << nb_grad_ans[i] << RESET << std::endl;
+            nb_grad_succ = false;
+        }
+    }
+
+    if (nb_grad_succ) {
+        std::cout << GREEN << "test_adam clip nb_grad succ" << RESET << std::endl;
+    }
+
+    float nw1_grad_ans[3][3] = {
+        0.33280569, 0, 0.071781613,
+        -0.33290085, 0, -0.071802132,
+        9.5136558e-05, 0, 2.0519647e-05
+    };
+
+    bool nbw1_grad_succ = true;
+
+    for (int i = 0; i < nw1_grad->get_shape()[0]; ++i) {
+        for (int j = 0; j < nw1_grad->get_shape()[1]; ++j) {
+            float *loc_grad = static_cast<float*>(nw1_grad->location({i, j}));
+            if (fabs(*loc_grad - nw1_grad_ans[i][j]) > eps) {
+                std::cerr << std::setprecision(8) << RED << "Error: nw1_grad[" << i << "][" << j << "] = " << *loc_grad
+                          << ", nw1_grad_ans[" << i << "][" << j << "] = " << nw1_grad_ans[i][j] << RESET << std::endl;
+                nbw1_grad_succ = false;
+            }
+        }
+    }
+
+    if (nbw1_grad_succ) {
+        std::cout << GREEN << "test_adam clip nw1_grad succ" << RESET << std::endl;
+    }
+
+    float nb1_grad_ans[3] = {
+        0.032628007,
+        -0.032637335,
+        9.3271128e-06
+    };
+
+    bool nb1_grad_succ = true;
+    for (int i = 0; i < nb1_grad->get_shape()[0]; ++i) {
+        float *loc_grad = static_cast<float*>(nb1_grad->location({i}));
+        if (fabs(*loc_grad - nb1_grad_ans[i]) > eps) {
+            std::cerr << std::setprecision(8) << RED << "Error: nb1_grad[" << i << "] = " << *loc_grad
+                      << ", nb1_grad_ans[" << i << "] = " << nb1_grad_ans[i] << RESET << std::endl;
+            nb1_grad_succ = false;
+        }
+    }
+
+    if (nb1_grad_succ) {
+        std::cout << GREEN << "test_adam clip nb1_grad succ" << RESET << std::endl;
+    }
+
+    float w_ans[3][2] = {
+        0.88999999, 0.090000004,
+        -0.89999998, 0.1,
+        0.10072108, 0.10078751
+    };
+
+    bool w_succ = true;
+    for (int i = 0; i < w->get_shape()[0]; ++i) {
+        for (int j = 0; j < w->get_shape()[1]; ++j) {
+            float *loc_w = static_cast<float*>(w->location({i, j}));
+            if (fabs(*loc_w - w_ans[i][j]) > eps) {
+                std::cerr << std::setprecision(8) << RED << "Error: w[" << i << "][" << j << "] = " << *loc_w
+                          << ", w_ans[" << i << "][" << j << "] = " << w_ans[i][j] << RESET << std::endl;
+                w_succ = false;
+            }
+        }
+    }
+
+    if (w_succ) {
+        std::cout << GREEN << "test_adam w succ" << RESET << std::endl;
+    }
+
+    float bias_ans[3] = {
+        0.090000004, 0.1, 0.10007711
+    };
+    bool bias_succ = true;
+    for (int i = 0; i < bias->get_shape()[0]; ++i) {
+        float *loc_bias = static_cast<float*>(bias->location({i}));
+        if (fabs(*loc_bias - bias_ans[i]) > eps) {
+            std::cerr << std::setprecision(8) << RED << "Error: bias[" << i << "] = " << *loc_bias
+                      << ", bias_ans[" << i << "] = " << bias_ans[i] << RESET << std::endl;
+            bias_succ = false;
+        }
+    }
+
+    if (bias_succ) {
+        std::cout << GREEN << "test_adam bias succ" << RESET << std::endl;
+    }
+
+    float w1_ans[3][3] = {
+        0.88999999, 0.1, 0.090000004,
+        -0.88999999, 0.1, 0.11,
+        0.090001054, 0.1, 0.090004876
+    };
+
+    bool w1_succ = true;
+    for (int i = 0; i < w1->get_shape()[0]; ++i) {
+        for (int j = 0; j < w1->get_shape()[1]; ++j) {
+            float *loc_w1 = static_cast<float*>(w1->location({i, j}));
+            if (fabs(*loc_w1 - w1_ans[i][j]) > eps) {
+                std::cerr << std::setprecision(8) << RED << "Error: w1[" << i << "][" << j << "] = " << *loc_w1
+                          << ", w1_ans[" << i << "][" << j << "] = " << w1_ans[i][j] << RESET << std::endl;
+                w1_succ = false;
+            }
+        }
+    }
+    if (w1_succ) {
+        std::cout << GREEN << "test_adam w1 succ" << RESET << std::endl;
+    }
+
+    float bias1_ans[3] = {
+        0.090000004, 0.11, 0.09001071
+    };
+
+    bool bias1_succ = true;
+    for (int i = 0; i < bias1->get_shape()[0]; ++i) {
+        float *loc_bias1 = static_cast<float*>(bias1->location({i}));
+        if (fabs(*loc_bias1 - bias1_ans[i]) > eps) {
+            std::cerr << std::setprecision(8) << RED << "Error: bias1[" << i << "] = " << *loc_bias1
+                      << ", bias1_ans[" << i << "] = " << bias1_ans[i] << RESET << std::endl;
+            bias1_succ = false;
+        }
+    }
+    if (bias1_succ) {
+        std::cout << GREEN << "test_adam bias1 succ" << RESET << std::endl;
+    }
+
+    destruct_env();
+}
+
+float calc_mean(Tensor *tensor) {
+    float sum = 0.0f;
+    auto data = static_cast<float*>(tensor->get_data());
+    for (int i = 0; i < tensor->length(); ++i) {
+        sum += data[i];
+    }
+    return sum / tensor->length();
+}
+
+float calc_std(Tensor *tensor) {
+    float mean = calc_mean(tensor);
+    float sum = 0.0f;
+    auto data = static_cast<float*>(tensor->get_data());
+    for (int i = 0; i < tensor->length(); ++i) {
+        sum += (data[i] - mean) * (data[i] - mean);
+    }
+    return sqrt(sum / tensor->length());
+}
+
+void test_mlp() {
+    construct_env();
+
+    MLP mlp(
+        784,
+        {30, 10}
+    );
+    Adam adam(
+        mlp.get_parameters(),
+        0.001f
+    );
+
+    Tensor *input = allocTensor({2, 784}, "input");
+    Tensor *labels = allocTensor({2}, "labels", INT32);
+    auto n_input = graph::allocNode(input);
+    auto res = mlp.forward(n_input)->CrossEntropy(labels);
+    zero_grad();
+    res->backward();
+    adam.clip_grad(1.0f);
+    adam.step();
+    // printAllTensors();
+    // printAllActions();
+    allocMemAndInitTensors();
+    gDoActions();
+    gDoActions();
+
+    auto w1_tensor = mlp.get_parameters()[0]->get_w();
+    auto w2_tensor = mlp.get_parameters()[1]->get_w();
+
+    float w1_mean = calc_mean(w1_tensor);
+    float w1_std = calc_std(w1_tensor);
+    float w2_mean = calc_mean(w2_tensor);
+    float w2_std = calc_std(w2_tensor);
+
+    const float eps = 0.01f;
+    const float mean_ans = 0.0f;
+    const float std_ans = 0.02f;
+    bool w1_succ = fabs(w1_mean - mean_ans) < eps && fabs(w1_std - std_ans) < eps;
+    bool w2_succ = fabs(w2_mean - mean_ans) < eps && fabs(w2_std - std_ans) < eps;
+
+    if (w1_succ && w2_succ) {
+        std::cout << GREEN << "test_mlp init weight succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_mlp init weight failed" << RESET << std::endl;
+    }
+
+    std::vector<Action*> once_actions = getOnceActions();
+    bool succ = true;
+    for (auto action : once_actions) {
+        if (action->get_exec_times() != 1) {
+            succ = false;
+        }
+    }
+    if (succ) {
+        std::cout << GREEN << "test_mlp once action succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_mlp once action failed" << RESET << std::endl;
+    }
+    destruct_env();
 }
 
 void test() {
@@ -658,6 +914,8 @@ void test() {
     test_cross_entropy();
     test_cross_entropy_backward();
     test_bp();
+    test_adam();
+    test_mlp();
 }
 
 int main() {

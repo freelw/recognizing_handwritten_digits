@@ -28,7 +28,10 @@ namespace graph {
         Tensor *l_tensor = this->get_tensor();
         Tensor *res_tensor = l_tensor->transpose();
         Node *res_node = allocNode(res_tensor);
-        res_node->edges.push_back(TransposeEdge::create(this));
+        if (is_require_grad()) {
+            res_node->require_grad();
+            res_node->edges.push_back(TransposeEdge::create(this));
+        }
         return res_node;
     }
 
@@ -43,8 +46,15 @@ namespace graph {
             )
         );
         Node *res_node = allocNode(res_tensor);
-        res_node->edges.push_back(AddEdge::create(this));
-        res_node->edges.push_back(ExpandAddEdge::create(rhs));
+        if (is_require_grad() || rhs->is_require_grad()) {
+            res_node->require_grad();
+            if (is_require_grad()) {
+                res_node->edges.push_back(AddEdge::create(this));
+            }
+            if (rhs->is_require_grad()) {
+                res_node->edges.push_back(ExpandAddEdge::create(rhs));
+            }
+        }
         return res_node;
     }
 
@@ -63,8 +73,15 @@ namespace graph {
             )
         );
         Node *res_node = allocNode(res_tensor);
-        res_node->edges.push_back(MatMulLEdge::create(this, rhs));
-        res_node->edges.push_back(MatMulREdge::create(rhs, this));
+        if (is_require_grad() || rhs->is_require_grad()) {
+            res_node->require_grad();
+            if (is_require_grad()) {
+                res_node->edges.push_back(MatMulLEdge::create(this, rhs));
+            }
+            if (rhs->is_require_grad()) {
+                res_node->edges.push_back(MatMulREdge::create(rhs, this));
+            }
+        }
         return res_node;
     }
 
@@ -78,7 +95,10 @@ namespace graph {
             )
         );
         Node *res_node = allocNode(res_tensor);
-        res_node->edges.push_back(ReluEdge::create(this));
+        if (is_require_grad()) {
+            res_node->require_grad();
+            res_node->edges.push_back(ReluEdge::create(this));
+        }
         return res_node;
     }
 
@@ -102,9 +122,33 @@ namespace graph {
             )
         );
         Node *res_node = allocNode(ce_res);
-
-        res_node->edges.push_back(CrossEntropyEdge::create(this, labels, tensor_maxs, tensor_sums));
+        if (is_require_grad() ) {
+            res_node->require_grad();
+            res_node->edges.push_back(CrossEntropyEdge::create(this, labels, tensor_maxs, tensor_sums));
+        }
         return res_node;
+    }
+
+    void Node::init_weight_gauss(float sigma, float mean) {
+        gCreateAction(
+            new InitWeightAction(
+                this->get_tensor(),
+                "gauss",
+                sigma,
+                mean
+            )
+        );
+    }
+
+    void Node::init_weight_uniform(float sigma) {
+        gCreateAction(
+            new InitWeightAction(
+                this->get_tensor(),
+                "uniform",
+                sigma,
+                0
+            )
+        );
     }
 
     void CrossEntropyEdge::backward(Tensor *) {

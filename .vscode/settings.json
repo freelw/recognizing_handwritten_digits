@@ -49,7 +49,8 @@
         "streambuf": "cpp",
         "typeinfo": "cpp",
         "map": "cpp",
-        "cstring": "cpp"
+        "cstring": "cpp",
+        "__config": "cpp"
     },
     "cmake.sourceDirectory": "/home/cs/project/recognizing_handwritten_digits/cuda/playground",
     "C_Cpp.errorSquiggles": "disabled"

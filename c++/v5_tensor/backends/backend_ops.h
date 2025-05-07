@@ -17,10 +17,19 @@ class BackendOps {
         virtual void reluPrime(Tensor *lhs, Tensor *res) = 0;
         virtual void crossEntropy(Tensor *lhs, const Tensor *labels, Tensor *maxs, Tensor *sums, Tensor *res) = 0;
         virtual void crossEntropyBackward(Tensor *lhs, const Tensor *labels, Tensor *maxs, Tensor *sums, Tensor *res) = 0;
+        virtual void calcAllGradNorm(const std::vector<Tensor*> &grads, Tensor *norm) = 0;
+        virtual void clipGrad(Tensor *grad, const Tensor *norm, float grad_clip_val) = 0;
+        virtual void adamStep(Tensor *w, Tensor *grad, Tensor *m, Tensor *v, int t, float lr, float beta1, float beta2, float epsilon) = 0;
+        virtual void init_weight_gauss(Tensor *tensor, float mean, float sigma) = 0;
+        virtual void init_weight_uniform(Tensor *tensor, float sigma) = 0;
+
+        // Memory management
         virtual void *alloc(size_t size) = 0;
         virtual void memset(void *ptr, int value, size_t size) = 0;
         virtual void memcpy(void *dst, const void *src, size_t size) = 0;
         virtual void free(void *ptr) = 0;
+        virtual float get_float(const Tensor *tensor, int index) = 0;
+        virtual void cp_to_device(Tensor *dst_tensor, char *src, size_t size) = 0;
 };
 
 extern BackendOps *g_backend_ops;

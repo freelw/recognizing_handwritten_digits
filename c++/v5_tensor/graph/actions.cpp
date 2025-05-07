@@ -5,6 +5,23 @@
 #include <assert.h>
 #include <sstream>
 #include "backends/backend_ops.h"
+#include "optimizers/parameter.h"
+
+bool Action::is_do_once() const {
+    return false;
+}
+
+bool Action::executed_once() const {
+    return exec_times > 0;
+}
+
+void Action::increase_exec_times() {
+    exec_times++;
+}
+
+int Action::get_exec_times() const {
+    return exec_times;
+}
 
 std::ostream &operator<<(std::ostream &output, const Action &a) {
     output << a.to_string();
@@ -149,6 +166,46 @@ std::string CrossEntropyBackwardAction::to_string() const {
     return oss.str();
 }
 
+void CalcAllGradNormAction::execute() {
+    assert(res != nullptr);
+    g_backend_ops->calcAllGradNorm(grads, res);
+}
+
+std::string CalcAllGradNormAction::to_string() const {
+    std::ostringstream oss;
+    oss << "CalcAllGradNormAction: calculating gradient norm for " << grads.size() << " tensors" << " -> " << *res;
+    return oss.str();
+}
+
+void ClipGradAction::execute() {
+    assert(lhs != nullptr); // grad
+    assert(rhs != nullptr); // norm
+    g_backend_ops->clipGrad(lhs, rhs, grad_clip_val);
+}
+
+std::string ClipGradAction::to_string() const {
+    std::ostringstream oss;
+    oss << "ClipGradAction: clipping gradient " << *lhs << " with norm " << *rhs << " to grad_clip_val: " << grad_clip_val;
+    return oss.str();
+}
+
+void AdamStepAction::execute() {
+    param->inc_t();
+    int t = param->get_t();
+    Tensor *w = param->get_w();
+    Tensor *grad = param->get_grad();
+    Tensor *m = param->get_m();
+    Tensor *v = param->get_v();
+
+    g_backend_ops->adamStep(w, grad, m, v, t, lr, beta1, beta2, epsilon);
+}
+
+std::string AdamStepAction::to_string() const {
+    std::ostringstream oss;
+    oss << "AdamStepAction: updating parameter " << *param->get_w() << " with learning rate " << lr;
+    return oss.str();
+}
+
 void ZeroGradAction::execute() {
     g_backend_ops->memset(grad_tensors_data, 0, grad_tensors_data_capacity);
 }
@@ -157,7 +214,42 @@ std::string ZeroGradAction::to_string() const {
     return "ZeroGradAction: zeroing gradients";
 }
 
+void InitWeightAction::execute() {
+    assert(lhs != nullptr);
+
+    if (init_type == "gauss") {
+        g_backend_ops->init_weight_gauss(lhs, mean, sigma);
+    } else if (init_type == "uniform") {
+        g_backend_ops->init_weight_uniform(lhs, sigma);
+    } else if (init_type == "xavier") {
+        assert(false);
+        // g_backend_ops->xavier(lhs);
+    } else if (init_type == "kaiming") {
+        assert(false);
+        // g_backend_ops->kaiming(lhs);
+    } else {
+        std::cerr << "Error: Unknown initialization type: " << init_type << std::endl;
+        abort();
+    }
+}
+
+std::string InitWeightAction::to_string() const {
+    std::ostringstream oss;
+    oss << "InitWeightAction: initializing " << *lhs << " with type " << init_type;
+    return oss.str();
+}
+
 std::vector<Action*> g_actions;
+
+std::vector<Action *> getOnceActions() {
+    std::vector<Action *> once_actions;
+    for (Action *action : g_actions) {
+        if (action->is_do_once() && !action->executed_once()) {
+            once_actions.push_back(action);
+        }
+    }
+    return once_actions;
+}
 
 void gCreateAction(Action *action) {
     g_actions.push_back(action);
@@ -165,13 +257,20 @@ void gCreateAction(Action *action) {
 
 void gDoActions() {
     for (Action *action : g_actions) {
+        if (action->is_do_once() && action->executed_once()) {
+            continue;
+        }
         action->execute();
+        action->increase_exec_times();
     }
 }
 
 void printAllActions() {
     std::cout << "Actions:" << std::endl;
     for (Action *action : g_actions) {
+        if (action->is_do_once()) {
+            std::cout << "[once]";
+        }
         std::cout << *action << std::endl;
     }
 }
