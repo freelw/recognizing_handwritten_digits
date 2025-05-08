@@ -120,7 +120,29 @@ void test_add() {
     );
 
     const float eps = 1e-5f;
+    float res_ans[12] = {
+        0.1000000015,
+        1.100000024,
+        2.099999905,
+        3.099999905,
+        4.099999905,
+        5.099999905,
+        6.099999905,
+        7.099999905,
+        8.100000381,
+        9.100000381,
+        10.10000038,
+        11.10000038
+    };
+
     bool succ = true;
+    for (int i = 0; i < res_wi_tensor->length(); ++ i) {
+        if (fabs(res_wi_tmp_buffer[i] - res_ans[i]) > eps) {
+            succ = false;
+            std::cerr << RED << "Error: res_wi[" << i << "] = " << res_wi_tmp_buffer[i]
+                      << ", res_ans[" << i << "] = " << res_ans[i] << RESET << std::endl;
+        }
+    }
     for (int i = 0; i < res_wi_tensor->length(); ++ i) {
         if (fabs(res_wi_tmp_buffer[i] - res_wti_tmp_buffer[i]) > eps) {
             succ = false;
