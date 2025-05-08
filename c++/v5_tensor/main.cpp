@@ -158,7 +158,7 @@ void train(int epochs, float lr, int batch_size) {
 
 int main(int argc, char *argv[]) {
     int opt;
-    int epochs = 30;
+    int epochs = 10;
     int batch_size = 100;
     float lr = 0.001;
 
