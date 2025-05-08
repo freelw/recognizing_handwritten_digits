@@ -236,11 +236,12 @@ void allocMemAndInitTensors() {
 
 void releaseTensorMem() {
     assert(tensors_data != nullptr);
-    assert(grad_tensors_data != nullptr);
+    if (grad_tensors_data != nullptr) {
+        g_backend_ops->free(grad_tensors_data);
+        grad_tensors_data = nullptr;
+    }
     g_backend_ops->free(tensors_data);
-    g_backend_ops->free(grad_tensors_data);
     tensors_data = nullptr;
-    grad_tensors_data = nullptr;
     tensors_data_capacity = 0;
     grad_tensors_data_capacity = 0;
 }

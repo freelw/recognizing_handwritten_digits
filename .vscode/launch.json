@@ -380,13 +380,26 @@
             "environment": []
         },
         {
-            "name": "(gdb) Launch cpu mnist_cuda v5 test",
+            "name": "(gdb) Launch gpu mnist_cuda v5 test",
             "type": "cppdbg",
             "request": "launch",
             "program": "/home/cs/project/recognizing_handwritten_digits/c++/v5_tensor/test",
             "args": [
                 "-t",
                 "1"
+            ],
+            "cwd": "/home/cs/project/recognizing_handwritten_digits/c++/v5_tensor/",
+            "stopAtEntry": false,
+            "environment": []
+        },
+        {
+            "name": "(gdb) Launch cpu mnist_cuda v5 test",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "/home/cs/project/recognizing_handwritten_digits/c++/v5_tensor/test",
+            "args": [
+                "-t",
+                "0"
             ],
             "cwd": "/home/cs/project/recognizing_handwritten_digits/c++/v5_tensor/",
             "stopAtEntry": false,
