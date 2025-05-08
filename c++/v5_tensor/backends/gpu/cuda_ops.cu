@@ -254,7 +254,7 @@ void CUDAOps::reluPrime(Tensor *lhs, Tensor *res) {
 }
 
 void CUDAOps::crossEntropy(Tensor *lhs, const Tensor *labels, Tensor *maxs, Tensor *sums, Tensor *res) {
-    assert(false); // Not implemented yet
+    
 }
 
 void CUDAOps::crossEntropyBackward(Tensor *lhs, const Tensor *labels, Tensor *maxs, Tensor *sums, Tensor *res) {

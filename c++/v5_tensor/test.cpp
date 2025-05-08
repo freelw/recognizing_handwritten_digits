@@ -295,6 +295,20 @@ void test_sum() {
     );
     destruct_env();
 }
+void init_labels(Tensor *labels) {
+    auto size = labels->size();
+    int32_t *labels_tmp_buffer = static_cast<int32_t*>(::malloc(size));
+    auto length = labels->length();
+    for (int i = 0; i < length; ++ i) {
+        labels_tmp_buffer[i] = i;
+    }
+    g_backend_ops->cp_to_device(
+        labels,
+        reinterpret_cast<char*>(labels_tmp_buffer),
+        size
+    );
+    ::free(labels_tmp_buffer);
+}
 
 void test_cross_entropy() {
     construct_env();
@@ -316,35 +330,14 @@ void test_cross_entropy() {
     // printAllTensors();
     // printAllActions();
     allocMemAndInitTensors();
-    for (int i = 0; i < 3; ++ i) {
-        int32_t *loc_labels = reinterpret_cast<int32_t*>(labels->location({i}));
-        *loc_labels = i;
-    }
-    for (int i = 0; i < 3; ++ i) {
-        for (int j = 0; j < 4; ++ j) {
-            float *loc_w = w->location({i, j});
-            float *loc_wt = wt->location({j, i});
-            float v = i * 4 + j;
-            *loc_w = v;
-            *loc_wt = v;
-        }
-    }
+    init_labels(labels);
+    init_w_wt(w, wt);
     
     gDoActions();
-    auto res_wi_data = static_cast<float*>(res_wi_tensor->get_data());
-    auto res_wti_data = static_cast<float*>(res_wti_tensor->get_data());
-    const float eps = 1e-5f;
-    bool succ = true;
-    for (int i = 0; i < res_wi_tensor->length(); ++ i) {
-        if (fabs(res_wi_data[i] - res_wti_data[i]) > eps) {
-            succ = false;
-            std::cerr << RED << "Error: res_wi[" << i << "] = " << res_wi_data[i]
-                      << ", res_wti[" << i << "] = " << res_wti_data[i] << RESET << std::endl;
-        }
-    }
-    if (succ) {
-        std::cout << GREEN << "test_cross_entropy succ" << RESET << std::endl;
-    }
+    compare_res_wi_wt_ans(
+        res_wi_tensor, res_wti_tensor,
+        nullptr, "test_cross_entropy"
+    );
     destruct_env();
 }
 
@@ -1445,7 +1438,6 @@ void test_gpu() {
     test_gpu_at_with_cpu();
     test_add();
     test_gpu_add_with_cpu();
-
     test_add_eq();
     test_gpu_add_eq_1d_with_cpu();
     test_gpu_add_eq_2d_with_cpu();
@@ -1455,7 +1447,7 @@ void test_gpu() {
     test_gpu_mul_with_cpu();
     test_sum();
     test_gpu_sum_with_cpu();
-    // test_cross_entropy();
+    test_cross_entropy();
     // test_cross_entropy_backward();
     // test_bp();
     // test_adam();
