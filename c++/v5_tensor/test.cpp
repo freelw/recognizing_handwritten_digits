@@ -1428,7 +1428,7 @@ Tensor *test_cross_entropy_with_cpu_base(int m, int n) {
 void test_gpu_cross_entropy_with_cpu() {
     use_gpu(false);
     construct_env();
-    int m = 1;
+    int m = 50;
     int n = 10;
     Tensor *cpu_res = test_cross_entropy_with_cpu_base(m, n);
     auto cpu_res_size = cpu_res->size();
@@ -1470,6 +1470,70 @@ void test_gpu_cross_entropy_with_cpu() {
     }
 }
 
+Tensor *test_cross_entropy_backward_with_cpu_base(int m, int n) {
+    Tensor *labels = allocTensor({m}, "input", INT32);
+    Tensor *w = allocTensor({m, n}, "w");
+    Tensor *res_wi_tensor = allocTensor({1}, "res_wi");
+    Tensor *maxs_wi = allocTensor({m}, "maxs_wi");
+    Tensor *sums_wi = allocTensor({m}, "sums_wi");
+    Tensor *grad_wi = allocTensor({m, n}, "grad_wi");
+    gCreateAction(
+        new CrossEntropyAction(w, labels, maxs_wi, sums_wi, res_wi_tensor)
+    );
+    gCreateAction(
+        new CrossEntropyBackwardAction(w, labels, maxs_wi, sums_wi, grad_wi)
+    );
+    allocMemAndInitTensors();
+    w->fill(0.1f);
+    gDoActions();
+    return grad_wi;
+}
+
+void test_gpu_cross_entropy_backward_with_cpu() {
+    use_gpu(false);
+    construct_env();
+    int m = 1;
+    int n = 10;
+    Tensor *cpu_res = test_cross_entropy_backward_with_cpu_base(m, n);
+    auto cpu_res_size = cpu_res->size();
+    auto cpu_res_length = cpu_res->length();
+    float *cpu_res_buffer = static_cast<float*>(::malloc(cpu_res_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(cpu_res_buffer),
+        cpu_res,
+        cpu_res_size
+    );
+    destruct_env();
+    use_gpu(true);
+    construct_env();
+    Tensor *gpu_res = test_cross_entropy_backward_with_cpu_base(m, n);
+    auto gpu_res_size = gpu_res->size();
+    auto gpu_res_length = gpu_res->length();
+    float *gpu_res_buffer = static_cast<float*>(::malloc(gpu_res_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(gpu_res_buffer),
+        gpu_res,
+        gpu_res_size
+    );
+    destruct_env();
+    assert(cpu_res_size == gpu_res_size);
+    assert(cpu_res_length == gpu_res_length);
+    const float eps = 1e-5f;
+    //compare cpu and gpu result
+    bool succ = true;
+    for (int i = 0; i < cpu_res_length; ++ i) {
+        if (fabs(cpu_res_buffer[i] - gpu_res_buffer[i]) > eps) {
+            std::cerr << RED << "Error: cpu_res[" << i << "] = " << cpu_res_buffer[i]
+                      << ", gpu_res[" << i << "] = " << gpu_res_buffer[i] << RESET << std::endl;
+            succ = false;
+            break;
+        }
+    }
+    if (succ) {
+        std::cout << GREEN << "test_cross_entropy_backward_with_cpu succ" << RESET << std::endl;
+    }
+}
+
 void test_gpu() {
     test_at();
     test_at_1();
@@ -1488,6 +1552,7 @@ void test_gpu() {
     test_cross_entropy();
     test_gpu_cross_entropy_with_cpu();
     test_cross_entropy_backward();
+    test_gpu_cross_entropy_backward_with_cpu();
     // test_bp();
     // test_adam();
     // test_mlp();
@@ -1495,7 +1560,7 @@ void test_gpu() {
 
 int main(int argc, char *argv[]) {
     int opt = 0;
-    int backend_type = 0; // 0 is cpu 1 is gpu
+    int backend_type = 1; // 0 is cpu 1 is gpu
     while ((opt = getopt(argc, argv, "t:")) != -1) {
         switch (opt) {
             case 't':

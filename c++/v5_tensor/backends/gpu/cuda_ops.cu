@@ -273,10 +273,10 @@ void CUDAOps::crossEntropy(Tensor *lhs, const Tensor *labels, Tensor *maxs, Tens
     auto lstrides = lhs->get_strides();
 
     dim3 gridDim(
-        (lhs->get_shape()[0] + TILE_WIDTH - 1) / TILE_WIDTH
+        1
     );
 
-    dim3 blockDim(TILE_WIDTH);
+    dim3 blockDim(lhs->get_shape()[0]);
 
     cross_entropy<<<gridDim, blockDim>>>(
         (float *)lhs->get_data(),
