@@ -125,6 +125,7 @@ void CPUOps::mul(Tensor *lhs, const Tensor *rhs, Tensor *res) {
     assert(lhs != nullptr);
     assert(rhs != nullptr);
     assert(res != nullptr);
+    assert(lhs->get_rank() == 2);
 
     auto lshape = lhs->get_shape();
     auto rshape = rhs->get_shape();
