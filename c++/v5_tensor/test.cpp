@@ -210,8 +210,6 @@ void test_add_eq() {
     input1->fill(0.1f);
     init_w_wt(w, wt);
     gDoActions();
-    auto input_data = static_cast<float*>(input->get_data());
-    auto input1_data = static_cast<float*>(input1->get_data());
 
     compare_res_wi_wt_ans(
         input, input1,
@@ -238,30 +236,12 @@ void test_expand_add() {
     // printAllActions();
     allocMemAndInitTensors();
     bias->fill(0.1f);
-    for (int i = 0; i < 3; ++ i) {
-        for (int j = 0; j < 4; ++ j) {
-            float *loc_w = w->location({i, j});
-            float *loc_wt = wt->location({j, i});
-            float v = i * 4 + j;
-            *loc_w = v;
-            *loc_wt = v;
-        }
-    }
+    init_w_wt(w, wt);
     gDoActions();
-    auto res_wi_data = static_cast<float*>(res_wi_tensor->get_data());
-    auto res_wti_data = static_cast<float*>(res_wti_tensor->get_data());
-    const float eps = 1e-5f;
-    bool succ = true;
-    for (int i = 0; i < res_wi_tensor->length(); ++ i) {
-        if (fabs(res_wi_data[i] - res_wti_data[i]) > eps) {
-            succ = false;
-            std::cerr << RED << "Error: res_wi[" << i << "] = " << res_wi_data[i]
-                      << ", res_wti[" << i << "] = " << res_wti_data[i] << RESET << std::endl;
-        }
-    }
-    if (succ) {
-        std::cout << GREEN << "test_expand_add succ" << RESET << std::endl;
-    }
+    compare_res_wi_wt_ans(
+        res_wi_tensor, res_wti_tensor,
+        nullptr, "test_expand_add"
+    );
     destruct_env();
 }
 
@@ -1303,7 +1283,7 @@ void test_gpu() {
     test_add_eq();
     test_gpu_add_eq_1d_with_cpu();
     test_gpu_add_eq_2d_with_cpu();
-    // test_expand_add();
+    test_expand_add();
     // test_mul();
     // test_sum();
     // test_cross_entropy();
