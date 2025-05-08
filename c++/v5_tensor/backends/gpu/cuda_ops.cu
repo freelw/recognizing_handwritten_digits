@@ -179,7 +179,42 @@ void CUDAOps::at(Tensor *lhs, const Tensor *rhs, Tensor *res) {
 }
 
 void CUDAOps::mul(Tensor *lhs, const Tensor *rhs, Tensor *res) {
-    assert(false); // Not implemented yet
+    assert(lhs != nullptr);
+    assert(rhs != nullptr);
+    assert(res != nullptr);
+    assert(lhs->get_rank() == 2);
+
+    auto lshape = lhs->get_shape();
+    auto rshape = rhs->get_shape();
+    auto res_shape = res->get_shape();
+
+    assert(lshape == rshape);
+    assert(res_shape == lshape);
+
+    auto lstrides = lhs->get_strides();
+    auto rstrides = rhs->get_strides();
+    auto res_strides = res->get_strides();
+
+    dim3 gridDim(
+        (lshape[1] + TILE_WIDTH - 1) / TILE_WIDTH,
+        (lshape[0] + TILE_WIDTH - 1) / TILE_WIDTH
+    );
+
+    dim3 blockDim(TILE_WIDTH, TILE_WIDTH);
+
+    tensor_mul_2d<<<gridDim, blockDim>>>(
+        (float *)lhs->get_data(),
+        (float *)rhs->get_data(),
+        (float *)res->get_data(),
+        lshape[0],
+        lshape[1],
+        lstrides[0],
+        lstrides[1],
+        rstrides[0],
+        rstrides[1],
+        res_strides[0],
+        res_strides[1]
+    );
 }
 
 void CUDAOps::sum(Tensor *lhs, Tensor *res, int dim) {
