@@ -56,15 +56,7 @@ void test_at() {
     // printAllActions();
     allocMemAndInitTensors();
     input->fill(1.0f);
-    for (int i = 0; i < 3; ++ i) {
-        for (int j = 0; j < 4; ++ j) {
-            float *loc_w = w->location({i, j});
-            float *loc_wt = wt->location({j, i});
-            float v = i * 4 + j;
-            *loc_w = v;
-            *loc_wt = v;
-        }
-    }
+    init_w_wt(w, wt);
     gDoActions();
     auto res_wi_tensor = res_wi->get_tensor();
     auto res_wti_tensor = res_wti->get_tensor();
@@ -85,26 +77,11 @@ void test_at() {
     destruct_env();
 }
 
-void test_add() {
-    construct_env();
-    Tensor *input = allocTensor({3, 4}, "input");
-    Tensor *w = allocTensor({3, 4}, "w");
-    Tensor *wt = allocTensor({4, 3}, "wt");
-    Tensor *res_wi_tensor = allocTensor({3, 4}, "res_wi");
-    Tensor *res_wti_tensor = allocTensor({3, 4}, "res_wti");
-    gCreateAction(
-        new AddAction(input, w, res_wi_tensor)
-    );
-    gCreateAction(
-        new AddAction(input, wt->transpose(), res_wti_tensor)
-    );
-    // printAllTensors();
-    // printAllActions();
-    allocMemAndInitTensors();
-    input->fill(0.1f);
+bool compare_res_wi_wt_ans(
+    Tensor *res_wi_tensor, Tensor *res_wti_tensor,
+    float *res_ans, const std::string & test_name) {
+    const float eps = 1e-5f;
 
-    init_w_wt(w, wt);
-    gDoActions();
     auto res_wi_data = static_cast<float*>(res_wi_tensor->get_data());
     auto res_wti_data = static_cast<float*>(res_wti_tensor->get_data());
 
@@ -123,6 +100,50 @@ void test_add() {
         res_wti_tensor->size()
     );
 
+    bool succ = true;
+    for (int i = 0; i < res_wi_tensor->length(); ++ i) {
+        if (fabs(res_wi_tmp_buffer[i] - res_ans[i]) > eps) {
+            succ = false;
+            std::cerr << RED << test_name << " Error: res_wi[" << i << "] = " << res_wi_tmp_buffer[i]
+                      << ", res_ans[" << i << "] = " << res_ans[i] << RESET << std::endl;
+        }
+    }
+    for (int i = 0; i < res_wi_tensor->length(); ++ i) {
+        if (fabs(res_wi_tmp_buffer[i] - res_wti_tmp_buffer[i]) > eps) {
+            succ = false;
+            std::cerr << RED << test_name << "Error: res_wi[" << i << "] = " << res_wi_tmp_buffer[i]
+                      << ", res_wti[" << i << "] = " << res_wti_tmp_buffer[i] << RESET << std::endl;
+        }
+    }
+    if (succ) {
+        std::cout << GREEN << test_name << " succ" << RESET << std::endl;
+    }
+
+    ::free(res_wti_tmp_buffer);
+    ::free(res_wi_tmp_buffer);
+    return succ;
+}
+
+void test_add() {
+    construct_env();
+    Tensor *input = allocTensor({3, 4}, "input");
+    Tensor *w = allocTensor({3, 4}, "w");
+    Tensor *wt = allocTensor({4, 3}, "wt");
+    Tensor *res_wi_tensor = allocTensor({3, 4}, "res_wi");
+    Tensor *res_wti_tensor = allocTensor({3, 4}, "res_wti");
+    gCreateAction(
+        new AddAction(input, w, res_wi_tensor)
+    );
+    gCreateAction(
+        new AddAction(input, wt->transpose(), res_wti_tensor)
+    );
+    // printAllTensors();
+    // printAllActions();
+    allocMemAndInitTensors();
+    input->fill(0.1f);
+    init_w_wt(w, wt);
+    gDoActions();
+
     const float eps = 1e-5f;
     float res_ans[12] = {
         0.1000000015,
@@ -139,27 +160,10 @@ void test_add() {
         11.10000038
     };
 
-    bool succ = true;
-    for (int i = 0; i < res_wi_tensor->length(); ++ i) {
-        if (fabs(res_wi_tmp_buffer[i] - res_ans[i]) > eps) {
-            succ = false;
-            std::cerr << RED << "Error: res_wi[" << i << "] = " << res_wi_tmp_buffer[i]
-                      << ", res_ans[" << i << "] = " << res_ans[i] << RESET << std::endl;
-        }
-    }
-    for (int i = 0; i < res_wi_tensor->length(); ++ i) {
-        if (fabs(res_wi_tmp_buffer[i] - res_wti_tmp_buffer[i]) > eps) {
-            succ = false;
-            std::cerr << RED << "Error: res_wi[" << i << "] = " << res_wi_tmp_buffer[i]
-                      << ", res_wti[" << i << "] = " << res_wti_tmp_buffer[i] << RESET << std::endl;
-        }
-    }
-    if (succ) {
-        std::cout << GREEN << "test_add succ" << RESET << std::endl;
-    }
-
-    ::free(res_wti_tmp_buffer);
-    ::free(res_wi_tmp_buffer);
+    compare_res_wi_wt_ans(
+        res_wi_tensor, res_wti_tensor,
+        res_ans, "test_add"
+    );
     destruct_env();
 }
 
