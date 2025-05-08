@@ -23,8 +23,8 @@ void CUDAOps::add(Tensor *lhs, const Tensor *rhs, Tensor *res) {
     assert(lhs->get_rank() == 2);
 
     dim3 gridDim(
-        (lshape[0] + TILE_WIDTH - 1) / TILE_WIDTH,
-        (lshape[1] + TILE_WIDTH - 1) / TILE_WIDTH
+        (lshape[1] + TILE_WIDTH - 1) / TILE_WIDTH,
+        (lshape[0] + TILE_WIDTH - 1) / TILE_WIDTH
     );
 
     dim3 blockDim(TILE_WIDTH, TILE_WIDTH);

@@ -1040,8 +1040,8 @@ Tensor * test_add_with_cpu_base(int m, int n) {
 void test_gpu_add_with_cpu() {
     use_gpu(false);
     construct_env();
-    int m = 3298;
-    int n = 1000;
+    int m = 330;
+    int n = 620;
     // int m = 10;
     // int n = 2;
     Tensor *cpu_res = test_add_with_cpu_base(m, n);
@@ -1076,6 +1076,7 @@ void test_gpu_add_with_cpu() {
             std::cerr << RED << "Error: cpu_res[" << i << "] = " << cpu_res_buffer[i]
                       << ", gpu_res[" << i << "] = " << gpu_res_buffer[i] << RESET << std::endl;
             succ = false;
+            break;
         }
     }
     if (succ) {
@@ -1094,7 +1095,7 @@ void test_gpu() {
 
 int main(int argc, char *argv[]) {
     int opt = 0;
-    int backend_type = 0; // 0 is cpu 1 is gpu
+    int backend_type = 1; // 0 is cpu 1 is gpu
     while ((opt = getopt(argc, argv, "t:")) != -1) {
         switch (opt) {
             case 't':
