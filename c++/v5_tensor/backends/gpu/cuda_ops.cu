@@ -45,7 +45,49 @@ void CUDAOps::add(Tensor *lhs, const Tensor *rhs, Tensor *res) {
 }
 
 void CUDAOps::addEq(Tensor *lhs, const Tensor *rhs) {
-    assert(false); // Not implemented yet
+    
+    assert(lhs != nullptr);
+    assert(rhs != nullptr);
+    
+    auto lshape = lhs->get_shape();
+    auto rshape = rhs->get_shape();
+    
+    assert(lshape == rshape);
+
+    auto lstrides = lhs->get_strides();
+    auto rstrides = rhs->get_strides();
+
+    int rank = lhs->get_rank();
+
+    assert(rank <= 2);
+
+    if (rank == 1) {
+        dim3 gridDim(
+            (lshape[0] + TILE_WIDTH - 1) / TILE_WIDTH
+        );
+        dim3 blockDim(TILE_WIDTH);
+        tensor_add_eq_1d<<<gridDim, blockDim>>>(
+            (float *)lhs->get_data(),
+            (float *)rhs->get_data(),
+            lshape[0]
+        );
+    } else if (rank == 2) {
+        dim3 gridDim(
+            (lshape[1] + TILE_WIDTH - 1) / TILE_WIDTH,
+            (lshape[0] + TILE_WIDTH - 1) / TILE_WIDTH
+        );
+        dim3 blockDim(TILE_WIDTH, TILE_WIDTH);
+        tensor_add_eq_2d<<<gridDim, blockDim>>>(
+            (float *)lhs->get_data(),
+            (float *)rhs->get_data(),
+            lshape[0],
+            lshape[1],
+            lstrides[0],
+            lstrides[1],
+            rstrides[0],
+            rstrides[1]
+        );
+    }
 }
 
 void CUDAOps::expandAdd(Tensor *lhs, const Tensor *rhs, Tensor *res) {
