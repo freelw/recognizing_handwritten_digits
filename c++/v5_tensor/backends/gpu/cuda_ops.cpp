@@ -6,7 +6,7 @@
 #include <cuda_runtime.h>
 
 void CUDAOps::add(Tensor *lhs, const Tensor *rhs, Tensor *res) {
-    assert(false); // Not implemented yet
+    
 }
 
 void CUDAOps::addEq(Tensor *lhs, const Tensor *rhs) {

@@ -103,18 +103,38 @@ void test_add() {
     gDoActions();
     auto res_wi_data = static_cast<float*>(res_wi_tensor->get_data());
     auto res_wti_data = static_cast<float*>(res_wti_tensor->get_data());
+
+    float *res_wi_tmp_buffer = static_cast<float*>(::malloc(res_wi_tensor->size()));
+    float *res_wti_tmp_buffer = static_cast<float*>(::malloc(res_wti_tensor->size()));
+
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(res_wi_tmp_buffer),
+        res_wi_tensor,
+        res_wi_tensor->size()
+    );
+
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(res_wti_tmp_buffer),
+        res_wti_tensor,
+        res_wti_tensor->size()
+    );
+
+    
     const float eps = 1e-5f;
     bool succ = true;
     for (int i = 0; i < res_wi_tensor->length(); ++ i) {
-        if (fabs(res_wi_data[i] - res_wti_data[i]) > eps) {
+        if (fabs(res_wi_tmp_buffer[i] - res_wti_tmp_buffer[i]) > eps) {
             succ = false;
-            std::cerr << RED << "Error: res_wi[" << i << "] = " << res_wi_data[i]
-                      << ", res_wti[" << i << "] = " << res_wti_data[i] << RESET << std::endl;
+            std::cerr << RED << "Error: res_wi[" << i << "] = " << res_wi_tmp_buffer[i]
+                      << ", res_wti[" << i << "] = " << res_wti_tmp_buffer[i] << RESET << std::endl;
         }
     }
     if (succ) {
         std::cout << GREEN << "test_add succ" << RESET << std::endl;
     }
+
+    ::free(res_wti_tmp_buffer);
+    ::free(res_wi_tmp_buffer);
     destruct_env();
 }
 

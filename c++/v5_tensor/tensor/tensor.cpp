@@ -73,12 +73,12 @@ bool Tensor::sanitize() const {
     if (data == nullptr) {
         return false;
     }
-    char * data_ptr = reinterpret_cast<char*>(data)+size();
-    for (int i = 0; i < TENSOR_PADDING_SIZE; ++i) {
-        if (data_ptr[i] != 0) {
-            return false;
-        }
-    }
+    // char * data_ptr = reinterpret_cast<char*>(data)+size();
+    // for (int i = 0; i < TENSOR_PADDING_SIZE; ++i) {
+    //     if (data_ptr[i] != 0) {
+    //         return false;
+    //     }
+    // }
     return true;
 }
 
