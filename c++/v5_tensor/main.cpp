@@ -9,6 +9,8 @@
 #include "model/mlp.h"
 
 #define INPUT_LAYER_SIZE 784
+#define TRAIN_IMAGES_NUM 50000
+#define TEST_IMAGES_NUM 10000
 
 void print_progress(uint i, uint tot) {
     std::cout << "\r[" << i << "/" << tot << "]" << std::flush;
@@ -73,13 +75,14 @@ void train(int epochs, float lr, int batch_size) {
     const std::vector<std::vector<unsigned char>> & train_images = loader.getTrainImages();
     const std::vector<unsigned char> & train_labels = loader.getTrainLabels();
     assert(train_images.size() % batch_size == 0);
+    assert(TRAIN_IMAGES_NUM + TEST_IMAGES_NUM == train_images.size());
     for (int epoch = 0; epoch < epochs; ++epoch) {
         float loss_sum = 0;
         int offset = 0;
         int loop_times = 0;
         std::cout << "epoch : " << epoch << std::endl;
-        print_progress(offset, train_images.size());
-        while (offset < train_images.size()) {
+        print_progress(offset, TRAIN_IMAGES_NUM);
+        while (offset < TRAIN_IMAGES_NUM) {
             assign_inputs(
                 inputs,
                 static_cast<float*>(inputs_tmp_buffer),
@@ -98,9 +101,27 @@ void train(int epochs, float lr, int batch_size) {
             gDoActions();
             loss_sum += g_backend_ops->get_float(loss->get_tensor(), 0);
             loop_times++;
-            print_progress(offset, train_images.size());
+            print_progress(offset, TRAIN_IMAGES_NUM);
         }
         std::cout << " loss : " << loss_sum / loop_times << std::endl;
+
+        // evaluate
+        offset = TRAIN_IMAGES_NUM;
+        std::cout << "evaluating : " << std::endl;
+        print_progress(offset-TRAIN_IMAGES_NUM, TEST_IMAGES_NUM);
+        while (offset < train_images.size()) {
+            assign_inputs(
+                inputs,
+                static_cast<float*>(inputs_tmp_buffer),
+                offset,
+                batch_size,
+                train_images
+            );
+            offset += batch_size;
+            gDoForwardActions();
+            print_progress(offset-TRAIN_IMAGES_NUM, TEST_IMAGES_NUM);
+        }
+        std::cout << std::endl;
     }
     ::free(labels_tmp_buffer);
     ::free(inputs_tmp_buffer);

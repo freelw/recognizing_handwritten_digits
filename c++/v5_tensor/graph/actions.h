@@ -186,6 +186,7 @@ class BoundaryAction : public Action {
 std::vector<Action *> getOnceActions();
 void gCreateAction(Action *action);
 void gDoActions();
+void gDoForwardActions();
 void printAllActions();
 void freeAllActions();
 
