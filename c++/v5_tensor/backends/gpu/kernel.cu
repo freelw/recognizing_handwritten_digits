@@ -135,4 +135,23 @@ __global__ void tensor_mul_2d(
         Pd[index_P] = Md[index_M] * Nd[index_N];
     }
 }
+
+__global__ void tensor_sum_2d_dim0(
+    float *Md, float *Pd,
+    int M, int N,
+    int stride_M0, int stride_M1
+) {
+    // todo: this kernel should be optimized
+    int row = blockIdx.x * blockDim.x + threadIdx.x;
+    if (row >= M) {
+        return;
+    } else {
+        float sum = 0;
+        for (int i = 0; i < N; ++i) {
+            sum += Md[row * stride_M0 + i * stride_M1];
+        }
+        Pd[row] = sum;
+    }
+}
+
 #endif // GCC_ASAN

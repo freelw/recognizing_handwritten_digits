@@ -53,6 +53,12 @@ __global__ void tensor_mul_2d(
     int stride_P0, int stride_P1
 );
 
+__global__ void tensor_sum_2d_dim0(
+    float *Md, float *Pd,
+    int M, int N,
+    int stride_M0, int stride_M1
+);
+
 #endif // GCC_ASAN
 
 #endif // V5_TENSOR_BACKENDS_GPU_KERNEL_CUH

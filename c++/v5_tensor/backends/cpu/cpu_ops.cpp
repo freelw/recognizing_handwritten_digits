@@ -157,6 +157,8 @@ void CPUOps::sum(Tensor *lhs, Tensor *res, int dim) {
     assert(dim == 0);
 
     auto lstrides = lhs->get_strides();
+    assert(lhs->get_rank() == 2);
+    assert(res->get_rank() == 1);
 
     for (int i = 0; i < shape[1]; ++i) {
         static_cast<float*>(res->get_data())[i] = 0;

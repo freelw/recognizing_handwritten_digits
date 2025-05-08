@@ -218,7 +218,31 @@ void CUDAOps::mul(Tensor *lhs, const Tensor *rhs, Tensor *res) {
 }
 
 void CUDAOps::sum(Tensor *lhs, Tensor *res, int dim) {
-    assert(false); // Not implemented yet
+    assert(lhs != nullptr);
+    assert(res != nullptr);
+    assert(dim >= 0 && dim < lhs->get_rank());
+
+    auto shape = lhs->get_shape();
+    auto res_shape = res->get_shape();
+    assert(dim == 0);
+    auto lstrides = lhs->get_strides();
+    assert(lhs->get_rank() == 2);
+    assert(res->get_rank() == 1);
+
+    dim3 gridDim(
+        (shape[0] + TILE_WIDTH - 1) / TILE_WIDTH
+    );
+
+    dim3 blockDim(TILE_WIDTH);
+
+    tensor_sum_2d_dim0<<<gridDim, blockDim>>>(
+        (float *)lhs->get_data(),
+        (float *)res->get_data(),
+        shape[0],
+        shape[1],
+        lstrides[0],
+        lstrides[1]
+    );
 }
 
 void CUDAOps::relu(Tensor *lhs, Tensor *res) {
