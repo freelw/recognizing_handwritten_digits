@@ -208,30 +208,15 @@ void test_add_eq() {
     allocMemAndInitTensors();
     input->fill(0.1f);
     input1->fill(0.1f);
-    for (int i = 0; i < 3; ++ i) {
-        for (int j = 0; j < 4; ++ j) {
-            float *loc_w = w->location({i, j});
-            float *loc_wt = wt->location({j, i});
-            float v = i * 4 + j;
-            *loc_w = v;
-            *loc_wt = v;
-        }
-    }
+    init_w_wt(w, wt);
     gDoActions();
     auto input_data = static_cast<float*>(input->get_data());
     auto input1_data = static_cast<float*>(input1->get_data());
-    const float eps = 1e-5f;
-    bool succ = true;
-    for (int i = 0; i < input->length(); ++ i) {
-        if (fabs(input_data[i] - input1_data[i]) > eps) {
-            succ = false;
-            std::cerr << RED << "Error: res_wi[" << i << "] = " << input_data[i]
-                      << ", res_wti[" << i << "] = " << input1_data[i] << RESET << std::endl;
-        }
-    }
-    if (succ) {
-        std::cout << GREEN << "test_add_eq succ" << RESET << std::endl;
-    }
+
+    compare_res_wi_wt_ans(
+        input, input1,
+        nullptr, "test_add_eq"
+    );
 
     destruct_env();
 }
@@ -1171,6 +1156,16 @@ void test_gpu() {
     test_gpu_at_with_cpu();
     test_add();
     test_gpu_add_with_cpu();
+
+    test_add_eq();
+    // test_expand_add();
+    // test_mul();
+    // test_sum();
+    // test_cross_entropy();
+    // test_cross_entropy_backward();
+    // test_bp();
+    // test_adam();
+    // test_mlp();
 }
 
 int main(int argc, char *argv[]) {
