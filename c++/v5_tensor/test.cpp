@@ -122,9 +122,12 @@ void test_at() {
 
 void test_at_1() {
     construct_env();
-    Tensor *input = allocTensor({2, 3}, "input");
-    Tensor *w = allocTensor({3, 4}, "w");
-    Tensor *wt = allocTensor({4, 3}, "wt");
+    int m = 330;
+    int n = 620;
+    int p = 102;
+    Tensor *input = allocTensor({m, n}, "input");
+    Tensor *w = allocTensor({n, p}, "w");
+    Tensor *wt = allocTensor({p, n}, "wt");
     graph::Node *ni = graph::allocNode(input);
     graph::Node *nw = graph::allocNode(w);
     graph::Node *nwt = graph::allocNode(wt);
@@ -1088,14 +1091,15 @@ void test_gpu_add_with_cpu() {
 
 void test_gpu() {
     test_at();
-    // test_at_1();
+    test_at_1();
+    // todo: test_gpu_at_with_cpu
     test_add();
     test_gpu_add_with_cpu();
 }
 
 int main(int argc, char *argv[]) {
     int opt = 0;
-    int backend_type = 1; // 0 is cpu 1 is gpu
+    int backend_type = 0; // 0 is cpu 1 is gpu
     while ((opt = getopt(argc, argv, "t:")) != -1) {
         switch (opt) {
             case 't':
