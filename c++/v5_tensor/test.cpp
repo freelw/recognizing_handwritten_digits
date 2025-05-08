@@ -1010,12 +1010,41 @@ void test_cpu() {
     test_mlp();
 }
 
-Tensor * test_add_with_cpu_base(int m, int n) {
+Tensor *test_add_with_cpu_base(int m, int n) {
     Tensor *input = allocTensor({m, n}, "input");
     Tensor *w = allocTensor({m, n}, "w");
     Tensor *res_wi_tensor = allocTensor({m, n}, "res_wi");
     gCreateAction(
         new AddAction(input, w, res_wi_tensor)
+    );
+    allocMemAndInitTensors();
+    input->fill(0.1f);
+    std::vector<int> w_strides = w->get_strides();
+    float *w_tmp_buffer = static_cast<float*>(::malloc(w->size()));
+    auto shape = w->get_shape();
+    for (int i = 0; i < shape[0]; ++ i) {
+        for (int j = 0; j < shape[1]; ++ j) {
+            float *loc_w_tmp = w_tmp_buffer + i * w_strides[0] + j * w_strides[1];
+            float v = i * shape[1] + j;
+            *loc_w_tmp = v;
+        }
+    }
+    g_backend_ops->cp_to_device(
+        w,
+        reinterpret_cast<char*>(w_tmp_buffer),
+        w->size()
+    );
+    ::free(w_tmp_buffer);
+    gDoActions();
+    return res_wi_tensor;
+}
+
+Tensor *test_at_with_cpu_base(int m, int n, int p) {
+    Tensor *input = allocTensor({m, n}, "input");
+    Tensor *w = allocTensor({n, p}, "w");
+    Tensor *res_wi_tensor = allocTensor({m, p}, "res_wi");
+    gCreateAction(
+        new AtAction(input, w, res_wi_tensor)
     );
     allocMemAndInitTensors();
     input->fill(0.1f);
@@ -1088,10 +1117,58 @@ void test_gpu_add_with_cpu() {
     ::free(cpu_res_buffer);
 }
 
+void test_gpu_at_with_cpu() {
+    use_gpu(false);
+    construct_env();
+    int m = 330;
+    int n = 620;
+    int p = 102;
+    Tensor *cpu_res = test_at_with_cpu_base(m, n, p);
+    auto cpu_res_size = cpu_res->size();
+    auto cpu_res_length = cpu_res->length();
+    float *cpu_res_buffer = static_cast<float*>(::malloc(cpu_res_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(cpu_res_buffer),
+        cpu_res,
+        cpu_res_size
+    );
+    destruct_env();
+    use_gpu(true);
+    construct_env();
+    Tensor *gpu_res = test_at_with_cpu_base(m, n, p);
+    auto gpu_res_size = gpu_res->size();
+    auto gpu_res_length = gpu_res->length();
+    float *gpu_res_buffer = static_cast<float*>(::malloc(gpu_res_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(gpu_res_buffer),
+        gpu_res,
+        gpu_res_size
+    );
+    destruct_env();
+    assert(cpu_res_size == gpu_res_size);
+    assert(cpu_res_length == gpu_res_length);
+    const float eps = 1e-1f;
+    //compare cpu and gpu result
+    float sum = 0.0f;
+    for (int i = 0; i < cpu_res_length; ++ i) {
+        float diff = cpu_res_buffer[i] - gpu_res_buffer[i];
+        sum += std::pow(diff, 2);
+    }
+    float rsme = std::sqrt(sum / cpu_res_length);
+    bool succ = rsme < eps;
+    if (succ) {
+        std::cout << GREEN << "test_at_with_cpu succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_at_with_cpu failed, rsme = " << rsme << RESET << std::endl;
+    }
+    ::free(gpu_res_buffer);
+    ::free(cpu_res_buffer);
+}
+
 void test_gpu() {
     test_at();
     test_at_1();
-    // todo: test_gpu_at_with_cpu
+    test_gpu_at_with_cpu();
     test_add();
     test_gpu_add_with_cpu();
 }
