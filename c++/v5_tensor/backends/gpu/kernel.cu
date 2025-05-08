@@ -154,4 +154,36 @@ __global__ void tensor_sum_2d_dim0(
     }
 }
 
+__global__ void cross_entropy(
+    float *Md, int32_t *labels,
+    float *maxs, float *sums,
+    float *loss,
+    int M, int N,
+    int stride0, int stride1
+) {
+    int row = blockIdx.x * blockDim.x + threadIdx.x;
+    float tmp_loss = 0;
+    if (row >= M) {
+        return;
+    } else {
+        float max = -1e10;
+        float sum = 0;
+        for (int i = 0; i < N; ++i) {
+            float val = Md[row * stride0 + i * stride1];
+            max = fmaxf(max, val);
+            sum += exp(val);
+        }
+        maxs[row] = max;
+        sums[row] = sum;
+        int label = labels[row];
+        float zt = Md[row * stride0 + label * stride1];
+        tmp_loss = -zt + max + logf(sum);
+    }
+    atomicAdd(loss, tmp_loss);
+    __syncthreads();
+    if (blockIdx.x == 0 && threadIdx.x == 0) {
+        *loss /= M;
+    }
+}
+
 #endif // GCC_ASAN

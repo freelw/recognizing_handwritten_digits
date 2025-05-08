@@ -59,6 +59,14 @@ __global__ void tensor_sum_2d_dim0(
     int stride_M0, int stride_M1
 );
 
+__global__ void cross_entropy(
+    float *Md, int *labels,
+    float *maxs, float *sums,
+    float *loss,
+    int M, int N,
+    int stride0, int stride1
+);
+
 #endif // GCC_ASAN
 
 #endif // V5_TENSOR_BACKENDS_GPU_KERNEL_CUH

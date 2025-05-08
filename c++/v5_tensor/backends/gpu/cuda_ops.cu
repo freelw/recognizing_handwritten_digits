@@ -254,7 +254,41 @@ void CUDAOps::reluPrime(Tensor *lhs, Tensor *res) {
 }
 
 void CUDAOps::crossEntropy(Tensor *lhs, const Tensor *labels, Tensor *maxs, Tensor *sums, Tensor *res) {
-    
+    assert(lhs != nullptr);
+    assert(labels != nullptr);
+    assert(maxs != nullptr);
+    assert(sums != nullptr);
+    assert(res != nullptr);
+
+    assert(lhs->get_shape().size() == 2);
+    assert(labels->get_shape().size() == 1);
+    assert(maxs->get_shape().size() == 1);
+    assert(sums->get_shape().size() == 1);
+    assert(res->get_shape().size() == 1);
+    assert(lhs->get_shape()[0] == labels->get_shape()[0]);
+    assert(lhs->get_shape()[0] == maxs->get_shape()[0]);
+    assert(lhs->get_shape()[0] == sums->get_shape()[0]);
+    assert(res->get_shape()[0] == 1);
+
+    auto lstrides = lhs->get_strides();
+
+    dim3 gridDim(
+        (lhs->get_shape()[0] + TILE_WIDTH - 1) / TILE_WIDTH
+    );
+
+    dim3 blockDim(TILE_WIDTH);
+
+    cross_entropy<<<gridDim, blockDim>>>(
+        (float *)lhs->get_data(),
+        (int32_t *)labels->get_data(),
+        (float *)maxs->get_data(),
+        (float *)sums->get_data(),
+        (float *)res->get_data(),
+        lhs->get_shape()[0],
+        lhs->get_shape()[1],
+        lstrides[0],
+        lstrides[1]
+    );
 }
 
 void CUDAOps::crossEntropyBackward(Tensor *lhs, const Tensor *labels, Tensor *maxs, Tensor *sums, Tensor *res) {
