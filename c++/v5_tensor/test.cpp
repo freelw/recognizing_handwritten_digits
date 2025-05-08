@@ -18,12 +18,13 @@ void init_w_wt(Tensor *w, Tensor *wt) {
     std::vector<int> wt_strides = wt->get_strides();
     float *w_tmp_buffer = static_cast<float*>(::malloc(w->size()));
     float *wt_tmp_buffer = static_cast<float*>(::malloc(wt->size()));
+    auto shape = w->get_shape();
 
-    for (int i = 0; i < 3; ++ i) {
-        for (int j = 0; j < 4; ++ j) {
+    for (int i = 0; i < shape[0]; ++ i) {
+        for (int j = 0; j < shape[1]; ++ j) {
             float *loc_w_tmp = w_tmp_buffer + i * w_strides[0] + j * w_strides[1];
             float *loc_wt_tmp = wt_tmp_buffer + j * wt_strides[0] + i * wt_strides[1];
-            float v = i * 4 + j;
+            float v = i * shape[1] + j;
             *loc_w_tmp = v;
             *loc_wt_tmp = v;
         }
