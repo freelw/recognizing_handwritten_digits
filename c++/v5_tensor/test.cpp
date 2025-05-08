@@ -119,7 +119,6 @@ void test_add() {
         res_wti_tensor->size()
     );
 
-    
     const float eps = 1e-5f;
     bool succ = true;
     for (int i = 0; i < res_wi_tensor->length(); ++ i) {

@@ -41,7 +41,7 @@ $(TEST_TARGET) : $(OBJECTS_TEST)
 clean:
 	@rm -f ${OBJECTS} $(TARGET) $(TEST_TARGET)
 
-.PHONY: clean prepare_data
+.PHONY: clean prepare_data run_test
 prepare_data:
 	@cd ../../resources && \
 	gunzip -c train-labels-idx1-ubyte.gz > train-labels-idx1-ubyte && \
@@ -55,3 +55,11 @@ dbg:
 	@echo "DIR_LIB is $(DIR_LIB)"
 	@echo "TARGET is $(TARGET)"
 	@echo "NVCC is $(NVCC)"
+run_test: $(TEST_TARGET)
+	@echo "Test cpu"
+	@./$(TEST_TARGET) -t 0
+	@echo "Test cpu done"
+	@echo "Test gpu"
+	@./$(TEST_TARGET) -t 1
+	@echo "Test gpu done"
+	@echo "Test completed"
