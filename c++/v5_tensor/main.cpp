@@ -9,9 +9,11 @@
 #include "model/mlp.h"
 
 #define INPUT_LAYER_SIZE 784
+#define TRAIN_IMAGES_NUM 50000
+#define TEST_IMAGES_NUM 10000
 
-void print_progress(uint i, uint tot) {
-    std::cout << "\r[" << i << "/" << tot << "]" << std::flush;
+void print_progress(const std::string &prefix, uint i, uint tot) {
+    std::cout << "\r" << prefix << " [" << i << "/" << tot << "]" << std::flush;
 }
 
 void assign_inputs(
@@ -59,25 +61,31 @@ void train(int epochs, float lr, int batch_size) {
     auto n_inputs = graph::allocNode(inputs);
     Adam optimizer(m.get_parameters(), lr);
 
-    auto loss = m.forward(n_inputs)->CrossEntropy(labels);
+    auto forward_res = m.forward(n_inputs);
+    auto loss = forward_res->CrossEntropy(labels);
+    assert(loss->get_tensor()->size() == sizeof(float));
     zero_grad();
+    insert_boundary_action();
     loss->backward();
     optimizer.clip_grad(1.0f);
     optimizer.step();
-    // printAllActions();
+    printAllActions();
 
     allocMemAndInitTensors();
     float *inputs_tmp_buffer = static_cast<float*>(::malloc(inputs->size()));
     int32_t *labels_tmp_buffer = static_cast<int32_t*>(::malloc(labels->size()));
+    float *evaluate_tmp_buffer = static_cast<float*>(::malloc(forward_res->get_tensor()->size()));
     const std::vector<std::vector<unsigned char>> & train_images = loader.getTrainImages();
     const std::vector<unsigned char> & train_labels = loader.getTrainLabels();
     assert(train_images.size() % batch_size == 0);
+    assert(TRAIN_IMAGES_NUM + TEST_IMAGES_NUM == train_images.size());
     for (int epoch = 0; epoch < epochs; ++epoch) {
         float loss_sum = 0;
         int offset = 0;
         int loop_times = 0;
-        print_progress(offset, train_images.size());
-        while (offset < train_images.size()) {
+        std::string prefix = "epoch : " + std::to_string(epoch);
+        print_progress(prefix, offset, TRAIN_IMAGES_NUM);
+        while (offset < TRAIN_IMAGES_NUM) {
             assign_inputs(
                 inputs,
                 static_cast<float*>(inputs_tmp_buffer),
@@ -94,20 +102,64 @@ void train(int epochs, float lr, int batch_size) {
             );
             offset += batch_size;
             gDoActions();
-            loss_sum += g_backend_ops->get_float(loss->get_tensor(), 0);
+            float loss_val = 0;
+            g_backend_ops->cp_from_device(
+                reinterpret_cast<char*>(&loss_val),
+                loss->get_tensor(),
+                loss->get_tensor()->size()
+            );
+            loss_sum += loss_val;
             loop_times++;
-            print_progress(offset, train_images.size());
+            print_progress(prefix, offset, TRAIN_IMAGES_NUM);
         }
-        std::cout << "loss : " << loss_sum / loop_times << std::endl;
+        std::cout << " loss : " << loss_sum / loop_times << std::endl;
+
+        // evaluate
+        offset = TRAIN_IMAGES_NUM;
+        print_progress("evaluating :", offset-TRAIN_IMAGES_NUM, TEST_IMAGES_NUM);
+        int correct = 0;
+        while (offset < train_images.size()) {
+            assign_inputs(
+                inputs,
+                static_cast<float*>(inputs_tmp_buffer),
+                offset,
+                batch_size,
+                train_images
+            );
+            
+            gDoForwardActions();
+            g_backend_ops->cp_from_device(
+                reinterpret_cast<char*>(evaluate_tmp_buffer),
+                forward_res->get_tensor(),
+                forward_res->get_tensor()->size()
+            );
+            for (int i = 0; i < batch_size; ++i) {
+                int max_index = 0;
+                float max_value = evaluate_tmp_buffer[i * 10];
+                for (int j = 1; j < 10; ++j) {
+                    if (evaluate_tmp_buffer[i * 10 + j] > max_value) {
+                        max_value = evaluate_tmp_buffer[i * 10 + j];
+                        max_index = j;
+                    }
+                }
+                if (max_index == static_cast<int>(train_labels[offset + i])) {
+                    correct++;
+                }
+            }
+            offset += batch_size;
+            print_progress("evaluating : ", offset-TRAIN_IMAGES_NUM, TEST_IMAGES_NUM);
+        }
+        std::cout << " correct : " << correct << std::endl;
     }
+    ::free(evaluate_tmp_buffer);
     ::free(labels_tmp_buffer);
     ::free(inputs_tmp_buffer);
 }
 
 int main(int argc, char *argv[]) {
     int opt;
-    int epochs = 30;
-    int batch_size = 60;
+    int epochs = 10;
+    int batch_size = 100;
     float lr = 0.001;
 
     while ((opt = getopt(argc, argv, "e:l:b:")) != -1) {

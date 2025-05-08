@@ -9,6 +9,12 @@ void zero_grad() {
     );
 }
 
+void insert_boundary_action() {
+    gCreateAction(
+        new BoundaryAction()
+    );
+}
+
 void init_backend() {
     g_backend_ops = new CPUOps();
 }

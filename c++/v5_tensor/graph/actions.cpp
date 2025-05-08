@@ -11,6 +11,10 @@ bool Action::is_do_once() const {
     return false;
 }
 
+bool Action::is_backward_boundary() {
+    return false;
+}
+
 bool Action::executed_once() const {
     return exec_times > 0;
 }
@@ -239,6 +243,18 @@ std::string InitWeightAction::to_string() const {
     return oss.str();
 }
 
+void BoundaryAction::execute() {
+    // Do nothing
+}
+
+std::string BoundaryAction::to_string() const {
+    return "============= BoundaryAction: boundary action =============";
+}
+
+bool BoundaryAction::is_backward_boundary() {
+    return true;
+}
+
 std::vector<Action*> g_actions;
 
 std::vector<Action *> getOnceActions() {
@@ -259,6 +275,19 @@ void gDoActions() {
     for (Action *action : g_actions) {
         if (action->is_do_once() && action->executed_once()) {
             continue;
+        }
+        action->execute();
+        action->increase_exec_times();
+    }
+}
+
+void gDoForwardActions() {
+    for (Action *action : g_actions) {
+        if (action->is_do_once() && action->executed_once()) {
+            continue;
+        }
+        if (action->is_backward_boundary()) {
+            break;
         }
         action->execute();
         action->increase_exec_times();
