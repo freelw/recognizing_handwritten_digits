@@ -189,4 +189,27 @@ __global__ void cross_entropy(
     }
 }
 
+__global__ void cross_entropy_backward(
+    float *Md, int32_t *labels,
+    float *maxs, float *sums,
+    float *grad,
+    int M, int N,
+    int Md_stride0, int Md_stride1,
+    int grad_stride0, int grad_stride1
+) {
+    int row = blockIdx.x * blockDim.x + threadIdx.x;
+    if (row >= M) {
+        return;
+    } else {
+        float max = maxs[row];
+        float sum = sums[row];
+        int label = labels[row];
+        for (int i = 0; i < N; ++i) {
+            float val = Md[row * Md_stride0 + i * Md_stride1];
+            grad[row * grad_stride0 + i * grad_stride1] = i == label ?
+                expf(val - max) / sum - 1 : expf(val - max) / sum;
+        }
+    }
+}
+
 #endif // GCC_ASAN

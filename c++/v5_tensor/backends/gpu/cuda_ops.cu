@@ -292,7 +292,40 @@ void CUDAOps::crossEntropy(Tensor *lhs, const Tensor *labels, Tensor *maxs, Tens
 }
 
 void CUDAOps::crossEntropyBackward(Tensor *lhs, const Tensor *labels, Tensor *maxs, Tensor *sums, Tensor *res) {
-    assert(false); // Not implemented yet
+    assert(lhs != nullptr);
+    assert(labels != nullptr);
+    assert(maxs != nullptr);
+    assert(sums != nullptr);
+    assert(res != nullptr);
+
+    int batch_size = lhs->get_shape()[0];
+    int size = lhs->get_shape()[1];
+    float *data = static_cast<float*>(lhs->get_data());
+    float *res_data = static_cast<float*>(res->get_data());
+    auto lstrides = lhs->get_strides();
+    auto res_strides = res->get_strides();
+    assert(lstrides.size() == 2);
+    assert(res_strides.size() == 2);
+
+    dim3 gridDim(
+        (batch_size + TILE_WIDTH - 1) / TILE_WIDTH
+    );
+
+    dim3 blockDim(TILE_WIDTH);
+
+    cross_entropy_backward<<<gridDim, blockDim>>>(
+        (float *)lhs->get_data(),
+        (int32_t *)labels->get_data(),
+        (float *)maxs->get_data(),
+        (float *)sums->get_data(),
+        (float *)res->get_data(),
+        batch_size,
+        size,
+        lstrides[0],
+        lstrides[1],
+        res_strides[0],
+        res_strides[1]
+    );
 }
 
 void CUDAOps::calcAllGradNorm(const std::vector<Tensor*> &grads, Tensor *norm) {

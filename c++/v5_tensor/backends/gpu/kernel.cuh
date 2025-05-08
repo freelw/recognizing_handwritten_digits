@@ -60,11 +60,20 @@ __global__ void tensor_sum_2d_dim0(
 );
 
 __global__ void cross_entropy(
-    float *Md, int *labels,
+    float *Md, int32_t *labels,
     float *maxs, float *sums,
     float *loss,
     int M, int N,
     int stride0, int stride1
+);
+
+__global__ void cross_entropy_backward(
+    float *Md, int32_t *labels,
+    float *maxs, float *sums,
+    float *grad,
+    int M, int N,
+    int Md_stride0, int Md_stride1,
+    int grad_stride0, int grad_stride1
 );
 
 #endif // GCC_ASAN
