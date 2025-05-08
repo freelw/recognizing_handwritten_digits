@@ -67,11 +67,13 @@ bool compare_res_wi_wt_ans(
     );
 
     bool succ = true;
-    for (int i = 0; i < res_wi_tensor->length(); ++ i) {
-        if (fabs(res_wi_tmp_buffer[i] - res_ans[i]) > eps) {
-            succ = false;
-            std::cerr << RED << test_name << " Error: res_wi[" << i << "] = " << res_wi_tmp_buffer[i]
-                      << ", res_ans[" << i << "] = " << res_ans[i] << RESET << std::endl;
+    if (res_ans != nullptr) {
+        for (int i = 0; i < res_wi_tensor->length(); ++ i) {
+            if (fabs(res_wi_tmp_buffer[i] - res_ans[i]) > eps) {
+                succ = false;
+                std::cerr << RED << test_name << " Error: res_wi[" << i << "] = " << res_wi_tmp_buffer[i]
+                        << ", res_ans[" << i << "] = " << res_ans[i] << RESET << std::endl;
+            }
         }
     }
     for (int i = 0; i < res_wi_tensor->length(); ++ i) {
@@ -110,12 +112,35 @@ void test_at() {
     auto res_wti_tensor = res_wti->get_tensor();
     auto res_wi_data = static_cast<float*>(res_wi_tensor->get_data());
     auto res_wti_data = static_cast<float*>(res_wti_tensor->get_data());
-    const float eps = 1e-5f;
-
     float res_ans[8] = {12,15,18,21,12,15,18,21};
     compare_res_wi_wt_ans(
         res_wi_tensor, res_wti_tensor,
         res_ans, "test_at"
+    );
+    destruct_env();
+}
+
+void test_at_1() {
+    construct_env();
+    Tensor *input = allocTensor({2, 3}, "input");
+    Tensor *w = allocTensor({3, 4}, "w");
+    Tensor *wt = allocTensor({4, 3}, "wt");
+    graph::Node *ni = graph::allocNode(input);
+    graph::Node *nw = graph::allocNode(w);
+    graph::Node *nwt = graph::allocNode(wt);
+    auto res_wi = ni->at(nw);
+    auto res_wti = ni->at(nwt->transpose());
+    allocMemAndInitTensors();
+    input->fill(1.0f);
+    init_w_wt(w, wt);
+    gDoActions();
+    auto res_wi_tensor = res_wi->get_tensor();
+    auto res_wti_tensor = res_wti->get_tensor();
+    auto res_wi_data = static_cast<float*>(res_wi_tensor->get_data());
+    auto res_wti_data = static_cast<float*>(res_wti_tensor->get_data());
+    compare_res_wi_wt_ans(
+        res_wi_tensor, res_wti_tensor,
+        nullptr, "test_at_1"
     );
     destruct_env();
 }
@@ -1015,10 +1040,10 @@ Tensor * test_add_with_cpu_base(int m, int n) {
 void test_gpu_add_with_cpu() {
     use_gpu(false);
     construct_env();
-    // int m = 3298;
-    // int n = 1000;
-    int m = 10;
-    int n = 2;
+    int m = 3298;
+    int n = 1000;
+    // int m = 10;
+    // int n = 2;
     Tensor *cpu_res = test_add_with_cpu_base(m, n);
     auto cpu_res_size = cpu_res->size();
     auto cpu_res_length = cpu_res->length();
@@ -1061,7 +1086,8 @@ void test_gpu_add_with_cpu() {
 }
 
 void test_gpu() {
-    // test_at();
+    test_at();
+    // test_at_1();
     test_add();
     test_gpu_add_with_cpu();
 }

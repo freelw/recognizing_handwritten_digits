@@ -53,7 +53,56 @@ void CUDAOps::expandAdd(Tensor *lhs, const Tensor *rhs, Tensor *res) {
 }
 
 void CUDAOps::at(Tensor *lhs, const Tensor *rhs, Tensor *res) {
-    assert(false); // Not implemented yet
+    auto lshape = lhs->get_shape();
+    auto rshape = rhs->get_shape();
+    auto res_shape = res->get_shape();
+
+    auto lstrides = lhs->get_strides();
+    auto rstrides = rhs->get_strides();
+    auto res_strides = res->get_strides();
+
+    assert(lhs->get_rank() == 2);
+    assert(rhs->get_rank() == 2);
+    assert(res->get_rank() == 2);
+
+    assert(lshape[1] == rshape[0]);
+    assert(res_shape[0] == lshape[0]);
+    assert(res_shape[1] == rshape[1]);
+
+    const int M = lshape[0];
+    const int N = lshape[1];
+    const int P = rshape[1];
+
+    const int stride_M0 = lstrides[0];
+    const int stride_M1 = lstrides[1];
+    const int stride_N0 = rstrides[0];
+    const int stride_N1 = rstrides[1];
+    const int stride_P0 = res_strides[0];
+    const int stride_P1 = res_strides[1];
+
+    dim3 gridDim(
+        (P + TILE_WIDTH - 1) / TILE_WIDTH,
+        (M + TILE_WIDTH - 1) / TILE_WIDTH
+    );
+    dim3 blockDim(
+        TILE_WIDTH,
+        TILE_WIDTH
+    );
+
+    tensor_at_2d<<<gridDim, blockDim>>>(
+        (float *)lhs->get_data(),
+        (float *)rhs->get_data(),
+        (float *)res->get_data(),
+        M,
+        N,
+        P,
+        stride_M0,
+        stride_M1,
+        stride_N0,
+        stride_N1,
+        stride_P0,
+        stride_P1
+    );
 }
 
 void CUDAOps::mul(Tensor *lhs, const Tensor *rhs, Tensor *res) {

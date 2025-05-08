@@ -30,4 +30,44 @@ __global__ void tensor_add_2d(
         Pd[index_P] = Md[index_M] + Nd[index_N];
     }
 }
+
+__global__ void tensor_at_2d(
+    float *Md, float *Nd, float *Pd,
+    int M, int N, int P,
+    int stride_M0, int stride_M1,
+    int stride_N0, int stride_N1,
+    int stride_P0, int stride_P1
+) {
+    int row = blockIdx.y * blockDim.y + threadIdx.y;
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
+
+    __shared__ float s_Md[TILE_WIDTH][TILE_WIDTH];
+    __shared__ float s_Nd[TILE_WIDTH][TILE_WIDTH];
+    
+    for (int m = 0; m < (N + TILE_WIDTH - 1)/ TILE_WIDTH; ++m) {
+        // Load data into shared memory
+
+        int M_row = row;
+        int M_col = m * TILE_WIDTH + threadIdx.x;
+        int N_row = m * TILE_WIDTH + threadIdx.y;
+        int N_col = col;
+        s_Md[threadIdx.y][threadIdx.x] =
+            M_row < M && M_col < N ?
+            Md[M_row * stride_M0 + M_col * stride_M1] : 0.f;
+        s_Nd[threadIdx.y][threadIdx.x] =
+            N_row < N && N_col < P?
+            Nd[N_row * stride_N0 + N_col * stride_N1] : 0.f;
+        __syncthreads();
+        if (row >= M || col >= P) {
+            
+        } else {
+            float sum = 0;
+            for (int k = 0; k < TILE_WIDTH; ++k) {
+                sum += s_Md[threadIdx.y][k] * s_Nd[k][threadIdx.x];
+            }
+            Pd[row * stride_P0 + col * stride_P1] += sum;
+        }
+        __syncthreads();
+    }
+}
 #endif // GCC_ASAN
