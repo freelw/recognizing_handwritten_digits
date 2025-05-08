@@ -148,7 +148,6 @@ void test_at_1() {
     destruct_env();
 }
 
-
 void test_add() {
     construct_env();
     Tensor *input = allocTensor({3, 4}, "input");
