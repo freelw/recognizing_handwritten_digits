@@ -2,9 +2,8 @@
 #include "optimizers/parameter.h"
 
 BackendOps *g_backend_ops = nullptr;
-#ifndef GCC_ASAN
-BackendOps *g_gpu_backend_ops = nullptr;
-#endif
+
+bool b_use_gpu = false;
 
 void zero_grad() {
     gCreateAction(
@@ -19,10 +18,16 @@ void insert_boundary_action() {
 }
 
 void init_backend() {
-    g_backend_ops = new CPUOps();
-    #ifndef GCC_ASAN
-    g_gpu_backend_ops = new CUDAOps();
-    #endif
+    if (b_use_gpu) {
+        #ifndef GCC_ASAN
+        g_backend_ops = new CUDAOps();
+        #else
+        std::cerr << "Error: GPU backend is not available in ASAN build." << std::endl;
+        abort();
+        #endif
+    } else {
+        g_backend_ops = new CPUOps();
+    }
 }
 
 void release_backend() {
@@ -45,4 +50,8 @@ void destruct_env() {
     graph::freeAllEdges();
     releaseTensorMem();
     release_backend();
+}
+
+void use_gpu() {
+    b_use_gpu = true;
 }

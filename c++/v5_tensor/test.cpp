@@ -7,6 +7,7 @@
 #include "common.h"
 #include <iomanip>
 #include <cmath>
+#include <unistd.h>
 
 const std::string RED = "\033[31m";
 const std::string GREEN = "\033[32m";
@@ -904,7 +905,7 @@ void test_mlp() {
     destruct_env();
 }
 
-void test() {
+void test_cpu() {
     test_at();
     test_add();
     test_add_eq();
@@ -918,7 +919,31 @@ void test() {
     test_mlp();
 }
 
-int main() {
-    test();
+void test_gpu() {
+    test_add();
+}
+
+int main(int argc, char *argv[]) {
+    int opt = 0;
+    int backend_type = 0; // 0 is cpu 1 is gpu
+    while ((opt = getopt(argc, argv, "t:")) != -1) {
+        switch (opt) {
+            case 't':
+                backend_type = atoi(optarg);
+                break;
+            default:
+                std::cerr << "Usage: " << argv[0] << " -t <backend_type>" << std::endl;
+                return 1;
+        }
+    }
+    if (backend_type == 0) {
+        test_cpu();
+    } else if (backend_type == 1) {
+        use_gpu();
+        test_gpu();
+    } else {
+        std::cerr << "Invalid backend type. Use 0 for CPU and 1 for GPU." << std::endl;
+        return 1;
+    }
     return 0;
 }

@@ -65,6 +65,10 @@ void CUDAOps::init_weight_uniform(Tensor *tensor, float sigma) {
     assert(false); // Not implemented yet
 }
 
+void CUDAOps::fill(Tensor *tensor, float value) {
+    
+}
+
 void* CUDAOps::alloc(size_t size) {
     void *ret = nullptr;
     cudaMalloc((void **)&ret, size);

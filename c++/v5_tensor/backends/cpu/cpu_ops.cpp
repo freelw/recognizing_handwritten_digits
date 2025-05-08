@@ -340,6 +340,17 @@ void CPUOps::init_weight_uniform(Tensor *tensor, float sigma) {
     
 }
 
+void CPUOps::fill(Tensor *tensor, float value) {
+    assert(tensor != nullptr);
+    assert(tensor->get_data() != nullptr);
+    assert(tensor->length() > 0);
+
+    float *data = static_cast<float*>(tensor->get_data());
+    for (int i = 0; i < tensor->length(); ++i) {
+        data[i] = value;
+    }   
+}
+
 void* CPUOps::alloc(size_t size) {
     return malloc(size);
 }

@@ -13,5 +13,6 @@ void init_backend();
 void release_backend();
 void construct_env();
 void destruct_env();
+void use_gpu();
 
 #endif

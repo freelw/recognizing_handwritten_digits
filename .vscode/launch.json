@@ -368,13 +368,11 @@
         },
         {
             "name": "(gdb) Launch mnist_cuda v5 test",
-            "type": "cuda-gdb",
+            "type": "cppdbg",
             "request": "launch",
             "program": "/home/cs/project/recognizing_handwritten_digits/c++/v5_tensor/test",
             "args": [
-                "10",
-                "16",
-                "1",
+                "-t",
                 "1"
             ],
             "cwd": "/home/cs/project/recognizing_handwritten_digits/c++/v5_tensor/",

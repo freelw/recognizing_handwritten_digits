@@ -105,10 +105,11 @@ Tensor *Tensor::transpose() {
 Tensor *Tensor::fill(float value) {
     assert(!is_view());
     assert(dtype == FLOAT32);
-    float *data_ptr = reinterpret_cast<float*>(data);
-    for (int i = 0; i < length(); ++i) {
-        data_ptr[i] = value;
-    }
+    // float *data_ptr = reinterpret_cast<float*>(data);
+    // for (int i = 0; i < length(); ++i) {
+    //     data_ptr[i] = value;
+    // }
+    g_backend_ops->fill(this, value);
     return this;
 }
 
