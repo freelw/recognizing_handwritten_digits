@@ -157,6 +157,9 @@ void train(int epochs, float lr, int batch_size) {
 }
 
 int main(int argc, char *argv[]) {
+    #ifdef GCC_ASAN
+    #pragma message "GCC_ASAN"
+    #endif
     int opt;
     int epochs = 10;
     int batch_size = 100;
