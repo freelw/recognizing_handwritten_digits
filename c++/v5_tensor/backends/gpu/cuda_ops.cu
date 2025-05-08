@@ -91,7 +91,38 @@ void CUDAOps::addEq(Tensor *lhs, const Tensor *rhs) {
 }
 
 void CUDAOps::expandAdd(Tensor *lhs, const Tensor *rhs, Tensor *res) {
-    assert(false); // Not implemented yet
+    assert(lhs != nullptr);
+    assert(rhs != nullptr);
+    assert(res != nullptr);
+
+    int size = lhs->size();
+    auto shape = lhs->get_shape();
+    assert(shape.size() == 2);
+    assert(rhs->get_shape().size() == 1);   
+    assert(rhs->get_shape()[0] == shape[1]);
+    assert(shape == res->get_shape());
+
+    auto lstrides = lhs->get_strides();
+    auto res_strides = res->get_strides();
+
+    dim3 gridDim(
+        (shape[1] + TILE_WIDTH - 1) / TILE_WIDTH,
+        (shape[0] + TILE_WIDTH - 1) / TILE_WIDTH
+    );
+
+    dim3 blockDim(TILE_WIDTH, TILE_WIDTH);
+
+    expand_add<<<gridDim, blockDim>>>(
+        (float *)lhs->get_data(),
+        (float *)rhs->get_data(),
+        (float *)res->get_data(),
+        shape[0],
+        shape[1],
+        lstrides[0],
+        lstrides[1],
+        res_strides[0],
+        res_strides[1]
+    );
 }
 
 void CUDAOps::at(Tensor *lhs, const Tensor *rhs, Tensor *res) {

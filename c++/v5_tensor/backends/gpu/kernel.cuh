@@ -38,6 +38,13 @@ __global__ void tensor_add_eq_2d(
     int stride_N0, int stride_N1
 );
 
+__global__ void expand_add(
+    float *Md, float *Nd, float *Pd,
+    int M, int N,
+    int stride_M0, int stride_M1,
+    int stride_P0, int stride_P1
+);
+
 #endif // GCC_ASAN
 
 #endif // V5_TENSOR_BACKENDS_GPU_KERNEL_CUH
