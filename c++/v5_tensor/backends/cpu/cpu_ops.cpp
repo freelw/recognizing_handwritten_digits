@@ -356,12 +356,6 @@ void CPUOps::free(void* ptr) {
     ::free(ptr);
 }
 
-float CPUOps::get_float(const Tensor *tensor, int index) {
-    assert(tensor != nullptr);
-    assert(index >= 0 && index < tensor->length());
-    return static_cast<float*>(tensor->get_data())[index];
-}
-
 void CPUOps::cp_to_device(Tensor *dst_tensor, char *src, size_t size) {
     assert(dst_tensor != nullptr);
     assert(src != nullptr);
@@ -369,4 +363,12 @@ void CPUOps::cp_to_device(Tensor *dst_tensor, char *src, size_t size) {
     assert(dst_tensor->get_data() != nullptr);
     assert(dst_tensor->size() == size);
     memcpy(dst_tensor->get_data(), src, size);
+}
+
+void CPUOps::cp_from_device(char *dst, Tensor *src_tensor, size_t size) {
+    assert(dst != nullptr);
+    assert(src_tensor != nullptr);
+    assert(size > 0);
+    assert(src_tensor->get_data() != nullptr);
+    memcpy(dst, src_tensor->get_data(), size);
 }

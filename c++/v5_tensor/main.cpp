@@ -12,8 +12,8 @@
 #define TRAIN_IMAGES_NUM 50000
 #define TEST_IMAGES_NUM 10000
 
-void print_progress(uint i, uint tot) {
-    std::cout << "\r[" << i << "/" << tot << "]" << std::flush;
+void print_progress(const std::string &prefix, uint i, uint tot) {
+    std::cout << "\r" << prefix << " [" << i << "/" << tot << "]" << std::flush;
 }
 
 void assign_inputs(
@@ -62,6 +62,7 @@ void train(int epochs, float lr, int batch_size) {
     Adam optimizer(m.get_parameters(), lr);
 
     auto loss = m.forward(n_inputs)->CrossEntropy(labels);
+    assert(loss->get_tensor()->size() == sizeof(float));
     zero_grad();
     insert_boundary_action();
     loss->backward();
@@ -80,8 +81,8 @@ void train(int epochs, float lr, int batch_size) {
         float loss_sum = 0;
         int offset = 0;
         int loop_times = 0;
-        std::cout << "epoch : " << epoch << std::endl;
-        print_progress(offset, TRAIN_IMAGES_NUM);
+        std::string prefix = "epoch : " + std::to_string(epoch);
+        print_progress(prefix, offset, TRAIN_IMAGES_NUM);
         while (offset < TRAIN_IMAGES_NUM) {
             assign_inputs(
                 inputs,
@@ -99,16 +100,21 @@ void train(int epochs, float lr, int batch_size) {
             );
             offset += batch_size;
             gDoActions();
-            loss_sum += g_backend_ops->get_float(loss->get_tensor(), 0);
+            float loss_val = 0;
+            g_backend_ops->cp_from_device(
+                reinterpret_cast<char*>(&loss_val),
+                loss->get_tensor(),
+                loss->get_tensor()->size()
+            );
+            loss_sum += loss_val;
             loop_times++;
-            print_progress(offset, TRAIN_IMAGES_NUM);
+            print_progress(prefix, offset, TRAIN_IMAGES_NUM);
         }
         std::cout << " loss : " << loss_sum / loop_times << std::endl;
 
         // evaluate
         offset = TRAIN_IMAGES_NUM;
-        std::cout << "evaluating : " << std::endl;
-        print_progress(offset-TRAIN_IMAGES_NUM, TEST_IMAGES_NUM);
+        print_progress("evaluating :", offset-TRAIN_IMAGES_NUM, TEST_IMAGES_NUM);
         while (offset < train_images.size()) {
             assign_inputs(
                 inputs,
@@ -119,7 +125,7 @@ void train(int epochs, float lr, int batch_size) {
             );
             offset += batch_size;
             gDoForwardActions();
-            print_progress(offset-TRAIN_IMAGES_NUM, TEST_IMAGES_NUM);
+            print_progress("evaluating : ", offset-TRAIN_IMAGES_NUM, TEST_IMAGES_NUM);
         }
         std::cout << std::endl;
     }
