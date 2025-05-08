@@ -142,15 +142,15 @@ __global__ void tensor_sum_2d_dim0(
     int stride_M0, int stride_M1
 ) {
     // todo: this kernel should be optimized
-    int row = blockIdx.x * blockDim.x + threadIdx.x;
-    if (row >= M) {
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
+    if (col >= N) {
         return;
     } else {
         float sum = 0;
-        for (int i = 0; i < N; ++i) {
-            sum += Md[row * stride_M0 + i * stride_M1];
+        for (int i = 0; i < M; ++i) {
+            sum += Md[i * stride_M0 + col * stride_M1];
         }
-        Pd[row] = sum;
+        Pd[col] = sum;
     }
 }
 

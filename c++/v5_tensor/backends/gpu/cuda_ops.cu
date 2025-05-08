@@ -230,7 +230,7 @@ void CUDAOps::sum(Tensor *lhs, Tensor *res, int dim) {
     assert(res->get_rank() == 1);
 
     dim3 gridDim(
-        (shape[0] + TILE_WIDTH - 1) / TILE_WIDTH
+        (shape[1] + TILE_WIDTH - 1) / TILE_WIDTH
     );
 
     dim3 blockDim(TILE_WIDTH);
