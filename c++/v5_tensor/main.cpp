@@ -61,10 +61,11 @@ void train(int epochs, float lr, int batch_size) {
 
     auto loss = m.forward(n_inputs)->CrossEntropy(labels);
     zero_grad();
+    insert_boundary_action();
     loss->backward();
     optimizer.clip_grad(1.0f);
     optimizer.step();
-    // printAllActions();
+    printAllActions();
 
     allocMemAndInitTensors();
     float *inputs_tmp_buffer = static_cast<float*>(::malloc(inputs->size()));
@@ -76,6 +77,7 @@ void train(int epochs, float lr, int batch_size) {
         float loss_sum = 0;
         int offset = 0;
         int loop_times = 0;
+        std::cout << "epoch : " << epoch << std::endl;
         print_progress(offset, train_images.size());
         while (offset < train_images.size()) {
             assign_inputs(
@@ -98,7 +100,7 @@ void train(int epochs, float lr, int batch_size) {
             loop_times++;
             print_progress(offset, train_images.size());
         }
-        std::cout << "loss : " << loss_sum / loop_times << std::endl;
+        std::cout << " loss : " << loss_sum / loop_times << std::endl;
     }
     ::free(labels_tmp_buffer);
     ::free(inputs_tmp_buffer);
@@ -107,7 +109,7 @@ void train(int epochs, float lr, int batch_size) {
 int main(int argc, char *argv[]) {
     int opt;
     int epochs = 30;
-    int batch_size = 60;
+    int batch_size = 100;
     float lr = 0.001;
 
     while ((opt = getopt(argc, argv, "e:l:b:")) != -1) {

@@ -17,6 +17,7 @@ class Action {
             return "Action not implemented";
         }
         virtual bool is_do_once() const;
+        virtual bool is_backward_boundary();
         bool executed_once() const;
         void increase_exec_times();
         int get_exec_times() const;
@@ -171,6 +172,15 @@ class InitWeightAction : public Action {
         std::string init_type;
         float sigma;
         float mean;
+};
+
+class BoundaryAction : public Action {
+    public:
+        BoundaryAction()
+            : Action(nullptr, nullptr, nullptr) {}
+        void execute() override;
+        bool is_backward_boundary() override;
+        std::string to_string() const override;
 };
 
 std::vector<Action *> getOnceActions();

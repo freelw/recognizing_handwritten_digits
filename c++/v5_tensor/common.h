@@ -7,6 +7,7 @@
 
 extern BackendOps *g_backend_ops;
 void zero_grad();
+void insert_boundary_action();
 void init_backend();
 void release_backend();
 void construct_env();
