@@ -83,6 +83,7 @@ bool Tensor::sanitize() const {
 }
 
 float *Tensor::location(const std::vector<int> &indices) const {
+    assert(this->dtype == FLOAT32 || this->dtype == INT32);
     assert(indices.size() == shape.size());
     int offset = 0;
     for (size_t i = 0; i < indices.size(); ++i) {

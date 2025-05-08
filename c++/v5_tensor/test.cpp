@@ -73,15 +73,33 @@ void test_add() {
     // printAllActions();
     allocMemAndInitTensors();
     input->fill(0.1f);
+
+    std::vector<int> w_strides = w->get_strides();
+    std::vector<int> wt_strides = wt->get_strides();
+    float *w_tmp_buffer = static_cast<float*>(::malloc(w->size()));
+    float *wt_tmp_buffer = static_cast<float*>(::malloc(wt->size()));
+
     for (int i = 0; i < 3; ++ i) {
         for (int j = 0; j < 4; ++ j) {
-            float *loc_w = w->location({i, j});
-            float *loc_wt = wt->location({j, i});
+            float *loc_w_tmp = w_tmp_buffer + i * w_strides[0] + j * w_strides[1];
+            float *loc_wt_tmp = wt_tmp_buffer + j * wt_strides[0] + i * wt_strides[1];
             float v = i * 4 + j;
-            *loc_w = v;
-            *loc_wt = v;
+            *loc_w_tmp = v;
+            *loc_wt_tmp = v;
         }
     }
+    g_backend_ops->cp_to_device(
+        w,
+        reinterpret_cast<char*>(w_tmp_buffer),
+        w->size()
+    );
+    g_backend_ops->cp_to_device(
+        wt,
+        reinterpret_cast<char*>(wt_tmp_buffer),
+        wt->size()
+    );
+    ::free(wt_tmp_buffer);
+    ::free(w_tmp_buffer);
     gDoActions();
     auto res_wi_data = static_cast<float*>(res_wi_tensor->get_data());
     auto res_wti_data = static_cast<float*>(res_wti_tensor->get_data());
