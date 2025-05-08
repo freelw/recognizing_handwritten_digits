@@ -2,6 +2,9 @@
 
 #ifndef GCC_ASAN
 
+#include <cuda.h>
+#include <cuda_runtime.h>
+
 void CUDAOps::add(Tensor *lhs, const Tensor *rhs, Tensor *res) {
     assert(false); // Not implemented yet
 }
@@ -63,7 +66,9 @@ void CUDAOps::init_weight_uniform(Tensor *tensor, float sigma) {
 }
 
 void* CUDAOps::alloc(size_t size) {
-    assert(false); // Not implemented yet
+    void *ret = nullptr;
+    cudaMalloc((void **)&ret, size);
+    return ret;
 }
 
 void CUDAOps::memset(void* ptr, int value, size_t size) {

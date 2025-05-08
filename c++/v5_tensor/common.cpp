@@ -2,7 +2,9 @@
 #include "optimizers/parameter.h"
 
 BackendOps *g_backend_ops = nullptr;
+#ifndef GCC_ASAN
 BackendOps *g_gpu_backend_ops = nullptr;
+#endif
 
 void zero_grad() {
     gCreateAction(
@@ -18,7 +20,9 @@ void insert_boundary_action() {
 
 void init_backend() {
     g_backend_ops = new CPUOps();
+    #ifndef GCC_ASAN
     g_gpu_backend_ops = new CUDAOps();
+    #endif
 }
 
 void release_backend() {
