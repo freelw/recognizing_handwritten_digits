@@ -13,6 +13,35 @@ const std::string RED = "\033[31m";
 const std::string GREEN = "\033[32m";
 const std::string RESET = "\033[0m";
 
+void init_w_wt(Tensor *w, Tensor *wt) {
+    std::vector<int> w_strides = w->get_strides();
+    std::vector<int> wt_strides = wt->get_strides();
+    float *w_tmp_buffer = static_cast<float*>(::malloc(w->size()));
+    float *wt_tmp_buffer = static_cast<float*>(::malloc(wt->size()));
+
+    for (int i = 0; i < 3; ++ i) {
+        for (int j = 0; j < 4; ++ j) {
+            float *loc_w_tmp = w_tmp_buffer + i * w_strides[0] + j * w_strides[1];
+            float *loc_wt_tmp = wt_tmp_buffer + j * wt_strides[0] + i * wt_strides[1];
+            float v = i * 4 + j;
+            *loc_w_tmp = v;
+            *loc_wt_tmp = v;
+        }
+    }
+    g_backend_ops->cp_to_device(
+        w,
+        reinterpret_cast<char*>(w_tmp_buffer),
+        w->size()
+    );
+    g_backend_ops->cp_to_device(
+        wt,
+        reinterpret_cast<char*>(wt_tmp_buffer),
+        wt->size()
+    );
+    ::free(wt_tmp_buffer);
+    ::free(w_tmp_buffer);
+}
+
 void test_at() {
     construct_env();
     Tensor *input = allocTensor({2, 3}, "input");
@@ -74,32 +103,7 @@ void test_add() {
     allocMemAndInitTensors();
     input->fill(0.1f);
 
-    std::vector<int> w_strides = w->get_strides();
-    std::vector<int> wt_strides = wt->get_strides();
-    float *w_tmp_buffer = static_cast<float*>(::malloc(w->size()));
-    float *wt_tmp_buffer = static_cast<float*>(::malloc(wt->size()));
-
-    for (int i = 0; i < 3; ++ i) {
-        for (int j = 0; j < 4; ++ j) {
-            float *loc_w_tmp = w_tmp_buffer + i * w_strides[0] + j * w_strides[1];
-            float *loc_wt_tmp = wt_tmp_buffer + j * wt_strides[0] + i * wt_strides[1];
-            float v = i * 4 + j;
-            *loc_w_tmp = v;
-            *loc_wt_tmp = v;
-        }
-    }
-    g_backend_ops->cp_to_device(
-        w,
-        reinterpret_cast<char*>(w_tmp_buffer),
-        w->size()
-    );
-    g_backend_ops->cp_to_device(
-        wt,
-        reinterpret_cast<char*>(wt_tmp_buffer),
-        wt->size()
-    );
-    ::free(wt_tmp_buffer);
-    ::free(w_tmp_buffer);
+    init_w_wt(w, wt);
     gDoActions();
     auto res_wi_data = static_cast<float*>(res_wi_tensor->get_data());
     auto res_wti_data = static_cast<float*>(res_wti_tensor->get_data());
