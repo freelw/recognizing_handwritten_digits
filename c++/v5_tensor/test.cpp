@@ -1120,8 +1120,8 @@ void test_gpu_add_with_cpu() {
 void test_gpu_at_with_cpu() {
     use_gpu(false);
     construct_env();
-    int m = 330;
-    int n = 620;
+    int m = 103;
+    int n = 80;
     int p = 102;
     Tensor *cpu_res = test_at_with_cpu_base(m, n, p);
     auto cpu_res_size = cpu_res->size();
@@ -1147,7 +1147,7 @@ void test_gpu_at_with_cpu() {
     destruct_env();
     assert(cpu_res_size == gpu_res_size);
     assert(cpu_res_length == gpu_res_length);
-    const float eps = 1e-1f;
+    const float eps = 1e-3f;
     //compare cpu and gpu result
     float sum = 0.0f;
     for (int i = 0; i < cpu_res_length; ++ i) {
