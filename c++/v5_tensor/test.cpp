@@ -1176,6 +1176,34 @@ Tensor *test_add_eq_1d_with_cpu_base(int m) {
     return input;
 }
 
+Tensor *test_add_eq_2d_with_cpu_base(int m, int n) {
+    Tensor *input = allocTensor({m, n}, "input");
+    Tensor *w = allocTensor({m, n}, "w");
+    gCreateAction(
+        new AddEqAction(input, w)
+    );
+    allocMemAndInitTensors();
+    input->fill(0.1f);
+    std::vector<int> w_strides = w->get_strides();
+    float *w_tmp_buffer = static_cast<float*>(::malloc(w->size()));
+    auto shape = w->get_shape();
+    for (int i = 0; i < shape[0]; ++ i) {
+        for (int j = 0; j < shape[1]; ++ j) {
+            float *loc_w_tmp = w_tmp_buffer + i * w_strides[0] + j * w_strides[1];
+            float v = i * shape[1] + j;
+            *loc_w_tmp = v;
+        }
+    }
+    g_backend_ops->cp_to_device(
+        w,
+        reinterpret_cast<char*>(w_tmp_buffer),
+        w->size()
+    );
+    ::free(w_tmp_buffer);
+    gDoActions();
+    return input;
+}
+
 void test_gpu_add_eq_1d_with_cpu() {
     use_gpu(false);
     construct_env();
@@ -1220,6 +1248,51 @@ void test_gpu_add_eq_1d_with_cpu() {
     }
 }
 
+void test_gpu_add_eq_2d_with_cpu() {
+    use_gpu(false);
+    construct_env();
+    int m = 103;
+    int n = 80;
+    Tensor *cpu_res = test_add_eq_2d_with_cpu_base(m, n);
+    auto cpu_res_size = cpu_res->size();
+    auto cpu_res_length = cpu_res->length();
+    float *cpu_res_buffer = static_cast<float*>(::malloc(cpu_res_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(cpu_res_buffer),
+        cpu_res,
+        cpu_res_size
+    );
+    destruct_env();
+    use_gpu(true);
+    construct_env();
+    Tensor *gpu_res = test_add_eq_2d_with_cpu_base(m, n);
+    auto gpu_res_size = gpu_res->size();
+    auto gpu_res_length = gpu_res->length();
+    float *gpu_res_buffer = static_cast<float*>(::malloc(gpu_res_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(gpu_res_buffer),
+        gpu_res,
+        gpu_res_size
+    );
+    destruct_env();
+    assert(cpu_res_size == gpu_res_size);
+    assert(cpu_res_length == gpu_res_length);
+    const float eps = 1e-5f;
+    //compare cpu and gpu result
+    bool succ = true;
+    for (int i = 0; i < cpu_res_length; ++ i) {
+        if (fabs(cpu_res_buffer[i] - gpu_res_buffer[i]) > eps) {
+            std::cerr << RED << "Error: cpu_res[" << i << "] = " << cpu_res_buffer[i]
+                      << ", gpu_res[" << i << "] = " << gpu_res_buffer[i] << RESET << std::endl;
+            succ = false;
+            break;
+        }
+    }
+    if (succ) {
+        std::cout << GREEN << "test_add_eq_2d_with_cpu succ" << RESET << std::endl;
+    }
+}
+
 void test_gpu() {
     test_at();
     test_at_1();
@@ -1229,6 +1302,7 @@ void test_gpu() {
 
     test_add_eq();
     test_gpu_add_eq_1d_with_cpu();
+    test_gpu_add_eq_2d_with_cpu();
     // test_expand_add();
     // test_mul();
     // test_sum();
