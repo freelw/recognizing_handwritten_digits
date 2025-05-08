@@ -205,6 +205,7 @@ void CPUOps::crossEntropy(Tensor *lhs, const Tensor *labels, Tensor *maxs, Tenso
     assert(res->get_shape().size() == 1);
     assert(lhs->get_shape()[0] == labels->get_shape()[0]);
     assert(lhs->get_shape()[0] == maxs->get_shape()[0]);
+    
     assert(lhs->get_shape()[0] == sums->get_shape()[0]);
     assert(res->get_shape()[0] == 1);
 

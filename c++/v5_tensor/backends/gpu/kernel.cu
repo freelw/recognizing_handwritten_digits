@@ -171,9 +171,12 @@ __global__ void cross_entropy(
         for (int i = 0; i < N; ++i) {
             float val = Md[row * stride0 + i * stride1];
             max = fmaxf(max, val);
-            sum += exp(val);
         }
         maxs[row] = max;
+        for (int i = 0; i < N; ++i) {
+            float val = Md[row * stride0 + i * stride1];
+            sum += expf(val - max);
+        }
         sums[row] = sum;
         int label = labels[row];
         float zt = Md[row * stride0 + label * stride1];
