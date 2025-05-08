@@ -920,10 +920,5 @@ void test() {
 
 int main() {
     test();
-    freeAllTensors();
-    freeAllTensorViews();
-    graph::freeAllEdges();
-    graph::freeAllNodes();
-    freeAllActions();
     return 0;
 }
