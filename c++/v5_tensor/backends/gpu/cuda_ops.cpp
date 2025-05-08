@@ -72,22 +72,22 @@ void* CUDAOps::alloc(size_t size) {
 }
 
 void CUDAOps::memset(void* ptr, int value, size_t size) {
-    assert(false); // Not implemented yet
+    ::cudaMemset(ptr, value, size);
 }
 
-void CUDAOps::memcpy(void* dst, const void* src, size_t size) {
-    assert(false); // Not implemented yet
+void CUDAOps::cp_device_to_device(void* dst, const void* src, size_t size) {
+    ::cudaMemcpy(dst, src, size, cudaMemcpyDeviceToDevice);
 }
 
 void CUDAOps::free(void* ptr) {
-    assert(false); // Not implemented yet
+    ::cudaFree(ptr);
 }
 
 void CUDAOps::cp_to_device(Tensor *dst_tensor, char *src, size_t size) {
-    assert(false); // Not implemented yet
+    ::cudaMemcpy(dst_tensor->get_data(), src, size, cudaMemcpyHostToDevice);
 }
 
 void CUDAOps::cp_from_device(char *dst, Tensor *src_tensor, size_t size) {
-    assert(false); // Not implemented yet
+    ::cudaMemcpy(dst, src_tensor->get_data(), size, cudaMemcpyDeviceToHost);
 }
 #endif // GCC_ASAN

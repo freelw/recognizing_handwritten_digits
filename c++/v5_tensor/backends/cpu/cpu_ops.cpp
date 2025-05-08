@@ -348,7 +348,7 @@ void CPUOps::memset(void* ptr, int value, size_t size) {
     ::memset(ptr, value, size);
 }
 
-void CPUOps::memcpy(void* dst, const void* src, size_t size) {
+void CPUOps::cp_device_to_device(void* dst, const void* src, size_t size) {
     ::memcpy(dst, src, size);
 }
 
