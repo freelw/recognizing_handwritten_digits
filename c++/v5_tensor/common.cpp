@@ -52,6 +52,6 @@ void destruct_env() {
     release_backend();
 }
 
-void use_gpu() {
-    b_use_gpu = true;
+void use_gpu(bool use) {
+    b_use_gpu = use;
 }
