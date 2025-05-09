@@ -237,7 +237,7 @@ void CPUOps::crossEntropy(Tensor *lhs, const Tensor *labels, Tensor *maxs, Tenso
         static_cast<float*>(sums->get_data())[j] = sum;
         loss_value += -(zt - max - std::log(sum));
     }
-    static_cast<float*>(res->get_data())[0] = loss_value / batch_size;
+    static_cast<float*>(res->get_data())[0] = loss_value;
 }
 
 void CPUOps::crossEntropyBackward(Tensor *lhs, const Tensor *labels, Tensor *maxs, Tensor *sums, Tensor *res) {

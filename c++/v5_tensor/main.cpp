@@ -108,7 +108,7 @@ void train(int epochs, float lr, int batch_size) {
                 loss->get_tensor(),
                 loss->get_tensor()->size()
             );
-            loss_sum += loss_val;
+            loss_sum += loss_val / batch_size;
             loop_times++;
             print_progress(prefix, offset, TRAIN_IMAGES_NUM);
         }

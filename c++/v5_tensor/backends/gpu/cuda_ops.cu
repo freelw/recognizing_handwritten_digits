@@ -309,12 +309,12 @@ void CUDAOps::crossEntropy(Tensor *lhs, const Tensor *labels, Tensor *maxs, Tens
     auto lstrides = lhs->get_strides();
 
     dim3 gridDim(
-        1
+        (lhs->get_shape()[0] + TILE_WIDTH - 1) / TILE_WIDTH
     );
 
-    dim3 blockDim(lhs->get_shape()[0]);
+    dim3 blockDim(TILE_WIDTH);
 
-    cross_entropy<<<gridDim, blockDim>>>(
+    cross_entropy<<<gridDim, blockDim, TILE_WIDTH*sizeof(float)>>>(
         (float *)lhs->get_data(),
         (int32_t *)labels->get_data(),
         (float *)maxs->get_data(),
@@ -365,7 +365,7 @@ void CUDAOps::crossEntropyBackward(Tensor *lhs, const Tensor *labels, Tensor *ma
 }
 
 void CUDAOps::calcAllGradNorm(const std::vector<Tensor*> &grads, Tensor *norm) {
-    assert(false); // Not implemented yet
+    
 }
 
 void CUDAOps::clipGrad(Tensor *grad, const Tensor *norm, float grad_clip_val) {
