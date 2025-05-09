@@ -416,38 +416,89 @@ void test_bp() {
     // printAllActions();
     allocMemAndInitTensors();
 
-    float *input_data = static_cast<float*>(input->get_data());
-    input_data[0] = 10.0f;
-    input_data[1] = 11.0f;
+    auto input_size = input->size();
+    auto w_size = w->size();
+    auto bias_size = bias->size();
+    auto w1_size = w1->size();
+    auto bias1_size = bias1->size();
+    auto labels_size = labels->size();
 
-    int32_t *labels_data = static_cast<int32_t*>(labels->get_data());
-    labels_data[0] = 1;
+    float *input_tmp_buffer = static_cast<float*>(::malloc(input_size));
+    float *w_tmp_buffer = static_cast<float*>(::malloc(w_size));
+    float *bias_tmp_buffer = static_cast<float*>(::malloc(bias_size));
+    float *w1_tmp_buffer = static_cast<float*>(::malloc(w1_size));
+    float *bias1_tmp_buffer = static_cast<float*>(::malloc(bias1_size));
+    int32_t *labels_tmp_buffer = static_cast<int32_t*>(::malloc(labels_size));
 
-    float *w_data = static_cast<float*>(w->get_data());
+    input_tmp_buffer[0] = 10.0f;
+    input_tmp_buffer[1] = 11.0f;
+
+    labels_tmp_buffer[0] = 1;
+
     for (int i = 0; i < w->length(); ++i) {
-        w_data[i] = 0.1f;
+        w_tmp_buffer[i] = 0.1f;
     }
 
-    float *bias_data = static_cast<float*>(bias->get_data());
     for (int i = 0; i < bias->length(); ++i) {
-        bias_data[i] = 0.1f;
+        bias_tmp_buffer[i] = 0.1f;
     }
 
-    float *w1_data = static_cast<float*>(w1->get_data());
     for (int i = 0; i < w1->length(); ++i) {
-        w1_data[i] = 0.1f;
+        w1_tmp_buffer[i] = 0.1f;
     }
 
-    float *bias1_data = static_cast<float*>(bias1->get_data());
     for (int i = 0; i < bias1->length(); ++i) {
-        bias1_data[i] = 0.1f;
+        bias1_tmp_buffer[i] = 0.1f;
     }
 
-    w_data[0] = 0.9f;
-    w_data[1*w->get_shape()[1]] = -0.9f;
+    w_tmp_buffer[0] = 0.9f;
+    w_tmp_buffer[1*w->get_shape()[1]] = -0.9f;
 
-    w1_data[0] = 0.9f;
-    w1_data[1*w1->get_shape()[1]] = -0.9f;
+    w1_tmp_buffer[0] = 0.9f;
+    w1_tmp_buffer[1*w1->get_shape()[1]] = -0.9f;
+
+    g_backend_ops->cp_to_device(
+        input,
+        reinterpret_cast<char*>(input_tmp_buffer),
+        input_size
+    );
+
+    g_backend_ops->cp_to_device(
+        labels,
+        reinterpret_cast<char*>(labels_tmp_buffer),
+        labels_size
+    );
+
+    g_backend_ops->cp_to_device(
+        w,
+        reinterpret_cast<char*>(w_tmp_buffer),
+        w_size
+    );
+
+    g_backend_ops->cp_to_device(
+        bias,
+        reinterpret_cast<char*>(bias_tmp_buffer),
+        bias_size
+    );
+
+    g_backend_ops->cp_to_device(
+        w1,
+        reinterpret_cast<char*>(w1_tmp_buffer),
+        w1_size
+    );
+
+    g_backend_ops->cp_to_device(
+        bias1,
+        reinterpret_cast<char*>(bias1_tmp_buffer),
+        bias1_size
+    );
+
+    ::free(input_tmp_buffer);
+    ::free(w_tmp_buffer);
+    ::free(bias_tmp_buffer);
+    ::free(w1_tmp_buffer);
+    ::free(bias1_tmp_buffer);
+    ::free(labels_tmp_buffer);
 
     gDoActions();
 
@@ -1553,7 +1604,7 @@ void test_gpu() {
     test_gpu_cross_entropy_with_cpu();
     test_cross_entropy_backward();
     test_gpu_cross_entropy_backward_with_cpu();
-    // test_bp();
+    test_bp();
     // test_adam();
     // test_mlp();
 }
