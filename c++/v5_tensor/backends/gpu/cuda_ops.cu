@@ -372,7 +372,8 @@ void CUDAOps::crossEntropyBackward(Tensor *lhs, const Tensor *labels, Tensor *ma
 
 void CUDAOps::calcAllGradNorm(const std::vector<Tensor*> &grads, Tensor *norm) {
     assert(norm != nullptr);
-    assert(norm->get_shape().size() == 1);
+    assert(norm->length() == 1);
+    this->memset((float *)norm->get_data(), 0, norm->size());
     for (auto &grad : grads) {
         assert(grad != nullptr);
         auto length = grad->length();
