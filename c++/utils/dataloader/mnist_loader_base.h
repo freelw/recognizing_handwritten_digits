@@ -4,7 +4,7 @@
 #include <vector>
 
 #define EXPECTED_IMAGES_NUM 60000
-#define TRAIN_IMAGES_NUM 200
+#define TRAIN_IMAGES_NUM 10
 #define TEST_IMAGES_NUM 10
 
 class MnistLoaderBase {
