@@ -272,4 +272,19 @@ __global__ void tensor_l2_norm(
     }
 }
 
+__global__ void tensor_clip(
+    float *Md, float *Norm, int M,
+    float clip_value
+) {
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index >= M) {
+        return;
+    } else {
+        float norm = sqrtf(Norm[0]);
+        if (norm > clip_value) {
+            Md[index] *= clip_value / norm;
+        }
+    }
+}
+
 #endif // GCC_ASAN

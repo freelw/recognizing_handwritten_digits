@@ -383,7 +383,26 @@ void CUDAOps::calcAllGradNorm(const std::vector<Tensor*> &grads, Tensor *norm) {
 }
 
 void CUDAOps::clipGrad(Tensor *grad, const Tensor *norm, float grad_clip_val) {
-    assert(false); // Not implemented yet
+    assert(grad != nullptr);
+    assert(norm != nullptr);
+
+    assert(norm->get_shape().size() == 1);
+
+    auto length = grad->length();
+    auto norm_length = norm->length();
+    assert(norm_length == 1);
+
+    dim3 gridDim(
+        (length + TILE_WIDTH - 1) / TILE_WIDTH
+    );
+    dim3 blockDim(TILE_WIDTH);
+
+    tensor_clip<<<gridDim, blockDim>>>(
+        (float *)grad->get_data(),
+        (float *)norm->get_data(),
+        length,
+        grad_clip_val
+    );
 }
 
 void CUDAOps::adamStep(Tensor *w, Tensor *grad, Tensor *m, Tensor *v, int t, float lr, float beta1, float beta2, float epsilon) {
