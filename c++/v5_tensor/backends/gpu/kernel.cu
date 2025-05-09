@@ -287,4 +287,28 @@ __global__ void tensor_clip(
     }
 }
 
+__global__ void tensor_adam_step(
+    float *w, float *grad,
+    float *m, float *v, int M,
+    float beta1, float beta2,
+    float lr, float eps
+) {
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index >= M) {
+        return;
+    } else {
+        float w_value = w[index];
+        float m_value = m[index];
+        float v_value = v[index];
+        float grad_value = grad[index];
+
+        m_value = beta1 * m_value + (1 - beta1) * grad_value;
+        v_value = beta2 * v_value + (1 - beta2) * powf(grad_value, 2);
+        float m_hat = m_value / (1 - powf(beta1, 1));
+        float v_hat = v_value / (1 - powf(beta2, 1));
+        w_value -= lr * m_hat / (sqrtf(v_hat) + eps);
+        w[index] = w_value;
+    }
+}
+
 #endif // GCC_ASAN

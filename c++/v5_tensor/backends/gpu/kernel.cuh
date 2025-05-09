@@ -93,6 +93,13 @@ __global__ void tensor_clip(
     float clip_value
 );
 
+__global__ void tensor_adam_step(
+    float *w, float *grad,
+    float *m, float *v, int M,
+    float beta1, float beta2,
+    float lr, float eps
+);
+
 #endif // GCC_ASAN
 
 #endif // V5_TENSOR_BACKENDS_GPU_KERNEL_CUH

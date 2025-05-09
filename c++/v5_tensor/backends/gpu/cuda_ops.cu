@@ -406,7 +406,39 @@ void CUDAOps::clipGrad(Tensor *grad, const Tensor *norm, float grad_clip_val) {
 }
 
 void CUDAOps::adamStep(Tensor *w, Tensor *grad, Tensor *m, Tensor *v, int t, float lr, float beta1, float beta2, float epsilon) {
-    assert(false); // Not implemented yet
+    assert(w != nullptr);
+    assert(grad != nullptr);
+    assert(m != nullptr);
+    assert(v != nullptr);
+
+    assert(!w->is_view());
+    assert(!grad->is_view());
+    assert(!m->is_view());
+    assert(!v->is_view());
+
+    assert(w->get_shape() == grad->get_shape());
+    assert(w->get_shape() == m->get_shape());
+    assert(w->get_shape() == v->get_shape());
+
+    auto length = w->length();
+
+    dim3 gridDim(
+        (length + TILE_WIDTH - 1) / TILE_WIDTH
+    );
+
+    dim3 blockDim(TILE_WIDTH);
+
+    tensor_adam_step<<<gridDim, blockDim>>>(
+        (float *)w->get_data(),
+        (float *)grad->get_data(),
+        (float *)m->get_data(),
+        (float *)v->get_data(),
+        length,
+        beta1,
+        beta2,
+        lr,
+        epsilon
+    );
 }
 
 void CUDAOps::init_weight_gauss(Tensor *tensor, float mean, float sigma) {
