@@ -244,4 +244,32 @@ __global__ void tensor_relu_prime(
     }
 }
 
+__global__ void tensor_l2_norm(
+    float *Md, float *Nd, int M
+) {
+    extern __shared__ float partial_sums[];
+    int row = blockIdx.x * blockDim.x + threadIdx.x;
+    int tid = threadIdx.x;
+    partial_sums[tid] = 0.0f;
+
+    if (row >= M) {
+        return;
+    } else {
+        partial_sums[tid] = powf(Md[row], 2);
+    }
+
+    __syncthreads();
+
+    for (int s = blockDim.x / 2; s > 0; s >>= 1) {
+        if (tid < s) {
+            partial_sums[tid] += partial_sums[tid + s];
+        }
+        __syncthreads();
+    }
+
+    if (tid == 0) {
+        atomicAdd(Nd, partial_sums[0]);
+    }
+}
+
 #endif // GCC_ASAN

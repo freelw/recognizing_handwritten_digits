@@ -84,6 +84,10 @@ __global__ void tensor_relu_prime(
     float *Md, float *Nd, int M
 );
 
+__global__ void tensor_l2_norm(
+    float *Md, float *Nd, int M
+);
+
 #endif // GCC_ASAN
 
 #endif // V5_TENSOR_BACKENDS_GPU_KERNEL_CUH

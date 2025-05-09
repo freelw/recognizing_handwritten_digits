@@ -1783,7 +1783,7 @@ void test_gpu() {
     test_cross_entropy_backward();
     test_gpu_cross_entropy_backward_with_cpu();
     test_bp();
-    // test_adam();
+    test_adam();
     // test_mlp();
 }
 

@@ -365,7 +365,21 @@ void CUDAOps::crossEntropyBackward(Tensor *lhs, const Tensor *labels, Tensor *ma
 }
 
 void CUDAOps::calcAllGradNorm(const std::vector<Tensor*> &grads, Tensor *norm) {
-    
+    assert(norm != nullptr);
+    assert(norm->get_shape().size() == 1);
+    for (auto &grad : grads) {
+        assert(grad != nullptr);
+        auto length = grad->length();
+        dim3 gridDim(
+            (length + TILE_WIDTH - 1) / TILE_WIDTH
+        );
+        dim3 blockDim(TILE_WIDTH);
+        tensor_l2_norm<<<gridDim, blockDim, TILE_WIDTH>>>(
+            (float *)grad->get_data(),
+            (float *)norm->get_data(),
+            length
+        );
+    }
 }
 
 void CUDAOps::clipGrad(Tensor *grad, const Tensor *norm, float grad_clip_val) {
