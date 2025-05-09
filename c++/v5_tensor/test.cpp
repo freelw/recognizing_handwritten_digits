@@ -515,17 +515,60 @@ void test_bp() {
     auto nw1_grad = nw1->get_grad();
     auto nb1_grad = nb1->get_grad();
 
+    auto nw_grad_size = nw_grad->size();
+    auto nb_grad_size = nb_grad->size();
+    auto nw1_grad_size = nw1_grad->size();
+    auto nb1_grad_size = nb1_grad->size();
+
+    auto nw_grad_shape = nw_grad->get_shape();
+    auto nb_grad_shape = nb_grad->get_shape();
+    auto nw1_grad_shape = nw1_grad->get_shape();
+    auto nb1_grad_shape = nb1_grad->get_shape();
+
+    auto nw_grad_strides = nw_grad->get_strides();
+    auto nw1_grad_strides = nw1_grad->get_strides();
+
+    float *nw_grad_tmp_buffer = static_cast<float*>(::malloc(nw_grad_size));
+    float *nb_grad_tmp_buffer = static_cast<float*>(::malloc(nb_grad_size));
+    float *nw1_grad_tmp_buffer = static_cast<float*>(::malloc(nw1_grad_size));
+    float *nb1_grad_tmp_buffer = static_cast<float*>(::malloc(nb1_grad_size));
+
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(nw_grad_tmp_buffer),
+        nw_grad,
+        nw_grad_size
+    );
+
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(nb_grad_tmp_buffer),
+        nb_grad,
+        nb_grad_size
+    );
+
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(nw1_grad_tmp_buffer),
+        nw1_grad,
+        nw1_grad_size
+    );
+
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(nb1_grad_tmp_buffer),
+        nb1_grad,
+        nb1_grad_size
+    );
+
     bool nw_grad_succ = true;
     float nw_grad_ans[3][2] {
         17.997713,  19.797485,
         0.0000e+00,  0.0000e+00,
         -2.3890e-08, -2.6279e-08
     };
-    for (int i = 0; i < nw_grad->get_shape()[0]; ++i) {
-        for (int j = 0; j < nw_grad->get_shape()[1]; ++j) {
-            float *loc_grad = static_cast<float*>(nw_grad->location({i, j}));
-            if (fabs(*loc_grad - nw_grad_ans[i][j]) > eps) {
-                std::cerr << std::setprecision(8) << RED << "Error: nw_grad[" << i << "][" << j << "] = " << *loc_grad
+
+    for (int i = 0; i < nw_grad_shape[0]; ++i) {
+        for (int j = 0; j < nw_grad_shape[1]; ++j) {
+            auto v = nw_grad_tmp_buffer[i * nw_grad_strides[0] + j * nw_grad_strides[1]];
+            if (fabs(nw_grad_ans[i][j] - v) > eps) {
+                std::cerr << std::setprecision(8) << RED << "Error: nw_grad[" << i << "][" << j << "] = " << v
                           << ", nw_grad_ans[" << i << "][" << j << "] = " << nw_grad_ans[i][j] << RESET << std::endl;
                 nw_grad_succ = false;
             }
@@ -543,10 +586,10 @@ void test_bp() {
         -2.3810571e-09
     };
     
-    for (int i = 0; i < nb_grad->get_shape()[0]; ++i) {
-        float *loc_grad = static_cast<float*>(nb_grad->location({i}));
-        if (fabs(*loc_grad - nb_grad_ans[i]) > eps) {
-            std::cerr << std::setprecision(8) << RED << "Error: nb_grad[" << i << "] = " << *loc_grad
+    for (int i = 0; i < nb_grad_shape[0]; ++i) {
+        float v = nb_grad_tmp_buffer[i];
+        if (fabs(nb_grad_ans[i] - v) > eps) {
+            std::cerr << std::setprecision(8) << RED << "Error: nb_grad[" << i << "] = " << v
                       << ", nb_grad_ans[" << i << "] = " << nb_grad_ans[i] << RESET << std::endl;
             nb_grad_succ = false;
         }
@@ -562,20 +605,19 @@ void test_bp() {
         0.002914961, 0, 0.00062871695
     };
 
-    bool nbw1_grad_succ = true;
+    bool nw1_grad_succ = true;
 
-    for (int i = 0; i < nw1_grad->get_shape()[0]; ++i) {
-        for (int j = 0; j < nw1_grad->get_shape()[1]; ++j) {
-            float *loc_grad = static_cast<float*>(nw1_grad->location({i, j}));
-            if (fabs(*loc_grad - nw1_grad_ans[i][j]) > eps) {
-                std::cerr << std::setprecision(8) << RED << "Error: nw1_grad[" << i << "][" << j << "] = " << *loc_grad
+    for (int i = 0; i < nw1_grad_shape[0]; ++i) {
+        for (int j = 0; j < nw1_grad_shape[1]; ++j) {
+            auto v = nw1_grad_tmp_buffer[i * nw1_grad_strides[0] + j * nw1_grad_strides[1]];
+            if (fabs(nw1_grad_ans[i][j] - v) > eps) {
+                std::cerr << std::setprecision(8) << RED << "Error: nw1_grad[" << i << "][" << j << "] = " << v
                           << ", nw1_grad_ans[" << i << "][" << j << "] = " << nw1_grad_ans[i][j] << RESET << std::endl;
-                nbw1_grad_succ = false;
+                nw1_grad_succ = false;
             }
         }
     }
-
-    if (nbw1_grad_succ) {
+    if (nw1_grad_succ) {
         std::cout << GREEN << "test_cross_entropy nw1_grad succ" << RESET << std::endl;
     }
 
@@ -586,10 +628,11 @@ void test_bp() {
     };
 
     bool nb1_grad_succ = true;
-    for (int i = 0; i < nb1_grad->get_shape()[0]; ++i) {
-        float *loc_grad = static_cast<float*>(nb1_grad->location({i}));
-        if (fabs(*loc_grad - nb1_grad_ans[i]) > eps) {
-            std::cerr << std::setprecision(8) << RED << "Error: nb1_grad[" << i << "] = " << *loc_grad
+
+    for (int i = 0; i < nb1_grad_shape[0]; ++i) {
+        float v = nb1_grad_tmp_buffer[i];
+        if (fabs(nb1_grad_ans[i] - v) > eps) {
+            std::cerr << std::setprecision(8) << RED << "Error: nb1_grad[" << i << "] = " << v
                       << ", nb1_grad_ans[" << i << "] = " << nb1_grad_ans[i] << RESET << std::endl;
             nb1_grad_succ = false;
         }
