@@ -3,6 +3,8 @@
 #ifndef GCC_ASAN
 
 #include "kernel.cuh"
+#include <random>
+#include <chrono>
 
 void CUDAOps::add(Tensor *lhs, const Tensor *rhs, Tensor *res) {
     assert(lhs != nullptr);
@@ -442,7 +444,16 @@ void CUDAOps::adamStep(Tensor *w, Tensor *grad, Tensor *m, Tensor *v, int t, flo
 }
 
 void CUDAOps::init_weight_gauss(Tensor *tensor, float mean, float sigma) {
-    assert(false); // Not implemented yet
+    unsigned seed1 = std::chrono::system_clock::now().time_since_epoch().count();
+    std::default_random_engine generator_w(seed1);
+    std::normal_distribution<float> distribution_w(0.0, sigma);
+    auto size = tensor->size();
+    float *data = static_cast<float*>(::malloc(size));
+    for (int i = 0; i < tensor->length(); ++i) {
+        data[i] = distribution_w(generator_w) + mean;
+    }
+    this->cp_to_device(tensor, (char *)data, size);
+    ::free(data);
 }
 
 void CUDAOps::init_weight_uniform(Tensor *tensor, float sigma) {

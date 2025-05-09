@@ -1048,20 +1048,35 @@ void test_adam() {
 
 float calc_mean(Tensor *tensor) {
     float sum = 0.0f;
-    auto data = static_cast<float*>(tensor->get_data());
+    auto size = tensor->size();
+
+    auto data = static_cast<float*>(::malloc(size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(data),
+        tensor,
+        size
+    );
     for (int i = 0; i < tensor->length(); ++i) {
         sum += data[i];
     }
+    ::free(data);
     return sum / tensor->length();
 }
 
 float calc_std(Tensor *tensor) {
     float mean = calc_mean(tensor);
     float sum = 0.0f;
-    auto data = static_cast<float*>(tensor->get_data());
+    auto size = tensor->size();
+    auto data = static_cast<float*>(::malloc(size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(data),
+        tensor,
+        size
+    );
     for (int i = 0; i < tensor->length(); ++i) {
         sum += (data[i] - mean) * (data[i] - mean);
     }
+    ::free(data);
     return sqrt(sum / tensor->length());
 }
 
@@ -1784,7 +1799,7 @@ void test_gpu() {
     test_gpu_cross_entropy_backward_with_cpu();
     test_bp();
     test_adam();
-    // test_mlp();
+    test_mlp();
 }
 
 int main(int argc, char *argv[]) {
