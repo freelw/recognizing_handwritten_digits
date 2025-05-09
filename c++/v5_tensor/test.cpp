@@ -648,6 +648,11 @@ void test_bp() {
         std::cout << GREEN << "test_cross_entropy nb1_grad succ" << RESET << std::endl;
     }
 
+    ::free(nw_grad_tmp_buffer);
+    ::free(nb_grad_tmp_buffer);
+    ::free(nw1_grad_tmp_buffer);
+    ::free(nb1_grad_tmp_buffer);
+
     destruct_env();
 }
 
@@ -713,38 +718,85 @@ void test_adam() {
     // printAllActions();
     allocMemAndInitTensors();
 
-    float *input_data = static_cast<float*>(input->get_data());
-    input_data[0] = 10.0f;
-    input_data[1] = 11.0f;
+    auto input_size = input->size();
+    auto w_size = w->size();
+    auto bias_size = bias->size();
+    auto w1_size = w1->size();
+    auto bias1_size = bias1->size();
+    auto labels_size = labels->size();
 
-    int32_t *labels_data = static_cast<int32_t*>(labels->get_data());
-    labels_data[0] = 1;
+    auto w_strides = w->get_strides();
+    auto w1_strides = w1->get_strides();
 
-    float *w_data = static_cast<float*>(w->get_data());
+    float *input_tmp_buffer = static_cast<float*>(::malloc(input_size));
+    float *w_tmp_buffer = static_cast<float*>(::malloc(w_size));
+    float *bias_tmp_buffer = static_cast<float*>(::malloc(bias_size));
+    float *w1_tmp_buffer = static_cast<float*>(::malloc(w1_size));
+    float *bias1_tmp_buffer = static_cast<float*>(::malloc(bias1_size));
+    int32_t *labels_tmp_buffer = static_cast<int32_t*>(::malloc(labels_size));
+
+    input_tmp_buffer[0] = 10.0f;
+    input_tmp_buffer[1] = 11.0f;
+
+    labels_tmp_buffer[0] = 1;
+
     for (int i = 0; i < w->length(); ++i) {
-        w_data[i] = 0.1f;
+        w_tmp_buffer[i] = 0.1f;
     }
 
-    float *bias_data = static_cast<float*>(bias->get_data());
     for (int i = 0; i < bias->length(); ++i) {
-        bias_data[i] = 0.1f;
+        bias_tmp_buffer[i] = 0.1f;
     }
 
-    float *w1_data = static_cast<float*>(w1->get_data());
     for (int i = 0; i < w1->length(); ++i) {
-        w1_data[i] = 0.1f;
+        w1_tmp_buffer[i] = 0.1f;
     }
 
-    float *bias1_data = static_cast<float*>(bias1->get_data());
     for (int i = 0; i < bias1->length(); ++i) {
-        bias1_data[i] = 0.1f;
+        bias1_tmp_buffer[i] = 0.1f;
     }
 
-    w_data[0] = 0.9f;
-    w_data[1*w->get_shape()[1]] = -0.9f;
+    w_tmp_buffer[0] = 0.9f;
+    w_tmp_buffer[1*w->get_shape()[1]] = -0.9f;
 
-    w1_data[0] = 0.9f;
-    w1_data[1*w1->get_shape()[1]] = -0.9f;
+    w1_tmp_buffer[0] = 0.9f;
+    w1_tmp_buffer[1*w1->get_shape()[1]] = -0.9f;
+
+    g_backend_ops->cp_to_device(
+        input,
+        reinterpret_cast<char*>(input_tmp_buffer),
+        input_size
+    );
+
+    g_backend_ops->cp_to_device(
+        labels,
+        reinterpret_cast<char*>(labels_tmp_buffer),
+        labels_size
+    );
+
+    g_backend_ops->cp_to_device(
+        w,
+        reinterpret_cast<char*>(w_tmp_buffer),
+        w_size
+    );
+
+    g_backend_ops->cp_to_device(
+        bias,
+        reinterpret_cast<char*>(bias_tmp_buffer),
+        bias_size
+    );
+
+    g_backend_ops->cp_to_device(
+        w1,
+        reinterpret_cast<char*>(w1_tmp_buffer),
+        w1_size
+    );
+
+    g_backend_ops->cp_to_device(
+        bias1,
+        reinterpret_cast<char*>(bias1_tmp_buffer),
+        bias1_size
+    );
 
     gDoActions();
 
@@ -753,6 +805,72 @@ void test_adam() {
     auto nw1_grad = nw1->get_grad();
     auto nb1_grad = nb1->get_grad();
 
+    auto nw_grad_size = nw_grad->size();
+    auto nb_grad_size = nb_grad->size();
+    auto nw1_grad_size = nw1_grad->size();
+    auto nb1_grad_size = nb1_grad->size();
+
+    auto nw_grad_shape = nw_grad->get_shape();
+    auto nb_grad_shape = nb_grad->get_shape();
+    auto nw1_grad_shape = nw1_grad->get_shape();
+    auto nb1_grad_shape = nb1_grad->get_shape();
+
+    auto nw_grad_strides = nw_grad->get_strides();
+    auto nw1_grad_strides = nw1_grad->get_strides();
+
+    float *nw_grad_tmp_buffer = static_cast<float*>(::malloc(nw_grad_size));
+    float *nb_grad_tmp_buffer = static_cast<float*>(::malloc(nb_grad_size));
+    float *nw1_grad_tmp_buffer = static_cast<float*>(::malloc(nw1_grad_size));
+    float *nb1_grad_tmp_buffer = static_cast<float*>(::malloc(nb1_grad_size));
+
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(nw_grad_tmp_buffer),
+        nw_grad,
+        nw_grad_size
+    );
+
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(nb_grad_tmp_buffer),
+        nb_grad,
+        nb_grad_size
+    );
+
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(nw1_grad_tmp_buffer),
+        nw1_grad,
+        nw1_grad_size
+    );
+
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(nb1_grad_tmp_buffer),
+        nb1_grad,
+        nb1_grad_size
+    );
+
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(w_tmp_buffer),
+        w,
+        w_size
+    );
+
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(bias_tmp_buffer),
+        bias,
+        bias_size
+    );
+
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(w1_tmp_buffer),
+        w1,
+        w1_size
+    );
+
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(bias1_tmp_buffer),
+        bias1,
+        bias1_size
+    );
+
     const float eps = 1e-5f;
     bool nw_grad_succ = true;
     float nw_grad_ans[3][2] {
@@ -760,11 +878,11 @@ void test_adam() {
         0, 0,
         -7.771136e-10, -8.5482493e-10,
     };
-    for (int i = 0; i < nw_grad->get_shape()[0]; ++i) {
-        for (int j = 0; j < nw_grad->get_shape()[1]; ++j) {
-            float *loc_grad = static_cast<float*>(nw_grad->location({i, j}));
-            if (fabs(*loc_grad - nw_grad_ans[i][j]) > eps) {
-                std::cerr << std::setprecision(8) << RED << "Error: nw_grad[" << i << "][" << j << "] = " << *loc_grad
+    for (int i = 0; i < nw_grad_shape[0]; ++i) {
+        for (int j = 0; j < nw_grad_shape[1]; ++j) {
+            auto v = nw_grad_tmp_buffer[i * nw_grad_strides[0] + j * nw_grad_strides[1]];
+            if (fabs(nw_grad_ans[i][j] - v) > eps) {
+                std::cerr << std::setprecision(8) << RED << "Error: nw_grad[" << i << "][" << j << "] = " << v
                           << ", nw_grad_ans[" << i << "][" << j << "] = " << nw_grad_ans[i][j] << RESET << std::endl;
                 nw_grad_succ = false;
             }
@@ -781,10 +899,10 @@ void test_adam() {
         -7.7711358e-11
     };
     
-    for (int i = 0; i < nb_grad->get_shape()[0]; ++i) {
-        float *loc_grad = static_cast<float*>(nb_grad->location({i}));
-        if (fabs(*loc_grad - nb_grad_ans[i]) > eps) {
-            std::cerr << std::setprecision(8) << RED << "Error: nb_grad[" << i << "] = " << *loc_grad
+    for (int i = 0; i < nb_grad_shape[0]; ++i) {
+        float v = nb_grad_tmp_buffer[i];
+        if (fabs(nb_grad_ans[i] - v) > eps) {
+            std::cerr << std::setprecision(8) << RED << "Error: nb_grad[" << i << "] = " << v
                       << ", nb_grad_ans[" << i << "] = " << nb_grad_ans[i] << RESET << std::endl;
             nb_grad_succ = false;
         }
@@ -800,20 +918,20 @@ void test_adam() {
         9.5136558e-05, 0, 2.0519647e-05
     };
 
-    bool nbw1_grad_succ = true;
+    bool nw1_grad_succ = true;
 
-    for (int i = 0; i < nw1_grad->get_shape()[0]; ++i) {
-        for (int j = 0; j < nw1_grad->get_shape()[1]; ++j) {
-            float *loc_grad = static_cast<float*>(nw1_grad->location({i, j}));
-            if (fabs(*loc_grad - nw1_grad_ans[i][j]) > eps) {
-                std::cerr << std::setprecision(8) << RED << "Error: nw1_grad[" << i << "][" << j << "] = " << *loc_grad
+    for (int i = 0; i < nw1_grad_shape[0]; ++i) {
+        for (int j = 0; j < nw1_grad_shape[1]; ++j) {
+            auto v = nw1_grad_tmp_buffer[i * nw1_grad_strides[0] + j * nw1_grad_strides[1]];
+            if (fabs(nw1_grad_ans[i][j] - v) > eps) {
+                std::cerr << std::setprecision(8) << RED << "Error: nw1_grad[" << i << "][" << j << "] = " << v
                           << ", nw1_grad_ans[" << i << "][" << j << "] = " << nw1_grad_ans[i][j] << RESET << std::endl;
-                nbw1_grad_succ = false;
+                nw1_grad_succ = false;
             }
         }
     }
 
-    if (nbw1_grad_succ) {
+    if (nw1_grad_succ) {
         std::cout << GREEN << "test_adam clip nw1_grad succ" << RESET << std::endl;
     }
 
@@ -824,10 +942,10 @@ void test_adam() {
     };
 
     bool nb1_grad_succ = true;
-    for (int i = 0; i < nb1_grad->get_shape()[0]; ++i) {
-        float *loc_grad = static_cast<float*>(nb1_grad->location({i}));
-        if (fabs(*loc_grad - nb1_grad_ans[i]) > eps) {
-            std::cerr << std::setprecision(8) << RED << "Error: nb1_grad[" << i << "] = " << *loc_grad
+    for (int i = 0; i < nb1_grad_shape[0]; ++i) {
+        float v = nb1_grad_tmp_buffer[i];
+        if (fabs(nb1_grad_ans[i] - v) > eps) {
+            std::cerr << std::setprecision(8) << RED << "Error: nb1_grad[" << i << "] = " << v
                       << ", nb1_grad_ans[" << i << "] = " << nb1_grad_ans[i] << RESET << std::endl;
             nb1_grad_succ = false;
         }
@@ -846,11 +964,11 @@ void test_adam() {
     bool w_succ = true;
     for (int i = 0; i < w->get_shape()[0]; ++i) {
         for (int j = 0; j < w->get_shape()[1]; ++j) {
-            float *loc_w = static_cast<float*>(w->location({i, j}));
-            if (fabs(*loc_w - w_ans[i][j]) > eps) {
-                std::cerr << std::setprecision(8) << RED << "Error: w[" << i << "][" << j << "] = " << *loc_w
+            auto v = w_tmp_buffer[i * w_strides[0] + j * w_strides[1]];
+            if (fabs(w_ans[i][j] - v) > eps) {
+                std::cerr << std::setprecision(8) << RED << "Error: w[" << i << "][" << j << "] = " << v
                           << ", w_ans[" << i << "][" << j << "] = " << w_ans[i][j] << RESET << std::endl;
-                w_succ = false;
+                w_succ = false;    
             }
         }
     }
@@ -864,9 +982,9 @@ void test_adam() {
     };
     bool bias_succ = true;
     for (int i = 0; i < bias->get_shape()[0]; ++i) {
-        float *loc_bias = static_cast<float*>(bias->location({i}));
-        if (fabs(*loc_bias - bias_ans[i]) > eps) {
-            std::cerr << std::setprecision(8) << RED << "Error: bias[" << i << "] = " << *loc_bias
+        float v = bias_tmp_buffer[i];
+        if (fabs(bias_ans[i] - v) > eps) {
+            std::cerr << std::setprecision(8) << RED << "Error: bias[" << i << "] = " << v
                       << ", bias_ans[" << i << "] = " << bias_ans[i] << RESET << std::endl;
             bias_succ = false;
         }
@@ -885,11 +1003,11 @@ void test_adam() {
     bool w1_succ = true;
     for (int i = 0; i < w1->get_shape()[0]; ++i) {
         for (int j = 0; j < w1->get_shape()[1]; ++j) {
-            float *loc_w1 = static_cast<float*>(w1->location({i, j}));
-            if (fabs(*loc_w1 - w1_ans[i][j]) > eps) {
-                std::cerr << std::setprecision(8) << RED << "Error: w1[" << i << "][" << j << "] = " << *loc_w1
+            auto v = w1_tmp_buffer[i * w1_strides[0] + j * w1_strides[1]];
+            if (fabs(w1_ans[i][j] - v) > eps) {
+                std::cerr << std::setprecision(8) << RED << "Error: w1[" << i << "][" << j << "] = " << v
                           << ", w1_ans[" << i << "][" << j << "] = " << w1_ans[i][j] << RESET << std::endl;
-                w1_succ = false;
+                w1_succ = false;    
             }
         }
     }
@@ -903,9 +1021,9 @@ void test_adam() {
 
     bool bias1_succ = true;
     for (int i = 0; i < bias1->get_shape()[0]; ++i) {
-        float *loc_bias1 = static_cast<float*>(bias1->location({i}));
-        if (fabs(*loc_bias1 - bias1_ans[i]) > eps) {
-            std::cerr << std::setprecision(8) << RED << "Error: bias1[" << i << "] = " << *loc_bias1
+        float v = bias1_tmp_buffer[i];
+        if (fabs(bias1_ans[i] - v) > eps) {
+            std::cerr << std::setprecision(8) << RED << "Error: bias1[" << i << "] = " << v
                       << ", bias1_ans[" << i << "] = " << bias1_ans[i] << RESET << std::endl;
             bias1_succ = false;
         }
@@ -913,6 +1031,17 @@ void test_adam() {
     if (bias1_succ) {
         std::cout << GREEN << "test_adam bias1 succ" << RESET << std::endl;
     }
+
+    ::free(input_tmp_buffer);
+    ::free(w_tmp_buffer);
+    ::free(bias_tmp_buffer);
+    ::free(w1_tmp_buffer);
+    ::free(bias1_tmp_buffer);
+    ::free(labels_tmp_buffer);
+    ::free(nw_grad_tmp_buffer);
+    ::free(nb_grad_tmp_buffer);
+    ::free(nw1_grad_tmp_buffer);
+    ::free(nb1_grad_tmp_buffer);
 
     destruct_env();
 }
@@ -1654,7 +1783,7 @@ void test_gpu() {
     test_cross_entropy_backward();
     test_gpu_cross_entropy_backward_with_cpu();
     test_bp();
-    // test_adam();
+    test_adam();
     // test_mlp();
 }
 
