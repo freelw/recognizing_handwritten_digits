@@ -163,9 +163,10 @@ int main(int argc, char *argv[]) {
     int opt;
     int epochs = 10;
     int batch_size = 100;
+    int gpu = 0;
     float lr = 0.001;
 
-    while ((opt = getopt(argc, argv, "e:l:b:")) != -1) {
+    while ((opt = getopt(argc, argv, "e:l:b:g:")) != -1) {
         switch (opt) {
             case 'e':
                 epochs = atoi(optarg);
@@ -176,11 +177,15 @@ int main(int argc, char *argv[]) {
             case 'b':
                 batch_size = atoi(optarg);
                 break;
+            case 'g':
+                gpu = atoi(optarg);
+                break;
             default:
                 std::cerr << "Usage: " << argv[0] << " -f <corpus> -c <checpoint> -e <epochs>" << std::endl;
                 return 1;
         }
     }
+    use_gpu(gpu == 1);
     construct_env();
     if (epochs > 0) {
         train(epochs, lr, batch_size);
