@@ -1492,7 +1492,7 @@ Tensor *test_cross_entropy_backward_with_cpu_base(int m, int n) {
 void test_gpu_cross_entropy_backward_with_cpu() {
     use_gpu(false);
     construct_env();
-    int m = 1;
+    int m = 103;
     int n = 10;
     Tensor *cpu_res = test_cross_entropy_backward_with_cpu_base(m, n);
     auto cpu_res_size = cpu_res->size();

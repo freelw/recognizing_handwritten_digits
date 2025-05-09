@@ -207,7 +207,8 @@ __global__ void cross_entropy_backward(
         for (int i = 0; i < N; ++i) {
             float val = Md[row * Md_stride0 + i * Md_stride1];
             grad[row * grad_stride0 + i * grad_stride1] = i == label ?
-                expf(val - max) / sum - 1 : expf(val - max) / sum;
+                (expf(val - max) / sum - 1) / M :
+                expf(val - max) / sum / M ;
         }
     }
 }
