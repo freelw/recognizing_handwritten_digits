@@ -246,11 +246,47 @@ void CUDAOps::sum(Tensor *lhs, Tensor *res, int dim) {
 }
 
 void CUDAOps::relu(Tensor *lhs, Tensor *res) {
-    assert(false); // Not implemented yet
+    assert(lhs != nullptr);
+    assert(res != nullptr);
+
+    int length = lhs->length();
+
+    auto shape = lhs->get_shape();
+    auto res_shape = res->get_shape();
+    assert(shape == res_shape);
+
+    dim3 gridDim(
+        (length + TILE_WIDTH - 1) / TILE_WIDTH
+    );
+    dim3 blockDim(TILE_WIDTH);
+
+    tensor_relu<<<gridDim, blockDim>>>(
+        (float *)lhs->get_data(),
+        (float *)res->get_data(),
+        length
+    );
 }
 
 void CUDAOps::reluPrime(Tensor *lhs, Tensor *res) {
-    assert(false); // Not implemented yet
+    assert(lhs != nullptr);
+    assert(res != nullptr);
+
+    int length = lhs->length();
+
+    auto shape = lhs->get_shape();
+    auto res_shape = res->get_shape();
+    assert(shape == res_shape);
+
+    dim3 gridDim(
+        (length + TILE_WIDTH - 1) / TILE_WIDTH
+    );
+    dim3 blockDim(TILE_WIDTH);
+
+    tensor_relu_prime<<<gridDim, blockDim>>>(
+        (float *)lhs->get_data(),
+        (float *)res->get_data(),
+        length
+    );
 }
 
 void CUDAOps::crossEntropy(Tensor *lhs, const Tensor *labels, Tensor *maxs, Tensor *sums, Tensor *res) {

@@ -76,6 +76,14 @@ __global__ void cross_entropy_backward(
     int grad_stride0, int grad_stride1
 );
 
+__global__ void tensor_relu(
+    float *Md, float *Nd, int M
+);
+
+__global__ void tensor_relu_prime(
+    float *Md, float *Nd, int M
+);
+
 #endif // GCC_ASAN
 
 #endif // V5_TENSOR_BACKENDS_GPU_KERNEL_CUH

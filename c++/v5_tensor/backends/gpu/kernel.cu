@@ -213,4 +213,26 @@ __global__ void cross_entropy_backward(
     }
 }
 
+__global__ void tensor_relu(
+    float *Md, float *Nd, int M
+) {
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index >= M) {
+        return;
+    } else {
+        Nd[index] = fmaxf(Md[index], 0.f);
+    }
+}
+
+__global__ void tensor_relu_prime(
+    float *Md, float *Nd, int M
+) {
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index >= M) {
+        return;
+    } else {
+        Nd[index] = Md[index] > 0.f ? 1.f : 0.f;
+    }
+}
+
 #endif // GCC_ASAN

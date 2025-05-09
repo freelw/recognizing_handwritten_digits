@@ -503,7 +503,13 @@ void test_bp() {
     gDoActions();
 
     const float eps = 1e-5f;
-    bool loss_succ = fabs(static_cast<float*>(nres->get_tensor()->get_data())[0] - 18.360287f) < eps;
+    float loss = 0;
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(&loss),
+        nres->get_tensor(),
+        sizeof(float)
+    );
+    bool loss_succ = fabs(loss - 18.360287f) < eps;
     if (loss_succ) {
         std::cout << GREEN << "test_cross_entropy succ" << RESET << std::endl;
     } else {
