@@ -9,8 +9,6 @@
 #include "model/mlp.h"
 
 #define INPUT_LAYER_SIZE 784
-#define TRAIN_IMAGES_NUM 50000
-#define TEST_IMAGES_NUM 10000
 
 void print_progress(const std::string &prefix, uint i, uint tot) {
     std::cout << "\r" << prefix << " [" << i << "/" << tot << "]" << std::flush;
@@ -78,7 +76,7 @@ void train(int epochs, float lr, int batch_size) {
     const std::vector<std::vector<unsigned char>> & train_images = loader.getTrainImages();
     const std::vector<unsigned char> & train_labels = loader.getTrainLabels();
     assert(train_images.size() % batch_size == 0);
-    assert(TRAIN_IMAGES_NUM + TEST_IMAGES_NUM == train_images.size());
+    // assert(TRAIN_IMAGES_NUM + TEST_IMAGES_NUM == train_images.size());
     for (int epoch = 0; epoch < epochs; ++epoch) {
         float loss_sum = 0;
         int offset = 0;
@@ -118,7 +116,7 @@ void train(int epochs, float lr, int batch_size) {
         offset = TRAIN_IMAGES_NUM;
         print_progress("evaluating :", offset-TRAIN_IMAGES_NUM, TEST_IMAGES_NUM);
         int correct = 0;
-        while (offset < train_images.size()) {
+        while (offset < TRAIN_IMAGES_NUM + TEST_IMAGES_NUM) {
             assign_inputs(
                 inputs,
                 static_cast<float*>(inputs_tmp_buffer),

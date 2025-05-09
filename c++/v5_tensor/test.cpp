@@ -1092,19 +1092,28 @@ void test_mlp() {
         0.001f
     );
 
-    Tensor *input = allocTensor({2, 784}, "input");
-    Tensor *labels = allocTensor({2}, "labels", INT32);
+    Tensor *input = allocTensor({100, 784}, "input");
+    Tensor *labels = allocTensor({100}, "labels", INT32);
     auto n_input = graph::allocNode(input);
     auto res = mlp.forward(n_input)->CrossEntropy(labels);
     zero_grad();
+    insert_boundary_action();
     res->backward();
     adam.clip_grad(1.0f);
     adam.step();
     // printAllTensors();
-    // printAllActions();
+    printAllActions();
     allocMemAndInitTensors();
-    gDoActions();
-    gDoActions();
+    for (int i = 0; i < 10; ++ i) {
+        gDoActions();
+        float loss = 0;
+        g_backend_ops->cp_from_device(
+            reinterpret_cast<char*>(&loss),
+            res->get_tensor(),
+            sizeof(float)
+        );
+        std::cout << "loss : " << loss << std::endl;
+    }
 
     auto w1_tensor = mlp.get_parameters()[0]->get_w();
     auto w2_tensor = mlp.get_parameters()[1]->get_w();
@@ -1138,6 +1147,7 @@ void test_mlp() {
     } else {
         std::cout << RED << "test_mlp once action failed" << RESET << std::endl;
     }
+
     destruct_env();
 }
 

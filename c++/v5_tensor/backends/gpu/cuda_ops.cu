@@ -310,6 +310,10 @@ void CUDAOps::crossEntropy(Tensor *lhs, const Tensor *labels, Tensor *maxs, Tens
 
     auto lstrides = lhs->get_strides();
 
+    this->memset((float *)res->get_data(), 0, res->size());
+    this->memset((float *)maxs->get_data(), 0, maxs->size());
+    this->memset((float *)sums->get_data(), 0, sums->size());
+
     dim3 gridDim(
         (lhs->get_shape()[0] + TILE_WIDTH - 1) / TILE_WIDTH
     );
