@@ -155,6 +155,8 @@ void CUDAOps::at(Tensor *lhs, const Tensor *rhs, Tensor *res) {
     const int stride_P0 = res_strides[0];
     const int stride_P1 = res_strides[1];
 
+    this->memset((float *)res->get_data(), 0, res->size());
+
     dim3 gridDim(
         (P + TILE_WIDTH - 1) / TILE_WIDTH,
         (M + TILE_WIDTH - 1) / TILE_WIDTH
@@ -320,6 +322,11 @@ void CUDAOps::crossEntropy(Tensor *lhs, const Tensor *labels, Tensor *maxs, Tens
 
     dim3 blockDim(TILE_WIDTH);
 
+    // std::cout << "lhs->get_shape()[0]" << lhs->get_shape()[0] << std::endl;
+    // std::cout << "lhs->get_shape()[1]" << lhs->get_shape()[1] << std::endl;
+    // std::cout << "lstrides[0]" << lstrides[0] << std::endl;
+    // std::cout << "lstrides[1]" << lstrides[1] << std::endl;
+
     cross_entropy<<<gridDim, blockDim, TILE_WIDTH*sizeof(float)>>>(
         (float *)lhs->get_data(),
         (int32_t *)labels->get_data(),
@@ -381,7 +388,7 @@ void CUDAOps::calcAllGradNorm(const std::vector<Tensor*> &grads, Tensor *norm) {
             (length + TILE_WIDTH - 1) / TILE_WIDTH
         );
         dim3 blockDim(TILE_WIDTH);
-        tensor_l2_norm<<<gridDim, blockDim, TILE_WIDTH>>>(
+        tensor_l2_norm<<<gridDim, blockDim, TILE_WIDTH*sizeof(float)>>>(
             (float *)grad->get_data(),
             (float *)norm->get_data(),
             length

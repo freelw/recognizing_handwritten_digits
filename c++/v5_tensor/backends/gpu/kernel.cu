@@ -181,7 +181,7 @@ __global__ void cross_entropy(
             sum += expf(val - max);
         }
         sums[row] = sum;
-        int label = labels[row];
+        int32_t label = labels[row];
         float zt = Md[row * stride0 + label * stride1];
         tmp_loss = -zt + max + logf(sum);
     }

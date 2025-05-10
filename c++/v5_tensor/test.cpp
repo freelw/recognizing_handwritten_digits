@@ -1092,8 +1092,8 @@ void test_mlp() {
         0.001f
     );
 
-    Tensor *input = allocTensor({100, 784}, "input");
-    Tensor *labels = allocTensor({100}, "labels", INT32);
+    Tensor *input = allocTensor({1, 784}, "input");
+    Tensor *labels = allocTensor({1}, "labels", INT32);
     auto n_input = graph::allocNode(input);
     auto res = mlp.forward(n_input)->CrossEntropy(labels);
     zero_grad();
@@ -1104,7 +1104,7 @@ void test_mlp() {
     // printAllTensors();
     printAllActions();
     allocMemAndInitTensors();
-    for (int i = 0; i < 10; ++ i) {
+    for (int i = 0; i < 500; ++ i) {
         gDoActions();
         float loss = 0;
         g_backend_ops->cp_from_device(

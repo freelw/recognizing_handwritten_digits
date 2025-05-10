@@ -7,6 +7,7 @@
 #include "dataloader/mnist_loader_base.h"
 #include "optimizers/adam.h"
 #include "model/mlp.h"
+#include <string.h>
 
 #define INPUT_LAYER_SIZE 784
 
@@ -22,6 +23,9 @@ void assign_inputs(
     for (int i = 0; i < batch_size; ++i) {
         for (int j = 0; j < INPUT_LAYER_SIZE; ++j) {
             tmp_buffer[i * INPUT_LAYER_SIZE + j] = static_cast<float>(data[offset + i][j]) / 256.0f;
+            assert(tmp_buffer[i * INPUT_LAYER_SIZE + j] >= 0.0f);
+            assert(tmp_buffer[i * INPUT_LAYER_SIZE + j] <= 1.0f);
+            // tmp_buffer[i * INPUT_LAYER_SIZE + j] = 0;
         }
     }
     g_backend_ops->cp_to_device(
@@ -38,8 +42,11 @@ void assign_labels(
     const std::vector<unsigned char> & train_labels) {
 
     assert(labels->get_dtype() == INT32);
+    // std::cout << std::endl;
     for (int i = 0; i < batch_size; ++i) {
         tmp_buffer[i] = static_cast<int32_t>(train_labels[offset + i]);
+        // std::cout << "labels[" << i << "] : " << static_cast<int>(train_labels[offset + i]) << " " << tmp_buffer[i] << std::endl;
+        // tmp_buffer[i] = 0;
     }
     g_backend_ops->cp_to_device(
         labels,
@@ -71,6 +78,7 @@ void train(int epochs, float lr, int batch_size) {
 
     allocMemAndInitTensors();
     float *inputs_tmp_buffer = static_cast<float*>(::malloc(inputs->size()));
+    std::cout << "inputs size : " << inputs->size() << std::endl;
     int32_t *labels_tmp_buffer = static_cast<int32_t*>(::malloc(labels->size()));
     float *evaluate_tmp_buffer = static_cast<float*>(::malloc(forward_res->get_tensor()->size()));
     const std::vector<std::vector<unsigned char>> & train_images = loader.getTrainImages();
@@ -83,6 +91,7 @@ void train(int epochs, float lr, int batch_size) {
         int loop_times = 0;
         std::string prefix = "epoch : " + std::to_string(epoch);
         print_progress(prefix, offset, TRAIN_IMAGES_NUM);
+        
         while (offset < TRAIN_IMAGES_NUM) {
             assign_inputs(
                 inputs,
@@ -98,6 +107,8 @@ void train(int epochs, float lr, int batch_size) {
                 batch_size,
                 train_labels
             );
+            // std::cout << "inputs length : " << inputs->length() << std::endl;
+            // std::cout << "labels length : " << labels->length() << std::endl;
             offset += batch_size;
             gDoActions();
             float loss_val = 0;
@@ -161,7 +172,7 @@ int main(int argc, char *argv[]) {
     int opt;
     int epochs = 10;
     int batch_size = 100;
-    int gpu = 0;
+    int gpu = 1;
     float lr = 0.001;
 
     while ((opt = getopt(argc, argv, "e:l:b:g:")) != -1) {
