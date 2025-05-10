@@ -125,6 +125,7 @@ void CPUOps::mul(Tensor *lhs, const Tensor *rhs, Tensor *res) {
     assert(lhs != nullptr);
     assert(rhs != nullptr);
     assert(res != nullptr);
+    assert(lhs->get_rank() == 2);
 
     auto lshape = lhs->get_shape();
     auto rshape = rhs->get_shape();
@@ -156,6 +157,8 @@ void CPUOps::sum(Tensor *lhs, Tensor *res, int dim) {
     assert(dim == 0);
 
     auto lstrides = lhs->get_strides();
+    assert(lhs->get_rank() == 2);
+    assert(res->get_rank() == 1);
 
     for (int i = 0; i < shape[1]; ++i) {
         static_cast<float*>(res->get_data())[i] = 0;
@@ -202,6 +205,7 @@ void CPUOps::crossEntropy(Tensor *lhs, const Tensor *labels, Tensor *maxs, Tenso
     assert(res->get_shape().size() == 1);
     assert(lhs->get_shape()[0] == labels->get_shape()[0]);
     assert(lhs->get_shape()[0] == maxs->get_shape()[0]);
+    
     assert(lhs->get_shape()[0] == sums->get_shape()[0]);
     assert(res->get_shape()[0] == 1);
 
@@ -233,7 +237,7 @@ void CPUOps::crossEntropy(Tensor *lhs, const Tensor *labels, Tensor *maxs, Tenso
         static_cast<float*>(sums->get_data())[j] = sum;
         loss_value += -(zt - max - std::log(sum));
     }
-    static_cast<float*>(res->get_data())[0] = loss_value / batch_size;
+    static_cast<float*>(res->get_data())[0] = loss_value;
 }
 
 void CPUOps::crossEntropyBackward(Tensor *lhs, const Tensor *labels, Tensor *maxs, Tensor *sums, Tensor *res) {
@@ -280,7 +284,7 @@ void CPUOps::calcAllGradNorm(const std::vector<Tensor*> &grads, Tensor *norm) {
     assert(norm->get_shape().size() == 1);
     assert(norm->get_shape()[0] == 1);
     float *norm_data = static_cast<float*>(norm->get_data());
-    norm_data[0] = std::sqrt(tmp);
+    norm_data[0] = tmp;
 }
 
 void CPUOps::clipGrad(Tensor *grad, const Tensor *norm, float grad_clip_val) {
@@ -290,7 +294,7 @@ void CPUOps::clipGrad(Tensor *grad, const Tensor *norm, float grad_clip_val) {
     assert(norm->get_shape()[0] == 1);
     float *data = static_cast<float*>(grad->get_data());
     float *norm_data = static_cast<float*>(norm->get_data());
-    float norm_value = norm_data[0];
+    float norm_value = std::sqrt(norm_data[0]);
     if (norm_value > grad_clip_val) {
         for (int i = 0; i < grad->length(); ++i) {
             data[i] *= grad_clip_val / norm_value;
@@ -340,6 +344,17 @@ void CPUOps::init_weight_uniform(Tensor *tensor, float sigma) {
     
 }
 
+void CPUOps::fill(Tensor *tensor, float value) {
+    assert(tensor != nullptr);
+    assert(tensor->get_data() != nullptr);
+    assert(tensor->length() > 0);
+
+    float *data = static_cast<float*>(tensor->get_data());
+    for (int i = 0; i < tensor->length(); ++i) {
+        data[i] = value;
+    }   
+}
+
 void* CPUOps::alloc(size_t size) {
     return malloc(size);
 }
@@ -348,7 +363,7 @@ void CPUOps::memset(void* ptr, int value, size_t size) {
     ::memset(ptr, value, size);
 }
 
-void CPUOps::memcpy(void* dst, const void* src, size_t size) {
+void CPUOps::cp_device_to_device(void* dst, const void* src, size_t size) {
     ::memcpy(dst, src, size);
 }
 

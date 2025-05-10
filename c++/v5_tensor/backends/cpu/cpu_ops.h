@@ -22,11 +22,12 @@ class CPUOps : public BackendOps {
         void adamStep(Tensor *w, Tensor *grad, Tensor *m, Tensor *v, int t, float lr, float beta1, float beta2, float epsilon) override;
         void init_weight_gauss(Tensor *tensor, float mean, float sigma) override;
         void init_weight_uniform(Tensor *tensor, float sigma) override;
+        void fill(Tensor *tensor, float value) override;
 
         // Memory management
         void* alloc(size_t size) override;
         void memset(void* ptr, int value, size_t size) override;
-        void memcpy(void* dst, const void* src, size_t size) override;
+        void cp_device_to_device(void* dst, const void* src, size_t size) override;
         void free(void* ptr) override;
         void cp_to_device(Tensor *dst_tensor, char *src, size_t size) override;
         void cp_from_device(char *dst, Tensor *src_tensor, size_t size) override;

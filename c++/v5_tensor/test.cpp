@@ -7,10 +7,90 @@
 #include "common.h"
 #include <iomanip>
 #include <cmath>
+#include <unistd.h>
 
 const std::string RED = "\033[31m";
 const std::string GREEN = "\033[32m";
 const std::string RESET = "\033[0m";
+
+void init_w_wt(Tensor *w, Tensor *wt) {
+    std::vector<int> w_strides = w->get_strides();
+    std::vector<int> wt_strides = wt->get_strides();
+    float *w_tmp_buffer = static_cast<float*>(::malloc(w->size()));
+    float *wt_tmp_buffer = static_cast<float*>(::malloc(wt->size()));
+    auto shape = w->get_shape();
+
+    for (int i = 0; i < shape[0]; ++ i) {
+        for (int j = 0; j < shape[1]; ++ j) {
+            float *loc_w_tmp = w_tmp_buffer + i * w_strides[0] + j * w_strides[1];
+            float *loc_wt_tmp = wt_tmp_buffer + j * wt_strides[0] + i * wt_strides[1];
+            float v = i * shape[1] + j;
+            *loc_w_tmp = v;
+            *loc_wt_tmp = v;
+        }
+    }
+    g_backend_ops->cp_to_device(
+        w,
+        reinterpret_cast<char*>(w_tmp_buffer),
+        w->size()
+    );
+    g_backend_ops->cp_to_device(
+        wt,
+        reinterpret_cast<char*>(wt_tmp_buffer),
+        wt->size()
+    );
+    ::free(wt_tmp_buffer);
+    ::free(w_tmp_buffer);
+}
+
+bool compare_res_wi_wt_ans(
+    Tensor *res_wi_tensor, Tensor *res_wti_tensor,
+    float *res_ans, const std::string & test_name) {
+    const float eps = 1e-5f;
+
+    auto res_wi_data = static_cast<float*>(res_wi_tensor->get_data());
+    auto res_wti_data = static_cast<float*>(res_wti_tensor->get_data());
+
+    float *res_wi_tmp_buffer = static_cast<float*>(::malloc(res_wi_tensor->size()));
+    float *res_wti_tmp_buffer = static_cast<float*>(::malloc(res_wti_tensor->size()));
+
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(res_wi_tmp_buffer),
+        res_wi_tensor,
+        res_wi_tensor->size()
+    );
+
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(res_wti_tmp_buffer),
+        res_wti_tensor,
+        res_wti_tensor->size()
+    );
+
+    bool succ = true;
+    if (res_ans != nullptr) {
+        for (int i = 0; i < res_wi_tensor->length(); ++ i) {
+            if (fabs(res_wi_tmp_buffer[i] - res_ans[i]) > eps) {
+                succ = false;
+                std::cerr << RED << test_name << " Error: res_wi[" << i << "] = " << res_wi_tmp_buffer[i]
+                        << ", res_ans[" << i << "] = " << res_ans[i] << RESET << std::endl;
+            }
+        }
+    }
+    for (int i = 0; i < res_wi_tensor->length(); ++ i) {
+        if (fabs(res_wi_tmp_buffer[i] - res_wti_tmp_buffer[i]) > eps) {
+            succ = false;
+            std::cerr << RED << test_name << "Error: res_wi[" << i << "] = " << res_wi_tmp_buffer[i]
+                      << ", res_wti[" << i << "] = " << res_wti_tmp_buffer[i] << RESET << std::endl;
+        }
+    }
+    if (succ) {
+        std::cout << GREEN << test_name << " succ" << RESET << std::endl;
+    }
+
+    ::free(res_wti_tmp_buffer);
+    ::free(res_wi_tmp_buffer);
+    return succ;
+}
 
 void test_at() {
     construct_env();
@@ -26,32 +106,45 @@ void test_at() {
     // printAllActions();
     allocMemAndInitTensors();
     input->fill(1.0f);
-    for (int i = 0; i < 3; ++ i) {
-        for (int j = 0; j < 4; ++ j) {
-            float *loc_w = w->location({i, j});
-            float *loc_wt = wt->location({j, i});
-            float v = i * 4 + j;
-            *loc_w = v;
-            *loc_wt = v;
-        }
-    }
+    init_w_wt(w, wt);
     gDoActions();
     auto res_wi_tensor = res_wi->get_tensor();
     auto res_wti_tensor = res_wti->get_tensor();
     auto res_wi_data = static_cast<float*>(res_wi_tensor->get_data());
     auto res_wti_data = static_cast<float*>(res_wti_tensor->get_data());
-    const float eps = 1e-5f;
-    bool succ = true;
-    for (int i = 0; i < res_wi_tensor->length(); ++ i) {
-        if (fabs(res_wi_data[i] - res_wti_data[i]) > eps) {
-            succ = false;
-            std::cerr << RED << "Error: res_wi[" << i << "] = " << res_wi_data[i]
-                      << ", res_wti[" << i << "] = " << res_wti_data[i] << RESET << std::endl;
-        }
-    }
-    if (succ) {
-        std::cout << GREEN << "test_at succ " << RESET << std::endl;
-    }
+    float res_ans[8] = {12,15,18,21,12,15,18,21};
+    compare_res_wi_wt_ans(
+        res_wi_tensor, res_wti_tensor,
+        res_ans, "test_at"
+    );
+    destruct_env();
+}
+
+void test_at_1() {
+    construct_env();
+    int m = 330;
+    int n = 620;
+    int p = 102;
+    Tensor *input = allocTensor({m, n}, "input");
+    Tensor *w = allocTensor({n, p}, "w");
+    Tensor *wt = allocTensor({p, n}, "wt");
+    graph::Node *ni = graph::allocNode(input);
+    graph::Node *nw = graph::allocNode(w);
+    graph::Node *nwt = graph::allocNode(wt);
+    auto res_wi = ni->at(nw);
+    auto res_wti = ni->at(nwt->transpose());
+    allocMemAndInitTensors();
+    input->fill(1.0f);
+    init_w_wt(w, wt);
+    gDoActions();
+    auto res_wi_tensor = res_wi->get_tensor();
+    auto res_wti_tensor = res_wti->get_tensor();
+    auto res_wi_data = static_cast<float*>(res_wi_tensor->get_data());
+    auto res_wti_data = static_cast<float*>(res_wti_tensor->get_data());
+    compare_res_wi_wt_ans(
+        res_wi_tensor, res_wti_tensor,
+        nullptr, "test_at_1"
+    );
     destruct_env();
 }
 
@@ -72,30 +165,29 @@ void test_add() {
     // printAllActions();
     allocMemAndInitTensors();
     input->fill(0.1f);
-    for (int i = 0; i < 3; ++ i) {
-        for (int j = 0; j < 4; ++ j) {
-            float *loc_w = w->location({i, j});
-            float *loc_wt = wt->location({j, i});
-            float v = i * 4 + j;
-            *loc_w = v;
-            *loc_wt = v;
-        }
-    }
+    init_w_wt(w, wt);
     gDoActions();
-    auto res_wi_data = static_cast<float*>(res_wi_tensor->get_data());
-    auto res_wti_data = static_cast<float*>(res_wti_tensor->get_data());
+
     const float eps = 1e-5f;
-    bool succ = true;
-    for (int i = 0; i < res_wi_tensor->length(); ++ i) {
-        if (fabs(res_wi_data[i] - res_wti_data[i]) > eps) {
-            succ = false;
-            std::cerr << RED << "Error: res_wi[" << i << "] = " << res_wi_data[i]
-                      << ", res_wti[" << i << "] = " << res_wti_data[i] << RESET << std::endl;
-        }
-    }
-    if (succ) {
-        std::cout << GREEN << "test_add succ" << RESET << std::endl;
-    }
+    float res_ans[12] = {
+        0.1000000015,
+        1.100000024,
+        2.099999905,
+        3.099999905,
+        4.099999905,
+        5.099999905,
+        6.099999905,
+        7.099999905,
+        8.100000381,
+        9.100000381,
+        10.10000038,
+        11.10000038
+    };
+
+    compare_res_wi_wt_ans(
+        res_wi_tensor, res_wti_tensor,
+        res_ans, "test_add"
+    );
     destruct_env();
 }
 
@@ -116,30 +208,13 @@ void test_add_eq() {
     allocMemAndInitTensors();
     input->fill(0.1f);
     input1->fill(0.1f);
-    for (int i = 0; i < 3; ++ i) {
-        for (int j = 0; j < 4; ++ j) {
-            float *loc_w = w->location({i, j});
-            float *loc_wt = wt->location({j, i});
-            float v = i * 4 + j;
-            *loc_w = v;
-            *loc_wt = v;
-        }
-    }
+    init_w_wt(w, wt);
     gDoActions();
-    auto input_data = static_cast<float*>(input->get_data());
-    auto input1_data = static_cast<float*>(input1->get_data());
-    const float eps = 1e-5f;
-    bool succ = true;
-    for (int i = 0; i < input->length(); ++ i) {
-        if (fabs(input_data[i] - input1_data[i]) > eps) {
-            succ = false;
-            std::cerr << RED << "Error: res_wi[" << i << "] = " << input_data[i]
-                      << ", res_wti[" << i << "] = " << input1_data[i] << RESET << std::endl;
-        }
-    }
-    if (succ) {
-        std::cout << GREEN << "test_add_eq succ" << RESET << std::endl;
-    }
+
+    compare_res_wi_wt_ans(
+        input, input1,
+        nullptr, "test_add_eq"
+    );
 
     destruct_env();
 }
@@ -161,30 +236,12 @@ void test_expand_add() {
     // printAllActions();
     allocMemAndInitTensors();
     bias->fill(0.1f);
-    for (int i = 0; i < 3; ++ i) {
-        for (int j = 0; j < 4; ++ j) {
-            float *loc_w = w->location({i, j});
-            float *loc_wt = wt->location({j, i});
-            float v = i * 4 + j;
-            *loc_w = v;
-            *loc_wt = v;
-        }
-    }
+    init_w_wt(w, wt);
     gDoActions();
-    auto res_wi_data = static_cast<float*>(res_wi_tensor->get_data());
-    auto res_wti_data = static_cast<float*>(res_wti_tensor->get_data());
-    const float eps = 1e-5f;
-    bool succ = true;
-    for (int i = 0; i < res_wi_tensor->length(); ++ i) {
-        if (fabs(res_wi_data[i] - res_wti_data[i]) > eps) {
-            succ = false;
-            std::cerr << RED << "Error: res_wi[" << i << "] = " << res_wi_data[i]
-                      << ", res_wti[" << i << "] = " << res_wti_data[i] << RESET << std::endl;
-        }
-    }
-    if (succ) {
-        std::cout << GREEN << "test_expand_add succ" << RESET << std::endl;
-    }
+    compare_res_wi_wt_ans(
+        res_wi_tensor, res_wti_tensor,
+        nullptr, "test_expand_add"
+    );
     destruct_env();
 }
 
@@ -205,30 +262,13 @@ void test_mul() {
     // printAllActions();
     allocMemAndInitTensors();
     input->fill(0.1f);
-    for (int i = 0; i < 3; ++ i) {
-        for (int j = 0; j < 4; ++ j) {
-            float *loc_w = w->location({i, j});
-            float *loc_wt = wt->location({j, i});
-            float v = i * 4 + j;
-            *loc_w = v;
-            *loc_wt = v;
-        }
-    }
+    init_w_wt(w, wt);
     gDoActions();
-    auto res_wi_data = static_cast<float*>(res_wi_tensor->get_data());
-    auto res_wti_data = static_cast<float*>(res_wti_tensor->get_data());
-    const float eps = 1e-5f;
-    bool succ = true;
-    for (int i = 0; i < res_wi_tensor->length(); ++ i) {
-        if (fabs(res_wi_data[i] - res_wti_data[i]) > eps) {
-            succ = false;
-            std::cerr << RED << "Error: res_wi[" << i << "] = " << res_wi_data[i]
-                      << ", res_wti[" << i << "] = " << res_wti_data[i] << RESET << std::endl;
-        }
-    }
-    if (succ) {
-        std::cout << GREEN << "test_mul succ" << RESET << std::endl;
-    }
+
+    compare_res_wi_wt_ans(
+        res_wi_tensor, res_wti_tensor,
+        nullptr, "test_mul"
+    );
     destruct_env();
 }
 
@@ -236,8 +276,8 @@ void test_sum() {
     construct_env();
     Tensor *w = allocTensor({3, 4}, "w");
     Tensor *wt = allocTensor({4, 3}, "wt");
-    Tensor *res_wi_tensor = allocTensor({3, 4}, "res_wi");
-    Tensor *res_wti_tensor = allocTensor({3, 4}, "res_wti");
+    Tensor *res_wi_tensor = allocTensor({4}, "res_wi");
+    Tensor *res_wti_tensor = allocTensor({4}, "res_wti");
     gCreateAction(
         new SumAction(w, res_wi_tensor, 0)
     );
@@ -247,31 +287,27 @@ void test_sum() {
     // printAllTensors();
     // printAllActions();
     allocMemAndInitTensors();
-    for (int i = 0; i < 3; ++ i) {
-        for (int j = 0; j < 4; ++ j) {
-            float *loc_w = w->location({i, j});
-            float *loc_wt = wt->location({j, i});
-            float v = i * 4 + j;
-            *loc_w = v;
-            *loc_wt = v;
-        }
-    }
+    init_w_wt(w, wt);
     gDoActions();
-    auto res_wi_data = static_cast<float*>(res_wi_tensor->get_data());
-    auto res_wti_data = static_cast<float*>(res_wti_tensor->get_data());
-    const float eps = 1e-5f;
-    bool succ = true;
-    for (int i = 0; i < res_wi_tensor->length(); ++ i) {
-        if (fabs(res_wi_data[i] - res_wti_data[i]) > eps) {
-            succ = false;
-            std::cerr << RED << "Error: res_wi[" << i << "] = " << res_wi_data[i]
-                      << ", res_wti[" << i << "] = " << res_wti_data[i] << RESET << std::endl;
-        }
-    }
-    if (succ) {
-        std::cout << GREEN << "test_sum succ" << RESET << std::endl;
-    }
+    compare_res_wi_wt_ans(
+        res_wi_tensor, res_wti_tensor,
+        nullptr, "test_sum"
+    );
     destruct_env();
+}
+void init_labels(Tensor *labels) {
+    auto size = labels->size();
+    int32_t *labels_tmp_buffer = static_cast<int32_t*>(::malloc(size));
+    auto length = labels->length();
+    for (int i = 0; i < length; ++ i) {
+        labels_tmp_buffer[i] = i;
+    }
+    g_backend_ops->cp_to_device(
+        labels,
+        reinterpret_cast<char*>(labels_tmp_buffer),
+        size
+    );
+    ::free(labels_tmp_buffer);
 }
 
 void test_cross_entropy() {
@@ -294,35 +330,14 @@ void test_cross_entropy() {
     // printAllTensors();
     // printAllActions();
     allocMemAndInitTensors();
-    for (int i = 0; i < 3; ++ i) {
-        int32_t *loc_labels = reinterpret_cast<int32_t*>(labels->location({i}));
-        *loc_labels = i;
-    }
-    for (int i = 0; i < 3; ++ i) {
-        for (int j = 0; j < 4; ++ j) {
-            float *loc_w = w->location({i, j});
-            float *loc_wt = wt->location({j, i});
-            float v = i * 4 + j;
-            *loc_w = v;
-            *loc_wt = v;
-        }
-    }
+    init_labels(labels);
+    init_w_wt(w, wt);
     
     gDoActions();
-    auto res_wi_data = static_cast<float*>(res_wi_tensor->get_data());
-    auto res_wti_data = static_cast<float*>(res_wti_tensor->get_data());
-    const float eps = 1e-5f;
-    bool succ = true;
-    for (int i = 0; i < res_wi_tensor->length(); ++ i) {
-        if (fabs(res_wi_data[i] - res_wti_data[i]) > eps) {
-            succ = false;
-            std::cerr << RED << "Error: res_wi[" << i << "] = " << res_wi_data[i]
-                      << ", res_wti[" << i << "] = " << res_wti_data[i] << RESET << std::endl;
-        }
-    }
-    if (succ) {
-        std::cout << GREEN << "test_cross_entropy succ" << RESET << std::endl;
-    }
+    compare_res_wi_wt_ans(
+        res_wi_tensor, res_wti_tensor,
+        nullptr, "test_cross_entropy"
+    );
     destruct_env();
 }
 
@@ -354,37 +369,15 @@ void test_cross_entropy_backward() {
     // printAllTensors();
     // printAllActions();
     allocMemAndInitTensors();
-    for (int i = 0; i < 3; ++ i) {
-        int32_t *loc_labels = reinterpret_cast<int32_t*>(labels->location({i}));
-        *loc_labels = i;
-    }
-    for (int i = 0; i < 3; ++ i) {
-        for (int j = 0; j < 4; ++ j) {
-            float *loc_w = w->location({i, j});
-            float *loc_wt = wt->location({j, i});
-            float v = i * 4 + j;
-            *loc_w = v;
-            *loc_wt = v;
-        }
-    }
+    init_labels(labels);
+    init_w_wt(w, wt);
     
     gDoActions();
 
-    auto grad_wi_data = static_cast<float*>(grad_wi->get_data());
-    auto grad_wti_data = static_cast<float*>(grad_wti->get_data());
-
-    const float eps = 1e-5f;
-    bool succ = true;
-    for (int i = 0; i < grad_wi->length(); ++ i) {
-        if (fabs(grad_wi_data[i] - grad_wti_data[i]) > eps) {
-            std::cerr << RED << "Error: grad_wi[" << i << "] = " << grad_wi_data[i]
-                      << ", grad_wti[" << i << "] = " << grad_wti_data[i] << RESET << std::endl;
-            succ = false;
-        }
-    }
-    if (succ) {
-        std::cout << GREEN << "test_cross_entropy_backward succ" << RESET << std::endl;
-    }
+    compare_res_wi_wt_ans(
+        grad_wi, grad_wti,
+        nullptr, "test_cross_entropy_backward"
+    );
     destruct_env();
 }
 
@@ -423,47 +416,104 @@ void test_bp() {
     // printAllActions();
     allocMemAndInitTensors();
 
-    float *input_data = static_cast<float*>(input->get_data());
-    input_data[0] = 10.0f;
-    input_data[1] = 11.0f;
+    auto input_size = input->size();
+    auto w_size = w->size();
+    auto bias_size = bias->size();
+    auto w1_size = w1->size();
+    auto bias1_size = bias1->size();
+    auto labels_size = labels->size();
 
-    int32_t *labels_data = static_cast<int32_t*>(labels->get_data());
-    labels_data[0] = 1;
+    float *input_tmp_buffer = static_cast<float*>(::malloc(input_size));
+    float *w_tmp_buffer = static_cast<float*>(::malloc(w_size));
+    float *bias_tmp_buffer = static_cast<float*>(::malloc(bias_size));
+    float *w1_tmp_buffer = static_cast<float*>(::malloc(w1_size));
+    float *bias1_tmp_buffer = static_cast<float*>(::malloc(bias1_size));
+    int32_t *labels_tmp_buffer = static_cast<int32_t*>(::malloc(labels_size));
 
-    float *w_data = static_cast<float*>(w->get_data());
+    input_tmp_buffer[0] = 10.0f;
+    input_tmp_buffer[1] = 11.0f;
+
+    labels_tmp_buffer[0] = 1;
+
     for (int i = 0; i < w->length(); ++i) {
-        w_data[i] = 0.1f;
+        w_tmp_buffer[i] = 0.1f;
     }
 
-    float *bias_data = static_cast<float*>(bias->get_data());
     for (int i = 0; i < bias->length(); ++i) {
-        bias_data[i] = 0.1f;
+        bias_tmp_buffer[i] = 0.1f;
     }
 
-    float *w1_data = static_cast<float*>(w1->get_data());
     for (int i = 0; i < w1->length(); ++i) {
-        w1_data[i] = 0.1f;
+        w1_tmp_buffer[i] = 0.1f;
     }
 
-    float *bias1_data = static_cast<float*>(bias1->get_data());
     for (int i = 0; i < bias1->length(); ++i) {
-        bias1_data[i] = 0.1f;
+        bias1_tmp_buffer[i] = 0.1f;
     }
 
-    w_data[0] = 0.9f;
-    w_data[1*w->get_shape()[1]] = -0.9f;
+    w_tmp_buffer[0] = 0.9f;
+    w_tmp_buffer[1*w->get_shape()[1]] = -0.9f;
 
-    w1_data[0] = 0.9f;
-    w1_data[1*w1->get_shape()[1]] = -0.9f;
+    w1_tmp_buffer[0] = 0.9f;
+    w1_tmp_buffer[1*w1->get_shape()[1]] = -0.9f;
+
+    g_backend_ops->cp_to_device(
+        input,
+        reinterpret_cast<char*>(input_tmp_buffer),
+        input_size
+    );
+
+    g_backend_ops->cp_to_device(
+        labels,
+        reinterpret_cast<char*>(labels_tmp_buffer),
+        labels_size
+    );
+
+    g_backend_ops->cp_to_device(
+        w,
+        reinterpret_cast<char*>(w_tmp_buffer),
+        w_size
+    );
+
+    g_backend_ops->cp_to_device(
+        bias,
+        reinterpret_cast<char*>(bias_tmp_buffer),
+        bias_size
+    );
+
+    g_backend_ops->cp_to_device(
+        w1,
+        reinterpret_cast<char*>(w1_tmp_buffer),
+        w1_size
+    );
+
+    g_backend_ops->cp_to_device(
+        bias1,
+        reinterpret_cast<char*>(bias1_tmp_buffer),
+        bias1_size
+    );
+
+    ::free(input_tmp_buffer);
+    ::free(w_tmp_buffer);
+    ::free(bias_tmp_buffer);
+    ::free(w1_tmp_buffer);
+    ::free(bias1_tmp_buffer);
+    ::free(labels_tmp_buffer);
 
     gDoActions();
 
     const float eps = 1e-5f;
-    bool loss_succ = fabs(static_cast<float*>(nres->get_tensor()->get_data())[0] - 18.360287f) < eps;
+    float loss = 0;
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(&loss),
+        nres->get_tensor(),
+        sizeof(float)
+    );
+    bool loss_succ = fabs(loss - 18.360287f) < eps;
     if (loss_succ) {
         std::cout << GREEN << "test_cross_entropy succ" << RESET << std::endl;
     } else {
-        std::cout << RED << "test_cross_entropy failed" << RESET << std::endl;
+        std::cout << RED << "test_cross_entropy failed loss : " << loss << RESET << std::endl;
     }
 
     auto nw_grad = nw->get_grad();
@@ -471,17 +521,60 @@ void test_bp() {
     auto nw1_grad = nw1->get_grad();
     auto nb1_grad = nb1->get_grad();
 
+    auto nw_grad_size = nw_grad->size();
+    auto nb_grad_size = nb_grad->size();
+    auto nw1_grad_size = nw1_grad->size();
+    auto nb1_grad_size = nb1_grad->size();
+
+    auto nw_grad_shape = nw_grad->get_shape();
+    auto nb_grad_shape = nb_grad->get_shape();
+    auto nw1_grad_shape = nw1_grad->get_shape();
+    auto nb1_grad_shape = nb1_grad->get_shape();
+
+    auto nw_grad_strides = nw_grad->get_strides();
+    auto nw1_grad_strides = nw1_grad->get_strides();
+
+    float *nw_grad_tmp_buffer = static_cast<float*>(::malloc(nw_grad_size));
+    float *nb_grad_tmp_buffer = static_cast<float*>(::malloc(nb_grad_size));
+    float *nw1_grad_tmp_buffer = static_cast<float*>(::malloc(nw1_grad_size));
+    float *nb1_grad_tmp_buffer = static_cast<float*>(::malloc(nb1_grad_size));
+
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(nw_grad_tmp_buffer),
+        nw_grad,
+        nw_grad_size
+    );
+
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(nb_grad_tmp_buffer),
+        nb_grad,
+        nb_grad_size
+    );
+
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(nw1_grad_tmp_buffer),
+        nw1_grad,
+        nw1_grad_size
+    );
+
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(nb1_grad_tmp_buffer),
+        nb1_grad,
+        nb1_grad_size
+    );
+
     bool nw_grad_succ = true;
     float nw_grad_ans[3][2] {
         17.997713,  19.797485,
         0.0000e+00,  0.0000e+00,
         -2.3890e-08, -2.6279e-08
     };
-    for (int i = 0; i < nw_grad->get_shape()[0]; ++i) {
-        for (int j = 0; j < nw_grad->get_shape()[1]; ++j) {
-            float *loc_grad = static_cast<float*>(nw_grad->location({i, j}));
-            if (fabs(*loc_grad - nw_grad_ans[i][j]) > eps) {
-                std::cerr << std::setprecision(8) << RED << "Error: nw_grad[" << i << "][" << j << "] = " << *loc_grad
+
+    for (int i = 0; i < nw_grad_shape[0]; ++i) {
+        for (int j = 0; j < nw_grad_shape[1]; ++j) {
+            auto v = nw_grad_tmp_buffer[i * nw_grad_strides[0] + j * nw_grad_strides[1]];
+            if (fabs(nw_grad_ans[i][j] - v) > eps) {
+                std::cerr << std::setprecision(8) << RED << "Error: nw_grad[" << i << "][" << j << "] = " << v
                           << ", nw_grad_ans[" << i << "][" << j << "] = " << nw_grad_ans[i][j] << RESET << std::endl;
                 nw_grad_succ = false;
             }
@@ -499,10 +592,10 @@ void test_bp() {
         -2.3810571e-09
     };
     
-    for (int i = 0; i < nb_grad->get_shape()[0]; ++i) {
-        float *loc_grad = static_cast<float*>(nb_grad->location({i}));
-        if (fabs(*loc_grad - nb_grad_ans[i]) > eps) {
-            std::cerr << std::setprecision(8) << RED << "Error: nb_grad[" << i << "] = " << *loc_grad
+    for (int i = 0; i < nb_grad_shape[0]; ++i) {
+        float v = nb_grad_tmp_buffer[i];
+        if (fabs(nb_grad_ans[i] - v) > eps) {
+            std::cerr << std::setprecision(8) << RED << "Error: nb_grad[" << i << "] = " << v
                       << ", nb_grad_ans[" << i << "] = " << nb_grad_ans[i] << RESET << std::endl;
             nb_grad_succ = false;
         }
@@ -518,20 +611,19 @@ void test_bp() {
         0.002914961, 0, 0.00062871695
     };
 
-    bool nbw1_grad_succ = true;
+    bool nw1_grad_succ = true;
 
-    for (int i = 0; i < nw1_grad->get_shape()[0]; ++i) {
-        for (int j = 0; j < nw1_grad->get_shape()[1]; ++j) {
-            float *loc_grad = static_cast<float*>(nw1_grad->location({i, j}));
-            if (fabs(*loc_grad - nw1_grad_ans[i][j]) > eps) {
-                std::cerr << std::setprecision(8) << RED << "Error: nw1_grad[" << i << "][" << j << "] = " << *loc_grad
+    for (int i = 0; i < nw1_grad_shape[0]; ++i) {
+        for (int j = 0; j < nw1_grad_shape[1]; ++j) {
+            auto v = nw1_grad_tmp_buffer[i * nw1_grad_strides[0] + j * nw1_grad_strides[1]];
+            if (fabs(nw1_grad_ans[i][j] - v) > eps) {
+                std::cerr << std::setprecision(8) << RED << "Error: nw1_grad[" << i << "][" << j << "] = " << v
                           << ", nw1_grad_ans[" << i << "][" << j << "] = " << nw1_grad_ans[i][j] << RESET << std::endl;
-                nbw1_grad_succ = false;
+                nw1_grad_succ = false;
             }
         }
     }
-
-    if (nbw1_grad_succ) {
+    if (nw1_grad_succ) {
         std::cout << GREEN << "test_cross_entropy nw1_grad succ" << RESET << std::endl;
     }
 
@@ -542,10 +634,11 @@ void test_bp() {
     };
 
     bool nb1_grad_succ = true;
-    for (int i = 0; i < nb1_grad->get_shape()[0]; ++i) {
-        float *loc_grad = static_cast<float*>(nb1_grad->location({i}));
-        if (fabs(*loc_grad - nb1_grad_ans[i]) > eps) {
-            std::cerr << std::setprecision(8) << RED << "Error: nb1_grad[" << i << "] = " << *loc_grad
+
+    for (int i = 0; i < nb1_grad_shape[0]; ++i) {
+        float v = nb1_grad_tmp_buffer[i];
+        if (fabs(nb1_grad_ans[i] - v) > eps) {
+            std::cerr << std::setprecision(8) << RED << "Error: nb1_grad[" << i << "] = " << v
                       << ", nb1_grad_ans[" << i << "] = " << nb1_grad_ans[i] << RESET << std::endl;
             nb1_grad_succ = false;
         }
@@ -554,6 +647,11 @@ void test_bp() {
     if (nb1_grad_succ) {
         std::cout << GREEN << "test_cross_entropy nb1_grad succ" << RESET << std::endl;
     }
+
+    ::free(nw_grad_tmp_buffer);
+    ::free(nb_grad_tmp_buffer);
+    ::free(nw1_grad_tmp_buffer);
+    ::free(nb1_grad_tmp_buffer);
 
     destruct_env();
 }
@@ -612,46 +710,93 @@ void test_adam() {
 
     zero_grad();
     nres->backward();
-    Tensor *norm_before_clip = calc_norm(params);
+    // Tensor *norm_before_clip = calc_norm(params);
     adam.clip_grad(1.0f);
-    Tensor *norm_after_clip = calc_norm(params);
+    // Tensor *norm_after_clip = calc_norm(params);
     adam.step();
     // printAllTensors();
     // printAllActions();
     allocMemAndInitTensors();
 
-    float *input_data = static_cast<float*>(input->get_data());
-    input_data[0] = 10.0f;
-    input_data[1] = 11.0f;
+    auto input_size = input->size();
+    auto w_size = w->size();
+    auto bias_size = bias->size();
+    auto w1_size = w1->size();
+    auto bias1_size = bias1->size();
+    auto labels_size = labels->size();
 
-    int32_t *labels_data = static_cast<int32_t*>(labels->get_data());
-    labels_data[0] = 1;
+    auto w_strides = w->get_strides();
+    auto w1_strides = w1->get_strides();
 
-    float *w_data = static_cast<float*>(w->get_data());
+    float *input_tmp_buffer = static_cast<float*>(::malloc(input_size));
+    float *w_tmp_buffer = static_cast<float*>(::malloc(w_size));
+    float *bias_tmp_buffer = static_cast<float*>(::malloc(bias_size));
+    float *w1_tmp_buffer = static_cast<float*>(::malloc(w1_size));
+    float *bias1_tmp_buffer = static_cast<float*>(::malloc(bias1_size));
+    int32_t *labels_tmp_buffer = static_cast<int32_t*>(::malloc(labels_size));
+
+    input_tmp_buffer[0] = 10.0f;
+    input_tmp_buffer[1] = 11.0f;
+
+    labels_tmp_buffer[0] = 1;
+
     for (int i = 0; i < w->length(); ++i) {
-        w_data[i] = 0.1f;
+        w_tmp_buffer[i] = 0.1f;
     }
 
-    float *bias_data = static_cast<float*>(bias->get_data());
     for (int i = 0; i < bias->length(); ++i) {
-        bias_data[i] = 0.1f;
+        bias_tmp_buffer[i] = 0.1f;
     }
 
-    float *w1_data = static_cast<float*>(w1->get_data());
     for (int i = 0; i < w1->length(); ++i) {
-        w1_data[i] = 0.1f;
+        w1_tmp_buffer[i] = 0.1f;
     }
 
-    float *bias1_data = static_cast<float*>(bias1->get_data());
     for (int i = 0; i < bias1->length(); ++i) {
-        bias1_data[i] = 0.1f;
+        bias1_tmp_buffer[i] = 0.1f;
     }
 
-    w_data[0] = 0.9f;
-    w_data[1*w->get_shape()[1]] = -0.9f;
+    w_tmp_buffer[0] = 0.9f;
+    w_tmp_buffer[1*w->get_shape()[1]] = -0.9f;
 
-    w1_data[0] = 0.9f;
-    w1_data[1*w1->get_shape()[1]] = -0.9f;
+    w1_tmp_buffer[0] = 0.9f;
+    w1_tmp_buffer[1*w1->get_shape()[1]] = -0.9f;
+
+    g_backend_ops->cp_to_device(
+        input,
+        reinterpret_cast<char*>(input_tmp_buffer),
+        input_size
+    );
+
+    g_backend_ops->cp_to_device(
+        labels,
+        reinterpret_cast<char*>(labels_tmp_buffer),
+        labels_size
+    );
+
+    g_backend_ops->cp_to_device(
+        w,
+        reinterpret_cast<char*>(w_tmp_buffer),
+        w_size
+    );
+
+    g_backend_ops->cp_to_device(
+        bias,
+        reinterpret_cast<char*>(bias_tmp_buffer),
+        bias_size
+    );
+
+    g_backend_ops->cp_to_device(
+        w1,
+        reinterpret_cast<char*>(w1_tmp_buffer),
+        w1_size
+    );
+
+    g_backend_ops->cp_to_device(
+        bias1,
+        reinterpret_cast<char*>(bias1_tmp_buffer),
+        bias1_size
+    );
 
     gDoActions();
 
@@ -660,6 +805,72 @@ void test_adam() {
     auto nw1_grad = nw1->get_grad();
     auto nb1_grad = nb1->get_grad();
 
+    auto nw_grad_size = nw_grad->size();
+    auto nb_grad_size = nb_grad->size();
+    auto nw1_grad_size = nw1_grad->size();
+    auto nb1_grad_size = nb1_grad->size();
+
+    auto nw_grad_shape = nw_grad->get_shape();
+    auto nb_grad_shape = nb_grad->get_shape();
+    auto nw1_grad_shape = nw1_grad->get_shape();
+    auto nb1_grad_shape = nb1_grad->get_shape();
+
+    auto nw_grad_strides = nw_grad->get_strides();
+    auto nw1_grad_strides = nw1_grad->get_strides();
+
+    float *nw_grad_tmp_buffer = static_cast<float*>(::malloc(nw_grad_size));
+    float *nb_grad_tmp_buffer = static_cast<float*>(::malloc(nb_grad_size));
+    float *nw1_grad_tmp_buffer = static_cast<float*>(::malloc(nw1_grad_size));
+    float *nb1_grad_tmp_buffer = static_cast<float*>(::malloc(nb1_grad_size));
+
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(nw_grad_tmp_buffer),
+        nw_grad,
+        nw_grad_size
+    );
+
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(nb_grad_tmp_buffer),
+        nb_grad,
+        nb_grad_size
+    );
+
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(nw1_grad_tmp_buffer),
+        nw1_grad,
+        nw1_grad_size
+    );
+
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(nb1_grad_tmp_buffer),
+        nb1_grad,
+        nb1_grad_size
+    );
+
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(w_tmp_buffer),
+        w,
+        w_size
+    );
+
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(bias_tmp_buffer),
+        bias,
+        bias_size
+    );
+
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(w1_tmp_buffer),
+        w1,
+        w1_size
+    );
+
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(bias1_tmp_buffer),
+        bias1,
+        bias1_size
+    );
+
     const float eps = 1e-5f;
     bool nw_grad_succ = true;
     float nw_grad_ans[3][2] {
@@ -667,11 +878,11 @@ void test_adam() {
         0, 0,
         -7.771136e-10, -8.5482493e-10,
     };
-    for (int i = 0; i < nw_grad->get_shape()[0]; ++i) {
-        for (int j = 0; j < nw_grad->get_shape()[1]; ++j) {
-            float *loc_grad = static_cast<float*>(nw_grad->location({i, j}));
-            if (fabs(*loc_grad - nw_grad_ans[i][j]) > eps) {
-                std::cerr << std::setprecision(8) << RED << "Error: nw_grad[" << i << "][" << j << "] = " << *loc_grad
+    for (int i = 0; i < nw_grad_shape[0]; ++i) {
+        for (int j = 0; j < nw_grad_shape[1]; ++j) {
+            auto v = nw_grad_tmp_buffer[i * nw_grad_strides[0] + j * nw_grad_strides[1]];
+            if (fabs(nw_grad_ans[i][j] - v) > eps) {
+                std::cerr << std::setprecision(8) << RED << "Error: nw_grad[" << i << "][" << j << "] = " << v
                           << ", nw_grad_ans[" << i << "][" << j << "] = " << nw_grad_ans[i][j] << RESET << std::endl;
                 nw_grad_succ = false;
             }
@@ -688,10 +899,10 @@ void test_adam() {
         -7.7711358e-11
     };
     
-    for (int i = 0; i < nb_grad->get_shape()[0]; ++i) {
-        float *loc_grad = static_cast<float*>(nb_grad->location({i}));
-        if (fabs(*loc_grad - nb_grad_ans[i]) > eps) {
-            std::cerr << std::setprecision(8) << RED << "Error: nb_grad[" << i << "] = " << *loc_grad
+    for (int i = 0; i < nb_grad_shape[0]; ++i) {
+        float v = nb_grad_tmp_buffer[i];
+        if (fabs(nb_grad_ans[i] - v) > eps) {
+            std::cerr << std::setprecision(8) << RED << "Error: nb_grad[" << i << "] = " << v
                       << ", nb_grad_ans[" << i << "] = " << nb_grad_ans[i] << RESET << std::endl;
             nb_grad_succ = false;
         }
@@ -707,20 +918,20 @@ void test_adam() {
         9.5136558e-05, 0, 2.0519647e-05
     };
 
-    bool nbw1_grad_succ = true;
+    bool nw1_grad_succ = true;
 
-    for (int i = 0; i < nw1_grad->get_shape()[0]; ++i) {
-        for (int j = 0; j < nw1_grad->get_shape()[1]; ++j) {
-            float *loc_grad = static_cast<float*>(nw1_grad->location({i, j}));
-            if (fabs(*loc_grad - nw1_grad_ans[i][j]) > eps) {
-                std::cerr << std::setprecision(8) << RED << "Error: nw1_grad[" << i << "][" << j << "] = " << *loc_grad
+    for (int i = 0; i < nw1_grad_shape[0]; ++i) {
+        for (int j = 0; j < nw1_grad_shape[1]; ++j) {
+            auto v = nw1_grad_tmp_buffer[i * nw1_grad_strides[0] + j * nw1_grad_strides[1]];
+            if (fabs(nw1_grad_ans[i][j] - v) > eps) {
+                std::cerr << std::setprecision(8) << RED << "Error: nw1_grad[" << i << "][" << j << "] = " << v
                           << ", nw1_grad_ans[" << i << "][" << j << "] = " << nw1_grad_ans[i][j] << RESET << std::endl;
-                nbw1_grad_succ = false;
+                nw1_grad_succ = false;
             }
         }
     }
 
-    if (nbw1_grad_succ) {
+    if (nw1_grad_succ) {
         std::cout << GREEN << "test_adam clip nw1_grad succ" << RESET << std::endl;
     }
 
@@ -731,10 +942,10 @@ void test_adam() {
     };
 
     bool nb1_grad_succ = true;
-    for (int i = 0; i < nb1_grad->get_shape()[0]; ++i) {
-        float *loc_grad = static_cast<float*>(nb1_grad->location({i}));
-        if (fabs(*loc_grad - nb1_grad_ans[i]) > eps) {
-            std::cerr << std::setprecision(8) << RED << "Error: nb1_grad[" << i << "] = " << *loc_grad
+    for (int i = 0; i < nb1_grad_shape[0]; ++i) {
+        float v = nb1_grad_tmp_buffer[i];
+        if (fabs(nb1_grad_ans[i] - v) > eps) {
+            std::cerr << std::setprecision(8) << RED << "Error: nb1_grad[" << i << "] = " << v
                       << ", nb1_grad_ans[" << i << "] = " << nb1_grad_ans[i] << RESET << std::endl;
             nb1_grad_succ = false;
         }
@@ -753,11 +964,11 @@ void test_adam() {
     bool w_succ = true;
     for (int i = 0; i < w->get_shape()[0]; ++i) {
         for (int j = 0; j < w->get_shape()[1]; ++j) {
-            float *loc_w = static_cast<float*>(w->location({i, j}));
-            if (fabs(*loc_w - w_ans[i][j]) > eps) {
-                std::cerr << std::setprecision(8) << RED << "Error: w[" << i << "][" << j << "] = " << *loc_w
+            auto v = w_tmp_buffer[i * w_strides[0] + j * w_strides[1]];
+            if (fabs(w_ans[i][j] - v) > eps) {
+                std::cerr << std::setprecision(8) << RED << "Error: w[" << i << "][" << j << "] = " << v
                           << ", w_ans[" << i << "][" << j << "] = " << w_ans[i][j] << RESET << std::endl;
-                w_succ = false;
+                w_succ = false;    
             }
         }
     }
@@ -771,9 +982,9 @@ void test_adam() {
     };
     bool bias_succ = true;
     for (int i = 0; i < bias->get_shape()[0]; ++i) {
-        float *loc_bias = static_cast<float*>(bias->location({i}));
-        if (fabs(*loc_bias - bias_ans[i]) > eps) {
-            std::cerr << std::setprecision(8) << RED << "Error: bias[" << i << "] = " << *loc_bias
+        float v = bias_tmp_buffer[i];
+        if (fabs(bias_ans[i] - v) > eps) {
+            std::cerr << std::setprecision(8) << RED << "Error: bias[" << i << "] = " << v
                       << ", bias_ans[" << i << "] = " << bias_ans[i] << RESET << std::endl;
             bias_succ = false;
         }
@@ -792,11 +1003,11 @@ void test_adam() {
     bool w1_succ = true;
     for (int i = 0; i < w1->get_shape()[0]; ++i) {
         for (int j = 0; j < w1->get_shape()[1]; ++j) {
-            float *loc_w1 = static_cast<float*>(w1->location({i, j}));
-            if (fabs(*loc_w1 - w1_ans[i][j]) > eps) {
-                std::cerr << std::setprecision(8) << RED << "Error: w1[" << i << "][" << j << "] = " << *loc_w1
+            auto v = w1_tmp_buffer[i * w1_strides[0] + j * w1_strides[1]];
+            if (fabs(w1_ans[i][j] - v) > eps) {
+                std::cerr << std::setprecision(8) << RED << "Error: w1[" << i << "][" << j << "] = " << v
                           << ", w1_ans[" << i << "][" << j << "] = " << w1_ans[i][j] << RESET << std::endl;
-                w1_succ = false;
+                w1_succ = false;    
             }
         }
     }
@@ -810,9 +1021,9 @@ void test_adam() {
 
     bool bias1_succ = true;
     for (int i = 0; i < bias1->get_shape()[0]; ++i) {
-        float *loc_bias1 = static_cast<float*>(bias1->location({i}));
-        if (fabs(*loc_bias1 - bias1_ans[i]) > eps) {
-            std::cerr << std::setprecision(8) << RED << "Error: bias1[" << i << "] = " << *loc_bias1
+        float v = bias1_tmp_buffer[i];
+        if (fabs(bias1_ans[i] - v) > eps) {
+            std::cerr << std::setprecision(8) << RED << "Error: bias1[" << i << "] = " << v
                       << ", bias1_ans[" << i << "] = " << bias1_ans[i] << RESET << std::endl;
             bias1_succ = false;
         }
@@ -821,25 +1032,51 @@ void test_adam() {
         std::cout << GREEN << "test_adam bias1 succ" << RESET << std::endl;
     }
 
+    ::free(input_tmp_buffer);
+    ::free(w_tmp_buffer);
+    ::free(bias_tmp_buffer);
+    ::free(w1_tmp_buffer);
+    ::free(bias1_tmp_buffer);
+    ::free(labels_tmp_buffer);
+    ::free(nw_grad_tmp_buffer);
+    ::free(nb_grad_tmp_buffer);
+    ::free(nw1_grad_tmp_buffer);
+    ::free(nb1_grad_tmp_buffer);
+
     destruct_env();
 }
 
 float calc_mean(Tensor *tensor) {
     float sum = 0.0f;
-    auto data = static_cast<float*>(tensor->get_data());
+    auto size = tensor->size();
+
+    auto data = static_cast<float*>(::malloc(size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(data),
+        tensor,
+        size
+    );
     for (int i = 0; i < tensor->length(); ++i) {
         sum += data[i];
     }
+    ::free(data);
     return sum / tensor->length();
 }
 
 float calc_std(Tensor *tensor) {
     float mean = calc_mean(tensor);
     float sum = 0.0f;
-    auto data = static_cast<float*>(tensor->get_data());
+    auto size = tensor->size();
+    auto data = static_cast<float*>(::malloc(size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(data),
+        tensor,
+        size
+    );
     for (int i = 0; i < tensor->length(); ++i) {
         sum += (data[i] - mean) * (data[i] - mean);
     }
+    ::free(data);
     return sqrt(sum / tensor->length());
 }
 
@@ -855,19 +1092,28 @@ void test_mlp() {
         0.001f
     );
 
-    Tensor *input = allocTensor({2, 784}, "input");
-    Tensor *labels = allocTensor({2}, "labels", INT32);
+    Tensor *input = allocTensor({1, 784}, "input");
+    Tensor *labels = allocTensor({1}, "labels", INT32);
     auto n_input = graph::allocNode(input);
     auto res = mlp.forward(n_input)->CrossEntropy(labels);
     zero_grad();
+    insert_boundary_action();
     res->backward();
     adam.clip_grad(1.0f);
     adam.step();
     // printAllTensors();
-    // printAllActions();
+    printAllActions();
     allocMemAndInitTensors();
-    gDoActions();
-    gDoActions();
+    for (int i = 0; i < 500; ++ i) {
+        gDoActions();
+        float loss = 0;
+        g_backend_ops->cp_from_device(
+            reinterpret_cast<char*>(&loss),
+            res->get_tensor(),
+            sizeof(float)
+        );
+        std::cout << "loss : " << loss << std::endl;
+    }
 
     auto w1_tensor = mlp.get_parameters()[0]->get_w();
     auto w2_tensor = mlp.get_parameters()[1]->get_w();
@@ -901,10 +1147,11 @@ void test_mlp() {
     } else {
         std::cout << RED << "test_mlp once action failed" << RESET << std::endl;
     }
+
     destruct_env();
 }
 
-void test() {
+void test_cpu() {
     test_at();
     test_add();
     test_add_eq();
@@ -918,12 +1165,674 @@ void test() {
     test_mlp();
 }
 
-int main() {
-    test();
-    freeAllTensors();
-    freeAllTensorViews();
-    graph::freeAllEdges();
-    graph::freeAllNodes();
-    freeAllActions();
+Tensor *test_add_with_cpu_base(int m, int n) {
+    Tensor *input = allocTensor({m, n}, "input");
+    Tensor *w = allocTensor({m, n}, "w");
+    Tensor *res_wi_tensor = allocTensor({m, n}, "res_wi");
+    gCreateAction(
+        new AddAction(input, w, res_wi_tensor)
+    );
+    allocMemAndInitTensors();
+    input->fill(0.1f);
+    std::vector<int> w_strides = w->get_strides();
+    float *w_tmp_buffer = static_cast<float*>(::malloc(w->size()));
+    auto shape = w->get_shape();
+    for (int i = 0; i < shape[0]; ++ i) {
+        for (int j = 0; j < shape[1]; ++ j) {
+            float *loc_w_tmp = w_tmp_buffer + i * w_strides[0] + j * w_strides[1];
+            float v = i * shape[1] + j;
+            *loc_w_tmp = v;
+        }
+    }
+    g_backend_ops->cp_to_device(
+        w,
+        reinterpret_cast<char*>(w_tmp_buffer),
+        w->size()
+    );
+    ::free(w_tmp_buffer);
+    gDoActions();
+    return res_wi_tensor;
+}
+
+Tensor *test_at_with_cpu_base(int m, int n, int p) {
+    Tensor *input = allocTensor({m, n}, "input");
+    Tensor *w = allocTensor({n, p}, "w");
+    Tensor *res_wi_tensor = allocTensor({m, p}, "res_wi");
+    gCreateAction(
+        new AtAction(input, w, res_wi_tensor)
+    );
+    allocMemAndInitTensors();
+    input->fill(0.1f);
+    std::vector<int> w_strides = w->get_strides();
+    float *w_tmp_buffer = static_cast<float*>(::malloc(w->size()));
+    auto shape = w->get_shape();
+    for (int i = 0; i < shape[0]; ++ i) {
+        for (int j = 0; j < shape[1]; ++ j) {
+            float *loc_w_tmp = w_tmp_buffer + i * w_strides[0] + j * w_strides[1];
+            float v = i * shape[1] + j;
+            *loc_w_tmp = v;
+        }
+    }
+    g_backend_ops->cp_to_device(
+        w,
+        reinterpret_cast<char*>(w_tmp_buffer),
+        w->size()
+    );
+    ::free(w_tmp_buffer);
+    gDoActions();
+    return res_wi_tensor;
+}
+
+void test_gpu_add_with_cpu() {
+    use_gpu(false);
+    construct_env();
+    int m = 330;
+    int n = 620;
+    // int m = 10;
+    // int n = 2;
+    Tensor *cpu_res = test_add_with_cpu_base(m, n);
+    auto cpu_res_size = cpu_res->size();
+    auto cpu_res_length = cpu_res->length();
+    float *cpu_res_buffer = static_cast<float*>(::malloc(cpu_res_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(cpu_res_buffer),
+        cpu_res,
+        cpu_res_size
+    );
+    destruct_env();
+    use_gpu(true);
+    construct_env();
+    Tensor *gpu_res = test_add_with_cpu_base(m, n);
+    auto gpu_res_size = gpu_res->size();
+    auto gpu_res_length = gpu_res->length();
+    float *gpu_res_buffer = static_cast<float*>(::malloc(gpu_res_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(gpu_res_buffer),
+        gpu_res,
+        gpu_res_size
+    );
+    destruct_env();
+    assert(cpu_res_size == gpu_res_size);
+    assert(cpu_res_length == gpu_res_length);
+    const float eps = 1e-5f;
+    //compare cpu and gpu result
+    bool succ = true;
+    for (int i = 0; i < cpu_res_length; ++ i) {
+        if (fabs(cpu_res_buffer[i] - gpu_res_buffer[i]) > eps) {
+            std::cerr << RED << "Error: cpu_res[" << i << "] = " << cpu_res_buffer[i]
+                      << ", gpu_res[" << i << "] = " << gpu_res_buffer[i] << RESET << std::endl;
+            succ = false;
+            break;
+        }
+    }
+    if (succ) {
+        std::cout << GREEN << "test_add_with_cpu succ" << RESET << std::endl;
+    }
+    ::free(gpu_res_buffer);
+    ::free(cpu_res_buffer);
+}
+
+void test_gpu_at_with_cpu() {
+    use_gpu(false);
+    construct_env();
+    int m = 103;
+    int n = 80;
+    int p = 102;
+    Tensor *cpu_res = test_at_with_cpu_base(m, n, p);
+    auto cpu_res_size = cpu_res->size();
+    auto cpu_res_length = cpu_res->length();
+    float *cpu_res_buffer = static_cast<float*>(::malloc(cpu_res_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(cpu_res_buffer),
+        cpu_res,
+        cpu_res_size
+    );
+    destruct_env();
+    use_gpu(true);
+    construct_env();
+    Tensor *gpu_res = test_at_with_cpu_base(m, n, p);
+    auto gpu_res_size = gpu_res->size();
+    auto gpu_res_length = gpu_res->length();
+    float *gpu_res_buffer = static_cast<float*>(::malloc(gpu_res_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(gpu_res_buffer),
+        gpu_res,
+        gpu_res_size
+    );
+    destruct_env();
+    assert(cpu_res_size == gpu_res_size);
+    assert(cpu_res_length == gpu_res_length);
+    const float eps = 1e-3f;
+    //compare cpu and gpu result
+    float sum = 0.0f;
+    for (int i = 0; i < cpu_res_length; ++ i) {
+        float diff = cpu_res_buffer[i] - gpu_res_buffer[i];
+        sum += std::pow(diff, 2);
+    }
+    float rsme = std::sqrt(sum / cpu_res_length);
+    bool succ = rsme < eps;
+    if (succ) {
+        std::cout << GREEN << "test_at_with_cpu succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_at_with_cpu failed, rsme = " << rsme << RESET << std::endl;
+    }
+    ::free(gpu_res_buffer);
+    ::free(cpu_res_buffer);
+}
+
+Tensor *test_add_eq_1d_with_cpu_base(int m) {
+    Tensor *input = allocTensor({m}, "input");
+    Tensor *w = allocTensor({m}, "w");
+    gCreateAction(
+        new AddEqAction(input, w)
+    );
+    allocMemAndInitTensors();
+    input->fill(0.1f);
+    std::vector<int> w_strides = w->get_strides();
+    float *w_tmp_buffer = static_cast<float*>(::malloc(w->size()));
+    auto shape = w->get_shape();
+    for (int i = 0; i < shape[0]; ++ i) {
+        float *loc_w_tmp = w_tmp_buffer + i * w_strides[0];
+        float v = i;
+        *loc_w_tmp = v;
+    }
+    g_backend_ops->cp_to_device(
+        w,
+        reinterpret_cast<char*>(w_tmp_buffer),
+        w->size()
+    );
+    ::free(w_tmp_buffer);
+    gDoActions();
+    return input;
+}
+
+Tensor *test_add_eq_2d_with_cpu_base(int m, int n) {
+    Tensor *input = allocTensor({m, n}, "input");
+    Tensor *w = allocTensor({m, n}, "w");
+    gCreateAction(
+        new AddEqAction(input, w)
+    );
+    allocMemAndInitTensors();
+    input->fill(0.1f);
+    std::vector<int> w_strides = w->get_strides();
+    float *w_tmp_buffer = static_cast<float*>(::malloc(w->size()));
+    auto shape = w->get_shape();
+    for (int i = 0; i < shape[0]; ++ i) {
+        for (int j = 0; j < shape[1]; ++ j) {
+            float *loc_w_tmp = w_tmp_buffer + i * w_strides[0] + j * w_strides[1];
+            float v = i * shape[1] + j;
+            *loc_w_tmp = v;
+        }
+    }
+    g_backend_ops->cp_to_device(
+        w,
+        reinterpret_cast<char*>(w_tmp_buffer),
+        w->size()
+    );
+    ::free(w_tmp_buffer);
+    gDoActions();
+    return input;
+}
+
+void test_gpu_add_eq_1d_with_cpu() {
+    use_gpu(false);
+    construct_env();
+    int m = 103;
+    Tensor *cpu_res = test_add_eq_1d_with_cpu_base(m);
+    auto cpu_res_size = cpu_res->size();
+    auto cpu_res_length = cpu_res->length();
+    float *cpu_res_buffer = static_cast<float*>(::malloc(cpu_res_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(cpu_res_buffer),
+        cpu_res,
+        cpu_res_size
+    );
+    destruct_env();
+    use_gpu(true);
+    construct_env();
+    Tensor *gpu_res = test_add_eq_1d_with_cpu_base(m);
+    auto gpu_res_size = gpu_res->size();
+    auto gpu_res_length = gpu_res->length();
+    float *gpu_res_buffer = static_cast<float*>(::malloc(gpu_res_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(gpu_res_buffer),
+        gpu_res,
+        gpu_res_size
+    );
+    destruct_env();
+    assert(cpu_res_size == gpu_res_size);
+    assert(cpu_res_length == gpu_res_length);
+    const float eps = 1e-5f;
+    //compare cpu and gpu result
+    bool succ = true;
+    for (int i = 0; i < cpu_res_length; ++ i) {
+        if (fabs(cpu_res_buffer[i] - gpu_res_buffer[i]) > eps) {
+            std::cerr << RED << "Error: cpu_res[" << i << "] = " << cpu_res_buffer[i]
+                      << ", gpu_res[" << i << "] = " << gpu_res_buffer[i] << RESET << std::endl;
+            succ = false;
+            break;
+        }
+    }
+    if (succ) {
+        std::cout << GREEN << "test_add_eq_1d_with_cpu succ" << RESET << std::endl;
+    }
+}
+
+void test_gpu_add_eq_2d_with_cpu() {
+    use_gpu(false);
+    construct_env();
+    int m = 103;
+    int n = 80;
+    Tensor *cpu_res = test_add_eq_2d_with_cpu_base(m, n);
+    auto cpu_res_size = cpu_res->size();
+    auto cpu_res_length = cpu_res->length();
+    float *cpu_res_buffer = static_cast<float*>(::malloc(cpu_res_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(cpu_res_buffer),
+        cpu_res,
+        cpu_res_size
+    );
+    destruct_env();
+    use_gpu(true);
+    construct_env();
+    Tensor *gpu_res = test_add_eq_2d_with_cpu_base(m, n);
+    auto gpu_res_size = gpu_res->size();
+    auto gpu_res_length = gpu_res->length();
+    float *gpu_res_buffer = static_cast<float*>(::malloc(gpu_res_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(gpu_res_buffer),
+        gpu_res,
+        gpu_res_size
+    );
+    destruct_env();
+    assert(cpu_res_size == gpu_res_size);
+    assert(cpu_res_length == gpu_res_length);
+    const float eps = 1e-5f;
+    //compare cpu and gpu result
+    bool succ = true;
+    for (int i = 0; i < cpu_res_length; ++ i) {
+        if (fabs(cpu_res_buffer[i] - gpu_res_buffer[i]) > eps) {
+            std::cerr << RED << "Error: cpu_res[" << i << "] = " << cpu_res_buffer[i]
+                      << ", gpu_res[" << i << "] = " << gpu_res_buffer[i] << RESET << std::endl;
+            succ = false;
+            break;
+        }
+    }
+    if (succ) {
+        std::cout << GREEN << "test_add_eq_2d_with_cpu succ" << RESET << std::endl;
+    }
+}
+
+Tensor *test_expand_add_with_cpu_base(int m, int n) {
+    Tensor *input = allocTensor({m, n}, "input");
+    Tensor *w = allocTensor({n}, "w");
+    Tensor *res_wi_tensor = allocTensor({m, n}, "res_wi");
+    gCreateAction(
+        new ExpandAddAction(input, w, res_wi_tensor)
+    );
+    allocMemAndInitTensors();
+    input->fill(0.1f);
+    std::vector<int> w_strides = w->get_strides();
+    float *w_tmp_buffer = static_cast<float*>(::malloc(w->size()));
+    auto shape = w->get_shape();
+    for (int i = 0; i < shape[0]; ++ i) {
+        w_tmp_buffer[i] = i;
+    }
+    g_backend_ops->cp_to_device(
+        w,
+        reinterpret_cast<char*>(w_tmp_buffer),
+        w->size()
+    );
+    ::free(w_tmp_buffer);
+    gDoActions();
+    return res_wi_tensor;
+}
+
+void test_gpu_expand_add_with_cpu() {
+    use_gpu(false);
+    construct_env();
+    int m = 103;
+    int n = 80;
+    Tensor *cpu_res = test_expand_add_with_cpu_base(m, n);
+    auto cpu_res_size = cpu_res->size();
+    auto cpu_res_length = cpu_res->length();
+    float *cpu_res_buffer = static_cast<float*>(::malloc(cpu_res_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(cpu_res_buffer),
+        cpu_res,
+        cpu_res_size
+    );
+    destruct_env();
+    use_gpu(true);
+    construct_env();
+    Tensor *gpu_res = test_expand_add_with_cpu_base(m, n);
+    auto gpu_res_size = gpu_res->size();
+    auto gpu_res_length = gpu_res->length();
+    float *gpu_res_buffer = static_cast<float*>(::malloc(gpu_res_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(gpu_res_buffer),
+        gpu_res,
+        gpu_res_size
+    );
+    destruct_env();
+    assert(cpu_res_size == gpu_res_size);
+    assert(cpu_res_length == gpu_res_length);
+    const float eps = 1e-5f;
+    //compare cpu and gpu result
+    bool succ = true;
+    for (int i = 0; i < cpu_res_length; ++ i) {
+        if (fabs(cpu_res_buffer[i] - gpu_res_buffer[i]) > eps) {
+            std::cerr << RED << "Error: cpu_res[" << i << "] = " << cpu_res_buffer[i]
+                      << ", gpu_res[" << i << "] = " << gpu_res_buffer[i] << RESET << std::endl;
+            succ = false;
+            break;
+        }
+    }
+    if (succ) {
+        std::cout << GREEN << "test_expand_add_with_cpu succ" << RESET << std::endl;
+    }
+}
+
+Tensor *test_mul_with_cpu_base(int m, int n) {
+    Tensor *input = allocTensor({m, n}, "input");
+    Tensor *w = allocTensor({m, n}, "w");
+    Tensor *res_wi_tensor = allocTensor({m, n}, "res_wi");
+    gCreateAction(
+        new MulAction(input, w, res_wi_tensor)
+    );
+    allocMemAndInitTensors();
+    input->fill(0.1f);
+    std::vector<int> w_strides = w->get_strides();
+    float *w_tmp_buffer = static_cast<float*>(::malloc(w->size()));
+    auto shape = w->get_shape();
+    for (int i = 0; i < shape[0]; ++ i) {
+        for (int j = 0; j < shape[1]; ++ j) {
+            float *loc_w_tmp = w_tmp_buffer + i * w_strides[0] + j * w_strides[1];
+            float v = i * shape[1] + j;
+            *loc_w_tmp = v;
+        }
+    }
+    g_backend_ops->cp_to_device(
+        w,
+        reinterpret_cast<char*>(w_tmp_buffer),
+        w->size()
+    );
+    ::free(w_tmp_buffer);
+    gDoActions();
+    return res_wi_tensor;
+}
+
+void test_gpu_mul_with_cpu() {
+    use_gpu(false);
+    construct_env();
+    int m = 103;
+    int n = 80;
+    Tensor *cpu_res = test_mul_with_cpu_base(m, n);
+    auto cpu_res_size = cpu_res->size();
+    auto cpu_res_length = cpu_res->length();
+    float *cpu_res_buffer = static_cast<float*>(::malloc(cpu_res_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(cpu_res_buffer),
+        cpu_res,
+        cpu_res_size
+    );
+    destruct_env();
+    use_gpu(true);
+    construct_env();
+    Tensor *gpu_res = test_mul_with_cpu_base(m, n);
+    auto gpu_res_size = gpu_res->size();
+    auto gpu_res_length = gpu_res->length();
+    float *gpu_res_buffer = static_cast<float*>(::malloc(gpu_res_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(gpu_res_buffer),
+        gpu_res,
+        gpu_res_size
+    );
+    destruct_env();
+    assert(cpu_res_size == gpu_res_size);
+    assert(cpu_res_length == gpu_res_length);
+    const float eps = 1e-5f;
+    //compare cpu and gpu result
+    bool succ = true;
+    for (int i = 0; i < cpu_res_length; ++ i) {
+        if (fabs(cpu_res_buffer[i] - gpu_res_buffer[i]) > eps) {
+            std::cerr << RED << "Error: cpu_res[" << i << "] = " << cpu_res_buffer[i]
+                      << ", gpu_res[" << i << "] = " << gpu_res_buffer[i] << RESET << std::endl;
+            succ = false;
+            break;
+        }
+    }
+    if (succ) {
+        std::cout << GREEN << "test_mul_with_cpu succ" << RESET << std::endl;
+    }
+}
+
+Tensor *test_gpu_sum_with_cpu_base(int m, int n) {
+    Tensor *input = allocTensor({m, n}, "input");
+    Tensor *res_wi_tensor = allocTensor({n}, "res_wi");
+    gCreateAction(
+        new SumAction(input, res_wi_tensor, 0)
+    );
+    allocMemAndInitTensors();
+    input->fill(0.1f);
+    gDoActions();
+    return res_wi_tensor;
+}
+
+void test_gpu_sum_with_cpu() {
+    use_gpu(false);
+    construct_env();
+    int m = 103;
+    int n = 80;
+    Tensor *cpu_res = test_gpu_sum_with_cpu_base(m, n);
+    auto cpu_res_size = cpu_res->size();
+    auto cpu_res_length = cpu_res->length();
+    float *cpu_res_buffer = static_cast<float*>(::malloc(cpu_res_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(cpu_res_buffer),
+        cpu_res,
+        cpu_res_size
+    );
+    destruct_env();
+    use_gpu(true);
+    construct_env();
+    Tensor *gpu_res = test_gpu_sum_with_cpu_base(m, n);
+    auto gpu_res_size = gpu_res->size();
+    auto gpu_res_length = gpu_res->length();
+    float *gpu_res_buffer = static_cast<float*>(::malloc(gpu_res_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(gpu_res_buffer),
+        gpu_res,
+        gpu_res_size
+    );
+    destruct_env();
+    assert(cpu_res_size == gpu_res_size);
+    assert(cpu_res_length == gpu_res_length);
+    const float eps = 1e-5f;
+    //compare cpu and gpu result
+    bool succ = true;
+    for (int i = 0; i < cpu_res_length; ++ i) {
+        if (fabs(cpu_res_buffer[i] - gpu_res_buffer[i]) > eps) {
+            std::cerr << RED << "Error: cpu_res[" << i << "] = " << cpu_res_buffer[i]
+                      << ", gpu_res[" << i << "] = " << gpu_res_buffer[i] << RESET << std::endl;
+            succ = false;
+            break;
+        }
+    }
+    if (succ) {
+        std::cout << GREEN << "test_sum_with_cpu succ" << RESET << std::endl;
+    }
+}
+
+Tensor *test_cross_entropy_with_cpu_base(int m, int n) {
+    Tensor *input = allocTensor({m, n}, "input");
+    Tensor *labels = allocTensor({m}, "labels", INT32);
+    Tensor *res_wi_tensor = allocTensor({1}, "res_wi");
+    Tensor *sums = allocTensor({m}, "sums");
+    Tensor *maxs = allocTensor({m}, "maxs");
+    gCreateAction(
+        new CrossEntropyAction(input, labels, sums, maxs, res_wi_tensor)
+    );
+    allocMemAndInitTensors();
+    input->fill(0.1f);
+    gDoActions();
+    return res_wi_tensor;
+}
+
+void test_gpu_cross_entropy_with_cpu() {
+    use_gpu(false);
+    construct_env();
+    int m = 50;
+    int n = 10;
+    Tensor *cpu_res = test_cross_entropy_with_cpu_base(m, n);
+    auto cpu_res_size = cpu_res->size();
+    auto cpu_res_length = cpu_res->length();
+    float *cpu_res_buffer = static_cast<float*>(::malloc(cpu_res_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(cpu_res_buffer),
+        cpu_res,
+        cpu_res_size
+    );
+    destruct_env();
+    use_gpu(true);
+    construct_env();
+    Tensor *gpu_res = test_cross_entropy_with_cpu_base(m, n);
+    auto gpu_res_size = gpu_res->size();
+    auto gpu_res_length = gpu_res->length();
+    float *gpu_res_buffer = static_cast<float*>(::malloc(gpu_res_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(gpu_res_buffer),
+        gpu_res,
+        gpu_res_size
+    );
+    destruct_env();
+    assert(cpu_res_size == gpu_res_size);
+    assert(cpu_res_length == gpu_res_length);
+    const float eps = 1e-3f;
+    //compare cpu and gpu result
+    bool succ = true;
+    for (int i = 0; i < cpu_res_length; ++ i) {
+        if (fabs(cpu_res_buffer[i] - gpu_res_buffer[i]) > eps) {
+            std::cerr << std::setprecision(8) << RED << "Error: cpu_res[" << i << "] = " << cpu_res_buffer[i]
+                      << ", gpu_res[" << i << "] = " << gpu_res_buffer[i] << RESET << std::endl;
+            succ = false;
+            break;
+        }
+    }
+    if (succ) {
+        std::cout << GREEN << "test_cross_entropy_with_cpu succ" << RESET << std::endl;
+    }
+}
+
+Tensor *test_cross_entropy_backward_with_cpu_base(int m, int n) {
+    Tensor *labels = allocTensor({m}, "input", INT32);
+    Tensor *w = allocTensor({m, n}, "w");
+    Tensor *res_wi_tensor = allocTensor({1}, "res_wi");
+    Tensor *maxs_wi = allocTensor({m}, "maxs_wi");
+    Tensor *sums_wi = allocTensor({m}, "sums_wi");
+    Tensor *grad_wi = allocTensor({m, n}, "grad_wi");
+    gCreateAction(
+        new CrossEntropyAction(w, labels, maxs_wi, sums_wi, res_wi_tensor)
+    );
+    gCreateAction(
+        new CrossEntropyBackwardAction(w, labels, maxs_wi, sums_wi, grad_wi)
+    );
+    allocMemAndInitTensors();
+    w->fill(0.1f);
+    gDoActions();
+    return grad_wi;
+}
+
+void test_gpu_cross_entropy_backward_with_cpu() {
+    use_gpu(false);
+    construct_env();
+    int m = 103;
+    int n = 10;
+    Tensor *cpu_res = test_cross_entropy_backward_with_cpu_base(m, n);
+    auto cpu_res_size = cpu_res->size();
+    auto cpu_res_length = cpu_res->length();
+    float *cpu_res_buffer = static_cast<float*>(::malloc(cpu_res_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(cpu_res_buffer),
+        cpu_res,
+        cpu_res_size
+    );
+    destruct_env();
+    use_gpu(true);
+    construct_env();
+    Tensor *gpu_res = test_cross_entropy_backward_with_cpu_base(m, n);
+    auto gpu_res_size = gpu_res->size();
+    auto gpu_res_length = gpu_res->length();
+    float *gpu_res_buffer = static_cast<float*>(::malloc(gpu_res_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(gpu_res_buffer),
+        gpu_res,
+        gpu_res_size
+    );
+    destruct_env();
+    assert(cpu_res_size == gpu_res_size);
+    assert(cpu_res_length == gpu_res_length);
+    const float eps = 1e-5f;
+    //compare cpu and gpu result
+    bool succ = true;
+    for (int i = 0; i < cpu_res_length; ++ i) {
+        if (fabs(cpu_res_buffer[i] - gpu_res_buffer[i]) > eps) {
+            std::cerr << RED << "Error: cpu_res[" << i << "] = " << cpu_res_buffer[i]
+                      << ", gpu_res[" << i << "] = " << gpu_res_buffer[i] << RESET << std::endl;
+            succ = false;
+            break;
+        }
+    }
+    if (succ) {
+        std::cout << GREEN << "test_cross_entropy_backward_with_cpu succ" << RESET << std::endl;
+    }
+}
+
+void test_gpu() {
+    test_at();
+    test_at_1();
+    test_gpu_at_with_cpu();
+    test_add();
+    test_gpu_add_with_cpu();
+    test_add_eq();
+    test_gpu_add_eq_1d_with_cpu();
+    test_gpu_add_eq_2d_with_cpu();
+    test_expand_add();
+    test_gpu_expand_add_with_cpu();
+    test_mul();
+    test_gpu_mul_with_cpu();
+    test_sum();
+    test_gpu_sum_with_cpu();
+    test_cross_entropy();
+    test_gpu_cross_entropy_with_cpu();
+    test_cross_entropy_backward();
+    test_gpu_cross_entropy_backward_with_cpu();
+    test_bp();
+    test_adam();
+    test_mlp();
+}
+
+int main(int argc, char *argv[]) {
+    int opt = 0;
+    int backend_type = 1; // 0 is cpu 1 is gpu
+    while ((opt = getopt(argc, argv, "t:")) != -1) {
+        switch (opt) {
+            case 't':
+                backend_type = atoi(optarg);
+                break;
+            default:
+                std::cerr << "Usage: " << argv[0] << " -t <backend_type>" << std::endl;
+                return 1;
+        }
+    }
+    if (backend_type == 0) {
+        test_cpu();
+    } else if (backend_type == 1) {
+        use_gpu();
+        test_gpu();
+    } else {
+        std::cerr << "Invalid backend type. Use 0 for CPU and 1 for GPU." << std::endl;
+        return 1;
+    }
     return 0;
 }

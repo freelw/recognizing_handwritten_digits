@@ -7,10 +7,9 @@
 #include "dataloader/mnist_loader_base.h"
 #include "optimizers/adam.h"
 #include "model/mlp.h"
+#include <string.h>
 
 #define INPUT_LAYER_SIZE 784
-#define TRAIN_IMAGES_NUM 50000
-#define TEST_IMAGES_NUM 10000
 
 void print_progress(const std::string &prefix, uint i, uint tot) {
     std::cout << "\r" << prefix << " [" << i << "/" << tot << "]" << std::flush;
@@ -24,6 +23,8 @@ void assign_inputs(
     for (int i = 0; i < batch_size; ++i) {
         for (int j = 0; j < INPUT_LAYER_SIZE; ++j) {
             tmp_buffer[i * INPUT_LAYER_SIZE + j] = static_cast<float>(data[offset + i][j]) / 256.0f;
+            assert(tmp_buffer[i * INPUT_LAYER_SIZE + j] >= 0.0f);
+            assert(tmp_buffer[i * INPUT_LAYER_SIZE + j] <= 1.0f);
         }
     }
     g_backend_ops->cp_to_device(
@@ -85,10 +86,11 @@ void train(int epochs, float lr, int batch_size) {
         int loop_times = 0;
         std::string prefix = "epoch : " + std::to_string(epoch);
         print_progress(prefix, offset, TRAIN_IMAGES_NUM);
+        
         while (offset < TRAIN_IMAGES_NUM) {
             assign_inputs(
                 inputs,
-                static_cast<float*>(inputs_tmp_buffer),
+                inputs_tmp_buffer,
                 offset,
                 batch_size,
                 train_images
@@ -108,7 +110,7 @@ void train(int epochs, float lr, int batch_size) {
                 loss->get_tensor(),
                 loss->get_tensor()->size()
             );
-            loss_sum += loss_val;
+            loss_sum += loss_val / batch_size;
             loop_times++;
             print_progress(prefix, offset, TRAIN_IMAGES_NUM);
         }
@@ -118,7 +120,7 @@ void train(int epochs, float lr, int batch_size) {
         offset = TRAIN_IMAGES_NUM;
         print_progress("evaluating :", offset-TRAIN_IMAGES_NUM, TEST_IMAGES_NUM);
         int correct = 0;
-        while (offset < train_images.size()) {
+        while (offset < TRAIN_IMAGES_NUM + TEST_IMAGES_NUM) {
             assign_inputs(
                 inputs,
                 static_cast<float*>(inputs_tmp_buffer),
@@ -157,12 +159,16 @@ void train(int epochs, float lr, int batch_size) {
 }
 
 int main(int argc, char *argv[]) {
+    #ifdef GCC_ASAN
+    #pragma message "GCC_ASAN"
+    #endif
     int opt;
     int epochs = 10;
     int batch_size = 100;
+    int gpu = 1;
     float lr = 0.001;
 
-    while ((opt = getopt(argc, argv, "e:l:b:")) != -1) {
+    while ((opt = getopt(argc, argv, "e:l:b:g:")) != -1) {
         switch (opt) {
             case 'e':
                 epochs = atoi(optarg);
@@ -173,11 +179,15 @@ int main(int argc, char *argv[]) {
             case 'b':
                 batch_size = atoi(optarg);
                 break;
+            case 'g':
+                gpu = atoi(optarg);
+                break;
             default:
                 std::cerr << "Usage: " << argv[0] << " -f <corpus> -c <checpoint> -e <epochs>" << std::endl;
                 return 1;
         }
     }
+    use_gpu(gpu == 1);
     construct_env();
     if (epochs > 0) {
         train(epochs, lr, batch_size);

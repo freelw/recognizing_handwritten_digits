@@ -73,16 +73,17 @@ bool Tensor::sanitize() const {
     if (data == nullptr) {
         return false;
     }
-    char * data_ptr = reinterpret_cast<char*>(data)+size();
-    for (int i = 0; i < TENSOR_PADDING_SIZE; ++i) {
-        if (data_ptr[i] != 0) {
-            return false;
-        }
-    }
+    // char * data_ptr = reinterpret_cast<char*>(data)+size();
+    // for (int i = 0; i < TENSOR_PADDING_SIZE; ++i) {
+    //     if (data_ptr[i] != 0) {
+    //         return false;
+    //     }
+    // }
     return true;
 }
 
 float *Tensor::location(const std::vector<int> &indices) const {
+    assert(this->dtype == FLOAT32 || this->dtype == INT32);
     assert(indices.size() == shape.size());
     int offset = 0;
     for (size_t i = 0; i < indices.size(); ++i) {
@@ -105,10 +106,11 @@ Tensor *Tensor::transpose() {
 Tensor *Tensor::fill(float value) {
     assert(!is_view());
     assert(dtype == FLOAT32);
-    float *data_ptr = reinterpret_cast<float*>(data);
-    for (int i = 0; i < length(); ++i) {
-        data_ptr[i] = value;
-    }
+    // float *data_ptr = reinterpret_cast<float*>(data);
+    // for (int i = 0; i < length(); ++i) {
+    //     data_ptr[i] = value;
+    // }
+    g_backend_ops->fill(this, value);
     return this;
 }
 
@@ -234,11 +236,12 @@ void allocMemAndInitTensors() {
 
 void releaseTensorMem() {
     assert(tensors_data != nullptr);
-    assert(grad_tensors_data != nullptr);
+    if (grad_tensors_data != nullptr) {
+        g_backend_ops->free(grad_tensors_data);
+        grad_tensors_data = nullptr;
+    }
     g_backend_ops->free(tensors_data);
-    g_backend_ops->free(grad_tensors_data);
     tensors_data = nullptr;
-    grad_tensors_data = nullptr;
     tensors_data_capacity = 0;
     grad_tensors_data_capacity = 0;
 }

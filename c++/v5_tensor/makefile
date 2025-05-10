@@ -16,14 +16,18 @@ SRCDIR := ./tensor \
           ./model \
           ../utils/dataloader
 SRCS := $(wildcard *.cpp) $(wildcard $(addsuffix /*.cpp, $(SRCDIR)))
-SRCS += $(wildcard *.cu) $(wildcard $(addsuffix /*.cu, $(SRCDIR)))
-OBJECTS := $(patsubst %.c,%.o,$(patsubst %.cpp,%.o,$(patsubst %.cu,%.o,$(SRCS))))
+ifeq ($(ASAN),1)
+	OBJECTS := $(patsubst %.c,%.o,$(patsubst %.cpp,%.o,$(SRCS)))
+else
+	SRCS += $(wildcard *.cu) $(wildcard $(addsuffix /*.cu, $(SRCDIR)))
+	OBJECTS := $(patsubst %.c,%.o,$(patsubst %.cpp,%.o,$(patsubst %.cu,%.o,$(SRCS))))
+endif
 OBJECTS_MAIN := $(filter-out test.o,$(OBJECTS))
 OBJECTS_TEST := $(filter-out main.o,$(OBJECTS))
 
 ifeq ($(ASAN),1)
 	NVCC = g++
-	NVCC_CFLAGS = $(DIR_INC) $(DIR_LIB) -g -fsanitize=address -fno-omit-frame-pointer
+	NVCC_CFLAGS = -DGCC_ASAN $(DIR_INC) $(DIR_LIB) -g -fsanitize=address -fno-omit-frame-pointer
 else
 	NVCC = nvcc
 	NVCC_CFLAGS = $(DIR_INC) $(DIR_LIB) -g -G -O3
@@ -41,7 +45,7 @@ $(TEST_TARGET) : $(OBJECTS_TEST)
 clean:
 	@rm -f ${OBJECTS} $(TARGET) $(TEST_TARGET)
 
-.PHONY: clean prepare_data
+.PHONY: clean prepare_data run_test
 prepare_data:
 	@cd ../../resources && \
 	gunzip -c train-labels-idx1-ubyte.gz > train-labels-idx1-ubyte && \
@@ -55,3 +59,11 @@ dbg:
 	@echo "DIR_LIB is $(DIR_LIB)"
 	@echo "TARGET is $(TARGET)"
 	@echo "NVCC is $(NVCC)"
+run_test: $(TEST_TARGET)
+	@echo "Test cpu"
+	@./$(TEST_TARGET) -t 0
+	@echo "Test cpu done"
+	@echo "Test gpu"
+	@./$(TEST_TARGET) -t 1
+	@echo "Test gpu done"
+	@echo "Test completed"
