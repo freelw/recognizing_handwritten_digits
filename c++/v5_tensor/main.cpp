@@ -25,7 +25,6 @@ void assign_inputs(
             tmp_buffer[i * INPUT_LAYER_SIZE + j] = static_cast<float>(data[offset + i][j]) / 256.0f;
             assert(tmp_buffer[i * INPUT_LAYER_SIZE + j] >= 0.0f);
             assert(tmp_buffer[i * INPUT_LAYER_SIZE + j] <= 1.0f);
-            // tmp_buffer[i * INPUT_LAYER_SIZE + j] = 0;
         }
     }
     g_backend_ops->cp_to_device(
@@ -42,11 +41,8 @@ void assign_labels(
     const std::vector<unsigned char> & train_labels) {
 
     assert(labels->get_dtype() == INT32);
-    // std::cout << std::endl;
     for (int i = 0; i < batch_size; ++i) {
         tmp_buffer[i] = static_cast<int32_t>(train_labels[offset + i]);
-        // std::cout << "labels[" << i << "] : " << static_cast<int>(train_labels[offset + i]) << " " << tmp_buffer[i] << std::endl;
-        // tmp_buffer[i] = 0;
     }
     g_backend_ops->cp_to_device(
         labels,
@@ -78,13 +74,12 @@ void train(int epochs, float lr, int batch_size) {
 
     allocMemAndInitTensors();
     float *inputs_tmp_buffer = static_cast<float*>(::malloc(inputs->size()));
-    std::cout << "inputs size : " << inputs->size() << std::endl;
     int32_t *labels_tmp_buffer = static_cast<int32_t*>(::malloc(labels->size()));
     float *evaluate_tmp_buffer = static_cast<float*>(::malloc(forward_res->get_tensor()->size()));
     const std::vector<std::vector<unsigned char>> & train_images = loader.getTrainImages();
     const std::vector<unsigned char> & train_labels = loader.getTrainLabels();
     assert(train_images.size() % batch_size == 0);
-    // assert(TRAIN_IMAGES_NUM + TEST_IMAGES_NUM == train_images.size());
+    assert(TRAIN_IMAGES_NUM + TEST_IMAGES_NUM == train_images.size());
     for (int epoch = 0; epoch < epochs; ++epoch) {
         float loss_sum = 0;
         int offset = 0;
@@ -107,8 +102,6 @@ void train(int epochs, float lr, int batch_size) {
                 batch_size,
                 train_labels
             );
-            // std::cout << "inputs length : " << inputs->length() << std::endl;
-            // std::cout << "labels length : " << labels->length() << std::endl;
             offset += batch_size;
             gDoActions();
             float loss_val = 0;
@@ -124,41 +117,41 @@ void train(int epochs, float lr, int batch_size) {
         std::cout << " loss : " << loss_sum / loop_times << std::endl;
 
         // evaluate
-        // offset = TRAIN_IMAGES_NUM;
-        // print_progress("evaluating :", offset-TRAIN_IMAGES_NUM, TEST_IMAGES_NUM);
-        // int correct = 0;
-        // while (offset < TRAIN_IMAGES_NUM + TEST_IMAGES_NUM) {
-        //     assign_inputs(
-        //         inputs,
-        //         static_cast<float*>(inputs_tmp_buffer),
-        //         offset,
-        //         batch_size,
-        //         train_images
-        //     );
+        offset = TRAIN_IMAGES_NUM;
+        print_progress("evaluating :", offset-TRAIN_IMAGES_NUM, TEST_IMAGES_NUM);
+        int correct = 0;
+        while (offset < TRAIN_IMAGES_NUM + TEST_IMAGES_NUM) {
+            assign_inputs(
+                inputs,
+                static_cast<float*>(inputs_tmp_buffer),
+                offset,
+                batch_size,
+                train_images
+            );
             
-        //     gDoForwardActions();
-        //     g_backend_ops->cp_from_device(
-        //         reinterpret_cast<char*>(evaluate_tmp_buffer),
-        //         forward_res->get_tensor(),
-        //         forward_res->get_tensor()->size()
-        //     );
-        //     for (int i = 0; i < batch_size; ++i) {
-        //         int max_index = 0;
-        //         float max_value = evaluate_tmp_buffer[i * 10];
-        //         for (int j = 1; j < 10; ++j) {
-        //             if (evaluate_tmp_buffer[i * 10 + j] > max_value) {
-        //                 max_value = evaluate_tmp_buffer[i * 10 + j];
-        //                 max_index = j;
-        //             }
-        //         }
-        //         if (max_index == static_cast<int>(train_labels[offset + i])) {
-        //             correct++;
-        //         }
-        //     }
-        //     offset += batch_size;
-        //     print_progress("evaluating : ", offset-TRAIN_IMAGES_NUM, TEST_IMAGES_NUM);
-        // }
-        // std::cout << " correct : " << correct << std::endl;
+            gDoForwardActions();
+            g_backend_ops->cp_from_device(
+                reinterpret_cast<char*>(evaluate_tmp_buffer),
+                forward_res->get_tensor(),
+                forward_res->get_tensor()->size()
+            );
+            for (int i = 0; i < batch_size; ++i) {
+                int max_index = 0;
+                float max_value = evaluate_tmp_buffer[i * 10];
+                for (int j = 1; j < 10; ++j) {
+                    if (evaluate_tmp_buffer[i * 10 + j] > max_value) {
+                        max_value = evaluate_tmp_buffer[i * 10 + j];
+                        max_index = j;
+                    }
+                }
+                if (max_index == static_cast<int>(train_labels[offset + i])) {
+                    correct++;
+                }
+            }
+            offset += batch_size;
+            print_progress("evaluating : ", offset-TRAIN_IMAGES_NUM, TEST_IMAGES_NUM);
+        }
+        std::cout << " correct : " << correct << std::endl;
     }
     ::free(evaluate_tmp_buffer);
     ::free(labels_tmp_buffer);
