@@ -112,7 +112,7 @@ sys     0m0.113s
 
 ## gpu 表现
 ```
-(base) cs@cs-desktop:~/project/recognizing_handwritten_digits/c++/v5_tensor$ time ./mnist_cuda -g 1
+(base) cs@cs-desktop:~/project/recognizing_handwritten_digits/c++/v5_tensor$ time ./mnist_cuda 
 images magic : 2051
 label magic : 2049
 lables_num : 60000
@@ -150,28 +150,28 @@ AdamStepAction: updating parameter Tensor(w1)(784, 30) with learning rate 0.001
 AdamStepAction: updating parameter Tensor(w2)(30, 10) with learning rate 0.001
 AdamStepAction: updating parameter Tensor(bias1)(30) with learning rate 0.001
 AdamStepAction: updating parameter Tensor(bias2)(10) with learning rate 0.001
-epoch : 0 [50000/50000] loss : 0.704354
-evaluating :  [10000/10000] correct : 9060
-epoch : 1 [50000/50000] loss : 0.328653
-evaluating :  [10000/10000] correct : 9191
-epoch : 2 [50000/50000] loss : 0.301746
-evaluating :  [10000/10000] correct : 9265
-epoch : 3 [50000/50000] loss : 0.288545
-evaluating :  [10000/10000] correct : 9328
-epoch : 4 [50000/50000] loss : 0.279938
-evaluating :  [10000/10000] correct : 9371
-epoch : 5 [50000/50000] loss : 0.277637
-evaluating :  [10000/10000] correct : 9388
-epoch : 6 [50000/50000] loss : 0.279717
-evaluating :  [10000/10000] correct : 9411
-epoch : 7 [50000/50000] loss : 0.285472
-evaluating :  [10000/10000] correct : 9420
-epoch : 8 [50000/50000] loss : 0.29336
-evaluating :  [10000/10000] correct : 9439
-epoch : 9 [50000/50000] loss : 0.302342
-evaluating :  [10000/10000] correct : 9440
+epoch : 0 [50000/50000] loss : 0.707109
+evaluating :  [10000/10000] correct : 9072
+epoch : 1 [50000/50000] loss : 0.333386
+evaluating :  [10000/10000] correct : 9203
+epoch : 2 [50000/50000] loss : 0.30727
+evaluating :  [10000/10000] correct : 9247
+epoch : 3 [50000/50000] loss : 0.296601
+evaluating :  [10000/10000] correct : 9286
+epoch : 4 [50000/50000] loss : 0.289447
+evaluating :  [10000/10000] correct : 9322
+epoch : 5 [50000/50000] loss : 0.285547
+evaluating :  [10000/10000] correct : 9349
+epoch : 6 [50000/50000] loss : 0.286223
+evaluating :  [10000/10000] correct : 9370
+epoch : 7 [50000/50000] loss : 0.289685
+evaluating :  [10000/10000] correct : 9392
+epoch : 8 [50000/50000] loss : 0.295575
+evaluating :  [10000/10000] correct : 9403
+epoch : 9 [50000/50000] loss : 0.303859
+evaluating :  [10000/10000] correct : 9413
 
-real    0m10.169s
-user    0m9.751s
-sys     0m0.375s
+real    0m2.858s
+user    0m2.436s
+sys     0m0.387s
 ```
