@@ -48,7 +48,6 @@ void destruct_env() {
     freeAllGradTensors();
     graph::freeAllNodes();
     graph::freeAllEdges();
-    graph::freeAllEmbs();
     releaseTensorMem();
     release_backend();
 }

@@ -162,14 +162,6 @@ namespace graph {
         );
     }
 
-    Emb *Node::emb(Tensor *indices) {
-        assert(indices->get_rank() == 1);
-        assert(indices->get_dtype() == INT32);
-        assert(indices->get_shape()[0] == this->get_tensor()->get_shape()[0]);
-        Emb *emb = allocEmb(this, indices);
-        return emb;
-    }
-
     void CrossEntropyEdge::backward(Tensor *) {
         gCreateAction(
             new CrossEntropyBackwardAction(
@@ -182,14 +174,9 @@ namespace graph {
         );
     }
 
-    Node *Emb::at(Node *rhs) {
-        assert(false);
-        return nullptr;
-    }
 
     std::vector<Edge *> edges;
     std::vector<Node *> nodes;
-    std::vector<Emb *> embs;
 
     Node *allocNode(Tensor *t) {
         Node *node = new Node(t);
@@ -215,16 +202,4 @@ namespace graph {
         edges.clear();
     }
 
-    Emb *allocEmb(Node *_node, Tensor *_indices) {
-        Emb *emb = new Emb(_node, _indices);
-        embs.push_back(emb);
-        return emb;
-    }
-
-    void freeAllEmbs() {
-        for (Emb *emb : embs) {
-            delete emb;
-        }
-        embs.clear();
-    }
 } // namespace graph
