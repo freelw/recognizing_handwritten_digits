@@ -17,6 +17,13 @@ namespace graph {
                 grad(nullptr) {
                 
             }
+            Node(Tensor *_t, Tensor *_grad)
+                : t(_t),
+                ref_cnt(0),
+                b_require_grad(true),
+                grad(_grad) {
+                
+            }
             void inc_ref() {
                 ref_cnt++;
             }
@@ -283,15 +290,11 @@ namespace graph {
                 : Edge(Transpose, _node) {}
             virtual ~TransposeEdge() {}
             void backward(Tensor *grad) override {
-                gCreateAction(
-                    new AddEqAction(
-                        node->get_grad(), grad->transpose()
-                    )
-                );
             }        
     };
 
     Node *allocNode(Tensor *t);
+    Node *allocNode(Tensor *t, Tensor *grad);
     void freeAllNodes();
     void freeAllEdges();
 }

@@ -27,10 +27,13 @@ namespace graph {
     Node *Node::transpose() {
         Tensor *l_tensor = this->get_tensor();
         Tensor *res_tensor = l_tensor->transpose();
-        Node *res_node = allocNode(res_tensor);
+        Node *res_node = nullptr;
         if (is_require_grad()) {
+            res_node = allocNode(res_tensor, this->get_grad()->transpose());
             res_node->require_grad();
             res_node->edges.push_back(TransposeEdge::create(this));
+        } else {
+            res_node = allocNode(res_tensor);
         }
         return res_node;
     }
@@ -179,6 +182,12 @@ namespace graph {
 
     Node *allocNode(Tensor *t) {
         Node *node = new Node(t);
+        nodes.push_back(node);
+        return node;
+    }
+
+    Node *allocNode(Tensor *t, Tensor *grad) {
+        Node *node = new Node(t, grad);
         nodes.push_back(node);
         return node;
     }
