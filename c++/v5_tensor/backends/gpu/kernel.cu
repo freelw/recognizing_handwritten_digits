@@ -61,7 +61,7 @@ __global__ void tensor_at_2d(
         if (row >= M || col >= P) {
             
         } else {
-            float sum = 0;
+            float sum = 0.0f;
             for (int k = 0; k < TILE_WIDTH; ++k) {
                 sum += s_Md[threadIdx.y][k] * s_Nd[k][threadIdx.x];
             }
@@ -146,7 +146,7 @@ __global__ void tensor_sum_2d_dim0(
     if (col >= N) {
         return;
     } else {
-        float sum = 0;
+        float sum = 0.0f;
         for (int i = 0; i < M; ++i) {
             sum += Md[i * stride_M0 + col * stride_M1];
         }
@@ -170,7 +170,7 @@ __global__ void cross_entropy(
         return;
     } else {
         float max = -1e10;
-        float sum = 0;
+        float sum = 0.0f;
         for (int i = 0; i < N; ++i) {
             float val = Md[row * stride0 + i * stride1];
             max = fmaxf(max, val);

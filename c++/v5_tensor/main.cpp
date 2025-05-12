@@ -166,7 +166,7 @@ int main(int argc, char *argv[]) {
     int epochs = 10;
     int batch_size = 100;
     int gpu = 1;
-    float lr = 0.001;
+    float lr = 0.001f;
 
     while ((opt = getopt(argc, argv, "e:l:b:g:")) != -1) {
         switch (opt) {
