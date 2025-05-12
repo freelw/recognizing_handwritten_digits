@@ -11,7 +11,7 @@ class BackendOps {
         virtual void addEq(Tensor *lhs, const Tensor *rhs) = 0;
         virtual void expandAdd(Tensor *lhs, const Tensor *rhs, Tensor *res) = 0;
         virtual void at(Tensor *lhs, const Tensor *rhs, Tensor *res) = 0;
-        virtual void emb_at(Tensor *lhs, const Tensor *rhs, const Tensor *indices, Tensor *res) = 0;
+        virtual void emb_at(Tensor *lhs, const Tensor *indices, const Tensor *rhs, Tensor *res) = 0;
         virtual void mul(Tensor *lhs, const Tensor *rhs, Tensor *res) = 0;
         virtual void sum(Tensor *lhs, Tensor *res, int dim) = 0;
         virtual void relu(Tensor *lhs, Tensor *res) = 0;

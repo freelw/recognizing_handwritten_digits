@@ -40,7 +40,7 @@ void construct_env() {
 }
 
 void destruct_env() {
-    sanitizeTensors();
+    // sanitizeTensors();
     releaseParameters();
     freeAllActions();
     freeAllTensors();
