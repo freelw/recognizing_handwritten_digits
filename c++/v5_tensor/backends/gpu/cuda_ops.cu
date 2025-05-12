@@ -452,6 +452,7 @@ void CUDAOps::adamStep(Tensor *w, Tensor *grad, Tensor *m, Tensor *v, int t, flo
         (float *)m->get_data(),
         (float *)v->get_data(),
         length,
+        t,
         beta1,
         beta2,
         lr,

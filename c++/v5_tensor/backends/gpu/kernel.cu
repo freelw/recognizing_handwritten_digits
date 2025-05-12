@@ -289,7 +289,8 @@ __global__ void tensor_clip(
 
 __global__ void tensor_adam_step(
     float *w, float *grad,
-    float *m, float *v, int M,
+    float *m, float *v,
+    int M, int t,
     float beta1, float beta2,
     float lr, float eps
 ) {
@@ -302,10 +303,12 @@ __global__ void tensor_adam_step(
         float v_value = v[index];
         float grad_value = grad[index];
 
-        m_value = beta1 * m_value + (1 - beta1) * grad_value;
-        v_value = beta2 * v_value + (1 - beta2) * powf(grad_value, 2);
-        float m_hat = m_value / (1 - powf(beta1, 1));
-        float v_hat = v_value / (1 - powf(beta2, 1));
+        m_value = beta1 * m_value + (1.0f - beta1) * grad_value;
+        v_value = beta2 * v_value + (1.0f - beta2) * powf(grad_value, 2);
+        m[index] = m_value;
+        v[index] = v_value;
+        float m_hat = m_value / (1.0f - powf(beta1, t));
+        float v_hat = v_value / (1.0f - powf(beta2, t));
         w_value -= lr * m_hat / (sqrtf(v_hat) + eps);
         w[index] = w_value;
     }
