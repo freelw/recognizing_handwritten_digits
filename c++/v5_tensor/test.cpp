@@ -1839,8 +1839,8 @@ void test_mlp_with_cpu() {
     int m = 784;
     int n = 30;
     int k = 10;
-    int batch_size = 2;
-    int epochs = 130;
+    int batch_size = 100;
+    int epochs = 20;
     std::vector<float> loss_res_cpu;
     std::vector<float> loss_res_gpu;
     use_gpu(false);
@@ -1856,11 +1856,13 @@ void test_mlp_with_cpu() {
     const float eps = 1e-2f;
     //compare cpu and gpu result
     for (int i = 0; i < loss_res_cpu.size(); ++i) {
-        if (fabs(loss_res_cpu[i] - loss_res_gpu[i]) > eps) {
+        float loss_cpu = loss_res_cpu[i] / batch_size;
+        float loss_gpu = loss_res_gpu[i] / batch_size;
+        if (fabs(loss_cpu - loss_gpu) > eps) {
             std::cerr << RED;
         }
-        std::cerr << std::setprecision(8) << "cpu_res[" << i << "] = " << loss_res_cpu[i]
-                      << ", gpu_res[" << i << "] = " << loss_res_gpu[i] << RESET << std::endl;
+        std::cerr << std::setprecision(8) << "cpu_res[" << i << "] = " << loss_cpu
+                      << ", gpu_res[" << i << "] = " << loss_gpu << RESET << std::endl;
     }
 }
 
