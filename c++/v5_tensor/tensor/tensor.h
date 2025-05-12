@@ -42,7 +42,7 @@ class Tensor {
         virtual int size() const;
         virtual int length() const;
         virtual int capacity() const;
-        virtual bool is_view() const { return false; }
+        virtual bool is_view() const { return !own_storage; }
         std::vector<int> get_shape() const { return shape; }
         std::vector<int> get_strides() const { return strides; }
         virtual int get_rank() const { return shape.size(); }
