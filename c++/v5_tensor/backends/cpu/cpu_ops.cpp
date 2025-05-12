@@ -240,13 +240,6 @@ void CPUOps::crossEntropy(Tensor *lhs, const Tensor *labels, Tensor *maxs, Tenso
         static_cast<float*>(maxs->get_data())[j] = max;
         static_cast<float*>(sums->get_data())[j] = sum;
         loss_value += -(zt - max - std::log(sum));
-        if (loss_value < 0) {
-            std::cout << "zt : " << zt << std::endl;
-            std::cout << "max : " << max << std::endl;
-            std::cout << "sum : " << sum << std::endl;
-            std::cerr << "Error: loss_value < 0" << std::endl;
-            abort();
-        }
     }
     static_cast<float*>(res->get_data())[0] = loss_value;
 }

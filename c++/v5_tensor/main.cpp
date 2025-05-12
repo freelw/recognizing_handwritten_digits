@@ -22,9 +22,7 @@ void assign_inputs(
     const std::vector<std::vector<unsigned char>> &data) {
     for (int i = 0; i < batch_size; ++i) {
         for (int j = 0; j < INPUT_LAYER_SIZE; ++j) {
-            tmp_buffer[i * INPUT_LAYER_SIZE + j] = static_cast<float>(data[offset + i][j]) / 256.0f;
-            assert(tmp_buffer[i * INPUT_LAYER_SIZE + j] >= 0.0f);
-            assert(tmp_buffer[i * INPUT_LAYER_SIZE + j] <= 1.0f);
+            tmp_buffer[i * INPUT_LAYER_SIZE + j] = static_cast<float>(data[offset + i][j]);
         }
     }
     g_backend_ops->cp_to_device(
