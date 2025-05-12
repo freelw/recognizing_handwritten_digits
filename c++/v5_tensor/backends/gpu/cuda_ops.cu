@@ -182,7 +182,7 @@ void CUDAOps::at(Tensor *lhs, const Tensor *rhs, Tensor *res) {
     );
 }
 
-void CUDAOps::emb_at(Tensor *lhs, const Tensor *rhs, const Tensor *indices, Tensor *res) {
+void CUDAOps::emb_at(Tensor *lhs, const Tensor *indices, const Tensor *rhs, Tensor *res) {
     assert(false);
 }
 

@@ -121,7 +121,7 @@ void CPUOps::at(Tensor *lhs, const Tensor *rhs, Tensor *res) {
     }
 }
 
-void CPUOps::emb_at(Tensor *lhs, const Tensor *rhs, const Tensor *indices, Tensor *res) {
+void CPUOps::emb_at(Tensor *lhs, const Tensor *indices, const Tensor *rhs, Tensor *res) {
     assert(false);
 }
 
