@@ -7,6 +7,7 @@
 
 namespace graph {
     class Edge;
+    class Emb;
     void gAddEdge(Edge *edge);
     class Node {
         public:
@@ -55,6 +56,7 @@ namespace graph {
             void init_weight_gauss(float sigma, float mean);
             void init_weight_uniform(float sigma);
             void init_weight_for_dbg();
+            Emb *emb(Tensor *indices);
         private:
             Tensor *t;
             Tensor *grad;
@@ -291,8 +293,21 @@ namespace graph {
             }        
     };
 
+    class Emb {
+        public:
+            Emb(Node *_node, Tensor *_indices)
+                : node(_node), indices(_indices) {}
+            virtual ~Emb() {}
+            Node *at(Node *rhs);
+        private:
+            Node *node;
+            Tensor *indices;
+    };
+
     Node *allocNode(Tensor *t);
     void freeAllNodes();
     void freeAllEdges();
+    Emb *allocEmb(Node *_node, Tensor *_indices);
+    void freeAllEmbs();
 }
 #endif
