@@ -151,6 +151,17 @@ namespace graph {
         );
     }
 
+    void Node::init_weight_for_dbg() {
+        gCreateAction(
+            new InitWeightAction(
+                this->get_tensor(),
+                "dbg",
+                0,
+                0
+            )
+        );
+    }
+
     void CrossEntropyEdge::backward(Tensor *) {
         gCreateAction(
             new CrossEntropyBackwardAction(

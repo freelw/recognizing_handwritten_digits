@@ -6,7 +6,7 @@
 
 class MLP {
     public:
-        MLP(int32_t _input, const std::vector<int32_t> &_outputs);
+        MLP(int32_t _input, const std::vector<int32_t> &_outputs, bool const_weight = false);
         ~MLP() = default;
         std::vector<Parameter*> get_parameters();
         graph::Node *forward(graph::Node *input);

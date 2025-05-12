@@ -348,6 +348,17 @@ void CPUOps::init_weight_uniform(Tensor *tensor, float sigma) {
     
 }
 
+void CPUOps::init_weight_for_dbg(Tensor *tensor) {
+    assert(tensor != nullptr);
+    assert(tensor->get_data() != nullptr);
+    assert(tensor->length() > 0);
+
+    float *data = static_cast<float*>(tensor->get_data());
+    for (int i = 0; i < tensor->length(); ++i) {
+        data[i] = static_cast<float>(i);
+    }
+}
+
 void CPUOps::fill(Tensor *tensor, float value) {
     assert(tensor != nullptr);
     assert(tensor->get_data() != nullptr);

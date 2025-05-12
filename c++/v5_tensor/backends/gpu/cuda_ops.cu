@@ -476,6 +476,16 @@ void CUDAOps::init_weight_uniform(Tensor *tensor, float sigma) {
     assert(false); // Not implemented yet
 }
 
+void CUDAOps::init_weight_for_dbg(Tensor *tensor) {
+    auto size = tensor->size();
+    float *data = static_cast<float*>(::malloc(size));
+    for (int i = 0; i < tensor->length(); ++i) {
+        data[i] = static_cast<float>(i);
+    }
+    this->cp_to_device(tensor, (char *)data, size);
+    ::free(data);
+}
+
 void CUDAOps::fill(Tensor *tensor, float value) {
     dim3 gridDim(
         (tensor->length() + TILE_WIDTH - 1) / TILE_WIDTH

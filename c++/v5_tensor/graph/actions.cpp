@@ -231,6 +231,8 @@ void InitWeightAction::execute() {
     } else if (init_type == "kaiming") {
         assert(false);
         // g_backend_ops->kaiming(lhs);
+    } else if (init_type == "dbg") {
+        
     } else {
         std::cerr << "Error: Unknown initialization type: " << init_type << std::endl;
         abort();
