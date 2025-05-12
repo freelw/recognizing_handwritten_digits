@@ -174,7 +174,6 @@ namespace graph {
         );
     }
 
-
     std::vector<Edge *> edges;
     std::vector<Node *> nodes;
 
