@@ -36,19 +36,20 @@ else
 	NVCC_CFLAGS = $(DIR_INC) $(DIR_LIB) -g -O3
 endif
 
+$(TRANSFORMER_TARGET) : $(OBJECTS_TRANSFORMER)
+	${NVCC} $(NVCC_CFLAGS) $^ -o $@ $(LDFLAGS)
 $(TARGET) : $(OBJECTS_MAIN)
 	${NVCC} $(NVCC_CFLAGS) $^ -o $@ $(LDFLAGS)
 $(TEST_TARGET) : $(OBJECTS_TEST)
 	${NVCC} $(NVCC_CFLAGS) $^ -o $@ $(LDFLAGS)
-$(TRANSFORMER_TARGET) : $(OBJECTS_TRANSFORMER)
-	${NVCC} $(NVCC_CFLAGS) $^ -o $@ $(LDFLAGS)
+
 %.o : %.cu
 	${NVCC} -c $(NVCC_CFLAGS) $< -o $@
 %.o : %.cpp
 	${NVCC} -c $(NVCC_CFLAGS) $< -o $@
 
 clean:
-	@rm -f ${OBJECTS} $(TARGET) $(TEST_TARGET)
+	@rm -f ${OBJECTS} $(TARGET) $(TEST_TARGET) $(TRANSFORMER_TARGET)
 
 .PHONY: clean prepare_data run_test
 prepare_data:

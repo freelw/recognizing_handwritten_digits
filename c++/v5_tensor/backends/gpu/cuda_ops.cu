@@ -182,6 +182,10 @@ void CUDAOps::at(Tensor *lhs, const Tensor *rhs, Tensor *res) {
     );
 }
 
+void CUDAOps::emb_at(Tensor *lhs, const Tensor *rhs, const Tensor *indices, Tensor *res) {
+    assert(false);
+}
+
 void CUDAOps::mul(Tensor *lhs, const Tensor *rhs, Tensor *res) {
     assert(lhs != nullptr);
     assert(rhs != nullptr);
