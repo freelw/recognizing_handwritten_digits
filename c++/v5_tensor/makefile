@@ -6,6 +6,7 @@ DIR_INC = -I./ \
 DIR_LIB = -L./
 TARGET = mnist_cuda
 TEST_TARGET = test
+TRANSFORMER_TARGET = transformer
 LDFLAGS = -lstdc++
 SRCDIR := ./tensor \
           ./graph \
@@ -22,8 +23,9 @@ else
 	SRCS += $(wildcard *.cu) $(wildcard $(addsuffix /*.cu, $(SRCDIR)))
 	OBJECTS := $(patsubst %.c,%.o,$(patsubst %.cpp,%.o,$(patsubst %.cu,%.o,$(SRCS))))
 endif
-OBJECTS_MAIN := $(filter-out test.o,$(OBJECTS))
-OBJECTS_TEST := $(filter-out main.o,$(OBJECTS))
+OBJECTS_MAIN := $(filter-out test.o transformer.o,$(OBJECTS))
+OBJECTS_TEST := $(filter-out main.o transformer.o,$(OBJECTS))
+OBJECTS_TRANSFORMER := $(filter-out test.o main.o,$(OBJECTS))
 
 ifeq ($(ASAN),1)
 	NVCC = g++
@@ -37,6 +39,8 @@ endif
 $(TARGET) : $(OBJECTS_MAIN)
 	${NVCC} $(NVCC_CFLAGS) $^ -o $@ $(LDFLAGS)
 $(TEST_TARGET) : $(OBJECTS_TEST)
+	${NVCC} $(NVCC_CFLAGS) $^ -o $@ $(LDFLAGS)
+$(TRANSFORMER_TARGET) : $(OBJECTS_TRANSFORMER)
 	${NVCC} $(NVCC_CFLAGS) $^ -o $@ $(LDFLAGS)
 %.o : %.cu
 	${NVCC} -c $(NVCC_CFLAGS) $< -o $@
