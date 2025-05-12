@@ -478,12 +478,23 @@ void CUDAOps::init_weight_uniform(Tensor *tensor, float sigma) {
 
 void CUDAOps::init_weight_for_dbg(Tensor *tensor) {
     auto size = tensor->size();
-    float *data = static_cast<float*>(::malloc(size));
-    for (int i = 0; i < tensor->length(); ++i) {
-        data[i] = static_cast<float>(i);
+    void *_data = ::malloc(size);
+
+    if (tensor->get_dtype() == FLOAT32) {
+        float *data = static_cast<float*>(_data);
+        for (int i = 0; i < tensor->length(); ++i) {
+            data[i] = static_cast<float>(i) * 1e-5;
+        }
+    } else if (tensor->get_dtype() == INT32) {
+        int32_t *data = static_cast<int32_t*>(_data);
+        for (int i = 0; i < tensor->length(); ++i) {
+            data[i] = i % 10;
+        }
+    } else {
+        assert(false);
     }
-    this->cp_to_device(tensor, (char *)data, size);
-    ::free(data);
+    this->cp_to_device(tensor, (char *)_data, size);
+    ::free(_data);
 }
 
 void CUDAOps::fill(Tensor *tensor, float value) {

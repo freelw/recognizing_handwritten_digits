@@ -232,7 +232,7 @@ void InitWeightAction::execute() {
         assert(false);
         // g_backend_ops->kaiming(lhs);
     } else if (init_type == "dbg") {
-        
+        g_backend_ops->init_weight_for_dbg(lhs);
     } else {
         std::cerr << "Error: Unknown initialization type: " << init_type << std::endl;
         abort();

@@ -1790,7 +1790,8 @@ void test_gpu_cross_entropy_backward_with_cpu() {
 
 void test_mlp_with_cpu_base(
      int m, int n, int k,
-     int batch_size, int epochs) {
+     int batch_size, int epochs,
+     std::vector<float> &loss_res) {
     
     MLP mlp(
         m,
@@ -1803,7 +1804,16 @@ void test_mlp_with_cpu_base(
     );
     Tensor *input = allocTensor({batch_size, m}, "input");
     Tensor *labels = allocTensor({batch_size}, "labels", INT32);
+    gCreateAction(
+        new InitWeightAction(
+            labels,
+            "dbg",
+            0,
+            0
+        )
+    );
     auto n_input = graph::allocNode(input);
+    n_input->init_weight_for_dbg();
     auto res = mlp.forward(n_input)->CrossEntropy(labels);
     zero_grad();
     insert_boundary_action();
@@ -1811,6 +1821,7 @@ void test_mlp_with_cpu_base(
     adam.clip_grad(1.0f);
     adam.step();
     allocMemAndInitTensors();
+    printAllActions();
     float loss = 0;
     for (int i = 0; i < epochs; ++i) {
         gDoActions();
@@ -1820,25 +1831,37 @@ void test_mlp_with_cpu_base(
             res->get_tensor(),
             sizeof(float)
         );
+        loss_res.push_back(loss);
     }
-    std::cout << std::setprecision(8) << loss << std::endl;
 }
 
 void test_mlp_with_cpu() {
-    int m = 500;
+    int m = 784;
     int n = 30;
     int k = 10;
     int batch_size = 2;
-    int epochs = 30;
+    int epochs = 130;
+    std::vector<float> loss_res_cpu;
+    std::vector<float> loss_res_gpu;
     use_gpu(false);
     construct_env();
-    test_mlp_with_cpu_base(m, n, k, batch_size, epochs);
+    test_mlp_with_cpu_base(m, n, k, batch_size, epochs, loss_res_cpu);
     destruct_env();
     std::cout << "-------" << std::endl;
     use_gpu(true);
     construct_env();
-    test_mlp_with_cpu_base(m, n, k, batch_size, epochs);
+    test_mlp_with_cpu_base(m, n, k, batch_size, epochs, loss_res_gpu);
     destruct_env();
+
+    const float eps = 1e-2f;
+    //compare cpu and gpu result
+    for (int i = 0; i < loss_res_cpu.size(); ++i) {
+        if (fabs(loss_res_cpu[i] - loss_res_gpu[i]) > eps) {
+            std::cerr << RED;
+        }
+        std::cerr << std::setprecision(8) << "cpu_res[" << i << "] = " << loss_res_cpu[i]
+                      << ", gpu_res[" << i << "] = " << loss_res_gpu[i] << RESET << std::endl;
+    }
 }
 
 void test_gpu() {

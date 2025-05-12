@@ -22,7 +22,8 @@ MLP::MLP(int32_t _input, const std::vector<int32_t> &_outputs, bool const_weight
         nw1->init_weight_gauss(0.02, 0);
         nw2->init_weight_gauss(0.02, 0);
     } else {
-        
+        nw1->init_weight_for_dbg();
+        nw2->init_weight_for_dbg();
     }
 
     pw1 = allocParameter(nw1);
