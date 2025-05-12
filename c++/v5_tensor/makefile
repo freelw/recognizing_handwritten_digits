@@ -36,6 +36,8 @@ else
 	NVCC_CFLAGS = $(DIR_INC) $(DIR_LIB) -g -O3
 endif
 
+all: $(TARGET) $(TEST_TARGET) $(TRANSFORMER_TARGET)
+
 $(TRANSFORMER_TARGET) : $(OBJECTS_TRANSFORMER)
 	${NVCC} $(NVCC_CFLAGS) $^ -o $@ $(LDFLAGS)
 $(TARGET) : $(OBJECTS_MAIN)
@@ -51,7 +53,7 @@ $(TEST_TARGET) : $(OBJECTS_TEST)
 clean:
 	@rm -f ${OBJECTS} $(TARGET) $(TEST_TARGET) $(TRANSFORMER_TARGET)
 
-.PHONY: clean prepare_data run_test
+.PHONY: clean prepare_data run_test all
 prepare_data:
 	@cd ../../resources && \
 	gunzip -c train-labels-idx1-ubyte.gz > train-labels-idx1-ubyte && \
