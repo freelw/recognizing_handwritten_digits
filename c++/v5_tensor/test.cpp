@@ -1112,7 +1112,7 @@ void test_mlp() {
             res->get_tensor(),
             sizeof(float)
         );
-        std::cout << "loss : " << loss << std::endl;
+        // std::cout << "loss : " << loss << std::endl;
     }
 
     auto w1_tensor = mlp.get_parameters()[0]->get_w();
@@ -1788,28 +1788,82 @@ void test_gpu_cross_entropy_backward_with_cpu() {
     }
 }
 
+void test_mlp_with_cpu_base(
+     int m, int n, int k,
+     int batch_size, int epochs) {
+    
+    MLP mlp(
+        m,
+        {n, k},
+        true
+    );
+    Adam adam(
+        mlp.get_parameters(),
+        0.001f
+    );
+    Tensor *input = allocTensor({batch_size, m}, "input");
+    Tensor *labels = allocTensor({batch_size}, "labels", INT32);
+    auto n_input = graph::allocNode(input);
+    auto res = mlp.forward(n_input)->CrossEntropy(labels);
+    zero_grad();
+    insert_boundary_action();
+    res->backward();
+    adam.clip_grad(1.0f);
+    adam.step();
+    allocMemAndInitTensors();
+    float loss = 0;
+    for (int i = 0; i < epochs; ++i) {
+        gDoActions();
+        float loss = 0;
+        g_backend_ops->cp_from_device(
+            reinterpret_cast<char*>(&loss),
+            res->get_tensor(),
+            sizeof(float)
+        );
+    }
+    std::cout << std::setprecision(8) << loss << std::endl;
+}
+
+void test_mlp_with_cpu() {
+    int m = 500;
+    int n = 30;
+    int k = 10;
+    int batch_size = 2;
+    int epochs = 30;
+    use_gpu(false);
+    construct_env();
+    test_mlp_with_cpu_base(m, n, k, batch_size, epochs);
+    destruct_env();
+    std::cout << "-------" << std::endl;
+    use_gpu(true);
+    construct_env();
+    test_mlp_with_cpu_base(m, n, k, batch_size, epochs);
+    destruct_env();
+}
+
 void test_gpu() {
-    test_at();
-    test_at_1();
-    test_gpu_at_with_cpu();
-    test_add();
-    test_gpu_add_with_cpu();
-    test_add_eq();
-    test_gpu_add_eq_1d_with_cpu();
-    test_gpu_add_eq_2d_with_cpu();
-    test_expand_add();
-    test_gpu_expand_add_with_cpu();
-    test_mul();
-    test_gpu_mul_with_cpu();
-    test_sum();
-    test_gpu_sum_with_cpu();
-    test_cross_entropy();
-    test_gpu_cross_entropy_with_cpu();
-    test_cross_entropy_backward();
-    test_gpu_cross_entropy_backward_with_cpu();
-    test_bp();
-    test_adam();
-    test_mlp();
+    // test_at();
+    // test_at_1();
+    // test_gpu_at_with_cpu();
+    // test_add();
+    // test_gpu_add_with_cpu();
+    // test_add_eq();
+    // test_gpu_add_eq_1d_with_cpu();
+    // test_gpu_add_eq_2d_with_cpu();
+    // test_expand_add();
+    // test_gpu_expand_add_with_cpu();
+    // test_mul();
+    // test_gpu_mul_with_cpu();
+    // test_sum();
+    // test_gpu_sum_with_cpu();
+    // test_cross_entropy();
+    // test_gpu_cross_entropy_with_cpu();
+    // test_cross_entropy_backward();
+    // test_gpu_cross_entropy_backward_with_cpu();
+    // test_bp();
+    // test_adam();
+    // test_mlp();
+    test_mlp_with_cpu();
 }
 
 int main(int argc, char *argv[]) {
