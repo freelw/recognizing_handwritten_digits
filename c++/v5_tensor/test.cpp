@@ -1102,7 +1102,7 @@ void test_mlp() {
     adam.clip_grad(1.0f);
     adam.step();
     // printAllTensors();
-    printAllActions();
+    // printAllActions();
     allocMemAndInitTensors();
     for (int i = 0; i < 500; ++ i) {
         gDoActions();
@@ -1821,7 +1821,7 @@ void test_mlp_with_cpu_base(
     adam.clip_grad(1.0f);
     adam.step();
     allocMemAndInitTensors();
-    printAllActions();
+    // printAllActions();
     float loss = 0;
     for (int i = 0; i < epochs; ++i) {
         gDoActions();
@@ -1847,7 +1847,7 @@ void test_mlp_with_cpu() {
     construct_env();
     test_mlp_with_cpu_base(m, n, k, batch_size, epochs, loss_res_cpu);
     destruct_env();
-    std::cout << "-------" << std::endl;
+    // std::cout << "-------" << std::endl;
     use_gpu(true);
     construct_env();
     test_mlp_with_cpu_base(m, n, k, batch_size, epochs, loss_res_gpu);
@@ -1855,39 +1855,44 @@ void test_mlp_with_cpu() {
 
     const float eps = 1e-2f;
     //compare cpu and gpu result
+    bool succ = true;
     for (int i = 0; i < loss_res_cpu.size(); ++i) {
         float loss_cpu = loss_res_cpu[i] / batch_size;
         float loss_gpu = loss_res_gpu[i] / batch_size;
         if (fabs(loss_cpu - loss_gpu) > eps) {
-            std::cerr << RED;
-        }
-        std::cerr << std::setprecision(8) << "cpu_res[" << i << "] = " << loss_cpu
+            std::cerr << RED << std::setprecision(8) << "cpu_res[" << i << "] = " << loss_cpu
                       << ", gpu_res[" << i << "] = " << loss_gpu << RESET << std::endl;
+            succ = false;
+            break;
+        }
+    }
+    if (succ) {
+        std::cout << GREEN << "test_mlp_with_cpu succ" << RESET << std::endl;
     }
 }
 
 void test_gpu() {
-    // test_at();
-    // test_at_1();
-    // test_gpu_at_with_cpu();
-    // test_add();
-    // test_gpu_add_with_cpu();
-    // test_add_eq();
-    // test_gpu_add_eq_1d_with_cpu();
-    // test_gpu_add_eq_2d_with_cpu();
-    // test_expand_add();
-    // test_gpu_expand_add_with_cpu();
-    // test_mul();
-    // test_gpu_mul_with_cpu();
-    // test_sum();
-    // test_gpu_sum_with_cpu();
-    // test_cross_entropy();
-    // test_gpu_cross_entropy_with_cpu();
-    // test_cross_entropy_backward();
-    // test_gpu_cross_entropy_backward_with_cpu();
-    // test_bp();
-    // test_adam();
-    // test_mlp();
+    test_at();
+    test_at_1();
+    test_gpu_at_with_cpu();
+    test_add();
+    test_gpu_add_with_cpu();
+    test_add_eq();
+    test_gpu_add_eq_1d_with_cpu();
+    test_gpu_add_eq_2d_with_cpu();
+    test_expand_add();
+    test_gpu_expand_add_with_cpu();
+    test_mul();
+    test_gpu_mul_with_cpu();
+    test_sum();
+    test_gpu_sum_with_cpu();
+    test_cross_entropy();
+    test_gpu_cross_entropy_with_cpu();
+    test_cross_entropy_backward();
+    test_gpu_cross_entropy_backward_with_cpu();
+    test_bp();
+    test_adam();
+    test_mlp();
     test_mlp_with_cpu();
 }
 
