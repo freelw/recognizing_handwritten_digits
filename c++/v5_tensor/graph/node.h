@@ -55,6 +55,7 @@ namespace graph {
             }
             void backward();
             Node *transpose();
+            Node *reshape(const std::vector<int> &shape);
             Node *expand_add(Node *rhs);
             Node *at(Node *rhs);
             Node *relu();

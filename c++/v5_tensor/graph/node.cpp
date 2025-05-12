@@ -38,6 +38,10 @@ namespace graph {
         return res_node;
     }
 
+    Node *Node::reshape(const std::vector<int> &shape) {
+        assert(false);
+    }
+
     Node *Node::expand_add(Node *rhs) {
         Tensor *res_tensor = allocTensor(t->get_shape(), "expand_add");
         Tensor *r_tensor = rhs->get_tensor();

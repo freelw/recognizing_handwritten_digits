@@ -17,12 +17,13 @@ std::string TensorDtype_to_string(TensorDType dtype) {
 }
 
 Tensor::Tensor(const std::vector<int> &_shape, const std::string &_name, TensorDType _dtype)
-    : shape(_shape), data(nullptr), name(_name), dtype(_dtype) {
+    : shape(_shape), name(_name), dtype(_dtype), own_storage(true) {
     strides.resize(shape.size());
     strides[shape.size() - 1] = 1;
     for (int i = shape.size() - 2; i >= 0; --i) {
         strides[i] = strides[i + 1] * shape[i + 1];
     }
+    storage = new TensorStorage();
 }
 
 Tensor::Tensor(const std::vector<int> &_shape, TensorDType _dtype)
@@ -30,13 +31,26 @@ Tensor::Tensor(const std::vector<int> &_shape, TensorDType _dtype)
     
 }
 
-Tensor::Tensor(const std::vector<int> &_shape, const std::vector<int> &_strides, const std::string &_name, TensorDType _dtype)
-    : shape(_shape), strides(_strides), data(nullptr), name(_name), dtype(_dtype) {
+Tensor::Tensor(
+    const std::vector<int> &_shape,
+    const std::vector<int> &_strides,
+    const std::string &_name,
+    TensorDType _dtype,
+    TensorStorage *_storage)
+    : shape(_shape), strides(_strides),
+    name(_name), dtype(_dtype),
+    own_storage(false), storage(_storage) {
     assert(shape.size() == strides.size());
 }
 
+Tensor::~Tensor() {
+    if (own_storage) {
+        delete storage;
+    }
+}
+
 void Tensor::set_data(void *ptr) {
-    data = ptr;
+    storage->data = ptr;
 }
 
 int Tensor::size() const {
@@ -69,30 +83,6 @@ int Tensor::capacity() const {
     return size() + TENSOR_PADDING_SIZE;
 }
 
-bool Tensor::sanitize() const {
-    if (data == nullptr) {
-        return false;
-    }
-    // char * data_ptr = reinterpret_cast<char*>(data)+size();
-    // for (int i = 0; i < TENSOR_PADDING_SIZE; ++i) {
-    //     if (data_ptr[i] != 0) {
-    //         return false;
-    //     }
-    // }
-    return true;
-}
-
-float *Tensor::location(const std::vector<int> &indices) const {
-    assert(this->dtype == FLOAT32 || this->dtype == INT32);
-    assert(indices.size() == shape.size());
-    int offset = 0;
-    for (size_t i = 0; i < indices.size(); ++i) {
-        assert(indices[i] >= 0 && indices[i] < shape[i]);
-        offset += indices[i] * strides[i];
-    }
-    return reinterpret_cast<float*>(data) + offset;
-}
-
 Tensor *Tensor::transpose() {
     Tensor *transpose_view = allocTensorView(
         this,
@@ -106,14 +96,9 @@ Tensor *Tensor::transpose() {
 Tensor *Tensor::fill(float value) {
     assert(!is_view());
     assert(dtype == FLOAT32);
-    // float *data_ptr = reinterpret_cast<float*>(data);
-    // for (int i = 0; i < length(); ++i) {
-    //     data_ptr[i] = value;
-    // }
     g_backend_ops->fill(this, value);
     return this;
 }
-
 
 std::ostream &operator<<(std::ostream &output, const Tensor &s) {
     output << "Tensor";
@@ -146,8 +131,14 @@ Tensor *allocTensor(const std::vector<int> &shape, TensorDType dtype) {
     return allocTensor(shape, "tensor_autoname", dtype);
 }
 
-Tensor *allocTensorView(Tensor *parent, const std::vector<int> &shape, const std::vector<int> &strides, const std::string &name) {
-    Tensor *tensor_view = new TensorView(parent, shape, strides, name);
+Tensor *allocTensorView(
+    Tensor *parent, const std::vector<int> &shape,
+    const std::vector<int> &strides, const std::string &name
+) {
+    Tensor *tensor_view = new Tensor(
+        shape, strides, name,
+        parent->get_dtype(), parent->get_storage()
+    );
     g_tensor_views.push_back(tensor_view);
     return tensor_view;
 }
@@ -244,16 +235,4 @@ void releaseTensorMem() {
     tensors_data = nullptr;
     tensors_data_capacity = 0;
     grad_tensors_data_capacity = 0;
-}
-
-void sanitizeTensors() {
-    for (Tensor *tensor : g_tensors) {
-        assert(tensor->sanitize());
-    }
-    for (Tensor *tensor_view : g_tensor_views) {
-        assert(tensor_view->sanitize());
-    }
-    for (Tensor *grad_tensor : g_grad_tensors) {
-        assert(grad_tensor->sanitize());
-    }
 }
