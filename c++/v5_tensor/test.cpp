@@ -1102,7 +1102,7 @@ void test_mlp() {
     adam.clip_grad(1.0f);
     adam.step();
     // printAllTensors();
-    printAllActions();
+    // printAllActions();
     allocMemAndInitTensors();
     for (int i = 0; i < 500; ++ i) {
         gDoActions();
@@ -1112,7 +1112,7 @@ void test_mlp() {
             res->get_tensor(),
             sizeof(float)
         );
-        std::cout << "loss : " << loss << std::endl;
+        // std::cout << "loss : " << loss << std::endl;
     }
 
     auto w1_tensor = mlp.get_parameters()[0]->get_w();
@@ -1788,6 +1788,89 @@ void test_gpu_cross_entropy_backward_with_cpu() {
     }
 }
 
+void test_mlp_with_cpu_base(
+     int m, int n, int k,
+     int batch_size, int epochs,
+     std::vector<float> &loss_res) {
+    
+    MLP mlp(
+        m,
+        {n, k},
+        true
+    );
+    Adam adam(
+        mlp.get_parameters(),
+        0.001f
+    );
+    Tensor *input = allocTensor({batch_size, m}, "input");
+    Tensor *labels = allocTensor({batch_size}, "labels", INT32);
+    gCreateAction(
+        new InitWeightAction(
+            labels,
+            "dbg",
+            0,
+            0
+        )
+    );
+    auto n_input = graph::allocNode(input);
+    n_input->init_weight_for_dbg();
+    auto res = mlp.forward(n_input)->CrossEntropy(labels);
+    zero_grad();
+    insert_boundary_action();
+    res->backward();
+    adam.clip_grad(1.0f);
+    adam.step();
+    allocMemAndInitTensors();
+    // printAllActions();
+    float loss = 0;
+    for (int i = 0; i < epochs; ++i) {
+        gDoActions();
+        float loss = 0;
+        g_backend_ops->cp_from_device(
+            reinterpret_cast<char*>(&loss),
+            res->get_tensor(),
+            sizeof(float)
+        );
+        loss_res.push_back(loss);
+    }
+}
+
+void test_mlp_with_cpu() {
+    int m = 784;
+    int n = 30;
+    int k = 10;
+    int batch_size = 100;
+    int epochs = 20;
+    std::vector<float> loss_res_cpu;
+    std::vector<float> loss_res_gpu;
+    use_gpu(false);
+    construct_env();
+    test_mlp_with_cpu_base(m, n, k, batch_size, epochs, loss_res_cpu);
+    destruct_env();
+    // std::cout << "-------" << std::endl;
+    use_gpu(true);
+    construct_env();
+    test_mlp_with_cpu_base(m, n, k, batch_size, epochs, loss_res_gpu);
+    destruct_env();
+
+    const float eps = 1e-2f;
+    //compare cpu and gpu result
+    bool succ = true;
+    for (int i = 0; i < loss_res_cpu.size(); ++i) {
+        float loss_cpu = loss_res_cpu[i] / batch_size;
+        float loss_gpu = loss_res_gpu[i] / batch_size;
+        if (fabs(loss_cpu - loss_gpu) > eps) {
+            std::cerr << RED << std::setprecision(8) << "cpu_res[" << i << "] = " << loss_cpu
+                      << ", gpu_res[" << i << "] = " << loss_gpu << RESET << std::endl;
+            succ = false;
+            break;
+        }
+    }
+    if (succ) {
+        std::cout << GREEN << "test_mlp_with_cpu succ" << RESET << std::endl;
+    }
+}
+
 void test_gpu() {
     test_at();
     test_at_1();
@@ -1810,6 +1893,7 @@ void test_gpu() {
     test_bp();
     test_adam();
     test_mlp();
+    test_mlp_with_cpu();
 }
 
 int main(int argc, char *argv[]) {

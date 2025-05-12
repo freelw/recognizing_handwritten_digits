@@ -95,7 +95,8 @@ __global__ void tensor_clip(
 
 __global__ void tensor_adam_step(
     float *w, float *grad,
-    float *m, float *v, int M,
+    float *m, float *v,
+    int M, int t,
     float beta1, float beta2,
     float lr, float eps
 );

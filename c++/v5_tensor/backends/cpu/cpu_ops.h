@@ -11,6 +11,7 @@ class CPUOps : public BackendOps {
         void addEq(Tensor *lhs, const Tensor *rhs) override;
         void expandAdd(Tensor *lhs, const Tensor *rhs, Tensor *res) override;
         void at(Tensor *lhs, const Tensor *rhs, Tensor *res) override;
+        void emb_at(Tensor *lhs, const Tensor *rhs, const Tensor *indices, Tensor *res) override;
         void mul(Tensor *lhs, const Tensor *rhs, Tensor *res) override;
         void sum(Tensor *lhs, Tensor *res, int dim) override;
         void relu(Tensor *lhs, Tensor *res) override;
@@ -22,6 +23,7 @@ class CPUOps : public BackendOps {
         void adamStep(Tensor *w, Tensor *grad, Tensor *m, Tensor *v, int t, float lr, float beta1, float beta2, float epsilon) override;
         void init_weight_gauss(Tensor *tensor, float mean, float sigma) override;
         void init_weight_uniform(Tensor *tensor, float sigma) override;
+        void init_weight_for_dbg(Tensor *tensor) override;
         void fill(Tensor *tensor, float value) override;
 
         // Memory management

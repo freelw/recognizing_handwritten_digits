@@ -121,6 +121,10 @@ void CPUOps::at(Tensor *lhs, const Tensor *rhs, Tensor *res) {
     }
 }
 
+void CPUOps::emb_at(Tensor *lhs, const Tensor *rhs, const Tensor *indices, Tensor *res) {
+    assert(false);
+}
+
 void CPUOps::mul(Tensor *lhs, const Tensor *rhs, Tensor *res) {
     assert(lhs != nullptr);
     assert(rhs != nullptr);
@@ -236,6 +240,13 @@ void CPUOps::crossEntropy(Tensor *lhs, const Tensor *labels, Tensor *maxs, Tenso
         static_cast<float*>(maxs->get_data())[j] = max;
         static_cast<float*>(sums->get_data())[j] = sum;
         loss_value += -(zt - max - std::log(sum));
+        if (loss_value < 0) {
+            std::cout << "zt : " << zt << std::endl;
+            std::cout << "max : " << max << std::endl;
+            std::cout << "sum : " << sum << std::endl;
+            std::cerr << "Error: loss_value < 0" << std::endl;
+            abort();
+        }
     }
     static_cast<float*>(res->get_data())[0] = loss_value;
 }
@@ -341,6 +352,27 @@ void CPUOps::init_weight_gauss(Tensor *tensor, float mean, float sigma) {
 }
 
 void CPUOps::init_weight_uniform(Tensor *tensor, float sigma) {
+    
+}
+
+void CPUOps::init_weight_for_dbg(Tensor *tensor) {
+    assert(tensor != nullptr);
+    assert(tensor->get_data() != nullptr);
+    assert(tensor->length() > 0);
+
+    if (tensor->get_dtype() == FLOAT32) {
+        float *data = static_cast<float*>(tensor->get_data());
+        for (int i = 0; i < tensor->length(); ++i) {
+            data[i] = static_cast<float>(i) * 1e-5;
+        }
+    } else if (tensor->get_dtype() == INT32) {
+        int32_t *data = static_cast<int32_t*>(tensor->get_data());
+        for (int i = 0; i < tensor->length(); ++i) {
+            data[i] = i % 10;
+        }
+    } else {
+        assert(false);
+    }
     
 }
 

@@ -6,6 +6,7 @@ DIR_INC = -I./ \
 DIR_LIB = -L./
 TARGET = mnist_cuda
 TEST_TARGET = test
+TRANSFORMER_TARGET = transformer
 LDFLAGS = -lstdc++
 SRCDIR := ./tensor \
           ./graph \
@@ -22,31 +23,37 @@ else
 	SRCS += $(wildcard *.cu) $(wildcard $(addsuffix /*.cu, $(SRCDIR)))
 	OBJECTS := $(patsubst %.c,%.o,$(patsubst %.cpp,%.o,$(patsubst %.cu,%.o,$(SRCS))))
 endif
-OBJECTS_MAIN := $(filter-out test.o,$(OBJECTS))
-OBJECTS_TEST := $(filter-out main.o,$(OBJECTS))
+OBJECTS_MAIN := $(filter-out test.o transformer.o,$(OBJECTS))
+OBJECTS_TEST := $(filter-out main.o transformer.o,$(OBJECTS))
+OBJECTS_TRANSFORMER := $(filter-out test.o main.o,$(OBJECTS))
 
 ifeq ($(ASAN),1)
 	NVCC = g++
 	NVCC_CFLAGS = -DGCC_ASAN $(DIR_INC) $(DIR_LIB) -g -fsanitize=address -fno-omit-frame-pointer
 else
 	NVCC = nvcc
-	#NVCC_CFLAGS = $(DIR_INC) $(DIR_LIB) -g -G -O3
+	# NVCC_CFLAGS = $(DIR_INC) $(DIR_LIB) -g -G -O3
 	NVCC_CFLAGS = $(DIR_INC) $(DIR_LIB) -g -O3
 endif
 
+all: $(TARGET) $(TEST_TARGET) $(TRANSFORMER_TARGET)
+
+$(TRANSFORMER_TARGET) : $(OBJECTS_TRANSFORMER)
+	${NVCC} $(NVCC_CFLAGS) $^ -o $@ $(LDFLAGS)
 $(TARGET) : $(OBJECTS_MAIN)
 	${NVCC} $(NVCC_CFLAGS) $^ -o $@ $(LDFLAGS)
 $(TEST_TARGET) : $(OBJECTS_TEST)
 	${NVCC} $(NVCC_CFLAGS) $^ -o $@ $(LDFLAGS)
+
 %.o : %.cu
 	${NVCC} -c $(NVCC_CFLAGS) $< -o $@
 %.o : %.cpp
 	${NVCC} -c $(NVCC_CFLAGS) $< -o $@
 
 clean:
-	@rm -f ${OBJECTS} $(TARGET) $(TEST_TARGET)
+	@rm -f ${OBJECTS} $(TARGET) $(TEST_TARGET) $(TRANSFORMER_TARGET)
 
-.PHONY: clean prepare_data run_test
+.PHONY: clean prepare_data run_test all
 prepare_data:
 	@cd ../../resources && \
 	gunzip -c train-labels-idx1-ubyte.gz > train-labels-idx1-ubyte && \

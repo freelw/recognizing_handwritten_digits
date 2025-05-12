@@ -2,7 +2,7 @@
 #include "graph/node.h"
 
 
-MLP::MLP(int32_t _input, const std::vector<int32_t> &_outputs) {
+MLP::MLP(int32_t _input, const std::vector<int32_t> &_outputs, bool const_weight) {
     w1 = allocTensor({ _input, _outputs[0] }, "w1");
     w2 = allocTensor({ _outputs[0], _outputs[1] }, "w2");
     bias1 = allocTensor({ _outputs[0] }, "bias1");
@@ -18,8 +18,13 @@ MLP::MLP(int32_t _input, const std::vector<int32_t> &_outputs) {
     nb1->require_grad();
     nb2->require_grad();
 
-    nw1->init_weight_gauss(0.02, 0);
-    nw2->init_weight_gauss(0.02, 0);
+    if (!const_weight) {
+        nw1->init_weight_gauss(0.02, 0);
+        nw2->init_weight_gauss(0.02, 0);
+    } else {
+        nw1->init_weight_for_dbg();
+        nw2->init_weight_for_dbg();
+    }
 
     pw1 = allocParameter(nw1);
     pw2 = allocParameter(nw2);
