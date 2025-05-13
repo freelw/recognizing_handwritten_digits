@@ -1151,6 +1151,21 @@ void test_mlp() {
     destruct_env();
 }
 
+void test_print_tensor() {
+
+    construct_env();
+    Tensor *input = allocTensor({2, 2, 4}, "input");
+    auto node = graph::allocNode(input);
+    node->init_weight_gauss(0.02, 0);
+
+    allocMemAndInitTensors();
+    gDoActions();
+
+    std::cout << *input << std::endl;
+
+    destruct_env();
+}
+
 void test_cpu() {
     test_at();
     test_add();
@@ -1163,6 +1178,7 @@ void test_cpu() {
     test_bp();
     test_adam();
     test_mlp();
+    test_print_tensor();
 }
 
 Tensor *test_add_with_cpu_base(int m, int n) {
@@ -1894,6 +1910,7 @@ void test_gpu() {
     test_adam();
     test_mlp();
     test_mlp_with_cpu();
+    test_print_tensor();
 }
 
 int main(int argc, char *argv[]) {

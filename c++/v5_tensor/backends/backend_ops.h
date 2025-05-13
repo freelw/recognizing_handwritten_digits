@@ -32,7 +32,7 @@ class BackendOps {
         virtual void cp_device_to_device(void *dst, const void *src, size_t size) = 0;
         virtual void free(void *ptr) = 0;
         virtual void cp_to_device(Tensor *dst_tensor, char *src, size_t size) = 0;
-        virtual void cp_from_device(char *dst, Tensor *src_tensor, size_t size) = 0;
+        virtual void cp_from_device(char *dst, const Tensor *src_tensor, size_t size) = 0;
 };
 
 extern BackendOps *g_backend_ops;

@@ -405,7 +405,7 @@ void CPUOps::cp_to_device(Tensor *dst_tensor, char *src, size_t size) {
     memcpy(dst_tensor->get_data(), src, size);
 }
 
-void CPUOps::cp_from_device(char *dst, Tensor *src_tensor, size_t size) {
+void CPUOps::cp_from_device(char *dst, const Tensor *src_tensor, size_t size) {
     assert(dst != nullptr);
     assert(src_tensor != nullptr);
     assert(size > 0);

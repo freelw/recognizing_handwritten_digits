@@ -119,22 +119,55 @@ std::string Tensor::get_meta_info() const {
     return output.str();
 }
 
-// std::ostream &operator<<(std::ostream &output, const Tensor &s) {
-//     output << "Tensor";
-//     if (s.get_dtype() != FLOAT32) {
-//         std::string dtype_str = TensorDtype_to_string(s.get_dtype());
-//         output << "(" << dtype_str << ")";
-//     }
-//     output << "(" << s.get_name() << ")(";
-//     for (size_t i = 0; i < s.shape.size(); ++i) {
-//         output << s.shape[i];
-//         if (i != s.shape.size() - 1) {
-//             output << ", ";
-//         }
-//     }
-//     output << ")";
-//     return output;
-// }
+void dfs_print(std::ostream &output, const Tensor &s, void *data, int depth, bool is_start = true) {
+    if (!is_start) {
+        for (int i = 0; i < depth; ++i) {
+            output << " ";
+        }
+    }
+    output << "[";
+    auto rank = s.get_rank();
+    if (depth == rank-1) {
+        auto stride = s.get_strides()[depth];
+        auto dtype = s.get_dtype();
+        auto length = s.get_shape()[rank-1];
+        for (int i = 0; i < length; ++i) {
+            if (dtype == FLOAT32) {
+                output << *(reinterpret_cast<float*>(data) + i * stride);
+            } else if (dtype == INT32) {
+                output << *(reinterpret_cast<int32_t*>(data) + i * stride);
+            }
+            if (i < length - 1) {
+                output << ", ";
+            } else {
+                output << "]";
+            }
+        }
+        return ;
+    }
+    for (int i = 0; i < s.get_shape()[depth]; ++i) {
+        dfs_print(output, s, data, depth+1, i == 0);
+        if (i < s.get_shape()[depth] - 1) {
+            output << ",";
+            for (int j = 0; j < rank - depth -1 ; ++j) {
+                output << std::endl;
+            }
+        }
+    }
+    output << "]";
+}
+
+std::ostream &operator<<(std::ostream &output, const Tensor &s) {
+    void *data = ::malloc(s.size());
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(data),
+        &s,
+        s.size()
+    );
+    dfs_print(output, s, data, 0);
+    ::free(data);
+    return output;
+}
 
 std::vector<Tensor*> g_tensors;
 std::vector<Tensor*> g_tensor_views;
