@@ -1162,6 +1162,26 @@ void test_print_tensor() {
     destruct_env();
 }
 
+void test_reshape() {
+    construct_env();
+
+    Tensor *l = allocTensor({3, 4}, "input");
+    auto n = graph::allocNode(l);
+    n->init_weight_for_dbg();
+    auto l_t = l->transpose();
+    auto l_t_reshape = l_t->reshape({3, 4});
+
+    allocMemAndInitTensors();
+    printAllActions();
+    gDoActions();
+
+    std::cout << "l : " << std::endl << *l << std::endl;
+    std::cout << "l_t : " << std::endl << *l_t << std::endl;
+    std::cout << "l_t_reshape : " << std::endl << *l_t_reshape << std::endl;
+    
+    destruct_env();
+}
+
 void test_contiguous() {
     construct_env();
     Tensor *input = allocTensor({2, 2, 4}, "input");
@@ -1179,19 +1199,20 @@ void test_contiguous() {
 }
 
 void test_cpu() {
-    test_at();
-    test_add();
-    test_add_eq();
-    test_expand_add();
-    test_mul();
-    test_sum();
-    test_cross_entropy();
-    test_cross_entropy_backward();
-    test_bp();
-    test_adam();
-    test_mlp();
-    test_print_tensor();
-    test_contiguous();
+    // test_at();
+    // test_add();
+    // test_add_eq();
+    // test_expand_add();
+    // test_mul();
+    // test_sum();
+    // test_cross_entropy();
+    // test_cross_entropy_backward();
+    // test_bp();
+    // test_adam();
+    // test_mlp();
+    // test_print_tensor();
+    // test_contiguous();
+    test_reshape();
 }
 
 Tensor *test_add_with_cpu_base(int m, int n) {

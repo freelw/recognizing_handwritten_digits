@@ -216,7 +216,10 @@ bool Tensor::is_contiguous() const {
     return true;
 }
 
-void dfs_print(std::ostream &output, const Tensor &s, void *data, int depth, bool is_start = true) {
+void dfs_print(
+    std::ostream &output, const Tensor &s,
+    void *data, int depth,
+    int base_offset, bool is_start) {
     if (!is_start) {
         for (int i = 0; i < depth; ++i) {
             output << " ";
@@ -224,15 +227,15 @@ void dfs_print(std::ostream &output, const Tensor &s, void *data, int depth, boo
     }
     output << "[";
     auto dim = s.get_dim();
+    auto stride = s.get_strides()[depth];
     if (depth == dim-1) {
-        auto stride = s.get_strides()[depth];
         auto dtype = s.get_dtype();
         auto length = s.get_shape()[dim-1];
         for (int i = 0; i < length; ++i) {
             if (dtype == FLOAT32) {
-                output << *(reinterpret_cast<float*>(data) + i * stride);
+                output << *(reinterpret_cast<float*>(data) + base_offset + i * stride);
             } else if (dtype == INT32) {
-                output << *(reinterpret_cast<int32_t*>(data) + i * stride);
+                output << *(reinterpret_cast<int32_t*>(data) + base_offset + i * stride);
             }
             if (i < length - 1) {
                 output << ", ";
@@ -243,7 +246,7 @@ void dfs_print(std::ostream &output, const Tensor &s, void *data, int depth, boo
         return ;
     }
     for (int i = 0; i < s.get_shape()[depth]; ++i) {
-        dfs_print(output, s, data, depth+1, i == 0);
+        dfs_print(output, s, data, depth+1, base_offset + i * stride, i == 0);
         if (i < s.get_shape()[depth] - 1) {
             output << ",";
             for (int j = 0; j < dim - depth -1 ; ++j) {
@@ -261,7 +264,7 @@ std::ostream &operator<<(std::ostream &output, const Tensor &s) {
         &s,
         s.size()
     );
-    dfs_print(output, s, data, 0);
+    dfs_print(output, s, data, 0, 0, true);
     ::free(data);
     return output;
 }

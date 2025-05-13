@@ -277,6 +277,9 @@ AssignShapeAndStridesAction::AssignShapeAndStridesAction(
     strides(_strides) {
     shape_data = static_cast<int32_t*>(::malloc(sizeof(int32_t) * shape.size()));
     strides_data = static_cast<int32_t*>(::malloc(sizeof(int32_t) * strides.size()));
+    for (size_t i = 0; i < shape.size(); ++i) {
+        shape_data[i] = static_cast<int32_t>(shape[i]);
+    }
     for (size_t i = 0; i < strides.size(); ++i) {
         strides_data[i] = static_cast<int32_t>(strides[i]);
     }
@@ -310,7 +313,7 @@ void AssignShapeAndStridesAction::execute() {
 
 std::string AssignShapeAndStridesAction::to_string() const {
     std::ostringstream oss;
-    oss << "AssignShapeAndStridesAction: assigning shape " << lhs->get_meta_info() << " and strides " << rhs->get_meta_info();
+    oss << "AssignShapeAndStridesAction: assigning shape " << lhs->get_meta_info() << " and strides " << res->get_meta_info();
     return oss.str();
 }
 
