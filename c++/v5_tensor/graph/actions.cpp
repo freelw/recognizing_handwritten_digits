@@ -317,7 +317,7 @@ std::string AssignShapeAndStridesAction::to_string() const {
 void ReshapeDeepCpAction::execute() {
     assert(lhs != nullptr);
     assert(rhs != nullptr);
-    g_backend_ops->reshape_deep_cp(lhs, rhs, strides, dim);
+    g_backend_ops->reshape_deep_cp(lhs, rhs, shape, strides, dim);
 }
 
 std::string ReshapeDeepCpAction::to_string() const {

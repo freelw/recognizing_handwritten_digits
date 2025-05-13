@@ -169,6 +169,7 @@ Tensor *Tensor::reshape(const std::vector<int> &shape) {
             new ReshapeDeepCpAction(
                 reshape_deep_cpy,
                 this,
+                tensor_shape,
                 tensor_strides,
                 get_dim()
             )

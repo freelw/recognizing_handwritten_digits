@@ -203,11 +203,16 @@ class AssignShapeAndStridesAction : public Action {
 
 class ReshapeDeepCpAction : public Action {
     public:
-        ReshapeDeepCpAction(Tensor *_lhs, const Tensor *_rhs, const Tensor *_strides, int _dim)
-            : Action(_lhs, _rhs, nullptr), strides(_strides), dim(_dim) {}
+        ReshapeDeepCpAction(
+            Tensor *_lhs, const Tensor *_rhs,
+            const Tensor *_shape, const Tensor *_strides,
+            int _dim)
+            : Action(_lhs, _rhs, nullptr),
+            shape(_shape), strides(_strides), dim(_dim) {}
         void execute() override;
         std::string to_string() const override;
     private:
+        const Tensor *shape;
         const Tensor *strides;
         int dim;
 };
