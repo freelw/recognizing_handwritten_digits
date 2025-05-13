@@ -382,10 +382,30 @@ void CPUOps::fill(Tensor *tensor, float value) {
 
 void CPUOps::reshape_deep_cp(
     Tensor *dst_tensor, const Tensor *src_tensor,
-    const Tensor *src_shape, const Tensor *src_strides,
-    int _dim) {
+    const Tensor *src_shape, const Tensor *src_strides) {
     
+    assert(dst_tensor->get_dtype() == src_tensor->get_dtype());
+    assert(
+        dst_tensor->get_dtype() == INT32 ||
+        dst_tensor->get_dtype() == FLOAT32
+    );
 
+    auto dtype = dst_tensor->get_dtype();
+    auto src_shape_data = static_cast<int32_t*>(src_shape->get_data());
+    auto src_strides_data = static_cast<int32_t*>(src_strides->get_data());
+    auto dim = src_tensor->get_dim();
+    auto length = src_tensor->length();
+
+    if (dtype == INT32) {
+
+    } else if (dtype == FLOAT32) {
+        auto dst_data = static_cast<float*>(dst_tensor->get_data());
+        auto src_data = static_cast<float*>(src_tensor->get_data());
+
+        
+    } else {
+        assert(false);
+    }
 
 }
 

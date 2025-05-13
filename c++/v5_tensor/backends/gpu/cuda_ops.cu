@@ -512,8 +512,8 @@ void CUDAOps::fill(Tensor *tensor, float value) {
 
 void CUDAOps::reshape_deep_cp(
     Tensor *dst_tensor, const Tensor *src_tensor,
-    const Tensor *src_shape, const Tensor *src_strides,
-    int _dim) {
+    const Tensor *src_shape, const Tensor *src_strides
+) {
     assert(false); // Not implemented yet
 }
 

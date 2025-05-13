@@ -317,12 +317,12 @@ std::string AssignShapeAndStridesAction::to_string() const {
 void ReshapeDeepCpAction::execute() {
     assert(lhs != nullptr);
     assert(rhs != nullptr);
-    g_backend_ops->reshape_deep_cp(lhs, rhs, shape, strides, dim);
+    g_backend_ops->reshape_deep_cp(lhs, rhs, shape, strides);
 }
 
 std::string ReshapeDeepCpAction::to_string() const {
     std::ostringstream oss;
-    oss << "ReshapeDeepCpAction: deep copy " << lhs->get_meta_info() << " to " << rhs->get_meta_info() << " with strides " << strides->get_meta_info() << " dim " << dim;
+    oss << "ReshapeDeepCpAction: deep copy " << lhs->get_meta_info() << " to " << rhs->get_meta_info() << " with strides " << strides->get_meta_info();
     return oss.str();
 }
 

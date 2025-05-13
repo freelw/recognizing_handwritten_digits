@@ -205,16 +205,14 @@ class ReshapeDeepCpAction : public Action {
     public:
         ReshapeDeepCpAction(
             Tensor *_lhs, const Tensor *_rhs,
-            const Tensor *_shape, const Tensor *_strides,
-            int _dim)
+            const Tensor *_shape, const Tensor *_strides)
             : Action(_lhs, _rhs, nullptr),
-            shape(_shape), strides(_strides), dim(_dim) {}
+            shape(_shape), strides(_strides) {}
         void execute() override;
         std::string to_string() const override;
     private:
         const Tensor *shape;
         const Tensor *strides;
-        int dim;
 };
 
 std::vector<Action *> getOnceActions();

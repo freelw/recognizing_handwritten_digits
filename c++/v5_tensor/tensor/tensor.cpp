@@ -170,8 +170,7 @@ Tensor *Tensor::reshape(const std::vector<int> &shape) {
                 reshape_deep_cpy,
                 this,
                 tensor_shape,
-                tensor_strides,
-                get_dim()
+                tensor_strides
             )
         );
 
