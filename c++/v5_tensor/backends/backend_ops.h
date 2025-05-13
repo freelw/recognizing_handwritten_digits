@@ -25,6 +25,7 @@ class BackendOps {
         virtual void init_weight_uniform(Tensor *tensor, float sigma) = 0;
         virtual void init_weight_for_dbg(Tensor *tensor) = 0;
         virtual void fill(Tensor *tensor, float value) = 0;
+        virtual void reshape_deep_cp(Tensor *dst_tensor, const Tensor *src_tensor, const Tensor *src_strides, int _dim) = 0;
 
         // Memory management
         virtual void *alloc(size_t size) = 0;

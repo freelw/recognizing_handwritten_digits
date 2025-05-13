@@ -183,6 +183,28 @@ class BoundaryAction : public Action {
         std::string to_string() const override;
 };
 
+class AssignStridesAction : public Action {
+    public:
+        AssignStridesAction(Tensor *_lhs, const std::vector<int> &_strides);
+        virtual ~AssignStridesAction();
+        void execute() override;
+        std::string to_string() const override;
+    private:
+        std::vector<int> strides;
+        int32_t *strides_data;
+};
+
+class ReshapeDeepCpAction : public Action {
+    public:
+        ReshapeDeepCpAction(Tensor *_lhs, const Tensor *_rhs, const Tensor *_strides, int _dim)
+            : Action(_lhs, _rhs, nullptr), strides(_strides), dim(_dim) {}
+        void execute() override;
+        std::string to_string() const override;
+    private:
+        const Tensor *strides;
+        int dim;
+};
+
 std::vector<Action *> getOnceActions();
 void gCreateAction(Action *action);
 void gDoActions();

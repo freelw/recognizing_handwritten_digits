@@ -42,15 +42,15 @@ void CPUOps::addEq(Tensor *lhs, const Tensor *rhs) {
     auto lstrides = lhs->get_strides();
     auto rstrides = rhs->get_strides();
 
-    int rank = lhs->get_rank();
+    int dim = lhs->get_dim();
 
-    assert(rank <= 2);
-    if (rank == 1) {
+    assert(dim <= 2);
+    if (dim == 1) {
         for (int i = 0; i < lshape[0]; ++i) {
             static_cast<float*>(lhs->get_data())[i * lstrides[0]] += 
                 static_cast<float*>(rhs->get_data())[i * rstrides[0]];
         }
-    } else if (rank == 2) {
+    } else if (dim == 2) {
         for (int i = 0; i < lshape[0]; ++i) {
             for (int j = 0; j < lshape[1]; ++j) {
                 static_cast<float*>(lhs->get_data())[i * lstrides[0] + j * lstrides[1]] += 
@@ -129,7 +129,7 @@ void CPUOps::mul(Tensor *lhs, const Tensor *rhs, Tensor *res) {
     assert(lhs != nullptr);
     assert(rhs != nullptr);
     assert(res != nullptr);
-    assert(lhs->get_rank() == 2);
+    assert(lhs->get_dim() == 2);
 
     auto lshape = lhs->get_shape();
     auto rshape = rhs->get_shape();
@@ -154,15 +154,15 @@ void CPUOps::mul(Tensor *lhs, const Tensor *rhs, Tensor *res) {
 void CPUOps::sum(Tensor *lhs, Tensor *res, int dim) {
     assert(lhs != nullptr);
     assert(res != nullptr);
-    assert(dim >= 0 && dim < lhs->get_rank());
+    assert(dim >= 0 && dim < lhs->get_dim());
 
     auto shape = lhs->get_shape();
     auto res_shape = res->get_shape();
     assert(dim == 0);
 
     auto lstrides = lhs->get_strides();
-    assert(lhs->get_rank() == 2);
-    assert(res->get_rank() == 1);
+    assert(lhs->get_dim() == 2);
+    assert(res->get_dim() == 1);
 
     for (int i = 0; i < shape[1]; ++i) {
         static_cast<float*>(res->get_data())[i] = 0;
@@ -378,6 +378,10 @@ void CPUOps::fill(Tensor *tensor, float value) {
     for (int i = 0; i < tensor->length(); ++i) {
         data[i] = value;
     }   
+}
+
+void CPUOps::reshape_deep_cp(Tensor *dst_tensor, const Tensor *src_tensor, const Tensor *src_strides, int _dim) {
+    assert(false); // Not implemented
 }
 
 void* CPUOps::alloc(size_t size) {

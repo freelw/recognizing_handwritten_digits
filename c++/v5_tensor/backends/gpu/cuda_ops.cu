@@ -22,7 +22,7 @@ void CUDAOps::add(Tensor *lhs, const Tensor *rhs, Tensor *res) {
     auto rstrides = rhs->get_strides();
     auto res_strides = res->get_strides();
 
-    assert(lhs->get_rank() == 2);
+    assert(lhs->get_dim() == 2);
 
     dim3 gridDim(
         (lshape[1] + TILE_WIDTH - 1) / TILE_WIDTH,
@@ -59,7 +59,7 @@ void CUDAOps::addEq(Tensor *lhs, const Tensor *rhs) {
     auto lstrides = lhs->get_strides();
     auto rstrides = rhs->get_strides();
 
-    int rank = lhs->get_rank();
+    int rank = lhs->get_dim();
 
     assert(rank <= 2);
 
@@ -136,9 +136,9 @@ void CUDAOps::at(Tensor *lhs, const Tensor *rhs, Tensor *res) {
     auto rstrides = rhs->get_strides();
     auto res_strides = res->get_strides();
 
-    assert(lhs->get_rank() == 2);
-    assert(rhs->get_rank() == 2);
-    assert(res->get_rank() == 2);
+    assert(lhs->get_dim() == 2);
+    assert(rhs->get_dim() == 2);
+    assert(res->get_dim() == 2);
 
     assert(lshape[1] == rshape[0]);
     assert(res_shape[0] == lshape[0]);
@@ -190,7 +190,7 @@ void CUDAOps::mul(Tensor *lhs, const Tensor *rhs, Tensor *res) {
     assert(lhs != nullptr);
     assert(rhs != nullptr);
     assert(res != nullptr);
-    assert(lhs->get_rank() == 2);
+    assert(lhs->get_dim() == 2);
 
     auto lshape = lhs->get_shape();
     auto rshape = rhs->get_shape();
@@ -228,14 +228,14 @@ void CUDAOps::mul(Tensor *lhs, const Tensor *rhs, Tensor *res) {
 void CUDAOps::sum(Tensor *lhs, Tensor *res, int dim) {
     assert(lhs != nullptr);
     assert(res != nullptr);
-    assert(dim >= 0 && dim < lhs->get_rank());
+    assert(dim >= 0 && dim < lhs->get_dim());
 
     auto shape = lhs->get_shape();
     auto res_shape = res->get_shape();
     assert(dim == 0);
     auto lstrides = lhs->get_strides();
-    assert(lhs->get_rank() == 2);
-    assert(res->get_rank() == 1);
+    assert(lhs->get_dim() == 2);
+    assert(res->get_dim() == 1);
 
     dim3 gridDim(
         (shape[1] + TILE_WIDTH - 1) / TILE_WIDTH
@@ -508,6 +508,10 @@ void CUDAOps::fill(Tensor *tensor, float value) {
         tensor->length(),
         value
     );
+}
+
+void CUDAOps::reshape_deep_cp(Tensor *dst_tensor, const Tensor *src_tensor, const Tensor *src_strides, int _dim) {
+    assert(false); // Not implemented yet
 }
 
 void* CUDAOps::alloc(size_t size) {

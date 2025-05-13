@@ -28,6 +28,7 @@ class CUDAOps : public BackendOps {
         void init_weight_uniform(Tensor *tensor, float sigma) override;
         void init_weight_for_dbg(Tensor *tensor) override;
         void fill(Tensor *tensor, float value) override;
+        void reshape_deep_cp(Tensor *dst_tensor, const Tensor *src_tensor, const Tensor *src_strides, int _dim) override;
 
         // Memory management
         void* alloc(size_t size) override;

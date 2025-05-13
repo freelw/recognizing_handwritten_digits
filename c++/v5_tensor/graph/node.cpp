@@ -68,8 +68,8 @@ namespace graph {
     Node *Node::at(Node *rhs) {
         Tensor *r_tensor = rhs->get_tensor();
         Tensor *l_tensor = this->get_tensor();
-        assert(l_tensor->get_rank() == 2);
-        assert(r_tensor->get_rank() == 2);
+        assert(l_tensor->get_dim() == 2);
+        assert(r_tensor->get_dim() == 2);
         assert(l_tensor->get_shape()[1] == r_tensor->get_shape()[0]);
         Tensor *res_tensor = allocTensor({l_tensor->get_shape()[0], r_tensor->get_shape()[1]}, "res_at");
         gCreateAction(
@@ -110,7 +110,7 @@ namespace graph {
     }
 
     Node *Node::CrossEntropy(Tensor *labels) {
-        assert(labels->get_rank() == 1);
+        assert(labels->get_dim() == 1);
         assert(
             labels->get_dtype() == INT32 
         );

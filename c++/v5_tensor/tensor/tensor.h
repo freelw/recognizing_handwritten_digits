@@ -45,10 +45,11 @@ class Tensor {
         virtual bool is_view() const { return !own_storage; }
         std::vector<int> get_shape() const { return shape; }
         std::vector<int> get_strides() const { return strides; }
-        virtual int get_rank() const { return shape.size(); }
+        virtual int get_dim() const { return shape.size(); }
         TensorDType get_dtype() const { return dtype; }
         virtual std::string get_name() const { return name; }
         Tensor *transpose();
+        Tensor *reshape(const std::vector<int> &shape);
         Tensor *fill(float value);
         std::string get_meta_info() const;
         bool is_contiguous() const;

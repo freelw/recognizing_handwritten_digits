@@ -100,7 +100,7 @@ std::string MulAction::to_string() const {
 void SumAction::execute() {
     assert(lhs != nullptr);
     assert(rhs == nullptr);
-    if (dim < 0 || dim >= lhs->get_rank()) {
+    if (dim < 0 || dim >= lhs->get_dim()) {
         std::cerr << "Error: Invalid dimension for sum operation" << std::endl;
         abort();
     }
@@ -265,6 +265,50 @@ std::string BoundaryAction::to_string() const {
 
 bool BoundaryAction::is_backward_boundary() {
     return true;
+}
+
+AssignStridesAction::AssignStridesAction(
+    Tensor *_lhs,
+    const std::vector<int> &_strides
+) : Action(_lhs, nullptr, nullptr), strides(_strides) {
+    strides_data = static_cast<int32_t*>(::malloc(sizeof(int32_t) * strides.size()));
+    for (size_t i = 0; i < strides.size(); ++i) {
+        strides_data[i] = static_cast<int32_t>(strides[i]);
+    }
+}
+
+AssignStridesAction::~AssignStridesAction() {
+    assert(strides_data != nullptr);
+    ::free(strides_data);
+}
+
+void AssignStridesAction::execute() {
+    assert(lhs != nullptr);
+    assert(strides_data != nullptr);
+    g_backend_ops->cp_to_device(
+        lhs,
+        reinterpret_cast<char*>(strides_data),
+        sizeof(int32_t) * strides.size()
+    );
+}
+
+std::string AssignStridesAction::to_string() const {
+    std::ostringstream oss;
+    oss << "AssignStridesAction: assigning strides to " << lhs->get_meta_info();
+    return oss.str();
+}
+
+void ReshapeDeepCpAction::execute() {
+    assert(lhs != nullptr);
+    assert(rhs != nullptr);
+    // g_backend_ops->reshape_cp(lhs->get_data(), rhs->get_data(), lhs->size());
+    g_backend_ops->reshape_deep_cp(lhs, rhs, strides, dim);
+}
+
+std::string ReshapeDeepCpAction::to_string() const {
+    std::ostringstream oss;
+    oss << "ReshapeDeepCpAction: deep copy " << lhs->get_meta_info() << " to " << rhs->get_meta_info() << " with strides " << strides->get_meta_info() << " dim " << dim;
+    return oss.str();
 }
 
 std::vector<Action*> g_actions;

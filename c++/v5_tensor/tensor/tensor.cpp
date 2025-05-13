@@ -94,6 +94,83 @@ Tensor *Tensor::transpose() {
     return transpose_view;
 }
 
+Tensor *Tensor::reshape(const std::vector<int> &shape) {
+    std::vector<int> calc_req_shape = shape;
+
+    int unknown_dim_cnt = 0;
+    int unknown_dim_index = -1;
+    for (int i = 0; i < calc_req_shape.size(); ++i) {
+        if (calc_req_shape[i] == -1) {
+            unknown_dim_cnt++;
+            unknown_dim_index = i;
+        }
+    }
+
+    assert (unknown_dim_cnt <= 1);
+
+    if (unknown_dim_cnt == 1) {
+        int total_length = 1;
+        for (int i = 0; i < calc_req_shape.size(); ++i) {
+            if (calc_req_shape[i] != -1) {
+                total_length *= calc_req_shape[i];
+            }
+        }
+        assert(length() % total_length == 0);
+        calc_req_shape[unknown_dim_index] = length() / total_length;
+    }
+
+    auto req_length = 1;
+    for (int i = 0; i < calc_req_shape.size(); ++i) {
+        req_length *= calc_req_shape[i];
+    }
+
+    assert(req_length == length());
+    
+    if (this->is_contiguous()) {
+        std::vector<int> new_strides(calc_req_shape.size());
+        new_strides[calc_req_shape.size() - 1] = 1;
+        for (int i = calc_req_shape.size() - 2; i >= 0; --i) {
+            new_strides[i] = new_strides[i + 1] * calc_req_shape[i + 1];
+        }
+        Tensor *reshape_view = allocTensorView(
+            this,
+            calc_req_shape,
+            new_strides,
+            this->get_name() + "_reshape"
+        );
+        return reshape_view;
+    } else {
+        Tensor *reshape_deep_cpy = allocTensor(
+            calc_req_shape,
+            this->get_name() + "_reshape_deep_copy",
+            this->get_dtype()
+        );
+        Tensor *tensor_strides = allocTensor(
+            {get_dim()},
+            this->get_name() + "_reshape_deep_copy_strides",
+            INT32
+        );
+
+        gCreateAction(
+            new AssignStridesAction(
+                tensor_strides,
+                this->get_strides()
+            )
+        );
+
+        gCreateAction(
+            new ReshapeDeepCpAction(
+                reshape_deep_cpy,
+                this,
+                tensor_strides,
+                get_dim()
+            )
+        );
+
+        return reshape_deep_cpy;
+    }
+}
+
 Tensor *Tensor::fill(float value) {
     assert(!is_view());
     assert(dtype == FLOAT32);
@@ -120,11 +197,11 @@ std::string Tensor::get_meta_info() const {
 }
 
 bool Tensor::is_contiguous() const {
-    auto rank = get_rank();
-    if (strides[rank-1] != 1) {
+    auto dim = get_dim();
+    if (strides[dim-1] != 1) {
         return false;
     }
-    for (int i = 0; i < rank-1; ++ i) {
+    for (int i = 0; i < dim-1; ++ i) {
         if (strides[i] != strides[i+1] * shape[i+1]) {
             return false;
         }
@@ -139,11 +216,11 @@ void dfs_print(std::ostream &output, const Tensor &s, void *data, int depth, boo
         }
     }
     output << "[";
-    auto rank = s.get_rank();
-    if (depth == rank-1) {
+    auto dim = s.get_dim();
+    if (depth == dim-1) {
         auto stride = s.get_strides()[depth];
         auto dtype = s.get_dtype();
-        auto length = s.get_shape()[rank-1];
+        auto length = s.get_shape()[dim-1];
         for (int i = 0; i < length; ++i) {
             if (dtype == FLOAT32) {
                 output << *(reinterpret_cast<float*>(data) + i * stride);
@@ -162,7 +239,7 @@ void dfs_print(std::ostream &output, const Tensor &s, void *data, int depth, boo
         dfs_print(output, s, data, depth+1, i == 0);
         if (i < s.get_shape()[depth] - 1) {
             output << ",";
-            for (int j = 0; j < rank - depth -1 ; ++j) {
+            for (int j = 0; j < dim - depth -1 ; ++j) {
                 output << std::endl;
             }
         }
