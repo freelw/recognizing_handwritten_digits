@@ -403,11 +403,13 @@ void CPUOps::reshape_deep_cp(
         auto src_data = static_cast<float*>(src_tensor->get_data());
         for (int i = 0; i < length; ++i) {
             int offset = 0;
-            int index = i;    
+            int index = i;
+            auto tmp_length = length;
             for (int j = 0; j < dim; ++j) {
-                auto cur_dim_index = index / src_shape_data[j];
+                tmp_length /= src_shape_data[j];
+                auto cur_dim_index = index / tmp_length;
                 offset += cur_dim_index * src_strides_data[j];
-                index %= src_shape_data[j];
+                index %= tmp_length;
             }
             dst_data[i] = src_data[offset];
         }

@@ -1170,6 +1170,7 @@ void test_reshape() {
     n->init_weight_for_dbg();
     auto l_t = l->transpose();
     auto l_t_reshape = l_t->reshape({3, 4});
+    auto l_r = l->reshape({4, 3});
 
     allocMemAndInitTensors();
     printAllActions();
@@ -1178,6 +1179,7 @@ void test_reshape() {
     std::cout << "l : " << std::endl << *l << std::endl;
     std::cout << "l_t : " << std::endl << *l_t << std::endl;
     std::cout << "l_t_reshape : " << std::endl << *l_t_reshape << std::endl;
+    std::cout << "l_r : " << std::endl << *l_r << std::endl;
     
     destruct_env();
 }
