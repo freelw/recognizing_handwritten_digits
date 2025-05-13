@@ -397,16 +397,23 @@ void CPUOps::reshape_deep_cp(
     auto length = src_tensor->length();
 
     if (dtype == INT32) {
-
+        assert(false);
     } else if (dtype == FLOAT32) {
         auto dst_data = static_cast<float*>(dst_tensor->get_data());
         auto src_data = static_cast<float*>(src_tensor->get_data());
-
-        
+        for (int i = 0; i < length; ++i) {
+            int offset = 0;
+            int index = i;    
+            for (int j = 0; j < dim; ++j) {
+                auto cur_dim_index = index / src_shape_data[j];
+                offset += cur_dim_index * src_strides_data[j];
+                index %= src_shape_data[j];
+            }
+            dst_data[i] = src_data[offset];
+        }
     } else {
         assert(false);
     }
-
 }
 
 void* CPUOps::alloc(size_t size) {
