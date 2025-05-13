@@ -41,7 +41,7 @@ void AddAction::execute() {
 
 std::string AddAction::to_string() const {
     std::ostringstream oss;
-    oss << "AddAction: " << *lhs << " + " << *rhs << " -> " << *res;
+    oss << "AddAction: " << lhs->get_meta_info() << " + " << rhs->get_meta_info() << " -> " << res->get_meta_info();
     return oss.str();
 }
 
@@ -54,7 +54,7 @@ void AddEqAction::execute() {
 
 std::string AddEqAction::to_string() const {
     std::ostringstream oss;
-    oss << "AddEqAction: " << *lhs << " += " << *rhs;
+    oss << "AddEqAction: " << lhs->get_meta_info() << " += " << rhs->get_meta_info();
     return oss.str();
 }
 
@@ -67,7 +67,7 @@ void ExpandAddAction::execute() {
 
 std::string ExpandAddAction::to_string() const {
     std::ostringstream oss;
-    oss << "ExpandAddAction: " << *lhs << " + " << *rhs << " -> " << *res;
+    oss << "ExpandAddAction: " << lhs->get_meta_info() << " + " << rhs->get_meta_info() << " -> " << res->get_meta_info();
     return oss.str();
 }
 
@@ -80,7 +80,7 @@ void AtAction::execute() {
 
 std::string AtAction::to_string() const {
     std::ostringstream oss;
-    oss << "AtAction: " << *lhs << " at " << *rhs << " -> " << *res;
+    oss << "AtAction: " << lhs->get_meta_info() << " at " << rhs->get_meta_info() << " -> " << res->get_meta_info();
     return oss.str();
 }
 
@@ -93,7 +93,7 @@ void MulAction::execute() {
 
 std::string MulAction::to_string() const {
     std::ostringstream oss;
-    oss << "MulAction: " << *lhs << " * " << *rhs << " -> " << *res;
+    oss << "MulAction: " << lhs->get_meta_info() << " * " << rhs->get_meta_info() << " -> " << res->get_meta_info();
     return oss.str();
 }
 
@@ -109,7 +109,7 @@ void SumAction::execute() {
 
 std::string SumAction::to_string() const {
     std::ostringstream oss;
-    oss << "SumAction: " << *lhs << " -> " << *res << " along dim " << dim;
+    oss << "SumAction: " << lhs->get_meta_info() << " -> " << res->get_meta_info() << " along dim " << dim;
     return oss.str();
 }
 
@@ -121,7 +121,7 @@ void ReluAction::execute() {
 
 std::string ReluAction::to_string() const {
     std::ostringstream oss;
-    oss << "ReluAction: " << *lhs << " -> " << *res;
+    oss << "ReluAction: " << lhs->get_meta_info() << " -> " << res->get_meta_info();
     return oss.str();
 }
 
@@ -133,7 +133,7 @@ void ReluPrimeAction::execute() {
 
 std::string ReluPrimeAction::to_string() const {
     std::ostringstream oss;
-    oss << "ReluPrimeAction: " << *lhs << " -> " << *res;
+    oss << "ReluPrimeAction: " << lhs->get_meta_info() << " -> " << res->get_meta_info();
     return oss.str();
 }
 
@@ -148,7 +148,12 @@ void CrossEntropyAction::execute() {
 
 std::string CrossEntropyAction::to_string() const {
     std::ostringstream oss;
-    oss << "CrossEntropyAction: " << *lhs << " with labels " << *rhs << " -> " << *res << " context : " << *maxs << ", " << *sums;
+    oss << "CrossEntropyAction: " << 
+        lhs->get_meta_info() << " with labels " <<
+        rhs->get_meta_info() << " -> " <<
+        res->get_meta_info() << " context : " <<
+        maxs->get_meta_info() << ", " <<
+        sums->get_meta_info();
     return oss.str();
 }
 
@@ -166,7 +171,12 @@ void CrossEntropyBackwardAction::execute() {
 
 std::string CrossEntropyBackwardAction::to_string() const {
     std::ostringstream oss;
-    oss << "CrossEntropyBackwardAction: " << *lhs << " with labels " << *rhs << " -> " << *res << " context : " << *maxs << ", " << *sums;
+    oss << "CrossEntropyBackwardAction: " << 
+        lhs->get_meta_info() <<" with labels " <<
+        rhs->get_meta_info() << " -> " <<
+        res->get_meta_info() <<" context : " <<
+        maxs->get_meta_info() << ", " <<
+        sums->get_meta_info();
     return oss.str();
 }
 
@@ -177,7 +187,7 @@ void CalcAllGradNormAction::execute() {
 
 std::string CalcAllGradNormAction::to_string() const {
     std::ostringstream oss;
-    oss << "CalcAllGradNormAction: calculating gradient norm for " << grads.size() << " tensors" << " -> " << *res;
+    oss << "CalcAllGradNormAction: calculating gradient norm for " << grads.size() << " tensors" << " -> " << res->get_meta_info();
     return oss.str();
 }
 
@@ -189,7 +199,7 @@ void ClipGradAction::execute() {
 
 std::string ClipGradAction::to_string() const {
     std::ostringstream oss;
-    oss << "ClipGradAction: clipping gradient " << *lhs << " with norm " << *rhs << " to grad_clip_val: " << grad_clip_val;
+    oss << "ClipGradAction: clipping gradient " << lhs->get_meta_info() << " with norm " << rhs->get_meta_info() << " to grad_clip_val: " << grad_clip_val;
     return oss.str();
 }
 
@@ -206,7 +216,7 @@ void AdamStepAction::execute() {
 
 std::string AdamStepAction::to_string() const {
     std::ostringstream oss;
-    oss << "AdamStepAction: updating parameter " << *param->get_w() << " with learning rate " << lr;
+    oss << "AdamStepAction: updating parameter " << param->get_w()->get_meta_info() << " with learning rate " << lr;
     return oss.str();
 }
 
@@ -241,7 +251,7 @@ void InitWeightAction::execute() {
 
 std::string InitWeightAction::to_string() const {
     std::ostringstream oss;
-    oss << "InitWeightAction: initializing " << *lhs << " with type " << init_type;
+    oss << "InitWeightAction: initializing " << lhs->get_meta_info() << " with type " << init_type;
     return oss.str();
 }
 

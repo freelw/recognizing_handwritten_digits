@@ -1,6 +1,7 @@
 #include "tensor.h"
 #include "backends/backend_ops.h"
 #include "graph/actions.h"
+#include <sstream>
 
 std::string TensorDtype_to_string(TensorDType dtype) {
     switch (dtype) {
@@ -100,22 +101,40 @@ Tensor *Tensor::fill(float value) {
     return this;
 }
 
-std::ostream &operator<<(std::ostream &output, const Tensor &s) {
+std::string Tensor::get_meta_info() const {
+    std::ostringstream output;
     output << "Tensor";
-    if (s.get_dtype() != FLOAT32) {
-        std::string dtype_str = TensorDtype_to_string(s.get_dtype());
+    if (get_dtype() != FLOAT32) {
+        std::string dtype_str = TensorDtype_to_string(get_dtype());
         output << "(" << dtype_str << ")";
     }
-    output << "(" << s.get_name() << ")(";
-    for (size_t i = 0; i < s.shape.size(); ++i) {
-        output << s.shape[i];
-        if (i != s.shape.size() - 1) {
+    output << "(" << get_name() << ")(";
+    for (size_t i = 0; i < shape.size(); ++i) {
+        output << shape[i];
+        if (i != shape.size() - 1) {
             output << ", ";
         }
     }
     output << ")";
-    return output;
+    return output.str();
 }
+
+// std::ostream &operator<<(std::ostream &output, const Tensor &s) {
+//     output << "Tensor";
+//     if (s.get_dtype() != FLOAT32) {
+//         std::string dtype_str = TensorDtype_to_string(s.get_dtype());
+//         output << "(" << dtype_str << ")";
+//     }
+//     output << "(" << s.get_name() << ")(";
+//     for (size_t i = 0; i < s.shape.size(); ++i) {
+//         output << s.shape[i];
+//         if (i != s.shape.size() - 1) {
+//             output << ", ";
+//         }
+//     }
+//     output << ")";
+//     return output;
+// }
 
 std::vector<Tensor*> g_tensors;
 std::vector<Tensor*> g_tensor_views;
@@ -156,15 +175,15 @@ Tensor *allocGradTensor(const std::vector<int> &shape) {
 void printAllTensors() {
     std::cout << "Tensors:" << std::endl;
     for (Tensor *tensor : g_tensors) {
-        std::cout << "\t" << *tensor << std::endl;
+        std::cout << "\t" << tensor->get_meta_info() << std::endl;
     }
     std::cout << "Tensor Views:" << std::endl;
     for (Tensor *tensor_view : g_tensor_views) {
-        std::cout << "\t" << *tensor_view << std::endl;
+        std::cout << "\t" << tensor_view->get_meta_info() << std::endl;
     }
     std::cout << "Grad Tensors:" << std::endl;
     for (Tensor *grad_tensor : g_grad_tensors) {
-        std::cout << "\t" << *grad_tensor << std::endl;
+        std::cout << "\t" << grad_tensor->get_meta_info() << std::endl;
     }
 }
 

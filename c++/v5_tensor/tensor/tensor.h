@@ -50,15 +50,8 @@ class Tensor {
         virtual std::string get_name() const { return name; }
         Tensor *transpose();
         Tensor *fill(float value);
-        friend std::ostream &operator<<(std::ostream &output, const Tensor &s);
-        bool is_contiguous() const {
-            for (size_t i = 0; i < shape.size(); ++i) {
-                if (shape[i] * strides[i] != length()) {
-                    return false;
-                }
-            }
-            return true;
-        }
+        std::string get_meta_info() const;
+        // friend std::ostream &operator<<(std::ostream &output, const Tensor &s);
     protected:
         int cell_size() const;
     protected:
