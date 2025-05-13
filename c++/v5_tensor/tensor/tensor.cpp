@@ -119,6 +119,19 @@ std::string Tensor::get_meta_info() const {
     return output.str();
 }
 
+bool Tensor::is_contiguous() const {
+    auto rank = get_rank();
+    if (strides[rank-1] != 1) {
+        return false;
+    }
+    for (int i = 0; i < rank-1; ++ i) {
+        if (strides[i] != strides[i+1] * shape[i+1]) {
+            return false;
+        }
+    }
+    return true;
+}
+
 void dfs_print(std::ostream &output, const Tensor &s, void *data, int depth, bool is_start = true) {
     if (!is_start) {
         for (int i = 0; i < depth; ++i) {

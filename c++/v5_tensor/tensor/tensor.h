@@ -51,6 +51,7 @@ class Tensor {
         Tensor *transpose();
         Tensor *fill(float value);
         std::string get_meta_info() const;
+        bool is_contiguous() const;
         friend std::ostream &operator<<(std::ostream &output, const Tensor &s);
     protected:
         int cell_size() const;

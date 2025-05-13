@@ -1152,17 +1152,29 @@ void test_mlp() {
 }
 
 void test_print_tensor() {
-
     construct_env();
     Tensor *input = allocTensor({2, 2, 4}, "input");
     auto node = graph::allocNode(input);
     node->init_weight_gauss(0.02, 0);
-
     allocMemAndInitTensors();
     gDoActions();
-
     std::cout << *input << std::endl;
+    destruct_env();
+}
 
+void test_contiguous() {
+    construct_env();
+    Tensor *input = allocTensor({2, 2, 4}, "input");
+    auto t_input = input->transpose();
+    allocMemAndInitTensors();
+    gDoActions();
+    bool succ =
+        input->is_contiguous() && !t_input->is_contiguous();
+    if (succ) {
+        std::cout << GREEN << "test_contiguous succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_contiguous failed" << RESET << std::endl;
+    }
     destruct_env();
 }
 
@@ -1179,6 +1191,7 @@ void test_cpu() {
     test_adam();
     test_mlp();
     test_print_tensor();
+    test_contiguous();
 }
 
 Tensor *test_add_with_cpu_base(int m, int n) {
@@ -1911,6 +1924,7 @@ void test_gpu() {
     test_mlp();
     test_mlp_with_cpu();
     test_print_tensor();
+    test_contiguous();
 }
 
 int main(int argc, char *argv[]) {
