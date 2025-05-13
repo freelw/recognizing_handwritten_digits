@@ -314,4 +314,26 @@ __global__ void tensor_adam_step(
     }
 }
 
+__global__ void reshape_deep_cp_float_kernel(
+    float *dst, float *src,
+    int32_t *src_shape, int32_t *src_strides,
+    int32_t dim, int32_t length
+) {
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index >= length) {
+        return;
+    } else {
+        int tmp_length = length;
+        int tmp_index = index;
+        int offset = 0;
+        for (int j = 0; j < dim; ++j) {
+            tmp_length /= src_shape[j];
+            int cur_dim_index = tmp_index / tmp_length;
+            offset += cur_dim_index * src_strides[j];
+            tmp_index %= tmp_length;
+        }
+        dst[index] = src[offset];
+    }
+}
+
 #endif // GCC_ASAN

@@ -514,7 +514,36 @@ void CUDAOps::reshape_deep_cp(
     Tensor *dst_tensor, const Tensor *src_tensor,
     const Tensor *src_shape, const Tensor *src_strides
 ) {
-    assert(false); // Not implemented yet
+    assert(dst_tensor->get_dtype() == src_tensor->get_dtype());
+    assert(
+        dst_tensor->get_dtype() == INT32 ||
+        dst_tensor->get_dtype() == FLOAT32
+    );
+
+    auto dtype = dst_tensor->get_dtype();
+    auto src_shape_data = static_cast<int32_t*>(src_shape->get_data());
+    auto src_strides_data = static_cast<int32_t*>(src_strides->get_data());
+    auto dim = src_tensor->get_dim();
+    auto length = src_tensor->length();
+
+    if (dtype == INT32) {
+        assert(false);
+    } else if (dtype == FLOAT32) {
+        dim3 gridDim(
+            (length + TILE_WIDTH - 1) / TILE_WIDTH
+        );
+        dim3 blockDim(TILE_WIDTH);
+        reshape_deep_cp_float_kernel<<<gridDim, blockDim>>>(
+            (float *)dst_tensor->get_data(),
+            (float *)src_tensor->get_data(),
+            src_shape_data,
+            src_strides_data,
+            dim,
+            length
+        );
+    } else {
+        assert(false);
+    }
 }
 
 void* CUDAOps::alloc(size_t size) {

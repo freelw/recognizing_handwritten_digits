@@ -101,6 +101,12 @@ __global__ void tensor_adam_step(
     float lr, float eps
 );
 
+__global__ void reshape_deep_cp_float_kernel(
+    float *dst, float *src,
+    int32_t *src_shape, int32_t *src_strides,
+    int32_t dim, int32_t length
+);
+
 #endif // GCC_ASAN
 
 #endif // V5_TENSOR_BACKENDS_GPU_KERNEL_CUH

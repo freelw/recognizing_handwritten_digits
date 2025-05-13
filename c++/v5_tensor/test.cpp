@@ -1201,19 +1201,19 @@ void test_contiguous() {
 }
 
 void test_cpu() {
-    // test_at();
-    // test_add();
-    // test_add_eq();
-    // test_expand_add();
-    // test_mul();
-    // test_sum();
-    // test_cross_entropy();
-    // test_cross_entropy_backward();
-    // test_bp();
-    // test_adam();
-    // test_mlp();
-    // test_print_tensor();
-    // test_contiguous();
+    test_at();
+    test_add();
+    test_add_eq();
+    test_expand_add();
+    test_mul();
+    test_sum();
+    test_cross_entropy();
+    test_cross_entropy_backward();
+    test_bp();
+    test_adam();
+    test_mlp();
+    test_print_tensor();
+    test_contiguous();
     test_reshape();
 }
 
@@ -1948,6 +1948,7 @@ void test_gpu() {
     test_mlp_with_cpu();
     test_print_tensor();
     test_contiguous();
+    test_reshape();
 }
 
 int main(int argc, char *argv[]) {
