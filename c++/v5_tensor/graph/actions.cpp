@@ -267,41 +267,56 @@ bool BoundaryAction::is_backward_boundary() {
     return true;
 }
 
-AssignStridesAction::AssignStridesAction(
-    Tensor *_lhs,
+AssignShapeAndStridesAction::AssignShapeAndStridesAction(
+    Tensor *tensor_shape,
+    Tensor *tensor_strides,
+    const std::vector<int> &_shape,
     const std::vector<int> &_strides
-) : Action(_lhs, nullptr, nullptr), strides(_strides) {
+) : Action(tensor_shape, nullptr, tensor_strides),
+    shape(_shape),
+    strides(_strides) {
+    shape_data = static_cast<int32_t*>(::malloc(sizeof(int32_t) * shape.size()));
     strides_data = static_cast<int32_t*>(::malloc(sizeof(int32_t) * strides.size()));
     for (size_t i = 0; i < strides.size(); ++i) {
         strides_data[i] = static_cast<int32_t>(strides[i]);
     }
 }
 
-AssignStridesAction::~AssignStridesAction() {
+AssignShapeAndStridesAction::~AssignShapeAndStridesAction() {
+    assert(shape_data != nullptr);
     assert(strides_data != nullptr);
     ::free(strides_data);
+    ::free(shape_data);
 }
 
-void AssignStridesAction::execute() {
+void AssignShapeAndStridesAction::execute() {
     assert(lhs != nullptr);
+    assert(res != nullptr);
+    assert(shape_data != nullptr);
     assert(strides_data != nullptr);
+
     g_backend_ops->cp_to_device(
         lhs,
+        reinterpret_cast<char*>(shape_data),
+        sizeof(int32_t) * shape.size()
+    );
+
+    g_backend_ops->cp_to_device(
+        res,
         reinterpret_cast<char*>(strides_data),
         sizeof(int32_t) * strides.size()
     );
 }
 
-std::string AssignStridesAction::to_string() const {
+std::string AssignShapeAndStridesAction::to_string() const {
     std::ostringstream oss;
-    oss << "AssignStridesAction: assigning strides to " << lhs->get_meta_info();
+    oss << "AssignShapeAndStridesAction: assigning shape " << lhs->get_meta_info() << " and strides " << rhs->get_meta_info();
     return oss.str();
 }
 
 void ReshapeDeepCpAction::execute() {
     assert(lhs != nullptr);
     assert(rhs != nullptr);
-    // g_backend_ops->reshape_cp(lhs->get_data(), rhs->get_data(), lhs->size());
     g_backend_ops->reshape_deep_cp(lhs, rhs, strides, dim);
 }
 

@@ -183,14 +183,21 @@ class BoundaryAction : public Action {
         std::string to_string() const override;
 };
 
-class AssignStridesAction : public Action {
+class AssignShapeAndStridesAction : public Action {
     public:
-        AssignStridesAction(Tensor *_lhs, const std::vector<int> &_strides);
-        virtual ~AssignStridesAction();
+        AssignShapeAndStridesAction(
+            Tensor *tensor_shape,
+            Tensor *tensor_strides,
+            const std::vector<int> &_shape,
+            const std::vector<int> &_strides
+        );
+        virtual ~AssignShapeAndStridesAction();
         void execute() override;
         std::string to_string() const override;
     private:
+        std::vector<int> shape;
         std::vector<int> strides;
+        int32_t *shape_data;
         int32_t *strides_data;
 };
 

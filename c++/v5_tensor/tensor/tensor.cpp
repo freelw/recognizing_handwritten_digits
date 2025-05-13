@@ -145,6 +145,11 @@ Tensor *Tensor::reshape(const std::vector<int> &shape) {
             this->get_name() + "_reshape_deep_copy",
             this->get_dtype()
         );
+        Tensor *tensor_shape = allocTensor(
+            {get_dim()},
+            this->get_name() + "_reshape_deep_copy_shape",
+            INT32
+        );
         Tensor *tensor_strides = allocTensor(
             {get_dim()},
             this->get_name() + "_reshape_deep_copy_strides",
@@ -152,8 +157,10 @@ Tensor *Tensor::reshape(const std::vector<int> &shape) {
         );
 
         gCreateAction(
-            new AssignStridesAction(
+            new AssignShapeAndStridesAction(
+                tensor_shape,
                 tensor_strides,
+                this->get_shape(),
                 this->get_strides()
             )
         );

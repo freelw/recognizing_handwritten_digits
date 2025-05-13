@@ -381,7 +381,9 @@ void CPUOps::fill(Tensor *tensor, float value) {
 }
 
 void CPUOps::reshape_deep_cp(Tensor *dst_tensor, const Tensor *src_tensor, const Tensor *src_strides, int _dim) {
-    assert(false); // Not implemented
+    
+
+    
 }
 
 void* CPUOps::alloc(size_t size) {
