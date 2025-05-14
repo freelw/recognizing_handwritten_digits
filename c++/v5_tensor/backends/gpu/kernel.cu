@@ -350,4 +350,26 @@ __global__ void repeat_interleave_int32_kernel(
     }
 }
 
+__global__ void sequence_mask_kernel(
+    float *src, int32_t *mask, float *dst,
+    int M, int N,
+    int l_stride0,
+    int l_stride1,
+    int m_stride0,
+    int r_stride0,
+    int r_stride1,
+    float value
+) {
+    int row = blockIdx.y * blockDim.y + threadIdx.y;
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
+    if (row >= M || col >= N) {
+        return;
+    } else {
+        int index_l = row * l_stride0 + col * l_stride1;
+        int index_m = row * m_stride0;
+        int index_r = row * r_stride0 + col * r_stride1;
+        dst[index_r] = mask[index_m] <= col ? value : src[index_l];
+    }
+}
+
 #endif // GCC_ASAN

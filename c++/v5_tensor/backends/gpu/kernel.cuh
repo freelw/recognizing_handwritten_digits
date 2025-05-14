@@ -113,6 +113,17 @@ __global__ void repeat_interleave_int32_kernel(
     int32_t n
 );
 
+__global__ void sequence_mask_kernel(
+    float *src, int32_t *mask, float *dst,
+    int M, int N,
+    int l_stride0,
+    int l_stride1,
+    int m_stride0,
+    int r_stride0,
+    int r_stride1,
+    float value
+);
+
 #endif // GCC_ASAN
 
 #endif // V5_TENSOR_BACKENDS_GPU_KERNEL_CUH

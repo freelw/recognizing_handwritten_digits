@@ -576,7 +576,46 @@ void CUDAOps::repeat_interleave(Tensor *lhs, Tensor *res, int n) {
 }
 
 void CUDAOps::sequence_mask(Tensor *lhs, const Tensor *mask, Tensor *res, float value) {
-    assert(false);
+    assert(lhs != nullptr);
+    assert(mask != nullptr);
+    assert(res != nullptr);
+
+    assert(lhs->get_dim() == 2);
+    assert(mask->get_dim() == 1);
+    assert(res->get_dim() == 2);
+
+    auto lshape = lhs->get_shape();
+    auto mshape = mask->get_shape();
+    auto rshape = res->get_shape();
+
+    assert(lshape[0] == mshape[0]);
+    assert(lshape[1] == rshape[1]);
+    assert(rshape[0] == mshape[0]);
+
+    auto lstrides = lhs->get_strides();
+    auto mstrides = mask->get_strides();
+    auto rstrides = res->get_strides();
+
+    dim3 gridDim(
+        (lshape[1] + TILE_WIDTH - 1) / TILE_WIDTH,
+        (lshape[0] + TILE_WIDTH - 1) / TILE_WIDTH
+    );
+
+    dim3 blockDim(TILE_WIDTH, TILE_WIDTH);
+
+    sequence_mask_kernel<<<gridDim, blockDim>>>(
+        (float *)lhs->get_data(),
+        (int32_t *)mask->get_data(),
+        (float *)res->get_data(),
+        lshape[0],
+        lshape[1],
+        lstrides[0],
+        lstrides[1],
+        mstrides[0],
+        rstrides[0],
+        rstrides[1],
+        value
+    );
 }
 
 void* CUDAOps::alloc(size_t size) {
