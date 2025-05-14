@@ -1419,6 +1419,20 @@ bool compare_ans1_ans2(
     return true;
 }
 
+bool compare_ans1_ans2_int32(
+    int32_t *ans1, int32_t *ans2, int size
+) {
+    for (int i = 0; i < size; ++i) {
+        if (ans1[i] != ans2[i]) {
+            std::cerr << RED << "Error: ans1[" << i << "] = " << ans1[i]
+                      << ", ans2[" << i << "] = " << ans2[i] << RESET << std::endl;
+            return false;
+        }
+    }
+    return true;
+}
+
+
 void test_reshape_with_cpu() {
 
     construct_env();
@@ -2608,6 +2622,57 @@ void test_mlp_with_cpu() {
     }
 }
 
+Tensor *test_repeat_interleave_with_cpu_base(int m, int n) {
+    Tensor *input = allocTensor({m}, "input", INT32);
+    auto node = graph::allocNode(input);
+    node->init_weight_for_dbg();
+    auto res = input->repeat_interleave(n);
+    // printAllActions();
+    allocMemAndInitTensors();
+    gDoActions();
+    return res;
+}
+
+void test_repeat_interleave_with_cpu() {
+    int m = 100;
+    int n = 20;
+    use_gpu(false);
+    construct_env();
+    auto res_cpu = test_repeat_interleave_with_cpu_base(m, n);
+    auto res_cpu_size = res_cpu->size();
+    auto res_cpu_length = res_cpu->length();
+    int32_t *res_cpu_buffer = static_cast<int32_t*>(::malloc(res_cpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(res_cpu_buffer),
+        res_cpu,
+        res_cpu_size
+    );
+    destruct_env();
+    use_gpu(true);
+    construct_env();
+    auto res_gpu = test_repeat_interleave_with_cpu_base(m, n);
+    auto res_gpu_size = res_gpu->size();
+    auto res_gpu_length = res_gpu->length();
+    int32_t *res_gpu_buffer = static_cast<int32_t*>(::malloc(res_gpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(res_gpu_buffer),
+        res_gpu,
+        res_gpu_size
+    );
+    destruct_env();
+
+    assert(res_cpu_size == res_gpu_size);
+    assert(res_cpu_length == res_gpu_length);
+    bool succ = compare_ans1_ans2_int32(res_cpu_buffer, res_gpu_buffer, res_gpu_length);
+    if (succ) {
+        std::cout << GREEN << "test_repeat_interleave_with_gpu succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_repeat_interleave_with_gpu failed" << RESET << std::endl;
+    }
+    ::free(res_cpu_buffer);
+    ::free(res_gpu_buffer);
+}
+
 void test_gpu() {
     test_at();
     test_at_1();
@@ -2639,6 +2704,7 @@ void test_gpu() {
     test_reshape_bp();
     test_reshape_bp_1();
     test_repeat_interleave();
+    test_repeat_interleave_with_cpu();
 }
 
 int main(int argc, char *argv[]) {
