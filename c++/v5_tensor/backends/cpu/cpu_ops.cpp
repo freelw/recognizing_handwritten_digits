@@ -441,7 +441,37 @@ void CPUOps::repeat_interleave(Tensor *lhs, Tensor *res, int n) {
 }
 
 void CPUOps::sequence_mask(Tensor *lhs, const Tensor *mask, Tensor *res, float value) {
-    assert(false);
+    assert(lhs != nullptr);
+    assert(mask != nullptr);
+    assert(res != nullptr);
+
+    assert(lhs->get_dtype() == FLOAT32);
+    assert(mask->get_dtype() == INT32);
+    assert(res->get_dtype() == FLOAT32);
+
+    assert(lhs->get_dim() == 2);
+    assert(mask->get_dim() == 1);
+    assert(res->get_dim() == 2);
+
+    auto lshape = lhs->get_shape();
+    auto mshape = mask->get_shape();
+    auto rshape = res->get_shape();
+
+    assert(lshape[0] == mshape[0]);
+    assert(lshape[1] == rshape[1]);
+    assert(rshape[0] == mshape[0]);
+
+    auto lstrides = lhs->get_strides();
+    auto mstrides = mask->get_strides();
+    auto rstrides = res->get_strides();
+
+    for (int i = 0; i < lshape[0]; ++i) {
+        for (int j = 0; j < lshape[1]; ++j) {
+            static_cast<float*>(res->get_data())[i * rstrides[0] + j * rstrides[1]] = 
+                static_cast<int32_t*>(mask->get_data())[i * mstrides[0]] <= j ? value : 
+                static_cast<float*>(lhs->get_data())[i * lstrides[0] + j * lstrides[1]];
+        }
+    }
 }
 
 void* CPUOps::alloc(size_t size) {

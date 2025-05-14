@@ -205,11 +205,11 @@ Tensor *Tensor::repeat_interleave(int n) {
 }
 
 Tensor *Tensor::sequence_mask(Tensor *mask, float value) {
-    assert(!is_view());
     assert(mask->get_dtype() == INT32);
     assert(mask->get_dim() == 1);
     assert(mask->get_shape()[0] == shape[0]);
     assert(this->get_dtype() == FLOAT32);
+    assert(this->get_dim() == 2);
     Tensor *sequence_mask_tensor = allocTensor(
         {shape[0], shape[1]},
         this->get_name() + "_sequence_mask",
