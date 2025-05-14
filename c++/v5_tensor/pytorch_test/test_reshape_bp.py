@@ -39,35 +39,60 @@ def test1():
     model[0].weight.data[0, 0] = 0.9
     model[0].weight.data[1, 0] = -0.9
 
-    print("model[0].weight : ", model[0].weight)
-
     model[2].weight.data[0, 0] = 0.9
     model[2].weight.data[1, 0] = -0.9
-
 
     # loss function
     loss_fn = nn.CrossEntropyLoss()
 
     res = model(x)
     res.retain_grad()
-    print("forward result: ", res)
-    print("result grad: ", res.grad)
     loss = loss_fn(res, y)
     print("loss: ", loss)
     loss.backward()
 
-    #show the gradients
+    print("ox grad: ", ox.grad)
 
-    # print(model[0].weight)
-    print(model[0].weight.grad)
-    # print(model[0].bias)
-    print(model[0].bias.grad)
-    # print(model[2].weight)
-    print(model[2].weight.grad)
-    # print(model[2].bias)
-    print(model[2].bias.grad)
+def test2():
+    ox = torch.arange(20, dtype=torch.float32).reshape(5, 4) * 1e-5
+    print ("ox: ", ox)
+    ox.requires_grad_(True)  # 启用梯度计算
+    x = ox.reshape(-1, 2)
+    print("x: ", x)
+    print("x shape:", x.shape)
+    # target is 1
+    y = [1 for i in range(10)]
+    y = torch.tensor(y, dtype=torch.long).view(10)
+    # model
+    model = nn.Sequential(
+        nn.Linear(2, 3),
+        nn.ReLU(),
+        nn.Linear(3, 3)
+    )
+    # initialize the weights to 0.1
+    # initialize the bias to 0
+    model[0].weight.data.fill_(0.1)
+    model[0].bias.data.fill_(0.1)
+    model[2].weight.data.fill_(0.1)
+    model[2].bias.data.fill_(0.1)
+
+    model[0].weight.data[0, 0] = 0.9
+    model[0].weight.data[1, 0] = -0.9
+    model[2].weight.data[0, 0] = 0.9
+    model[2].weight.data[1, 0] = -0.9
+    # loss function
+    loss_fn = nn.CrossEntropyLoss()
+
+    res = model(x)
+    res.retain_grad()
+    loss = loss_fn(res, y)
+    print("loss: ", loss)
+    loss.backward()
+
 
     print("ox grad: ", ox.grad)
 
+
 if __name__ == "__main__":
     test1()
+    test2()
