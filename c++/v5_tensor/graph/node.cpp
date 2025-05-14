@@ -76,6 +76,7 @@ namespace graph {
     }
 
     Node *Node::softmax() {
+        assert(this->get_tensor()->get_dim() == 3);
         auto res_node = allocNode(
             this->get_tensor()->softmax()
         );
