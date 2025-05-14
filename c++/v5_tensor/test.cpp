@@ -1969,6 +1969,51 @@ void test_mask_1() {
     destruct_env();
 }
 
+void test_softmax() {
+    construct_env();
+    Tensor *input = allocTensor({1, 3, 4}, "input");
+    Tensor *maxs = allocTensor({1, 3}, "maxs");
+    Tensor *sums = allocTensor({1, 3}, "sums");
+    auto ni = graph::allocNode(input);
+    auto res = input->softmax(maxs, sums);
+    allocMemAndInitTensors();
+    gDoActions();
+    float ans[12] = {
+        0.25, 0.25, 0.25, 0.25,
+        0.25, 0.25, 0.25, 0.25,
+        0.25, 0.25, 0.25, 0.25
+    };
+    bool succ_res = compare_res_ans(res, ans, "res");
+    if (!succ_res) {
+        std::cout << RED << "test_softmax res failed" << RESET << std::endl;
+    }
+    
+
+    float ans_maxs[3] = {
+        0, 0, 0
+    };
+    bool succ_maxs = compare_res_ans(maxs, ans_maxs, "maxs");
+    if (!succ_maxs) {
+        std::cout << RED << "test_softmax maxs failed" << RESET << std::endl;
+    }
+
+    float ans_sums[3] = {
+        4, 4, 4
+    };
+    bool succ_sums = compare_res_ans(sums, ans_sums, "sums");
+    if (!succ_sums) {
+        std::cout << RED << "test_softmax sums failed" << RESET << std::endl;
+    }
+
+    bool succ = succ_res && succ_maxs && succ_sums;
+    if (succ) {
+        std::cout << GREEN << "test_softmax succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_softmax failed" << RESET << std::endl;
+    }    
+    destruct_env();
+}
+
 void test_cpu() {
     test_at();
     test_add();
@@ -1990,6 +2035,7 @@ void test_cpu() {
     test_repeat_interleave();
     test_mask();
     test_mask_1();
+    test_softmax();
 }
 
 Tensor *test_add_with_cpu_base(int m, int n) {
@@ -2887,6 +2933,7 @@ void test_gpu() {
     test_mask_with_cpu();
     test_mask_1();
     test_mask_with_cpu_1();
+    test_softmax();
 }
 
 int main(int argc, char *argv[]) {

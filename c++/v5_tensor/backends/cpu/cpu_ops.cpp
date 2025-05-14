@@ -474,7 +474,7 @@ void CPUOps::sequence_mask(Tensor *lhs, const Tensor *mask, Tensor *res, float v
     }
 }
 
-void CPUOps::softmax(Tensor *lhs, Tensor *res) {
+void CPUOps::softmax(Tensor *lhs, Tensor *res, Tensor *maxs, Tensor *sums) {
     auto l_shape = lhs->get_shape();
     auto r_shape = res->get_shape();
     assert(l_shape == r_shape);
@@ -484,6 +484,8 @@ void CPUOps::softmax(Tensor *lhs, Tensor *res) {
     assert(res->get_dim() == 3);
     auto lstrides = lhs->get_strides();
     auto rstrides = res->get_strides();
+    assert(maxs->get_dim() == 2);
+    assert(sums->get_dim() == 2);
     for (int i = 0; i < l_shape[0]; ++i) {
         for (int j = 0; j < l_shape[1]; ++j) {
             float max = static_cast<float*>(lhs->get_data())[i * lstrides[0] + j * lstrides[1]];
@@ -493,6 +495,7 @@ void CPUOps::softmax(Tensor *lhs, Tensor *res) {
                     max = e;
                 }
             }
+            static_cast<float*>(maxs->get_data())[i * l_shape[0] + j] = max;
             float sum = 0;
             for (int k = 0; k < l_shape[2]; ++k) {
                 float e = static_cast<float*>(lhs->get_data())[i * lstrides[0] + j * lstrides[1] + k * lstrides[2]];
@@ -503,6 +506,7 @@ void CPUOps::softmax(Tensor *lhs, Tensor *res) {
                 static_cast<float*>(res->get_data())[i * rstrides[0] + j * rstrides[1] + k * rstrides[2]] =
                     std::exp(static_cast<float*>(lhs->get_data())[i * lstrides[0] + j * lstrides[1] + k * lstrides[2]] - max) / sum;
             }
+            static_cast<float*>(sums->get_data())[i * l_shape[0] + j] = sum;
         }
     }
 }

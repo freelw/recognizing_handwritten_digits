@@ -618,7 +618,7 @@ void CUDAOps::sequence_mask(Tensor *lhs, const Tensor *mask, Tensor *res, float 
     );
 }
 
-void CUDAOps::softmax(Tensor *lhs, Tensor *res) {
+void CUDAOps::softmax(Tensor *lhs, Tensor *res, Tensor *maxs, Tensor *sums) {
     assert(false);
 }
 

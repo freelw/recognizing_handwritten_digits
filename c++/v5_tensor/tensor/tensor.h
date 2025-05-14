@@ -53,7 +53,7 @@ class Tensor {
         Tensor *fill(float value);
         Tensor *repeat_interleave(int n);
         Tensor *sequence_mask(Tensor *mask, float value);
-        Tensor *softmax();
+        Tensor *softmax(Tensor *maxs, Tensor *sums);
         std::string get_meta_info() const;
         bool is_contiguous() const;
         bool is_shared_with(const Tensor *other) const {

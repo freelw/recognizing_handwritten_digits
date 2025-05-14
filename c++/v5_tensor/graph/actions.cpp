@@ -357,7 +357,7 @@ std::string SequenceMaskAction::to_string() const {
 void SoftmaxAction::execute() {
     assert(lhs != nullptr);
     assert(res != nullptr);
-    g_backend_ops->softmax(lhs, res);
+    g_backend_ops->softmax(lhs, res, maxs, sums);
 }
 
 std::string SoftmaxAction::to_string() const {
