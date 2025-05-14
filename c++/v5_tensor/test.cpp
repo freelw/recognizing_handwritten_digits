@@ -1468,6 +1468,7 @@ void test_reshape_bp() {
     Tensor *bias1 = allocTensor({3}, "bias1");
 
     graph::Node *ni = graph::allocNode(input);
+    ni->require_grad();
     ni->init_weight_for_dbg();
     graph::Node *ni_t = ni->transpose();
     graph::Node *ni_t_r = ni_t->reshape({-1, 2});
@@ -1476,7 +1477,6 @@ void test_reshape_bp() {
     graph::Node *nw1 = graph::allocNode(w1);
     graph::Node *nb1 = graph::allocNode(bias1);
     
-    ni->require_grad();
     nw->require_grad();
     nb->require_grad();
     nw1->require_grad();
@@ -1493,7 +1493,7 @@ void test_reshape_bp() {
 
     zero_grad();
     nres->backward();
-    // printAllActions();
+    printAllActions();
     allocMemAndInitTensors();
 
     auto input_size = input->size();
