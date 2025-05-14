@@ -204,11 +204,12 @@ Tensor *Tensor::repeat_interleave(int n) {
     return repeat_interleave_tensor;
 }
 
-Tensor *Tensor::sequence_mask(Tensor *mask) {
+Tensor *Tensor::sequence_mask(Tensor *mask, float value) {
     assert(!is_view());
     assert(mask->get_dtype() == INT32);
     assert(mask->get_dim() == 1);
     assert(mask->get_shape()[0] == shape[0]);
+    assert(this->get_dtype() == FLOAT32);
     Tensor *sequence_mask_tensor = allocTensor(
         {shape[0], shape[1]},
         this->get_name() + "_sequence_mask",
@@ -218,7 +219,8 @@ Tensor *Tensor::sequence_mask(Tensor *mask) {
         new SequenceMaskAction(
             this,
             mask,
-            sequence_mask_tensor
+            sequence_mask_tensor,
+            value
         )
     );
     return sequence_mask_tensor;

@@ -30,7 +30,7 @@ class CPUOps : public BackendOps {
             const Tensor *src_shape, const Tensor *src_strides
         ) override;
         void repeat_interleave(Tensor *lhs, Tensor *res, int n) override;
-        void sequence_mask(Tensor *lhs, const Tensor *mask, Tensor *res) override;
+        void sequence_mask(Tensor *lhs, const Tensor *mask, Tensor *res, float value) override;
 
         // Memory management
         void* alloc(size_t size) override;

@@ -345,7 +345,7 @@ void SequenceMaskAction::execute() {
     assert(lhs != nullptr);
     assert(rhs != nullptr);
     assert(res != nullptr);
-    g_backend_ops->sequence_mask(lhs, rhs, res);
+    g_backend_ops->sequence_mask(lhs, rhs, res, value);
 }
 
 std::string SequenceMaskAction::to_string() const {

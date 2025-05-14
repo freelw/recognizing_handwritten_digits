@@ -575,7 +575,7 @@ void CUDAOps::repeat_interleave(Tensor *lhs, Tensor *res, int n) {
     );
 }
 
-void CUDAOps::sequence_mask(Tensor *lhs, const Tensor *mask, Tensor *res) {
+void CUDAOps::sequence_mask(Tensor *lhs, const Tensor *mask, Tensor *res, float value) {
     assert(false);
 }
 

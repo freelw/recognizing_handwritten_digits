@@ -227,10 +227,12 @@ class RepeatInterleaveAction : public Action {
 
 class SequenceMaskAction : public Action {
     public:
-        SequenceMaskAction(Tensor *_lhs, const Tensor *_rhs, Tensor *_res)
-            : Action(_lhs, _rhs, _res) {}
+        SequenceMaskAction(Tensor *_lhs, const Tensor *_rhs, Tensor *_res, float _value)
+            : Action(_lhs, _rhs, _res), value(_value) {}
         void execute() override;
         std::string to_string() const override;
+    private:
+        float value;
 };
 
 std::vector<Action *> getOnceActions();
