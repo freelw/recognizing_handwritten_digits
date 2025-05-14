@@ -1253,6 +1253,130 @@ void test_reshape() {
     destruct_env();
 }
 
+void test_reshape_with_cpu_base(
+    int m, int n,
+    float *l_ans,
+    float *l_t_ans,
+    float *l_t_shape_ans,
+    float *l_r_ans
+) {
+    Tensor *l = allocTensor({m, n}, "input");
+    auto node = graph::allocNode(l);
+    node->init_weight_for_dbg();
+    auto l_t = l->transpose();
+    auto l_t_reshape = l_t->reshape({m, n});
+    auto l_r = l->reshape({m, n});
+    allocMemAndInitTensors();
+    gDoActions();
+
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(l_ans),
+        l,
+        l->size()
+    );
+
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(l_t_ans),
+        l_t,
+        l_t->size()
+    );
+
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(l_t_shape_ans),
+        l_t_reshape,
+        l_t_reshape->size()
+    );
+
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(l_r_ans),
+        l_r,
+        l_r->size()
+    );
+}
+
+bool compare_ans1_ans2(
+    float *ans1, float *ans2, int size
+) {
+    const float eps = 1e-5f;
+    for (int i = 0; i < size; ++i) {
+        if (fabs(ans1[i] - ans2[i]) > eps) {
+            std::cerr << std::setprecision(8) << RED << "Error: ans1[" << i << "] = " << ans1[i]
+                      << ", ans2[" << i << "] = " << ans2[i] << RESET << std::endl;
+            return false;
+        }
+    }
+    return true;
+}
+
+void test_reshape_with_cpu() {
+
+    construct_env();
+    int m = 300;
+    int n = 400;
+    int size = m * n * sizeof(float);
+
+    float *l_ans_cpu = static_cast<float*>(::malloc(size));
+    float *l_t_ans_cpu = static_cast<float*>(::malloc(size));
+    float *l_t_shape_ans_cpu = static_cast<float*>(::malloc(size));
+    float *l_r_ans_cpu = static_cast<float*>(::malloc(size));
+
+    float *l_ans_gpu = static_cast<float*>(::malloc(size));
+    float *l_t_ans_gpu = static_cast<float*>(::malloc(size));
+    float *l_t_shape_ans_gpu = static_cast<float*>(::malloc(size));
+    float *l_r_ans_gpu = static_cast<float*>(::malloc(size));
+
+    use_gpu(false);
+    test_reshape_with_cpu_base(
+        m,
+        n,
+        l_ans_cpu,
+        l_t_ans_cpu,
+        l_t_shape_ans_cpu,
+        l_r_ans_cpu
+    );
+    destruct_env();
+
+    use_gpu(true);
+    construct_env();
+    test_reshape_with_cpu_base(
+        m,
+        n,
+        l_ans_gpu,
+        l_t_ans_gpu,
+        l_t_shape_ans_gpu,
+        l_r_ans_gpu
+    );
+    destruct_env();
+
+    bool l_succ = compare_ans1_ans2(l_ans_cpu, l_ans_gpu, m * n);
+    bool l_t_succ = compare_ans1_ans2(l_t_ans_cpu, l_t_ans_gpu, m * n);
+    bool l_t_shape_succ = compare_ans1_ans2(l_t_shape_ans_cpu, l_t_shape_ans_gpu, m * n);
+    bool l_r_succ = compare_ans1_ans2(l_r_ans_cpu, l_r_ans_gpu, m * n);
+
+    if (!l_succ) {
+        std::cerr << RED << "test_test_reshape_with_cpu l failed" << RESET << std::endl;
+    }
+    if (!l_t_succ) {
+        std::cerr << RED << "test_test_reshape_with_cpu l_t failed" << RESET << std::endl;
+    }
+    if (!l_t_shape_succ) {
+        std::cerr << RED << "test_test_reshape_with_cpu l_t_shape failed" << RESET << std::endl;
+    }
+    if (!l_r_succ) {
+        std::cerr << RED << "test_test_reshape_with_cpu l_r failed" << RESET << std::endl;
+    }
+
+    bool succ = l_succ && l_t_succ && l_t_shape_succ && l_r_succ;
+
+    if (succ) {
+        std::cout << GREEN << "test_test_reshape_with_cpu succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_test_reshape_with_cpu failed" << RESET << std::endl;
+    }
+
+    
+}
+
 void test_contiguous() {
     construct_env();
     Tensor *input = allocTensor({2, 2, 4}, "input");
@@ -2018,6 +2142,7 @@ void test_gpu() {
     // test_print_tensor();
     test_contiguous();
     test_reshape();
+    test_reshape_with_cpu();
 }
 
 int main(int argc, char *argv[]) {
