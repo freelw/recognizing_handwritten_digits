@@ -2897,6 +2897,122 @@ void test_mask_with_cpu_1() {
     }
 }
 
+std::vector<Tensor *> test_softmax_with_cpu_base(int m, int n, int k) {
+    Tensor *input = allocTensor({m, n, k}, "input");
+    Tensor *maxs = allocTensor({m, n}, "maxs");
+    Tensor *sums = allocTensor({m, n}, "sums");
+    auto ni = graph::allocNode(input);
+    ni->init_weight_for_dbg();
+    auto res = input->softmax(maxs, sums);
+    allocMemAndInitTensors();
+    printAllActions();
+    gDoActions();
+    std::vector<Tensor *> res_vec;
+    res_vec.push_back(res);
+    res_vec.push_back(maxs);
+    res_vec.push_back(sums);
+    return res_vec;
+}
+
+void test_softmax_with_cpu() {
+    std::vector<Tensor *> cpu_res;
+    std::vector<Tensor *> gpu_res;
+
+    use_gpu(false);
+    construct_env();
+    int m = 101;
+    int n = 500;
+    int k = 30;
+    cpu_res = test_softmax_with_cpu_base(m, n, k);
+    auto res_cpu = cpu_res[0];
+    auto maxs_cpu = cpu_res[1];
+    auto sums_cpu = cpu_res[2];
+    auto res_cpu_size = res_cpu->size();
+    auto res_cpu_length = res_cpu->length();
+    float *res_cpu_buffer = static_cast<float*>(::malloc(res_cpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(res_cpu_buffer),
+        res_cpu,
+        res_cpu_size
+    );
+    auto maxs_cpu_size = maxs_cpu->size();
+    auto maxs_cpu_length = maxs_cpu->length();
+    float *maxs_cpu_buffer = static_cast<float*>(::malloc(maxs_cpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(maxs_cpu_buffer),
+        maxs_cpu,
+        maxs_cpu_size
+    );
+    auto sums_cpu_size = sums_cpu->size();
+    auto sums_cpu_length = sums_cpu->length();
+    float *sums_cpu_buffer = static_cast<float*>(::malloc(sums_cpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(sums_cpu_buffer),
+        sums_cpu,
+        sums_cpu_size
+    );
+    destruct_env();
+    use_gpu(true);
+    construct_env();
+    gpu_res = test_softmax_with_cpu_base(m, n, k);
+    auto res_gpu = gpu_res[0];
+    auto maxs_gpu = gpu_res[1];
+    auto sums_gpu = gpu_res[2];
+    auto res_gpu_size = res_gpu->size();
+    auto res_gpu_length = res_gpu->length();
+    float *res_gpu_buffer = static_cast<float*>(::malloc(res_gpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(res_gpu_buffer),
+        res_gpu,
+        res_gpu_size
+    );
+    auto maxs_gpu_size = maxs_gpu->size();
+    auto maxs_gpu_length = maxs_gpu->length();
+    float *maxs_gpu_buffer = static_cast<float*>(::malloc(maxs_gpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(maxs_gpu_buffer),
+        maxs_gpu,
+        maxs_gpu_size
+    );
+    auto sums_gpu_size = sums_gpu->size();
+    auto sums_gpu_length = sums_gpu->length();
+    float *sums_gpu_buffer = static_cast<float*>(::malloc(sums_gpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(sums_gpu_buffer),
+        sums_gpu,
+        sums_gpu_size
+    );
+    destruct_env();
+
+    assert(res_cpu_size == res_gpu_size);
+    assert(res_cpu_length == res_gpu_length);
+    assert(maxs_cpu_size == maxs_gpu_size);
+    assert(maxs_cpu_length == maxs_gpu_length);
+    assert(sums_cpu_size == sums_gpu_size);
+    assert(sums_cpu_length == sums_gpu_length);
+
+    bool succ_res = compare_ans1_ans2(res_cpu_buffer, res_gpu_buffer, res_gpu_length);
+    if (!succ_res) {
+        std::cerr << RED << "res mismatch" << RESET << std::endl;
+    } else {
+        std::cout << GREEN << "res succ" << RESET << std::endl;
+    }
+    bool succ_maxs = compare_ans1_ans2(maxs_cpu_buffer, maxs_gpu_buffer, maxs_gpu_length);
+    if (!succ_maxs) {
+        std::cerr << RED << "maxs mismatch" << RESET << std::endl;
+    }
+    bool succ_sums = compare_ans1_ans2(sums_cpu_buffer, sums_gpu_buffer, sums_gpu_length);
+    if (!succ_sums) {
+        std::cerr << RED << "sums mismatch" << RESET << std::endl;
+    }
+    bool succ = succ_res && succ_maxs && succ_sums;
+    if (succ) {
+        std::cout << GREEN << "test_softmax_with_gpu succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_softmax_with_gpu failed" << RESET << std::endl;
+    }
+}
+
 void test_gpu() {
     test_at();
     test_at_1();
@@ -2934,6 +3050,7 @@ void test_gpu() {
     test_mask_1();
     test_mask_with_cpu_1();
     test_softmax();
+    test_softmax_with_cpu();
 }
 
 int main(int argc, char *argv[]) {
