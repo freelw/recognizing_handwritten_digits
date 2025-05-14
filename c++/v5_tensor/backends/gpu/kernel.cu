@@ -372,4 +372,36 @@ __global__ void sequence_mask_kernel(
     }
 }
 
+__global__ void softmax_kernel(
+    float *src, float *dst,
+    float *maxs, float *sums,
+    int shape0, int shape1, int shape2,
+    int l_stride0, int l_stride1, int l_stride2,
+    int r_stride0, int r_stride1, int r_stride2
+) {
+    int row = blockIdx.y * blockDim.y + threadIdx.y;
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
+    if (row >= shape0 || col >= shape2) {
+        return;
+    } else {
+        float max = -1e10;
+        for (int i = 0; i < shape1; ++i) {
+            float val = src[row * l_stride0 + i * l_stride1 + col * l_stride2];
+            max = fmaxf(max, val);
+        }
+        maxs[row * shape0 + col] = max;
+        float sum = 0.0f;
+        for (int i = 0; i < shape1; ++i) {
+            float val = src[row * l_stride0 + i * l_stride1 + col * l_stride2];
+            sum += expf(val - max);
+        }
+        sums[row * shape0 + col] = sum;
+        for (int i = 0; i < shape1; ++i) {
+            float val = src[row * l_stride0 + i * l_stride1 + col * l_stride2];
+            dst[row * r_stride0 + i * r_stride1 + col * r_stride2] =
+                expf(val - max) / sum;
+        }
+    }
+}
+
 #endif // GCC_ASAN

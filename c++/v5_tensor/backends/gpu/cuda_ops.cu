@@ -619,7 +619,47 @@ void CUDAOps::sequence_mask(Tensor *lhs, const Tensor *mask, Tensor *res, float 
 }
 
 void CUDAOps::softmax(Tensor *lhs, Tensor *res, Tensor *maxs, Tensor *sums) {
-    assert(false);
+    auto l_shape = lhs->get_shape();
+    auto r_shape = res->get_shape();
+    assert(l_shape == r_shape);
+    assert(lhs->get_dtype() == FLOAT32);
+    assert(res->get_dtype() == FLOAT32);
+    assert(lhs->get_dim() == 3);
+    assert(res->get_dim() == 3);
+    auto lstrides = lhs->get_strides();
+    auto rstrides = res->get_strides();
+    assert(maxs->get_dim() == 2);
+    assert(sums->get_dim() == 2);
+
+    assert(maxs->get_shape()[0] == l_shape[0]);
+    assert(maxs->get_shape()[1] == l_shape[1]);
+    assert(sums->get_shape()[0] == l_shape[0]);
+    assert(sums->get_shape()[1] == l_shape[1]);
+
+    dim3 gridDim(
+        (l_shape[1] + TILE_WIDTH - 1) / TILE_WIDTH,
+        (l_shape[0] + TILE_WIDTH - 1) / TILE_WIDTH
+    );
+
+    dim3 blockDim(TILE_WIDTH, TILE_WIDTH);
+    this->memset((float *)maxs->get_data(), 0, maxs->size());
+    this->memset((float *)sums->get_data(), 0, sums->size());
+
+    softmax_kernel<<<gridDim, blockDim>>>(
+        (float *)lhs->get_data(),
+        (float *)res->get_data(),
+        (float *)maxs->get_data(),
+        (float *)sums->get_data(),
+        l_shape[0],
+        l_shape[1],
+        l_shape[2],
+        lstrides[0],
+        lstrides[1],
+        lstrides[2],
+        rstrides[0],
+        rstrides[1],
+        rstrides[2]
+    );
 }
 
 void* CUDAOps::alloc(size_t size) {

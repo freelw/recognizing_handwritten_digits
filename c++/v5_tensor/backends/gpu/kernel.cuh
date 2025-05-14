@@ -124,6 +124,14 @@ __global__ void sequence_mask_kernel(
     float value
 );
 
+__global__ void softmax_kernel(
+    float *src, float *dst,
+    float *maxs, float *sums,
+    int shape0, int shape1, int shape2,
+    int l_stride0, int l_stride1, int l_stride2,
+    int r_stride0, int r_stride1, int r_stride2
+);
+
 #endif // GCC_ASAN
 
 #endif // V5_TENSOR_BACKENDS_GPU_KERNEL_CUH

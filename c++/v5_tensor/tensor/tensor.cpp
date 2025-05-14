@@ -227,6 +227,8 @@ Tensor *Tensor::sequence_mask(Tensor *mask, float value) {
 }
 
 Tensor *Tensor::softmax(Tensor *maxs, Tensor *sums) {
+    assert(!maxs->is_view());
+    assert(!sums->is_view());
     Tensor *res = allocTensor(
         shape,
         this->get_name() + "_softmax",
