@@ -56,6 +56,9 @@ namespace graph {
             void backward();
             Node *transpose();
             Node *reshape(const std::vector<int> &shape);
+            Node *sequence_mask(Tensor *mask, float value);
+            Node *softmax();
+            Node *masked_softmax(Tensor *valid_len);
             Node *expand_add(Node *rhs);
             Node *at(Node *rhs);
             Node *relu();
@@ -313,6 +316,21 @@ namespace graph {
                         grad->reshape(node->get_grad()->get_shape())
                     )
                 );
+            }        
+    };
+
+    class SoftmaxEdge : public Edge {
+        public:
+            static Edge* create(Node *_node) {
+                Edge *edge = new SoftmaxEdge(_node);
+                gAddEdge(edge);
+                return edge;
+            }
+            SoftmaxEdge(Node *_node)
+                : Edge(Softmax, _node) {}
+            virtual ~SoftmaxEdge() {}
+            void backward(Tensor *grad) override {
+                assert(false);
             }        
     };
 

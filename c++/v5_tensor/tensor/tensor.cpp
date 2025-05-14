@@ -226,6 +226,10 @@ Tensor *Tensor::sequence_mask(Tensor *mask, float value) {
     return sequence_mask_tensor;
 }
 
+Tensor *Tensor::softmax() {
+    assert(false);
+}
+
 std::string Tensor::get_meta_info() const {
     std::ostringstream output;
     output << "Tensor";

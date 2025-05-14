@@ -62,6 +62,45 @@ namespace graph {
         return res_node;
     }
 
+    Node *Node::sequence_mask(Tensor *mask, float value) {
+        Tensor *res_tensor = this->get_tensor()->sequence_mask(mask, value);
+        Node *res_node = nullptr;
+        if (is_require_grad()) {
+            res_node->require_grad();
+            res_node->edges.push_back(EmptyEdge::create(this));
+            res_node = allocNode(res_tensor, this->get_grad());
+        } else {
+            res_node = allocNode(res_tensor);
+        }
+        return res_node;
+    }
+
+    Node *Node::softmax() {
+        auto res_node = allocNode(
+            this->get_tensor()->softmax()
+        );
+        if (is_require_grad()) {
+            res_node->require_grad();
+            res_node->edges.push_back(SoftmaxEdge::create(this));
+        }
+        return res_node;
+    }
+
+    Node *Node::masked_softmax(Tensor *valid_len) {
+        assert(this->get_tensor()->get_dim() == 3);
+        if (valid_len == nullptr) {
+            return this->softmax();
+        } else {
+            auto shape = this->get_tensor()->get_shape();
+            Tensor *mask = valid_len->get_dim() == 1 ?  
+                valid_len->repeat_interleave(shape[1]) : valid_len->reshape({-1});
+            return this->reshape({-1, shape[2]})
+                ->sequence_mask(mask, -1e6f)
+                ->reshape(shape)
+                ->softmax();
+        }
+    }
+
     Node *Node::expand_add(Node *rhs) {
         Tensor *res_tensor = allocTensor(t->get_shape(), "expand_add");
         Tensor *r_tensor = rhs->get_tensor();
