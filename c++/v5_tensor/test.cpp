@@ -1162,6 +1162,38 @@ void test_print_tensor() {
     destruct_env();
 }
 
+bool compare_res_ans(
+    Tensor *res, float *ans, const std::string &name
+) {
+    auto res_size = res->size();
+    auto res_shape = res->get_shape();
+    auto res_strides = res->get_strides();
+    auto res_data = static_cast<float*>(::malloc(res_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(res_data),
+        res,
+        res_size
+    );
+    const float eps = 1e-5f;
+    bool succ = true;
+    for (int i = 0; i < res_shape[0]; ++i) {
+        for (int j = 0; j < res_shape[1]; ++j) {
+            auto v = res_data[i * res_strides[0] + j * res_strides[1]];
+            if (fabs(ans[i * res_shape[1] + j] - v) > eps) {
+                std::cerr << std::setprecision(8) << RED << "Error: " << name
+                          << "[" << i << "][" << j << "] = " << v
+                          << ", ans[" << i << "][" << j << "] = " << ans[i * res_shape[1] + j] << RESET << std::endl;
+                succ = false;
+            }
+        }
+    }
+    if (succ) {
+        std::cout << GREEN << name << " succ" << RESET << std::endl;
+    }
+    ::free(res_data);
+    return succ;
+}
+
 void test_reshape() {
     construct_env();
 
@@ -1173,13 +1205,50 @@ void test_reshape() {
     auto l_r = l->reshape({4, 3});
 
     allocMemAndInitTensors();
-    printAllActions();
+    // printAllActions();
     gDoActions();
 
-    std::cout << "l : " << std::endl << *l << std::endl;
-    std::cout << "l_t : " << std::endl << *l_t << std::endl;
-    std::cout << "l_t_reshape : " << std::endl << *l_t_reshape << std::endl;
-    std::cout << "l_r : " << std::endl << *l_r << std::endl;
+    // std::cout << "l : " << std::endl << *l << std::endl;
+    // std::cout << "l_t : " << std::endl << *l_t << std::endl;
+    // std::cout << "l_t_reshape : " << std::endl << *l_t_reshape << std::endl;
+    // std::cout << "l_r : " << std::endl << *l_r << std::endl;
+
+    float l_ans[12] = {
+        0, 1e-05, 2e-05, 3e-05,
+        4e-05, 5e-05, 6e-05, 7e-05,
+        8e-05, 9e-05, 0.0001, 0.00011
+    };
+
+    float l_t_ans[12] = {
+        0, 4e-05, 8e-05,
+        1e-05, 5e-05, 9e-05,
+        2e-05, 6e-05, 0.0001,
+        3e-05, 7e-05, 0.00011
+    };
+
+    float l_t_shape_ans[12] = {
+        0, 4e-05, 8e-05, 1e-05,
+        5e-05, 9e-05, 2e-05, 6e-05,
+        0.0001, 3e-05, 7e-05, 0.00011
+    };
+
+    float l_r_ans[12] = {
+        0, 1e-05, 2e-05,
+        3e-05, 4e-05, 5e-05,
+        6e-05, 7e-05, 8e-05,
+        9e-05, 0.0001, 0.00011
+    };
+
+    bool succ = compare_res_ans(l, l_ans, "l") &&
+        compare_res_ans(l_t, l_t_ans, "l_t") &&
+        compare_res_ans(l_t_reshape, l_t_shape_ans, "l_t_reshape") &&
+        compare_res_ans(l_r, l_r_ans, "l_r");
+    
+    if (succ) {
+        std::cout << GREEN << "test_reshape succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_reshape failed" << RESET << std::endl;
+    }
     
     destruct_env();
 }
@@ -1212,7 +1281,7 @@ void test_cpu() {
     test_bp();
     test_adam();
     test_mlp();
-    test_print_tensor();
+    // test_print_tensor();
     test_contiguous();
     test_reshape();
 }
@@ -1946,7 +2015,7 @@ void test_gpu() {
     test_adam();
     test_mlp();
     test_mlp_with_cpu();
-    test_print_tensor();
+    // test_print_tensor();
     test_contiguous();
     test_reshape();
 }
