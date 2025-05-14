@@ -29,8 +29,9 @@ class BackendOps {
             Tensor *dst_tensor, const Tensor *src_tensor,
             const Tensor *src_shape, const Tensor *src_strides
         ) = 0;
-        
 
+        virtual void repeat_interleave(Tensor *lhs, Tensor *res, int n) = 0;
+        
         // Memory management
         virtual void *alloc(size_t size) = 0;
         virtual void memset(void *ptr, int value, size_t size) = 0;

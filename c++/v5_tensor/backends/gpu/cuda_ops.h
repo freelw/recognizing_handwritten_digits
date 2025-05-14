@@ -32,6 +32,7 @@ class CUDAOps : public BackendOps {
             Tensor *dst_tensor, const Tensor *src_tensor,
             const Tensor *src_shape, const Tensor *src_strides
         ) override;
+        void repeat_interleave(Tensor *lhs, Tensor *res, int n) override;
 
         // Memory management
         void* alloc(size_t size) override;

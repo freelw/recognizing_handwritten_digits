@@ -1223,6 +1223,34 @@ bool compare_res_ans_1d(
     return succ;
 }
 
+bool compare_res_ans_1d_int32(
+    Tensor *res, int32_t *ans, const std::string &name
+) {
+    auto res_size = res->size();
+    auto res_length = res->length();
+    auto res_data = static_cast<int32_t*>(::malloc(res_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(res_data),
+        res,
+        res_size
+    );
+    bool succ = true;
+    for (int i = 0; i < res_length; ++i) {
+        auto v = res_data[i];
+        if (ans[i] != v) {
+            std::cerr << RED << "Error: " << name
+                      << "[" << i << "] = " << v
+                      << ", ans[" << i << "] = " << ans[i] << RESET << std::endl;
+            succ = false;
+        }
+    }
+    if (succ) {
+        std::cout << GREEN << name << " succ" << RESET << std::endl;
+    }
+    ::free(res_data);
+    return succ;
+}
+
 void test_reshape() {
     construct_env();
 
@@ -1832,6 +1860,30 @@ void test_contiguous() {
     destruct_env();
 }
 
+void test_repeat_interleave() {
+    construct_env();
+    Tensor *input = allocTensor({3}, "input", INT32);
+    auto node = graph::allocNode(input);
+    node->init_weight_for_dbg();
+    auto res = input->repeat_interleave(2);
+    printAllActions();
+    allocMemAndInitTensors();
+    gDoActions();
+
+    std::cout << "input : " << std::endl << *input << std::endl;
+
+    int32_t res_ans[6] = {
+        0, 0, 1, 1, 2, 2
+    };
+    bool succ = compare_res_ans_1d_int32(res, res_ans, "res");
+    if (succ) {
+        std::cout << GREEN << "test_repeat_interleave succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_repeat_interleave failed" << RESET << std::endl;
+    }
+    destruct_env();
+}
+
 void test_cpu() {
     test_at();
     test_add();
@@ -1850,6 +1902,7 @@ void test_cpu() {
     test_reshape_1();
     test_reshape_bp();
     test_reshape_bp_1();
+    test_repeat_interleave();
 }
 
 Tensor *test_add_with_cpu_base(int m, int n) {

@@ -215,6 +215,16 @@ class ReshapeDeepCpAction : public Action {
         const Tensor *strides;
 };
 
+class RepeatInterleaveAction : public Action {
+    public:
+        RepeatInterleaveAction(Tensor *_lhs, Tensor *_res, int _n)
+            : Action(_lhs, nullptr, _res), n(_n) {}
+        void execute() override;
+        std::string to_string() const override;
+    private:
+        int n;
+};
+
 std::vector<Action *> getOnceActions();
 void gCreateAction(Action *action);
 void gDoActions();

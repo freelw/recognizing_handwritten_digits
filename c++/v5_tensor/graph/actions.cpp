@@ -329,6 +329,18 @@ std::string ReshapeDeepCpAction::to_string() const {
     return oss.str();
 }
 
+void RepeatInterleaveAction::execute() {
+    assert(lhs != nullptr);
+    assert(res != nullptr);
+    g_backend_ops->repeat_interleave(lhs, res, n);
+}
+
+std::string RepeatInterleaveAction::to_string() const {
+    std::ostringstream oss;
+    oss << "RepeatInterleaveAction: repeat interleave " << lhs->get_meta_info() << " to " << res->get_meta_info() << " with n = " << n;
+    return oss.str();
+}
+
 std::vector<Action*> g_actions;
 
 std::vector<Action *> getOnceActions() {

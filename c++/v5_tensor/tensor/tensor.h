@@ -51,6 +51,7 @@ class Tensor {
         Tensor *transpose();
         Tensor *reshape(const std::vector<int> &shape);
         Tensor *fill(float value);
+        Tensor *repeat_interleave(int n);
         std::string get_meta_info() const;
         bool is_contiguous() const;
         bool is_shared_with(const Tensor *other) const {

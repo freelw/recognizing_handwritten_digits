@@ -546,6 +546,16 @@ void CUDAOps::reshape_deep_cp(
     }
 }
 
+void CUDAOps::repeat_interleave(Tensor *lhs, Tensor *res, int n) {
+    assert(lhs != nullptr);
+    assert(res != nullptr);
+
+    assert(lhs->get_dim() == 1);
+    assert(res->get_dim() == 1);
+
+    
+}
+
 void* CUDAOps::alloc(size_t size) {
     void *ret = nullptr;
     cudaMalloc((void **)&ret, size);

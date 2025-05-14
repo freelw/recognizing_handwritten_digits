@@ -185,6 +185,25 @@ Tensor *Tensor::fill(float value) {
     return this;
 }
 
+Tensor *Tensor::repeat_interleave(int n) {
+    assert(!is_view());
+    assert(dtype == INT32);
+    assert(get_dim() == 1);
+    Tensor *repeat_interleave_tensor = allocTensor(
+        {shape[0] * n},
+        this->get_name() + "_repeat_interleave",
+        INT32
+    );
+    gCreateAction(
+        new RepeatInterleaveAction(
+            this,
+            repeat_interleave_tensor,
+            n
+        )
+    );
+    return repeat_interleave_tensor;
+}
+
 std::string Tensor::get_meta_info() const {
     std::ostringstream output;
     output << "Tensor";

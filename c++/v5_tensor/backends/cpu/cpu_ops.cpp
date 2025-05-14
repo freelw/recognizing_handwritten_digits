@@ -418,6 +418,28 @@ void CPUOps::reshape_deep_cp(
     }
 }
 
+void CPUOps::repeat_interleave(Tensor *lhs, Tensor *res, int n) {
+    assert(lhs->get_dtype() == INT32);
+    assert(res->get_dtype() == INT32);
+    assert(lhs != nullptr);
+    assert(res != nullptr);
+
+    assert(lhs->get_dim() == 1);
+    assert(res->get_dim() == 1);
+
+    auto l_length = lhs->length();
+    auto r_length = res->length();
+
+    assert(l_length * n == r_length);
+
+    for (int i = 0; i < l_length; ++i) {
+        for (int j = 0; j < n; ++j) {
+            static_cast<int32_t*>(res->get_data())[i * n + j] = 
+                static_cast<int32_t*>(lhs->get_data())[i];
+        }
+    }
+}
+
 void* CPUOps::alloc(size_t size) {
     return malloc(size);
 }
