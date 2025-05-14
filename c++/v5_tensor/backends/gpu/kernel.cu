@@ -381,24 +381,24 @@ __global__ void softmax_kernel(
 ) {
     int row = blockIdx.y * blockDim.y + threadIdx.y;
     int col = blockIdx.x * blockDim.x + threadIdx.x;
-    if (row >= shape0 || col >= shape2) {
+    if (row >= shape0 || col >= shape1) {
         return;
     } else {
         float max = -1e10;
-        for (int i = 0; i < shape1; ++i) {
-            float val = src[row * l_stride0 + i * l_stride1 + col * l_stride2];
+        for (int i = 0; i < shape2; ++i) {
+            float val = src[row * l_stride0 + col * l_stride1 + i * l_stride2];
             max = fmaxf(max, val);
         }
         maxs[row * shape0 + col] = max;
         float sum = 0.0f;
-        for (int i = 0; i < shape1; ++i) {
-            float val = src[row * l_stride0 + i * l_stride1 + col * l_stride2];
+        for (int i = 0; i < shape2; ++i) {
+            float val = src[row * l_stride0 + col * l_stride1 + i * l_stride2];
             sum += expf(val - max);
         }
         sums[row * shape0 + col] = sum;
-        for (int i = 0; i < shape1; ++i) {
-            float val = src[row * l_stride0 + i * l_stride1 + col * l_stride2];
-            dst[row * r_stride0 + i * r_stride1 + col * r_stride2] =
+        for (int i = 0; i < shape2; ++i) {
+            float val = src[row * l_stride0 + col * l_stride1 + i * l_stride2];
+            dst[row * r_stride0 + col * r_stride1 + i * r_stride2] =
                 expf(val - max) / sum;
         }
     }
