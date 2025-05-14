@@ -1932,6 +1932,43 @@ void test_mask() {
     destruct_env();
 }
 
+void test_mask_1() {
+    construct_env();
+    int m = 3;
+    int n = 4;
+    int k = 13;
+    Tensor *input = allocTensor({m, n, k}, "input");
+    auto ni = graph::allocNode(input);
+    ni->init_weight_for_dbg();
+    Tensor *mask = allocTensor({m*n}, "mask", INT32);
+    auto nm = graph::allocNode(mask);
+    nm->init_weight_for_dbg();
+    auto res = input->reshape({-1, k})->sequence_mask(mask, 0.1f);
+    allocMemAndInitTensors();
+    gDoActions();
+    float ans[156] = {
+        0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1,
+        0.00013, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1,
+        0.00026, 0.00027, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1,
+        0.00039, 0.0004, 0.00041, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1,
+        0.00052, 0.00053, 0.00054, 0.00055, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1,
+        0.00065, 0.00066, 0.00067, 0.00068, 0.00069, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1,
+        0.00078, 0.00079, 0.0008, 0.00081, 0.00082, 0.00083, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1,
+        0.00091, 0.00092, 0.00093, 0.00094, 0.00095, 0.00096, 0.00097, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1,
+        0.00104, 0.00105, 0.00106, 0.00107, 0.00108, 0.00109, 0.0011, 0.00111, 0.1, 0.1, 0.1, 0.1, 0.1,
+        0.00117, 0.00118, 0.00119, 0.0012, 0.00121, 0.00122, 0.00123, 0.00124, 0.00125, 0.1, 0.1, 0.1, 0.1,
+        0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1,
+        0.00143, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1
+    };
+    bool succ = compare_res_ans(res, ans, "res");
+    if (succ) {
+        std::cout << GREEN << "test_mask_1 succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_mask_1 failed" << RESET << std::endl;
+    }
+    destruct_env();
+}
+
 void test_cpu() {
     test_at();
     test_add();
@@ -1952,6 +1989,7 @@ void test_cpu() {
     test_reshape_bp_1();
     test_repeat_interleave();
     test_mask();
+    test_mask_1();
 }
 
 Tensor *test_add_with_cpu_base(int m, int n) {
@@ -2796,6 +2834,7 @@ void test_gpu() {
     test_repeat_interleave_with_cpu();
     test_mask();
     test_mask_with_cpu();
+    test_mask_1();
 }
 
 int main(int argc, char *argv[]) {
