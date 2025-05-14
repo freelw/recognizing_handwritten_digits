@@ -573,7 +573,10 @@ void CUDAOps::repeat_interleave(Tensor *lhs, Tensor *res, int n) {
         r_length,
         n
     );
+}
 
+void CUDAOps::sequence_mask(Tensor *lhs, const Tensor *mask, Tensor *res) {
+    assert(false);
 }
 
 void* CUDAOps::alloc(size_t size) {

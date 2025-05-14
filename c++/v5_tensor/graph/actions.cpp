@@ -341,6 +341,19 @@ std::string RepeatInterleaveAction::to_string() const {
     return oss.str();
 }
 
+void SequenceMaskAction::execute() {
+    assert(lhs != nullptr);
+    assert(rhs != nullptr);
+    assert(res != nullptr);
+    g_backend_ops->sequence_mask(lhs, rhs, res);
+}
+
+std::string SequenceMaskAction::to_string() const {
+    std::ostringstream oss;
+    oss << "SequenceMaskAction: sequence mask " << lhs->get_meta_info() << " with mask " << rhs->get_meta_info() << " to " << res->get_meta_info();
+    return oss.str();
+}
+
 std::vector<Action*> g_actions;
 
 std::vector<Action *> getOnceActions() {

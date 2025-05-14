@@ -204,6 +204,26 @@ Tensor *Tensor::repeat_interleave(int n) {
     return repeat_interleave_tensor;
 }
 
+Tensor *Tensor::sequence_mask(Tensor *mask) {
+    assert(!is_view());
+    assert(mask->get_dtype() == INT32);
+    assert(mask->get_dim() == 1);
+    assert(mask->get_shape()[0] == shape[0]);
+    Tensor *sequence_mask_tensor = allocTensor(
+        {shape[0], shape[1]},
+        this->get_name() + "_sequence_mask",
+        this->get_dtype()
+    );
+    gCreateAction(
+        new SequenceMaskAction(
+            this,
+            mask,
+            sequence_mask_tensor
+        )
+    );
+    return sequence_mask_tensor;
+}
+
 std::string Tensor::get_meta_info() const {
     std::ostringstream output;
     output << "Tensor";

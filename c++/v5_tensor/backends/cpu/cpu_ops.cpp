@@ -440,6 +440,10 @@ void CPUOps::repeat_interleave(Tensor *lhs, Tensor *res, int n) {
     }
 }
 
+void CPUOps::sequence_mask(Tensor *lhs, const Tensor *mask, Tensor *res) {
+    assert(false);
+}
+
 void* CPUOps::alloc(size_t size) {
     return malloc(size);
 }

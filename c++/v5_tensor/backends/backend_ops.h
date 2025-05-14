@@ -29,8 +29,8 @@ class BackendOps {
             Tensor *dst_tensor, const Tensor *src_tensor,
             const Tensor *src_shape, const Tensor *src_strides
         ) = 0;
-
         virtual void repeat_interleave(Tensor *lhs, Tensor *res, int n) = 0;
+        virtual void sequence_mask(Tensor *lhs, const Tensor *mask, Tensor *res) = 0;
         
         // Memory management
         virtual void *alloc(size_t size) = 0;
