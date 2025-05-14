@@ -47,7 +47,7 @@ namespace graph {
         if (is_require_grad()) {
             Tensor *grad = this->get_grad();
             Tensor *res_grad = grad->reshape(shape);
-            assert(res_grad->is_contiguous() == share_mem);
+            assert(grad->is_contiguous() == share_mem);
             assert(grad->is_shared_with(res_grad) == share_mem);
             res_node = allocNode(res_tensor, res_grad);
             res_node->require_grad();

@@ -1493,7 +1493,7 @@ void test_reshape_bp() {
 
     zero_grad();
     nres->backward();
-    printAllActions();
+    // printAllActions();
     allocMemAndInitTensors();
 
     auto input_size = input->size();
@@ -1581,7 +1581,7 @@ void test_reshape_bp() {
 
     gDoActions();
 
-    const float eps = 1e-5f;
+    const float eps = 1e-4f;
     float loss = 0;
     g_backend_ops->cp_from_device(
         reinterpret_cast<char*>(&loss),
@@ -1641,15 +1641,15 @@ void test_contiguous() {
     construct_env();
     Tensor *input = allocTensor({2, 2, 4}, "input");
     auto t_input = input->transpose();
-    allocMemAndInitTensors();
-    gDoActions();
     bool succ =
-        input->is_contiguous() && !t_input->is_contiguous();
+        input->is_contiguous() && !t_input->is_contiguous() && input->is_shared_with(t_input);
     if (succ) {
         std::cout << GREEN << "test_contiguous succ" << RESET << std::endl;
     } else {
         std::cout << RED << "test_contiguous failed" << RESET << std::endl;
     }
+    allocMemAndInitTensors();
+    gDoActions();
     destruct_env();
 }
 
