@@ -1461,26 +1461,29 @@ void test_reshape_with_cpu() {
 void test_reshape_bp() {
 
     construct_env();
-    Tensor *input = allocTensor({1, 2}, "input");
+    Tensor *input = allocTensor({5, 4}, "input");
     Tensor *w = allocTensor({3, 2}, "w");
     Tensor *bias = allocTensor({3}, "bias");
     Tensor *w1 = allocTensor({3, 3}, "w1");
     Tensor *bias1 = allocTensor({3}, "bias1");
 
     graph::Node *ni = graph::allocNode(input);
+    ni->init_weight_for_dbg();
+    graph::Node *ni_t = ni->transpose();
+    graph::Node *ni_t_r = ni_t->reshape({-1, 2});
     graph::Node *nw = graph::allocNode(w);
     graph::Node *nb = graph::allocNode(bias);
     graph::Node *nw1 = graph::allocNode(w1);
     graph::Node *nb1 = graph::allocNode(bias1);
-
+    
     ni->require_grad();
     nw->require_grad();
     nb->require_grad();
     nw1->require_grad();
     nb1->require_grad();
 
-    Tensor *labels = allocTensor({1}, "labels", INT32);
-    auto foward_res0 = ni->at(nw->transpose())
+    Tensor *labels = allocTensor({10}, "labels", INT32);
+    auto foward_res0 = ni_t_r->at(nw->transpose())
         ->expand_add(nb)->relu();
     auto foward_res1 = foward_res0
         ->at(nw1->transpose())
@@ -1490,8 +1493,147 @@ void test_reshape_bp() {
 
     zero_grad();
     nres->backward();
+    // printAllActions();
     allocMemAndInitTensors();
 
+    auto input_size = input->size();
+    auto w_size = w->size();
+    auto bias_size = bias->size();
+    auto w1_size = w1->size();
+    auto bias1_size = bias1->size();
+    auto labels_size = labels->size();
+
+    float *input_tmp_buffer = static_cast<float*>(::malloc(input_size));
+    float *w_tmp_buffer = static_cast<float*>(::malloc(w_size));
+    float *bias_tmp_buffer = static_cast<float*>(::malloc(bias_size));
+    float *w1_tmp_buffer = static_cast<float*>(::malloc(w1_size));
+    float *bias1_tmp_buffer = static_cast<float*>(::malloc(bias1_size));
+    int32_t *labels_tmp_buffer = static_cast<int32_t*>(::malloc(labels_size));
+
+    for (int i = 0; i < 10; ++i) {
+        labels_tmp_buffer[i] = 1;
+    }
+
+    for (int i = 0; i < w->length(); ++i) {
+        w_tmp_buffer[i] = 0.1f;
+    }
+
+    for (int i = 0; i < bias->length(); ++i) {
+        bias_tmp_buffer[i] = 0.1f;
+    }
+
+    for (int i = 0; i < w1->length(); ++i) {
+        w1_tmp_buffer[i] = 0.1f;
+    }
+
+    for (int i = 0; i < bias1->length(); ++i) {
+        bias1_tmp_buffer[i] = 0.1f;
+    }
+
+    w_tmp_buffer[0] = 0.9f;
+    w_tmp_buffer[1*w->get_shape()[1]] = -0.9f;
+
+    w1_tmp_buffer[0] = 0.9f;
+    w1_tmp_buffer[1*w1->get_shape()[1]] = -0.9f;
+
+    g_backend_ops->cp_to_device(
+        input,
+        reinterpret_cast<char*>(input_tmp_buffer),
+        input_size
+    );
+
+    g_backend_ops->cp_to_device(
+        labels,
+        reinterpret_cast<char*>(labels_tmp_buffer),
+        labels_size
+    );
+
+    g_backend_ops->cp_to_device(
+        w,
+        reinterpret_cast<char*>(w_tmp_buffer),
+        w_size
+    );
+
+    g_backend_ops->cp_to_device(
+        bias,
+        reinterpret_cast<char*>(bias_tmp_buffer),
+        bias_size
+    );
+
+    g_backend_ops->cp_to_device(
+        w1,
+        reinterpret_cast<char*>(w1_tmp_buffer),
+        w1_size
+    );
+
+    g_backend_ops->cp_to_device(
+        bias1,
+        reinterpret_cast<char*>(bias1_tmp_buffer),
+        bias1_size
+    );
+
+    ::free(input_tmp_buffer);
+    ::free(w_tmp_buffer);
+    ::free(bias_tmp_buffer);
+    ::free(w1_tmp_buffer);
+    ::free(bias1_tmp_buffer);
+    ::free(labels_tmp_buffer);
+
+    gDoActions();
+
+    const float eps = 1e-5f;
+    float loss = 0;
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(&loss),
+        nres->get_tensor(),
+        sizeof(float)
+    );
+    loss /= 10;
+    if (fabs(loss - 1.19474f) > eps) {
+        std::cerr << RED << "Error: loss = " << loss << ", ans = 0.1" << RESET << std::endl;
+    } else {
+        std::cout << GREEN << "test_reshape_bp loss succ" << RESET << std::endl;
+    }
+
+    auto ni_grad = ni->get_grad();
+    auto ni_grad_size = ni_grad->size();
+    auto ni_grad_shape = ni_grad->get_shape();
+    auto ni_grad_strides = ni_grad->get_strides();
+    float *ni_grad_tmp_buffer = static_cast<float*>(::malloc(ni_grad_size));
+
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(ni_grad_tmp_buffer),
+        ni_grad,
+        ni_grad_size
+    );
+
+    float ni_grad_ans[5][4] = {
+        0.0888, 0.0099, 0.0889, 0.0099,
+        0.0099, 0.0889, 0.0099, 0.0889,
+        0.0889, 0.0099, 0.0889, 0.0099,
+        0.0099, 0.0889, 0.0099, 0.0889,
+        0.0889, 0.0099, 0.0889, 0.0099
+    };
+
+    bool ni_grad_succ = true;
+
+    for (int i = 0; i < ni_grad_shape[0]; ++i) {
+        for (int j = 0; j < ni_grad_shape[1]; ++j) {
+            auto v = ni_grad_tmp_buffer[i * ni_grad_strides[0] + j * ni_grad_strides[1]];
+            if (fabs(ni_grad_ans[i][j] - v) > eps) {
+                std::cerr << std::setprecision(8) << RED << "Error: ni_grad[" << i << "][" << j << "] = " << v
+                          << ", ni_grad_ans[" << i << "][" << j << "] = " << ni_grad_ans[i][j] << RESET << std::endl;
+                ni_grad_succ = false;
+            }
+        }
+    }
+    if (ni_grad_succ) {
+        std::cout << GREEN << "test_reshape_bp ni_grad succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_reshape_bp ni_grad failed" << RESET << std::endl;
+    }
+
+    ::free(ni_grad_tmp_buffer);
     destruct_env();
 }
 
