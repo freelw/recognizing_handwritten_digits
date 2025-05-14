@@ -2711,6 +2711,57 @@ void test_repeat_interleave_with_cpu() {
     ::free(res_gpu_buffer);
 }
 
+Tensor *test_mask_with_cpu_base(int m, int n, int k) {
+    Tensor *input = allocTensor({m, n, k}, "input");
+    auto ni = graph::allocNode(input);
+    ni->init_weight_for_dbg();
+    Tensor *mask = allocTensor({m}, "mask", INT32);
+    auto nm = graph::allocNode(mask);
+    nm->init_weight_for_dbg();
+    auto res = input->reshape({-1, k})->sequence_mask(mask->repeat_interleave(n), 0.1f);
+    allocMemAndInitTensors();
+    gDoActions();
+    return res;
+}
+
+void test_mask_with_cpu() {
+    use_gpu(false);
+    construct_env();
+    int m = 100;
+    int n = 500;
+    int k = 30;
+    auto res_cpu = test_mask_with_cpu_base(m, n, k);
+    auto res_cpu_size = res_cpu->size();
+    auto res_cpu_length = res_cpu->length();
+    float *res_cpu_buffer = static_cast<float*>(::malloc(res_cpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(res_cpu_buffer),
+        res_cpu,
+        res_cpu_size
+    );
+    destruct_env();
+    use_gpu(true);
+    construct_env();
+    auto res_gpu = test_mask_with_cpu_base(m, n, k);
+    auto res_gpu_size = res_gpu->size();
+    auto res_gpu_length = res_gpu->length();
+    float *res_gpu_buffer = static_cast<float*>(::malloc(res_gpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(res_gpu_buffer),
+        res_gpu,
+        res_gpu_size
+    );
+    destruct_env();
+    assert(res_cpu_size == res_gpu_size);
+    assert(res_cpu_length == res_gpu_length);
+    bool succ = compare_ans1_ans2(res_cpu_buffer, res_gpu_buffer, res_gpu_length);
+    if (succ) {
+        std::cout << GREEN << "test_mask_with_gpu succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_mask_with_gpu failed" << RESET << std::endl;
+    }
+}
+
 void test_gpu() {
     test_at();
     test_at_1();
@@ -2744,6 +2795,7 @@ void test_gpu() {
     test_repeat_interleave();
     test_repeat_interleave_with_cpu();
     test_mask();
+    test_mask_with_cpu();
 }
 
 int main(int argc, char *argv[]) {
