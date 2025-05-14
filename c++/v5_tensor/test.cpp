@@ -1372,9 +1372,7 @@ void test_reshape_with_cpu() {
         std::cout << GREEN << "test_test_reshape_with_cpu succ" << RESET << std::endl;
     } else {
         std::cout << RED << "test_test_reshape_with_cpu failed" << RESET << std::endl;
-    }
-
-    
+    }   
 }
 
 void test_contiguous() {
