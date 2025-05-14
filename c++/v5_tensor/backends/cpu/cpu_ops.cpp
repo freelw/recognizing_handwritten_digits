@@ -474,6 +474,10 @@ void CPUOps::sequence_mask(Tensor *lhs, const Tensor *mask, Tensor *res, float v
     }
 }
 
+void CPUOps::softmax(Tensor *lhs, Tensor *res) {
+    assert(false);
+}
+
 void* CPUOps::alloc(size_t size) {
     return malloc(size);
 }

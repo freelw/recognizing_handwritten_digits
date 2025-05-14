@@ -354,6 +354,18 @@ std::string SequenceMaskAction::to_string() const {
     return oss.str();
 }
 
+void SoftmaxAction::execute() {
+    assert(lhs != nullptr);
+    assert(res != nullptr);
+    g_backend_ops->softmax(lhs, res);
+}
+
+std::string SoftmaxAction::to_string() const {
+    std::ostringstream oss;
+    oss << "SoftmaxAction: softmax " << lhs->get_meta_info() << " to " << res->get_meta_info();
+    return oss.str();
+}
+
 std::vector<Action*> g_actions;
 
 std::vector<Action *> getOnceActions() {

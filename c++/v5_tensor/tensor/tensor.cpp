@@ -227,7 +227,18 @@ Tensor *Tensor::sequence_mask(Tensor *mask, float value) {
 }
 
 Tensor *Tensor::softmax() {
-    assert(false);
+    Tensor *res = allocTensor(
+        shape,
+        this->get_name() + "_softmax",
+        this->get_dtype()
+    );
+    gCreateAction(
+        new SoftmaxAction(
+            this,
+            res
+        )
+    );
+    return res;
 }
 
 std::string Tensor::get_meta_info() const {

@@ -31,6 +31,7 @@ class BackendOps {
         ) = 0;
         virtual void repeat_interleave(Tensor *lhs, Tensor *res, int n) = 0;
         virtual void sequence_mask(Tensor *lhs, const Tensor *mask, Tensor *res, float value) = 0;
+        virtual void softmax(Tensor *lhs, Tensor *res) = 0;
         
         // Memory management
         virtual void *alloc(size_t size) = 0;

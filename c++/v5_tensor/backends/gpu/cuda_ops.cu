@@ -618,6 +618,10 @@ void CUDAOps::sequence_mask(Tensor *lhs, const Tensor *mask, Tensor *res, float 
     );
 }
 
+void CUDAOps::softmax(Tensor *lhs, Tensor *res) {
+    assert(false);
+}
+
 void* CUDAOps::alloc(size_t size) {
     void *ret = nullptr;
     cudaMalloc((void **)&ret, size);

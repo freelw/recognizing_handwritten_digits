@@ -235,6 +235,14 @@ class SequenceMaskAction : public Action {
         float value;
 };
 
+class SoftmaxAction : public Action {
+    public:
+        SoftmaxAction(Tensor *_lhs, Tensor *_res)
+            : Action(_lhs, nullptr, _res) {}
+        void execute() override;
+        std::string to_string() const override;
+};
+
 std::vector<Action *> getOnceActions();
 void gCreateAction(Action *action);
 void gDoActions();
