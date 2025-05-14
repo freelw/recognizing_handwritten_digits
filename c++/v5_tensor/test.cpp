@@ -1194,6 +1194,35 @@ bool compare_res_ans(
     return succ;
 }
 
+bool compare_res_ans_1d(
+    Tensor *res, float *ans, const std::string &name
+) {
+    auto res_size = res->size();
+    auto res_length = res->length();
+    auto res_data = static_cast<float*>(::malloc(res_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(res_data),
+        res,
+        res_size
+    );
+    const float eps = 1e-5f;
+    bool succ = true;
+    for (int i = 0; i < res_length; ++i) {
+        auto v = res_data[i];
+        if (fabs(ans[i] - v) > eps) {
+            std::cerr << std::setprecision(8) << RED << "Error: " << name
+                      << "[" << i << "] = " << v
+                      << ", ans[" << i << "] = " << ans[i] << RESET << std::endl;
+            succ = false;
+        }
+    }
+    if (succ) {
+        std::cout << GREEN << name << " succ" << RESET << std::endl;
+    }
+    ::free(res_data);
+    return succ;
+}
+
 void test_reshape() {
     construct_env();
 
@@ -1250,6 +1279,60 @@ void test_reshape() {
         std::cout << RED << "test_reshape failed" << RESET << std::endl;
     }
     
+    destruct_env();
+}
+
+void test_reshape_1() {
+    construct_env();
+
+    Tensor *l = allocTensor({3, 4}, "input");
+    auto n = graph::allocNode(l);
+    n->init_weight_for_dbg();
+    auto l_t = l->transpose();
+    auto l_t_reshape = l_t->reshape({3, 4});
+    auto l_r = l->reshape({4, 3});
+    auto l_t_m_1 = l_t->reshape({-1});
+    auto l_t_d3 = l_t->reshape({2, -1, 3});
+    auto l_t_d3_1 = l_t->reshape({-1, 3, 2});
+
+    allocMemAndInitTensors();
+    // printAllActions();
+    gDoActions();
+
+    std::string l_t_m_1_meta_ans = "Tensor(input_transpose_reshape_deep_copy)(12)";
+    std::string l_t_d3_meta_ans = "Tensor(input_transpose_reshape_deep_copy)(2, 2, 3)";
+    std::string l_t_d3_1_meta_ans = "Tensor(input_transpose_reshape_deep_copy)(2, 3, 2)";
+
+    bool meta_succ = l_t_m_1->get_meta_info() == l_t_m_1_meta_ans &&
+        l_t_d3->get_meta_info() == l_t_d3_meta_ans &&
+        l_t_d3_1->get_meta_info() == l_t_d3_1_meta_ans;
+
+    if (meta_succ) {
+        std::cout << GREEN << "test_reshape_1 meta succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_reshape_1 meta failed" << RESET << std::endl;
+    }
+
+    float l_t_m_1_ans[12] = {
+        0, 4e-05, 8e-05, 1e-05, 5e-05, 9e-05, 2e-05, 6e-05, 0.0001, 3e-05, 7e-05, 0.00011
+    };
+    float l_t_d3_ans[12] = {
+        0, 4e-05, 8e-05, 1e-05, 5e-05, 9e-05, 2e-05, 6e-05, 0.0001, 3e-05, 7e-05, 0.00011
+    };
+    float l_t_d3_1_ans[12] = {
+        0, 4e-05, 8e-05, 1e-05, 5e-05, 9e-05, 2e-05, 6e-05, 0.0001, 3e-05, 7e-05, 0.00011
+    };
+
+    bool l_t_m_1_succ = compare_res_ans_1d(l_t_m_1, l_t_m_1_ans, "l_t_m_1");
+    bool l_t_d3_succ = compare_res_ans_1d(l_t_d3, l_t_d3_ans, "l_t_d3");
+    bool l_t_d3_1_succ = compare_res_ans_1d(l_t_d3_1, l_t_d3_1_ans, "l_t_d3_1");
+
+    bool succ = l_t_m_1_succ && l_t_d3_succ && l_t_d3_1_succ;
+    if (succ) {
+        std::cout << GREEN << "test_reshape_1 succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_reshape_1 failed" << RESET << std::endl;
+    }
     destruct_env();
 }
 
@@ -1375,6 +1458,43 @@ void test_reshape_with_cpu() {
     }   
 }
 
+void test_reshape_bp() {
+
+    construct_env();
+    Tensor *input = allocTensor({1, 2}, "input");
+    Tensor *w = allocTensor({3, 2}, "w");
+    Tensor *bias = allocTensor({3}, "bias");
+    Tensor *w1 = allocTensor({3, 3}, "w1");
+    Tensor *bias1 = allocTensor({3}, "bias1");
+
+    graph::Node *ni = graph::allocNode(input);
+    graph::Node *nw = graph::allocNode(w);
+    graph::Node *nb = graph::allocNode(bias);
+    graph::Node *nw1 = graph::allocNode(w1);
+    graph::Node *nb1 = graph::allocNode(bias1);
+
+    ni->require_grad();
+    nw->require_grad();
+    nb->require_grad();
+    nw1->require_grad();
+    nb1->require_grad();
+
+    Tensor *labels = allocTensor({1}, "labels", INT32);
+    auto foward_res0 = ni->at(nw->transpose())
+        ->expand_add(nb)->relu();
+    auto foward_res1 = foward_res0
+        ->at(nw1->transpose())
+        ->expand_add(nb1);
+    auto nres = foward_res1
+        ->CrossEntropy(labels);
+
+    zero_grad();
+    nres->backward();
+    allocMemAndInitTensors();
+
+    destruct_env();
+}
+
 void test_contiguous() {
     construct_env();
     Tensor *input = allocTensor({2, 2, 4}, "input");
@@ -1406,6 +1526,8 @@ void test_cpu() {
     // test_print_tensor();
     test_contiguous();
     test_reshape();
+    test_reshape_1();
+    test_reshape_bp();
 }
 
 Tensor *test_add_with_cpu_base(int m, int n) {
@@ -2141,6 +2263,8 @@ void test_gpu() {
     test_contiguous();
     test_reshape();
     test_reshape_with_cpu();
+    test_reshape_1();
+    test_reshape_bp();
 }
 
 int main(int argc, char *argv[]) {

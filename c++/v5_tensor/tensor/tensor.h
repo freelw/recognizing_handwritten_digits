@@ -53,7 +53,7 @@ class Tensor {
         Tensor *fill(float value);
         std::string get_meta_info() const;
         bool is_contiguous() const;
-        bool is_shared_width(const Tensor *other) const {
+        bool is_shared_with(const Tensor *other) const {
             return this->get_storage() == other->get_storage();
         }
         friend std::ostream &operator<<(std::ostream &output, const Tensor &s);

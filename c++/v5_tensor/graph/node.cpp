@@ -31,7 +31,7 @@ namespace graph {
         if (is_require_grad()) {
             res_node = allocNode(res_tensor, this->get_grad()->transpose());
             res_node->require_grad();
-            res_node->edges.push_back(TransposeEdge::create(this));
+            res_node->edges.push_back(EmptyEdge::create(this));
         } else {
             res_node = allocNode(res_tensor);
         }
@@ -39,7 +39,27 @@ namespace graph {
     }
 
     Node *Node::reshape(const std::vector<int> &shape) {
-        assert(false);
+        Tensor *l_tensor = this->get_tensor();
+        Tensor *res_tensor = l_tensor->reshape(shape);
+        bool share_mem = l_tensor->is_shared_with(res_tensor);
+        assert(l_tensor->is_contiguous() == share_mem);
+        Node *res_node = nullptr;
+        if (is_require_grad()) {
+            Tensor *grad = this->get_grad();
+            Tensor *res_grad = grad->reshape(shape);
+            assert(res_grad->is_contiguous() == share_mem);
+            assert(grad->is_shared_with(res_grad) == share_mem);
+            res_node = allocNode(res_tensor, res_grad);
+            res_node->require_grad();
+            if (share_mem) {
+                res_node->edges.push_back(EmptyEdge::create(this));
+            } else {
+                res_node->edges.push_back(ReshapeEdge::create(this));
+            }   
+        } else {
+            res_node = allocNode(res_tensor);
+        }
+        return res_node;
     }
 
     Node *Node::expand_add(Node *rhs) {

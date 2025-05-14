@@ -93,6 +93,8 @@ namespace graph {
         Norm,
         Softmax,
         Transpose,
+        Empty,
+        Reshape,
     };
 
     class Edge {
@@ -280,17 +282,37 @@ namespace graph {
             Tensor *sums;
     };
 
-    class TransposeEdge : public Edge {
+    class EmptyEdge : public Edge {
         public:
             static Edge* create(Node *_node) {
-                Edge *edge = new TransposeEdge(_node);
+                Edge *edge = new EmptyEdge(_node);
                 gAddEdge(edge);
                 return edge;
             }
-            TransposeEdge(Node *_node)
-                : Edge(Transpose, _node) {}
-            virtual ~TransposeEdge() {}
+            EmptyEdge(Node *_node)
+                : Edge(Empty, _node) {}
+            virtual ~EmptyEdge() {}
             void backward(Tensor *grad) override {
+            }        
+    };
+
+    class ReshapeEdge : public Edge {
+        public:
+            static Edge* create(Node *_node) {
+                Edge *edge = new ReshapeEdge(_node);
+                gAddEdge(edge);
+                return edge;
+            }
+            ReshapeEdge(Node *_node)
+                : Edge(Reshape, _node) {}
+            virtual ~ReshapeEdge() {}
+            void backward(Tensor *grad) override {
+                gCreateAction(
+                    new AddEqAction(
+                        node->get_grad(),
+                        grad->reshape(node->get_grad()->get_shape())
+                    )
+                );
             }        
     };
 

@@ -55,3 +55,7 @@ void destruct_env() {
 void use_gpu(bool use) {
     b_use_gpu = use;
 }
+
+bool is_use_gpu() {
+    return b_use_gpu;
+}
