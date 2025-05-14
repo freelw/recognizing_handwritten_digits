@@ -547,13 +547,33 @@ void CUDAOps::reshape_deep_cp(
 }
 
 void CUDAOps::repeat_interleave(Tensor *lhs, Tensor *res, int n) {
+    assert(lhs->get_dtype() == INT32);
+    assert(res->get_dtype() == INT32);
     assert(lhs != nullptr);
     assert(res != nullptr);
 
     assert(lhs->get_dim() == 1);
     assert(res->get_dim() == 1);
 
-    
+    auto l_length = lhs->length();
+    auto r_length = res->length();
+
+    assert(l_length * n == r_length);
+
+    dim3 gridDim(
+        (r_length + TILE_WIDTH - 1) / TILE_WIDTH
+    );
+
+    dim3 blockDim(TILE_WIDTH);
+
+    repeat_interleave_int32_kernel<<<gridDim, blockDim>>>(
+        (int32_t *)lhs->get_data(),
+        (int32_t *)res->get_data(),
+        l_length,
+        r_length,
+        n
+    );
+
 }
 
 void* CUDAOps::alloc(size_t size) {

@@ -336,4 +336,18 @@ __global__ void reshape_deep_cp_float_kernel(
     }
 }
 
+__global__ void repeat_interleave_int32_kernel(
+    int32_t *src, int32_t *dst,
+    int32_t src_length, int32_t dst_length,
+    int32_t n
+) {
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index >= dst_length) {
+        return;
+    } else {
+        int tmp_index = index / n;
+        dst[index] = src[tmp_index];
+    }
+}
+
 #endif // GCC_ASAN

@@ -1866,12 +1866,9 @@ void test_repeat_interleave() {
     auto node = graph::allocNode(input);
     node->init_weight_for_dbg();
     auto res = input->repeat_interleave(2);
-    printAllActions();
+    // printAllActions();
     allocMemAndInitTensors();
     gDoActions();
-
-    std::cout << "input : " << std::endl << *input << std::endl;
-
     int32_t res_ans[6] = {
         0, 0, 1, 1, 2, 2
     };
@@ -2641,6 +2638,7 @@ void test_gpu() {
     test_reshape_1();
     test_reshape_bp();
     test_reshape_bp_1();
+    test_repeat_interleave();
 }
 
 int main(int argc, char *argv[]) {

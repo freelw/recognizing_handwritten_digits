@@ -107,6 +107,12 @@ __global__ void reshape_deep_cp_float_kernel(
     int32_t dim, int32_t length
 );
 
+__global__ void repeat_interleave_int32_kernel(
+    int32_t *src, int32_t *dst,
+    int32_t src_length, int32_t dst_length,
+    int32_t n
+);
+
 #endif // GCC_ASAN
 
 #endif // V5_TENSOR_BACKENDS_GPU_KERNEL_CUH
