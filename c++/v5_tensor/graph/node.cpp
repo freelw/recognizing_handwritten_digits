@@ -24,12 +24,12 @@ namespace graph {
         }
     }
 
-    Node *Node::transpose() {
+    Node *Node::transpose(int a, int b) {
         Tensor *l_tensor = this->get_tensor();
-        Tensor *res_tensor = l_tensor->transpose();
+        Tensor *res_tensor = l_tensor->transpose(a, b);
         Node *res_node = nullptr;
         if (is_require_grad()) {
-            res_node = allocNode(res_tensor, this->get_grad()->transpose());
+            res_node = allocNode(res_tensor, this->get_grad()->transpose(a, b));
             res_node->require_grad();
             res_node->edges.push_back(EmptyEdge::create(this));
         } else {

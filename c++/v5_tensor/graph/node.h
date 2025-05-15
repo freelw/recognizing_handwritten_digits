@@ -54,7 +54,7 @@ namespace graph {
                 b_require_grad = _b_require_grad;
             }
             void backward();
-            Node *transpose();
+            Node *transpose(int a = 0, int b = 1);
             Node *reshape(const std::vector<int> &shape);
             Node *sequence_mask(Tensor *mask, float value);
             Node *softmax();
