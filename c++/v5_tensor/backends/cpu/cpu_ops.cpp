@@ -507,6 +507,10 @@ void CPUOps::softmax(Tensor *lhs, Tensor *res) {
     }
 }
 
+void CPUOps::softmax_bacward(Tensor *target_grad, const Tensor *softmax_res, Tensor *grad) {
+    assert(false);
+}
+
 void* CPUOps::alloc(size_t size) {
     return malloc(size);
 }

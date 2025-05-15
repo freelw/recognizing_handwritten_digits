@@ -321,19 +321,17 @@ namespace graph {
 
     class SoftmaxEdge : public Edge {
         public:
-            static Edge* create(Node *_node, Tensor *_res) {
-                Edge *edge = new SoftmaxEdge(_node, _res);
+            static Edge* create(Node *_node, Tensor *_softmax_res) {
+                Edge *edge = new SoftmaxEdge(_node, _softmax_res);
                 gAddEdge(edge);
                 return edge;
             }
-            SoftmaxEdge(Node *_node, Tensor *_res)
-                : Edge(Softmax, _node), res(_res) {}
+            SoftmaxEdge(Node *_node, Tensor *_softmax_res)
+                : Edge(Softmax, _node), softmax_res(_softmax_res) {}
             virtual ~SoftmaxEdge() {}
-            void backward(Tensor *grad) override {
-                assert(false);
-            }
+            void backward(Tensor *grad) override;
         private:
-            Tensor *res;
+            Tensor *softmax_res;
     };
 
     Node *allocNode(Tensor *t);

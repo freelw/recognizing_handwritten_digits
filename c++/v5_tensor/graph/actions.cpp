@@ -366,6 +366,22 @@ std::string SoftmaxAction::to_string() const {
     return oss.str();
 }
 
+void SoftmaxBackwardAction::execute() {
+    assert(lhs != nullptr);
+    assert(rhs != nullptr);
+    assert(res != nullptr);
+    // lhs is target grad
+    // rhs is softmax result
+    // res is input grad
+    g_backend_ops->softmax_bacward(lhs, rhs, res);
+}
+
+std::string SoftmaxBackwardAction::to_string() const {
+    std::ostringstream oss;
+    oss << "SoftmaxBackwardAction: softmax backward " << lhs->get_meta_info() << " with softmax result " << rhs->get_meta_info() << " to " << res->get_meta_info();
+    return oss.str();
+}
+
 std::vector<Action*> g_actions;
 
 std::vector<Action *> getOnceActions() {

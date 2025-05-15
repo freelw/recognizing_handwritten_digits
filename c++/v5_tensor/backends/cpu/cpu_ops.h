@@ -32,6 +32,7 @@ class CPUOps : public BackendOps {
         void repeat_interleave(Tensor *lhs, Tensor *res, int n) override;
         void sequence_mask(Tensor *lhs, const Tensor *mask, Tensor *res, float value) override;
         void softmax(Tensor *lhs, Tensor *res) override;
+        void softmax_bacward(Tensor *target_grad, const Tensor *softmax_res, Tensor *grad) override;
 
         // Memory management
         void* alloc(size_t size) override;

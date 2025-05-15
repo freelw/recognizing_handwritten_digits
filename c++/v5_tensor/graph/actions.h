@@ -243,6 +243,14 @@ class SoftmaxAction : public Action {
         std::string to_string() const override;
 };
 
+class SoftmaxBackwardAction : public Action {
+    public:
+        SoftmaxBackwardAction(Tensor *_lhs, Tensor *_softmax_res, Tensor *grad)
+            : Action(_lhs, _softmax_res, grad) {}
+        void execute() override;
+        std::string to_string() const override;
+};
+
 std::vector<Action *> getOnceActions();
 void gCreateAction(Action *action);
 void gDoActions();

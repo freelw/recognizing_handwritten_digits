@@ -242,6 +242,16 @@ namespace graph {
         );
     }
 
+    void SoftmaxEdge::backward(Tensor *grad) {
+        gCreateAction(
+            new SoftmaxBackwardAction(
+                node->get_grad(),
+                softmax_res,
+                grad
+            )
+        );
+    }
+
     std::vector<Edge *> edges;
     std::vector<Node *> nodes;
 

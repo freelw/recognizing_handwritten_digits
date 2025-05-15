@@ -651,6 +651,10 @@ void CUDAOps::softmax(Tensor *lhs, Tensor *res) {
     );
 }
 
+void CUDAOps::softmax_bacward(Tensor *target_grad, const Tensor *softmax_res, Tensor *grad) {
+    assert(false);
+}
+
 void* CUDAOps::alloc(size_t size) {
     void *ret = nullptr;
     cudaMalloc((void **)&ret, size);
