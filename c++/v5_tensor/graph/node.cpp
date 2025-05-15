@@ -266,6 +266,16 @@ namespace graph {
         return node;
     }
 
+    void validateAllNodes() {
+        for (Node *node : nodes) {
+            if (node->is_require_grad()) {
+                bool grad_contiguous = node->get_grad()->is_contiguous();
+                bool tensor_contiguous = node->get_tensor()->is_contiguous();
+                assert(grad_contiguous == tensor_contiguous);
+            }
+        }
+    }
+
     void gAddEdge(Edge *edge) {
         edges.push_back(edge);
     }

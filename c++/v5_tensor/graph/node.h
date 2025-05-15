@@ -336,6 +336,7 @@ namespace graph {
 
     Node *allocNode(Tensor *t);
     Node *allocNode(Tensor *t, Tensor *grad);
+    void validateAllNodes();
     void freeAllNodes();
     void freeAllEdges();
 }

@@ -1,6 +1,7 @@
 #include "tensor.h"
 #include "backends/backend_ops.h"
 #include "graph/actions.h"
+#include "graph/node.h"
 #include <sstream>
 
 std::string TensorDtype_to_string(TensorDType dtype) {
@@ -429,6 +430,8 @@ size_t tensors_data_capacity = 0;
 size_t grad_tensors_data_capacity = 0;
 
 void allocMemAndInitTensors() {
+
+    graph::validateAllNodes();
     assert(tensors_data == nullptr);
     assert(grad_tensors_data == nullptr);
     assert(tensors_data_capacity == 0);
