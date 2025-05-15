@@ -61,6 +61,8 @@ namespace graph {
             Node *masked_softmax(Tensor *valid_len);
             Node *expand_add(Node *rhs);
             Node *at(Node *rhs);
+            Node *bmm(Node *rhs);
+            void split_3d(std::vector<Node *> &res_nodes);
             Node *relu();
             Node *CrossEntropy(Tensor *labels);
             void init_weight_gauss(float sigma, float mean);

@@ -368,11 +368,13 @@ Tensor *allocTensor(const std::vector<int> &shape, TensorDType dtype) {
 
 Tensor *allocTensorView(
     Tensor *parent, const std::vector<int> &shape,
-    const std::vector<int> &strides, const std::string &name
+    const std::vector<int> &strides, const std::string &name,
+    int offset
 ) {
     Tensor *tensor_view = new Tensor(
         shape, strides, name,
-        parent->get_dtype(), parent->get_storage()
+        parent->get_dtype(), parent->get_storage(),
+        parent->get_offset() + offset
     );
     g_tensor_views.push_back(tensor_view);
     return tensor_view;
