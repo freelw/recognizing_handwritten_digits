@@ -1497,7 +1497,16 @@ void test_reshape_with_cpu() {
         std::cout << GREEN << "test_test_reshape_with_cpu succ" << RESET << std::endl;
     } else {
         std::cout << RED << "test_test_reshape_with_cpu failed" << RESET << std::endl;
-    }   
+    }
+
+    ::free(l_ans_cpu);
+    ::free(l_t_ans_cpu);
+    ::free(l_t_shape_ans_cpu);
+    ::free(l_r_ans_cpu);
+    ::free(l_ans_gpu);
+    ::free(l_t_ans_gpu);
+    ::free(l_t_shape_ans_gpu);
+    ::free(l_r_ans_gpu);
 }
 
 void test_reshape_bp() {
@@ -2291,6 +2300,8 @@ void test_gpu_add_eq_1d_with_cpu() {
     if (succ) {
         std::cout << GREEN << "test_add_eq_1d_with_cpu succ" << RESET << std::endl;
     }
+    ::free(cpu_res_buffer);
+    ::free(gpu_res_buffer);
 }
 
 void test_gpu_add_eq_2d_with_cpu() {
@@ -2336,6 +2347,8 @@ void test_gpu_add_eq_2d_with_cpu() {
     if (succ) {
         std::cout << GREEN << "test_add_eq_2d_with_cpu succ" << RESET << std::endl;
     }
+    ::free(cpu_res_buffer);
+    ::free(gpu_res_buffer);
 }
 
 Tensor *test_expand_add_with_cpu_base(int m, int n) {
@@ -2406,6 +2419,8 @@ void test_gpu_expand_add_with_cpu() {
     if (succ) {
         std::cout << GREEN << "test_expand_add_with_cpu succ" << RESET << std::endl;
     }
+    ::free(cpu_res_buffer);
+    ::free(gpu_res_buffer);
 }
 
 Tensor *test_mul_with_cpu_base(int m, int n) {
@@ -2480,6 +2495,8 @@ void test_gpu_mul_with_cpu() {
     if (succ) {
         std::cout << GREEN << "test_mul_with_cpu succ" << RESET << std::endl;
     }
+    ::free(cpu_res_buffer);
+    ::free(gpu_res_buffer);
 }
 
 Tensor *test_gpu_sum_with_cpu_base(int m, int n) {
@@ -2537,6 +2554,8 @@ void test_gpu_sum_with_cpu() {
     if (succ) {
         std::cout << GREEN << "test_sum_with_cpu succ" << RESET << std::endl;
     }
+    ::free(cpu_res_buffer);
+    ::free(gpu_res_buffer);
 }
 
 Tensor *test_cross_entropy_with_cpu_base(int m, int n) {
@@ -2597,6 +2616,8 @@ void test_gpu_cross_entropy_with_cpu() {
     if (succ) {
         std::cout << GREEN << "test_cross_entropy_with_cpu succ" << RESET << std::endl;
     }
+    ::free(gpu_res_buffer);
+    ::free(cpu_res_buffer);
 }
 
 Tensor *test_cross_entropy_backward_with_cpu_base(int m, int n) {
@@ -2661,6 +2682,8 @@ void test_gpu_cross_entropy_backward_with_cpu() {
     if (succ) {
         std::cout << GREEN << "test_cross_entropy_backward_with_cpu succ" << RESET << std::endl;
     }
+    ::free(cpu_res_buffer);
+    ::free(gpu_res_buffer);
 }
 
 void test_mlp_with_cpu_base(
@@ -2846,6 +2869,8 @@ void test_mask_with_cpu() {
     } else {
         std::cout << RED << "test_mask_with_gpu failed" << RESET << std::endl;
     }
+    ::free(res_gpu_buffer);
+    ::free(res_cpu_buffer);
 }
 
 Tensor *test_mask_with_cpu_base_1(int m, int n, int k) {
@@ -2897,6 +2922,8 @@ void test_mask_with_cpu_1() {
     } else {
         std::cout << RED << "test_mask_with_gpu_1 failed" << RESET << std::endl;
     }
+    ::free(res_gpu_buffer);
+    ::free(res_cpu_buffer);
 }
 
 std::vector<Tensor *> test_softmax_with_cpu_base(int m, int n, int k) {
