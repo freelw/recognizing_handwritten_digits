@@ -389,17 +389,16 @@ __global__ void softmax_kernel(
             float val = src[row * l_stride0 + col * l_stride1 + i * l_stride2];
             max = fmaxf(max, val);
         }
-        maxs[row * shape0 + col] = max;
+        maxs[row * shape1 + col] = max;
         float sum = 0.0f;
         for (int i = 0; i < shape2; ++i) {
             float val = src[row * l_stride0 + col * l_stride1 + i * l_stride2];
             sum += expf(val - max);
         }
-        sums[row * shape0 + col] = sum;
+        sums[row * shape1 + col] = sum;
         for (int i = 0; i < shape2; ++i) {
             float val = src[row * l_stride0 + col * l_stride1 + i * l_stride2];
-            dst[row * r_stride0 + col * r_stride1 + i * r_stride2] =
-                expf(val - max) / sum;
+            dst[row * r_stride0 + col * r_stride1 + i * r_stride2] = expf(val - max) / sum;  
         }
     }
 }

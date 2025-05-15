@@ -232,12 +232,12 @@ namespace graph {
         );
     }
 
-    void Node::init_weight_for_dbg() {
+    void Node::init_weight_for_dbg(float scale) {
         gCreateAction(
             new InitWeightAction(
                 this->get_tensor(),
                 "dbg",
-                0,
+                scale,
                 0
             )
         );

@@ -23,7 +23,7 @@ class BackendOps {
         virtual void adamStep(Tensor *w, Tensor *grad, Tensor *m, Tensor *v, int t, float lr, float beta1, float beta2, float epsilon) = 0;
         virtual void init_weight_gauss(Tensor *tensor, float mean, float sigma) = 0;
         virtual void init_weight_uniform(Tensor *tensor, float sigma) = 0;
-        virtual void init_weight_for_dbg(Tensor *tensor) = 0;
+        virtual void init_weight_for_dbg(Tensor *tensor, float scale) = 0;
         virtual void fill(Tensor *tensor, float value) = 0;
         virtual void reshape_deep_cp(
             Tensor *dst_tensor, const Tensor *src_tensor,

@@ -477,14 +477,14 @@ void CUDAOps::init_weight_uniform(Tensor *tensor, float sigma) {
     assert(false); // Not implemented yet
 }
 
-void CUDAOps::init_weight_for_dbg(Tensor *tensor) {
+void CUDAOps::init_weight_for_dbg(Tensor *tensor, float scale) {
     auto size = tensor->size();
     void *_data = ::malloc(size);
 
     if (tensor->get_dtype() == FLOAT32) {
         float *data = static_cast<float*>(_data);
         for (int i = 0; i < tensor->length(); ++i) {
-            data[i] = static_cast<float>(i) * 1e-5;
+            data[i] = static_cast<float>(i) * 1e-5 * scale;
         }
     } else if (tensor->get_dtype() == INT32) {
         int32_t *data = static_cast<int32_t*>(_data);

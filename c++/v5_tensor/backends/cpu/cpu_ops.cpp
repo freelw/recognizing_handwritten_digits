@@ -348,7 +348,7 @@ void CPUOps::init_weight_uniform(Tensor *tensor, float sigma) {
     
 }
 
-void CPUOps::init_weight_for_dbg(Tensor *tensor) {
+void CPUOps::init_weight_for_dbg(Tensor *tensor, float scale) {
     assert(tensor != nullptr);
     assert(tensor->get_data() != nullptr);
     assert(tensor->length() > 0);
@@ -356,7 +356,7 @@ void CPUOps::init_weight_for_dbg(Tensor *tensor) {
     if (tensor->get_dtype() == FLOAT32) {
         float *data = static_cast<float*>(tensor->get_data());
         for (int i = 0; i < tensor->length(); ++i) {
-            data[i] = static_cast<float>(i) * 1e-5;
+            data[i] = static_cast<float>(i) * 1e-5 * scale;
         }
     } else if (tensor->get_dtype() == INT32) {
         int32_t *data = static_cast<int32_t*>(tensor->get_data());
@@ -495,7 +495,7 @@ void CPUOps::softmax(Tensor *lhs, Tensor *res, Tensor *maxs, Tensor *sums) {
                     max = e;
                 }
             }
-            static_cast<float*>(maxs->get_data())[i * l_shape[0] + j] = max;
+            static_cast<float*>(maxs->get_data())[i * l_shape[1] + j] = max;
             float sum = 0;
             for (int k = 0; k < l_shape[2]; ++k) {
                 float e = static_cast<float*>(lhs->get_data())[i * lstrides[0] + j * lstrides[1] + k * lstrides[2]];
@@ -506,7 +506,7 @@ void CPUOps::softmax(Tensor *lhs, Tensor *res, Tensor *maxs, Tensor *sums) {
                 static_cast<float*>(res->get_data())[i * rstrides[0] + j * rstrides[1] + k * rstrides[2]] =
                     std::exp(static_cast<float*>(lhs->get_data())[i * lstrides[0] + j * lstrides[1] + k * lstrides[2]] - max) / sum;
             }
-            static_cast<float*>(sums->get_data())[i * l_shape[0] + j] = sum;
+            static_cast<float*>(sums->get_data())[i * l_shape[1] + j] = sum;
         }
     }
 }

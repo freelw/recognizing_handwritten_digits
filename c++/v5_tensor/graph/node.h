@@ -65,7 +65,7 @@ namespace graph {
             Node *CrossEntropy(Tensor *labels);
             void init_weight_gauss(float sigma, float mean);
             void init_weight_uniform(float sigma);
-            void init_weight_for_dbg();
+            void init_weight_for_dbg(float scale = 1.0f);
         private:
             Tensor *t;
             Tensor *grad;

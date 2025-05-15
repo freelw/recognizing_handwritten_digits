@@ -1163,7 +1163,8 @@ void test_print_tensor() {
 }
 
 bool compare_res_ans(
-    Tensor *res, float *ans, const std::string &name
+    Tensor *res, float *ans, const std::string &name,
+    float eps = 1e-5f
 ) {
     auto res_size = res->size();
     auto res_shape = res->get_shape();
@@ -1174,7 +1175,6 @@ bool compare_res_ans(
         res,
         res_size
     );
-    const float eps = 1e-5f;
     bool succ = true;
     for (int i = 0; i < res_shape[0]; ++i) {
         for (int j = 0; j < res_shape[1]; ++j) {
@@ -1195,7 +1195,8 @@ bool compare_res_ans(
 }
 
 bool compare_res_ans_1d(
-    Tensor *res, float *ans, const std::string &name
+    Tensor *res, float *ans, const std::string &name,
+    float eps = 1e-5f
 ) {
     auto res_size = res->size();
     auto res_length = res->length();
@@ -1205,7 +1206,6 @@ bool compare_res_ans_1d(
         res,
         res_size
     );
-    const float eps = 1e-5f;
     bool succ = true;
     for (int i = 0; i < res_length; ++i) {
         auto v = res_data[i];
@@ -1975,32 +1975,34 @@ void test_softmax() {
     Tensor *maxs = allocTensor({1, 3}, "maxs");
     Tensor *sums = allocTensor({1, 3}, "sums");
     auto ni = graph::allocNode(input);
+    ni->init_weight_for_dbg(10000.0f);
     auto res = input->softmax(maxs, sums);
     allocMemAndInitTensors();
     gDoActions();
     float ans[12] = {
-        0.25, 0.25, 0.25, 0.25,
-        0.25, 0.25, 0.25, 0.25,
-        0.25, 0.25, 0.25, 0.25
+        0.2138, 0.2363, 0.2612, 0.2887,
+        0.2138, 0.2363, 0.2612, 0.2887,
+        0.2138, 0.2363, 0.2612, 0.2887
     };
-    bool succ_res = compare_res_ans(res, ans, "res");
+    bool succ_res = compare_res_ans_1d(res, ans, "res", 1e-4);
     if (!succ_res) {
         std::cout << RED << "test_softmax res failed" << RESET << std::endl;
     }
-    
 
     float ans_maxs[3] = {
-        0, 0, 0
+        0.3, 0.7, 1.1
     };
-    bool succ_maxs = compare_res_ans(maxs, ans_maxs, "maxs");
+
+    bool succ_maxs = compare_res_ans_1d(maxs, ans_maxs, "maxs");
     if (!succ_maxs) {
         std::cout << RED << "test_softmax maxs failed" << RESET << std::endl;
     }
 
     float ans_sums[3] = {
-        4, 4, 4
+        3.46439, 3.46439, 3.46439
     };
-    bool succ_sums = compare_res_ans(sums, ans_sums, "sums");
+
+    bool succ_sums = compare_res_ans_1d(sums, ans_sums, "sums");
     if (!succ_sums) {
         std::cout << RED << "test_softmax sums failed" << RESET << std::endl;
     }
@@ -2902,10 +2904,10 @@ std::vector<Tensor *> test_softmax_with_cpu_base(int m, int n, int k) {
     Tensor *maxs = allocTensor({m, n}, "maxs");
     Tensor *sums = allocTensor({m, n}, "sums");
     auto ni = graph::allocNode(input);
-    ni->init_weight_for_dbg();
+    ni->init_weight_for_dbg(10000.0f);
     auto res = input->softmax(maxs, sums);
     allocMemAndInitTensors();
-    printAllActions();
+    // printAllActions();
     gDoActions();
     std::vector<Tensor *> res_vec;
     res_vec.push_back(res);
@@ -2920,7 +2922,7 @@ void test_softmax_with_cpu() {
 
     use_gpu(false);
     construct_env();
-    int m = 101;
+    int m = 100;
     int n = 500;
     int k = 30;
     cpu_res = test_softmax_with_cpu_base(m, n, k);
@@ -3007,9 +3009,9 @@ void test_softmax_with_cpu() {
     }
     bool succ = succ_res && succ_maxs && succ_sums;
     if (succ) {
-        std::cout << GREEN << "test_softmax_with_gpu succ" << RESET << std::endl;
+        std::cout << GREEN << "test_softmax_with_cpu succ" << RESET << std::endl;
     } else {
-        std::cout << RED << "test_softmax_with_gpu failed" << RESET << std::endl;
+        std::cout << RED << "test_softmax_with_cpu failed" << RESET << std::endl;
     }
 
     ::free(res_cpu_buffer);
@@ -3021,42 +3023,42 @@ void test_softmax_with_cpu() {
 }
 
 void test_gpu() {
-    // test_at();
-    // test_at_1();
-    // test_gpu_at_with_cpu();
-    // test_add();
-    // test_gpu_add_with_cpu();
-    // test_add_eq();
-    // test_gpu_add_eq_1d_with_cpu();
-    // test_gpu_add_eq_2d_with_cpu();
-    // test_expand_add();
-    // test_gpu_expand_add_with_cpu();
-    // test_mul();
-    // test_gpu_mul_with_cpu();
-    // test_sum();
-    // test_gpu_sum_with_cpu();
-    // test_cross_entropy();
-    // test_gpu_cross_entropy_with_cpu();
-    // test_cross_entropy_backward();
-    // test_gpu_cross_entropy_backward_with_cpu();
-    // test_bp();
-    // test_adam();
-    // test_mlp();
-    // test_mlp_with_cpu();
-    // // test_print_tensor();
-    // test_contiguous();
-    // test_reshape();
-    // test_reshape_with_cpu();
-    // test_reshape_1();
-    // test_reshape_bp();
-    // test_reshape_bp_1();
-    // test_repeat_interleave();
-    // test_repeat_interleave_with_cpu();
-    // test_mask();
-    // test_mask_with_cpu();
-    // test_mask_1();
-    // test_mask_with_cpu_1();
-    // test_softmax();
+    test_at();
+    test_at_1();
+    test_gpu_at_with_cpu();
+    test_add();
+    test_gpu_add_with_cpu();
+    test_add_eq();
+    test_gpu_add_eq_1d_with_cpu();
+    test_gpu_add_eq_2d_with_cpu();
+    test_expand_add();
+    test_gpu_expand_add_with_cpu();
+    test_mul();
+    test_gpu_mul_with_cpu();
+    test_sum();
+    test_gpu_sum_with_cpu();
+    test_cross_entropy();
+    test_gpu_cross_entropy_with_cpu();
+    test_cross_entropy_backward();
+    test_gpu_cross_entropy_backward_with_cpu();
+    test_bp();
+    test_adam();
+    test_mlp();
+    test_mlp_with_cpu();
+    // test_print_tensor();
+    test_contiguous();
+    test_reshape();
+    test_reshape_with_cpu();
+    test_reshape_1();
+    test_reshape_bp();
+    test_reshape_bp_1();
+    test_repeat_interleave();
+    test_repeat_interleave_with_cpu();
+    test_mask();
+    test_mask_with_cpu();
+    test_mask_1();
+    test_mask_with_cpu_1();
+    test_softmax();
     test_softmax_with_cpu();
 }
 
