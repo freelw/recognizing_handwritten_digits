@@ -2288,8 +2288,42 @@ void test_bmm_bp() {
     std::cout << "w :" << std::endl << *w << std::endl;
     std::cout << "labels :" << std::endl << *labels << std::endl;
     std::cout << "bmm_res :" << std::endl << *bmm_res->get_tensor() << std::endl;
-    std::cout << "loss = " << loss << std::endl;
-    
+    std::cout << std::setprecision(8) << "loss = " << loss << std::endl;
+
+    float loss_ans = 1.6919627f;
+
+    const float eps = 1e-5f;
+    if (fabs(loss - loss_ans) > eps) {
+        std::cerr << RED << "Error: loss = " << loss << ", ans = " << loss_ans << RESET << std::endl;
+    } else {
+        std::cout << GREEN << "test_bmm_bp loss succ" << RESET << std::endl;
+    }
+
+    float bmm_res_ans[36] = {
+        0.84, 0.9, 0.96, 1.02, 1.08, 1.14,
+        2.28, 2.5, 2.72, 2.94, 3.16, 3.38,
+        3.72, 4.1, 4.48, 4.86, 5.24, 5.62,
+        18.12, 18.66, 19.2, 19.74, 20.28, 20.82,
+        23.4, 24.1, 24.8, 25.5, 26.2, 26.9,
+        28.68, 29.54, 30.4, 31.26, 32.12, 32.98
+    };
+
+    bool succ_bmm_res = compare_res_ans_1d(
+        bmm_res->get_tensor(),
+        bmm_res_ans,
+        "bmm_res"
+    );
+
+    if (!succ_bmm_res) {
+        std::cout << RED << "test_bmm_bp bmm_res failed" << RESET << std::endl;
+    }
+
+    auto ni_grad = ni->get_grad();
+    auto nw_grad = nw->get_grad();
+
+    std::cout << "ni_grad :" << std::endl << *ni_grad << std::endl;
+    std::cout << "nw_grad :" << std::endl << *nw_grad << std::endl;
+
     destruct_env();
 }
 
