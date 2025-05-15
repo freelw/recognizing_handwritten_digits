@@ -34,7 +34,7 @@ x = torch.tensor(
 x.requires_grad_(True)  # Enable gradient calculation
 
 print("x :", x)
-masked_softmax_res = masked_softmax(x, torch.tensor([2, 3]))
+masked_softmax_res = masked_softmax(x, torch.tensor([[1, 3],[2, 4]]))
 
 loss_fn = nn.CrossEntropyLoss()
 labels = torch.tensor([0, 1, 2, 3])

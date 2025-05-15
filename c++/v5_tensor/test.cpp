@@ -2090,8 +2090,6 @@ void test_masked_softmax_bp() {
         4 * sizeof(int32_t)
     );
     gDoActions();
-    std::cout << "input : " << std::endl << *input << std::endl;
-    std::cout << "labels : " << std::endl << *labels << std::endl;
 
     float ans[16] = {
         1, 0, 0, 0,
@@ -2100,11 +2098,32 @@ void test_masked_softmax_bp() {
         0.213838, 0.236328, 0.261183, 0.288651
     };
 
-    bool succ = compare_res_ans_1d(res_softmax->get_tensor(), ans, "res_softmax");
-    if (!succ) {
+    bool succ_softmax = compare_res_ans_1d(res_softmax->get_tensor(), ans, "res_softmax");
+    if (!succ_softmax) {
         std::cout << RED << "test_masked_softmax_bp softmax failed" << RESET << std::endl;
+    }
+
+    float ni_grad_ans[16] = {
+        0, 0, 0, 0,
+        0.0242644, -0.0555455, 0.0312811, 0,
+        -0.00096927, 0.00096927, 0, 0,
+        0.0149098, 0.0168018, 0.0189739, -0.0506855
+    };
+
+    bool succ_ni_grad = compare_res_ans_1d(
+        ni->get_grad(),
+        ni_grad_ans,
+        "ni_grad"
+    );
+    if (!succ_ni_grad) {
+        std::cout << RED << "test_masked_softmax_bp ni_grad failed" << RESET << std::endl;
+    }
+
+    bool succ = succ_softmax && succ_ni_grad;
+    if (succ) {
+        std::cout << GREEN << "test_masked_softmax_bp succ" << RESET << std::endl;
     } else {
-        std::cout << GREEN << "test_masked_softmax_bp softmax succ" << RESET << std::endl;
+        std::cout << RED << "test_masked_softmax_bp failed" << RESET << std::endl;
     }
     destruct_env();
 }

@@ -530,6 +530,31 @@ void CPUOps::softmax_bacward(Tensor *target_grad, const Tensor *softmax_res, Ten
     auto t_strides = target_grad->get_strides();
     auto s_strides = softmax_res->get_strides();
     auto g_strides = grad->get_strides();
+
+    float *target_grad_data = static_cast<float*>(target_grad->get_data());
+    float *softmax_res_data = static_cast<float*>(softmax_res->get_data());
+    float *grad_data = static_cast<float*>(grad->get_data());
+
+    for (int i = 0; i < t_shape[0]; ++i) {
+        for (int j = 0; j < t_shape[1]; ++j) {
+            for (int target = 0; target < t_shape[2]; ++target) {
+                for (int k = 0; k < t_shape[2]; ++k) {
+                    auto target_pos = i * t_strides[0] + j * t_strides[1] + target * t_strides[2];
+                    auto k_pos = i * t_strides[0] + j * t_strides[1] + k * t_strides[2];
+                    auto softmax_res_k = softmax_res_data[k_pos];
+                    auto softmax_res_target = softmax_res_data[target_pos];
+                    auto grad_k = grad_data[k_pos];
+                    if (target == k) {
+                        target_grad_data[target_pos] += 
+                            softmax_res_k * (1 - softmax_res_k) * grad_k;
+                    } else {
+                        target_grad_data[target_pos] += 
+                            -softmax_res_target * softmax_res_k * grad_k;
+                    }
+                }
+            }
+        }
+    }
 }
 
 void* CPUOps::alloc(size_t size) {
