@@ -84,11 +84,11 @@ int Tensor::capacity() const {
     return size() + TENSOR_PADDING_SIZE;
 }
 
-Tensor *Tensor::transpose() {
+Tensor *Tensor::transpose(int a, int b) {
     Tensor *transpose_view = allocTensorView(
         this,
-        {this->get_shape()[1], this->get_shape()[0]},
-        {this->get_strides()[1], this->get_strides()[0]},
+        {this->get_shape()[b], this->get_shape()[a]},
+        {this->get_strides()[b], this->get_strides()[a]},
         this->get_name() + "_transpose"
     );
     return transpose_view;

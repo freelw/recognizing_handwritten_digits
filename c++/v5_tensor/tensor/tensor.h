@@ -48,7 +48,7 @@ class Tensor {
         virtual int get_dim() const { return shape.size(); }
         TensorDType get_dtype() const { return dtype; }
         virtual std::string get_name() const { return name; }
-        Tensor *transpose();
+        Tensor *transpose(int a = 0, int b = 1);
         Tensor *reshape(const std::vector<int> &shape);
         Tensor *fill(float value);
         Tensor *repeat_interleave(int n);
