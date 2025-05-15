@@ -66,9 +66,8 @@ namespace graph {
         Tensor *res_tensor = this->get_tensor()->sequence_mask(mask, value);
         Node *res_node = nullptr;
         if (is_require_grad()) {
-            res_node->require_grad();
-            res_node->edges.push_back(EmptyEdge::create(this));
             res_node = allocNode(res_tensor, this->get_grad());
+            res_node->edges.push_back(EmptyEdge::create(this));
         } else {
             res_node = allocNode(res_tensor);
         }

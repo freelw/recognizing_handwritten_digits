@@ -2069,6 +2069,44 @@ void test_masked_softmax_1() {
     destruct_env();
 }
 
+void test_masked_softmax_bp() {
+    construct_env();
+    Tensor *labels = allocTensor({4}, "input", INT32);
+    Tensor *input = allocTensor({2, 2, 4}, "input");
+    auto ni = graph::allocNode(input);
+    ni->require_grad();
+    ni->init_weight_for_dbg(10000.0f);
+    Tensor *valid_lens = allocTensor({2, 2}, "mask", INT32);
+    auto res_softmax = ni->masked_softmax(valid_lens);
+    auto res_ce = res_softmax->reshape({-1, 4})->CrossEntropy(labels);
+    res_ce->backward();
+    allocMemAndInitTensors();
+    init_labels(labels);
+    
+    int valid_lens_buffer[4] = {1, 3, 2, 4};
+    g_backend_ops->cp_to_device(
+        valid_lens,
+        reinterpret_cast<char*>(valid_lens_buffer),
+        4 * sizeof(int32_t)
+    );
+    gDoActions();
+
+    float ans[16] = {
+        1, 0, 0, 0,
+        0.30061, 0.332225, 0.367165, 0,
+        0.475021, 0.524979, 0, 0,
+        0.213838, 0.236328, 0.261183, 0.288651
+    };
+
+    bool succ = compare_res_ans_1d(res_ce->get_tensor(), ans, "res_ce");
+    if (!succ) {
+        std::cout << RED << "test_masked_softmax_bp softmax failed" << RESET << std::endl;
+    } else {
+        std::cout << GREEN << "test_masked_softmax_bp softmax succ" << RESET << std::endl;
+    }
+    destruct_env();
+}
+
 void test_cpu() {
     test_at();
     test_add();
@@ -2093,6 +2131,7 @@ void test_cpu() {
     test_softmax();
     test_masked_softmax();
     test_masked_softmax_1();
+    test_masked_softmax_bp();
 }
 
 Tensor *test_add_with_cpu_base(int m, int n) {
@@ -3131,6 +3170,7 @@ void test_gpu() {
     test_masked_softmax();
     test_masked_softmax_1();
     test_masked_softmax_with_cpu();
+    test_masked_softmax_bp();
 }
 
 int main(int argc, char *argv[]) {
