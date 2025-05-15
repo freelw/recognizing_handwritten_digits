@@ -45,20 +45,21 @@ class Tensor {
         virtual bool is_view() const { return !own_storage; }
         std::vector<int> get_shape() const { return shape; }
         std::vector<int> get_strides() const { return strides; }
-        virtual int get_rank() const { return shape.size(); }
+        virtual int get_dim() const { return shape.size(); }
         TensorDType get_dtype() const { return dtype; }
         virtual std::string get_name() const { return name; }
-        Tensor *transpose();
+        Tensor *transpose(int a = 0, int b = 1);
+        Tensor *reshape(const std::vector<int> &shape);
         Tensor *fill(float value);
-        friend std::ostream &operator<<(std::ostream &output, const Tensor &s);
-        bool is_contiguous() const {
-            for (size_t i = 0; i < shape.size(); ++i) {
-                if (shape[i] * strides[i] != length()) {
-                    return false;
-                }
-            }
-            return true;
+        Tensor *repeat_interleave(int n);
+        Tensor *sequence_mask(Tensor *mask, float value);
+        Tensor *softmax();
+        std::string get_meta_info() const;
+        bool is_contiguous() const;
+        bool is_shared_with(const Tensor *other) const {
+            return this->get_storage() == other->get_storage();
         }
+        friend std::ostream &operator<<(std::ostream &output, const Tensor &s);
     protected:
         int cell_size() const;
     protected:

@@ -1,6 +1,7 @@
 #include "tensor.h"
 #include "backends/backend_ops.h"
 #include "graph/actions.h"
+#include <sstream>
 
 std::string TensorDtype_to_string(TensorDType dtype) {
     switch (dtype) {
@@ -83,14 +84,98 @@ int Tensor::capacity() const {
     return size() + TENSOR_PADDING_SIZE;
 }
 
-Tensor *Tensor::transpose() {
+Tensor *Tensor::transpose(int a, int b) {
     Tensor *transpose_view = allocTensorView(
         this,
-        {this->get_shape()[1], this->get_shape()[0]},
-        {this->get_strides()[1], this->get_strides()[0]},
+        {this->get_shape()[b], this->get_shape()[a]},
+        {this->get_strides()[b], this->get_strides()[a]},
         this->get_name() + "_transpose"
     );
     return transpose_view;
+}
+
+Tensor *Tensor::reshape(const std::vector<int> &shape) {
+    std::vector<int> calc_req_shape = shape;
+
+    int unknown_dim_cnt = 0;
+    int unknown_dim_index = -1;
+    for (int i = 0; i < calc_req_shape.size(); ++i) {
+        if (calc_req_shape[i] == -1) {
+            unknown_dim_cnt++;
+            unknown_dim_index = i;
+        }
+    }
+
+    assert (unknown_dim_cnt <= 1);
+
+    if (unknown_dim_cnt == 1) {
+        int total_length = 1;
+        for (int i = 0; i < calc_req_shape.size(); ++i) {
+            if (calc_req_shape[i] != -1) {
+                total_length *= calc_req_shape[i];
+            }
+        }
+        assert(length() % total_length == 0);
+        calc_req_shape[unknown_dim_index] = length() / total_length;
+    }
+
+    auto req_length = 1;
+    for (int i = 0; i < calc_req_shape.size(); ++i) {
+        req_length *= calc_req_shape[i];
+    }
+
+    assert(req_length == length());
+    
+    if (this->is_contiguous()) {
+        std::vector<int> new_strides(calc_req_shape.size());
+        new_strides[calc_req_shape.size() - 1] = 1;
+        for (int i = calc_req_shape.size() - 2; i >= 0; --i) {
+            new_strides[i] = new_strides[i + 1] * calc_req_shape[i + 1];
+        }
+        Tensor *reshape_view = allocTensorView(
+            this,
+            calc_req_shape,
+            new_strides,
+            this->get_name() + "_reshape"
+        );
+        return reshape_view;
+    } else {
+        Tensor *reshape_deep_cpy = allocTensor(
+            calc_req_shape,
+            this->get_name() + "_reshape_deep_copy",
+            this->get_dtype()
+        );
+        Tensor *tensor_shape = allocTensor(
+            {get_dim()},
+            this->get_name() + "_reshape_deep_copy_shape",
+            INT32
+        );
+        Tensor *tensor_strides = allocTensor(
+            {get_dim()},
+            this->get_name() + "_reshape_deep_copy_strides",
+            INT32
+        );
+
+        gCreateAction(
+            new AssignShapeAndStridesAction(
+                tensor_shape,
+                tensor_strides,
+                this->get_shape(),
+                this->get_strides()
+            )
+        );
+
+        gCreateAction(
+            new ReshapeDeepCpAction(
+                reshape_deep_cpy,
+                this,
+                tensor_shape,
+                tensor_strides
+            )
+        );
+
+        return reshape_deep_cpy;
+    }
 }
 
 Tensor *Tensor::fill(float value) {
@@ -100,20 +185,143 @@ Tensor *Tensor::fill(float value) {
     return this;
 }
 
-std::ostream &operator<<(std::ostream &output, const Tensor &s) {
+Tensor *Tensor::repeat_interleave(int n) {
+    assert(!is_view());
+    assert(dtype == INT32);
+    assert(get_dim() == 1);
+    Tensor *repeat_interleave_tensor = allocTensor(
+        {shape[0] * n},
+        this->get_name() + "_repeat_interleave",
+        INT32
+    );
+    gCreateAction(
+        new RepeatInterleaveAction(
+            this,
+            repeat_interleave_tensor,
+            n
+        )
+    );
+    return repeat_interleave_tensor;
+}
+
+Tensor *Tensor::sequence_mask(Tensor *mask, float value) {
+    assert(mask->get_dtype() == INT32);
+    assert(mask->get_dim() == 1);
+    assert(mask->get_shape()[0] == shape[0]);
+    assert(this->get_dtype() == FLOAT32);
+    assert(this->get_dim() == 2);
+    Tensor *sequence_mask_tensor = allocTensor(
+        {shape[0], shape[1]},
+        this->get_name() + "_sequence_mask",
+        this->get_dtype()
+    );
+    gCreateAction(
+        new SequenceMaskAction(
+            this,
+            mask,
+            sequence_mask_tensor,
+            value
+        )
+    );
+    return sequence_mask_tensor;
+}
+
+Tensor *Tensor::softmax() {
+    Tensor *res = allocTensor(
+        shape,
+        this->get_name() + "_softmax",
+        this->get_dtype()
+    );
+    gCreateAction(
+        new SoftmaxAction(
+            this,
+            res
+        )
+    );
+    return res;
+}
+
+std::string Tensor::get_meta_info() const {
+    std::ostringstream output;
     output << "Tensor";
-    if (s.get_dtype() != FLOAT32) {
-        std::string dtype_str = TensorDtype_to_string(s.get_dtype());
+    if (get_dtype() != FLOAT32) {
+        std::string dtype_str = TensorDtype_to_string(get_dtype());
         output << "(" << dtype_str << ")";
     }
-    output << "(" << s.get_name() << ")(";
-    for (size_t i = 0; i < s.shape.size(); ++i) {
-        output << s.shape[i];
-        if (i != s.shape.size() - 1) {
+    output << "(" << get_name() << ")(";
+    for (size_t i = 0; i < shape.size(); ++i) {
+        output << shape[i];
+        if (i != shape.size() - 1) {
             output << ", ";
         }
     }
     output << ")";
+    return output.str();
+}
+
+bool Tensor::is_contiguous() const {
+    auto dim = get_dim();
+    if (strides[dim-1] != 1) {
+        return false;
+    }
+    for (int i = 0; i < dim-1; ++ i) {
+        if (strides[i] != strides[i+1] * shape[i+1]) {
+            return false;
+        }
+    }
+    return true;
+}
+
+void dfs_print(
+    std::ostream &output, const Tensor &s,
+    void *data, int depth,
+    int base_offset, bool is_start) {
+    if (!is_start) {
+        for (int i = 0; i < depth; ++i) {
+            output << " ";
+        }
+    }
+    output << "[";
+    auto dim = s.get_dim();
+    auto stride = s.get_strides()[depth];
+    if (depth == dim-1) {
+        auto dtype = s.get_dtype();
+        auto length = s.get_shape()[dim-1];
+        for (int i = 0; i < length; ++i) {
+            if (dtype == FLOAT32) {
+                output << *(reinterpret_cast<float*>(data) + base_offset + i * stride);
+            } else if (dtype == INT32) {
+                output << *(reinterpret_cast<int32_t*>(data) + base_offset + i * stride);
+            }
+            if (i < length - 1) {
+                output << ", ";
+            } else {
+                output << "]";
+            }
+        }
+        return ;
+    }
+    for (int i = 0; i < s.get_shape()[depth]; ++i) {
+        dfs_print(output, s, data, depth+1, base_offset + i * stride, i == 0);
+        if (i < s.get_shape()[depth] - 1) {
+            output << ",";
+            for (int j = 0; j < dim - depth -1 ; ++j) {
+                output << std::endl;
+            }
+        }
+    }
+    output << "]";
+}
+
+std::ostream &operator<<(std::ostream &output, const Tensor &s) {
+    void *data = ::malloc(s.size());
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(data),
+        &s,
+        s.size()
+    );
+    dfs_print(output, s, data, 0, 0, true);
+    ::free(data);
     return output;
 }
 
@@ -156,15 +364,15 @@ Tensor *allocGradTensor(const std::vector<int> &shape) {
 void printAllTensors() {
     std::cout << "Tensors:" << std::endl;
     for (Tensor *tensor : g_tensors) {
-        std::cout << "\t" << *tensor << std::endl;
+        std::cout << "\t" << tensor->get_meta_info() << std::endl;
     }
     std::cout << "Tensor Views:" << std::endl;
     for (Tensor *tensor_view : g_tensor_views) {
-        std::cout << "\t" << *tensor_view << std::endl;
+        std::cout << "\t" << tensor_view->get_meta_info() << std::endl;
     }
     std::cout << "Grad Tensors:" << std::endl;
     for (Tensor *grad_tensor : g_grad_tensors) {
-        std::cout << "\t" << *grad_tensor << std::endl;
+        std::cout << "\t" << grad_tensor->get_meta_info() << std::endl;
     }
 }
 

@@ -42,15 +42,15 @@ void CPUOps::addEq(Tensor *lhs, const Tensor *rhs) {
     auto lstrides = lhs->get_strides();
     auto rstrides = rhs->get_strides();
 
-    int rank = lhs->get_rank();
+    int dim = lhs->get_dim();
 
-    assert(rank <= 2);
-    if (rank == 1) {
+    assert(dim <= 2);
+    if (dim == 1) {
         for (int i = 0; i < lshape[0]; ++i) {
             static_cast<float*>(lhs->get_data())[i * lstrides[0]] += 
                 static_cast<float*>(rhs->get_data())[i * rstrides[0]];
         }
-    } else if (rank == 2) {
+    } else if (dim == 2) {
         for (int i = 0; i < lshape[0]; ++i) {
             for (int j = 0; j < lshape[1]; ++j) {
                 static_cast<float*>(lhs->get_data())[i * lstrides[0] + j * lstrides[1]] += 
@@ -129,7 +129,7 @@ void CPUOps::mul(Tensor *lhs, const Tensor *rhs, Tensor *res) {
     assert(lhs != nullptr);
     assert(rhs != nullptr);
     assert(res != nullptr);
-    assert(lhs->get_rank() == 2);
+    assert(lhs->get_dim() == 2);
 
     auto lshape = lhs->get_shape();
     auto rshape = rhs->get_shape();
@@ -154,15 +154,15 @@ void CPUOps::mul(Tensor *lhs, const Tensor *rhs, Tensor *res) {
 void CPUOps::sum(Tensor *lhs, Tensor *res, int dim) {
     assert(lhs != nullptr);
     assert(res != nullptr);
-    assert(dim >= 0 && dim < lhs->get_rank());
+    assert(dim >= 0 && dim < lhs->get_dim());
 
     auto shape = lhs->get_shape();
     auto res_shape = res->get_shape();
     assert(dim == 0);
 
     auto lstrides = lhs->get_strides();
-    assert(lhs->get_rank() == 2);
-    assert(res->get_rank() == 1);
+    assert(lhs->get_dim() == 2);
+    assert(res->get_dim() == 1);
 
     for (int i = 0; i < shape[1]; ++i) {
         static_cast<float*>(res->get_data())[i] = 0;
@@ -348,7 +348,7 @@ void CPUOps::init_weight_uniform(Tensor *tensor, float sigma) {
     
 }
 
-void CPUOps::init_weight_for_dbg(Tensor *tensor) {
+void CPUOps::init_weight_for_dbg(Tensor *tensor, float scale) {
     assert(tensor != nullptr);
     assert(tensor->get_data() != nullptr);
     assert(tensor->length() > 0);
@@ -356,7 +356,7 @@ void CPUOps::init_weight_for_dbg(Tensor *tensor) {
     if (tensor->get_dtype() == FLOAT32) {
         float *data = static_cast<float*>(tensor->get_data());
         for (int i = 0; i < tensor->length(); ++i) {
-            data[i] = static_cast<float>(i) * 1e-5;
+            data[i] = static_cast<float>(i) * 1e-5 * scale;
         }
     } else if (tensor->get_dtype() == INT32) {
         int32_t *data = static_cast<int32_t*>(tensor->get_data());
@@ -378,6 +378,187 @@ void CPUOps::fill(Tensor *tensor, float value) {
     for (int i = 0; i < tensor->length(); ++i) {
         data[i] = value;
     }   
+}
+
+void CPUOps::reshape_deep_cp(
+    Tensor *dst_tensor, const Tensor *src_tensor,
+    const Tensor *src_shape, const Tensor *src_strides) {
+    
+    assert(dst_tensor->get_dtype() == src_tensor->get_dtype());
+    assert(
+        dst_tensor->get_dtype() == INT32 ||
+        dst_tensor->get_dtype() == FLOAT32
+    );
+
+    auto dtype = dst_tensor->get_dtype();
+    auto src_shape_data = static_cast<int32_t*>(src_shape->get_data());
+    auto src_strides_data = static_cast<int32_t*>(src_strides->get_data());
+    auto dim = src_tensor->get_dim();
+    auto length = src_tensor->length();
+
+    if (dtype == INT32) {
+        assert(false);
+    } else if (dtype == FLOAT32) {
+        auto dst_data = static_cast<float*>(dst_tensor->get_data());
+        auto src_data = static_cast<float*>(src_tensor->get_data());
+        for (int i = 0; i < length; ++i) {
+            int offset = 0;
+            int index = i;
+            auto tmp_length = length;
+            for (int j = 0; j < dim; ++j) {
+                tmp_length /= src_shape_data[j];
+                auto cur_dim_index = index / tmp_length;
+                offset += cur_dim_index * src_strides_data[j];
+                index %= tmp_length;
+            }
+            dst_data[i] = src_data[offset];
+        }
+    } else {
+        assert(false);
+    }
+}
+
+void CPUOps::repeat_interleave(Tensor *lhs, Tensor *res, int n) {
+    assert(lhs->get_dtype() == INT32);
+    assert(res->get_dtype() == INT32);
+    assert(lhs != nullptr);
+    assert(res != nullptr);
+
+    assert(lhs->get_dim() == 1);
+    assert(res->get_dim() == 1);
+
+    auto l_length = lhs->length();
+    auto r_length = res->length();
+
+    assert(l_length * n == r_length);
+
+    for (int i = 0; i < l_length; ++i) {
+        for (int j = 0; j < n; ++j) {
+            static_cast<int32_t*>(res->get_data())[i * n + j] = 
+                static_cast<int32_t*>(lhs->get_data())[i];
+        }
+    }
+}
+
+void CPUOps::sequence_mask(Tensor *lhs, const Tensor *mask, Tensor *res, float value) {
+    assert(lhs != nullptr);
+    assert(mask != nullptr);
+    assert(res != nullptr);
+
+    assert(lhs->get_dtype() == FLOAT32);
+    assert(mask->get_dtype() == INT32);
+    assert(res->get_dtype() == FLOAT32);
+
+    assert(lhs->get_dim() == 2);
+    assert(mask->get_dim() == 1);
+    assert(res->get_dim() == 2);
+
+    auto lshape = lhs->get_shape();
+    auto mshape = mask->get_shape();
+    auto rshape = res->get_shape();
+
+    assert(lshape[0] == mshape[0]);
+    assert(lshape[1] == rshape[1]);
+    assert(rshape[0] == mshape[0]);
+
+    auto lstrides = lhs->get_strides();
+    auto mstrides = mask->get_strides();
+    auto rstrides = res->get_strides();
+
+    for (int i = 0; i < lshape[0]; ++i) {
+        for (int j = 0; j < lshape[1]; ++j) {
+            static_cast<float*>(res->get_data())[i * rstrides[0] + j * rstrides[1]] = 
+                static_cast<int32_t*>(mask->get_data())[i * mstrides[0]] <= j ? value : 
+                static_cast<float*>(lhs->get_data())[i * lstrides[0] + j * lstrides[1]];
+        }
+    }
+}
+
+void CPUOps::softmax(Tensor *lhs, Tensor *res) {
+    auto l_shape = lhs->get_shape();
+    auto r_shape = res->get_shape();
+    assert(l_shape == r_shape);
+    assert(lhs->get_dtype() == FLOAT32);
+    assert(res->get_dtype() == FLOAT32);
+    assert(lhs->get_dim() == 3);
+    assert(res->get_dim() == 3);
+    auto lstrides = lhs->get_strides();
+    auto rstrides = res->get_strides();
+    for (int i = 0; i < l_shape[0]; ++i) {
+        for (int j = 0; j < l_shape[1]; ++j) {
+            float max = static_cast<float*>(lhs->get_data())[i * lstrides[0] + j * lstrides[1]];
+            for (int k = 0; k < l_shape[2]; ++k) {
+                auto e = static_cast<float*>(lhs->get_data())[i * lstrides[0] + j * lstrides[1] + k * lstrides[2]];
+                if (max < e) {
+                    max = e;
+                }
+            }
+            float sum = 0;
+            for (int k = 0; k < l_shape[2]; ++k) {
+                float e = static_cast<float*>(lhs->get_data())[i * lstrides[0] + j * lstrides[1] + k * lstrides[2]];
+                e = std::exp(e - max);
+                sum += e;
+            }
+            for (int k = 0; k < l_shape[2]; ++k) {
+                static_cast<float*>(res->get_data())[i * rstrides[0] + j * rstrides[1] + k * rstrides[2]] =
+                    std::exp(static_cast<float*>(lhs->get_data())[i * lstrides[0] + j * lstrides[1] + k * lstrides[2]] - max) / sum;
+            }
+        }
+    }
+}
+
+void CPUOps::softmax_bacward(Tensor *target_grad, const Tensor *softmax_res, Tensor *grad) {
+    assert(target_grad != nullptr);
+    assert(softmax_res != nullptr);
+    assert(grad != nullptr);
+
+    assert(target_grad->get_dtype() == FLOAT32);
+    assert(softmax_res->get_dtype() == FLOAT32);
+    assert(grad->get_dtype() == FLOAT32);
+
+    assert(target_grad->get_dim() == 3);
+    assert(softmax_res->get_dim() == 3);
+    assert(grad->get_dim() == 3);
+
+    auto t_shape = target_grad->get_shape();
+    auto s_shape = softmax_res->get_shape();
+    auto g_shape = grad->get_shape();
+
+    assert(t_shape == s_shape);
+    assert(t_shape == g_shape);
+
+    auto t_strides = target_grad->get_strides();
+    auto s_strides = softmax_res->get_strides();
+    auto g_strides = grad->get_strides();
+
+    float *target_grad_data = static_cast<float*>(target_grad->get_data());
+    float *softmax_res_data = static_cast<float*>(softmax_res->get_data());
+    float *grad_data = static_cast<float*>(grad->get_data());
+
+    for (int i = 0; i < t_shape[0]; ++i) {
+        for (int j = 0; j < t_shape[1]; ++j) {
+            for (int target = 0; target < t_shape[2]; ++target) {
+                for (int k = 0; k < t_shape[2]; ++k) {
+                    auto tg_target_pos = i * t_strides[0] + j * t_strides[1] + target * t_strides[2];
+                    // auto tg_k_pos = i * t_strides[0] + j * t_strides[1] + k * t_strides[2];
+                    auto sm_target_pos = i * s_strides[0] + j * s_strides[1] + target * s_strides[2];
+                    auto sm_k_pos = i * s_strides[0] + j * s_strides[1] + k * s_strides[2];
+                    // auto g_target_pos = i * g_strides[0] + j * g_strides[1] + target * g_strides[2];
+                    auto g_k_pos = i * g_strides[0] + j * g_strides[1] + k * g_strides[2];
+                    auto softmax_res_k = softmax_res_data[sm_k_pos];
+                    auto softmax_res_target = softmax_res_data[sm_target_pos];
+                    auto grad_k = grad_data[g_k_pos];
+                    if (target == k) {
+                        target_grad_data[tg_target_pos] += 
+                            softmax_res_k * (1 - softmax_res_k) * grad_k;
+                    } else {
+                        target_grad_data[tg_target_pos] += 
+                            -softmax_res_target * softmax_res_k * grad_k;
+                    }
+                }
+            }
+        }
+    }
 }
 
 void* CPUOps::alloc(size_t size) {
@@ -405,7 +586,7 @@ void CPUOps::cp_to_device(Tensor *dst_tensor, char *src, size_t size) {
     memcpy(dst_tensor->get_data(), src, size);
 }
 
-void CPUOps::cp_from_device(char *dst, Tensor *src_tensor, size_t size) {
+void CPUOps::cp_from_device(char *dst, const Tensor *src_tensor, size_t size) {
     assert(dst != nullptr);
     assert(src_tensor != nullptr);
     assert(size > 0);

@@ -41,7 +41,7 @@ void AddAction::execute() {
 
 std::string AddAction::to_string() const {
     std::ostringstream oss;
-    oss << "AddAction: " << *lhs << " + " << *rhs << " -> " << *res;
+    oss << "AddAction: " << lhs->get_meta_info() << " + " << rhs->get_meta_info() << " -> " << res->get_meta_info();
     return oss.str();
 }
 
@@ -54,7 +54,7 @@ void AddEqAction::execute() {
 
 std::string AddEqAction::to_string() const {
     std::ostringstream oss;
-    oss << "AddEqAction: " << *lhs << " += " << *rhs;
+    oss << "AddEqAction: " << lhs->get_meta_info() << " += " << rhs->get_meta_info();
     return oss.str();
 }
 
@@ -67,7 +67,7 @@ void ExpandAddAction::execute() {
 
 std::string ExpandAddAction::to_string() const {
     std::ostringstream oss;
-    oss << "ExpandAddAction: " << *lhs << " + " << *rhs << " -> " << *res;
+    oss << "ExpandAddAction: " << lhs->get_meta_info() << " + " << rhs->get_meta_info() << " -> " << res->get_meta_info();
     return oss.str();
 }
 
@@ -80,7 +80,7 @@ void AtAction::execute() {
 
 std::string AtAction::to_string() const {
     std::ostringstream oss;
-    oss << "AtAction: " << *lhs << " at " << *rhs << " -> " << *res;
+    oss << "AtAction: " << lhs->get_meta_info() << " at " << rhs->get_meta_info() << " -> " << res->get_meta_info();
     return oss.str();
 }
 
@@ -93,14 +93,14 @@ void MulAction::execute() {
 
 std::string MulAction::to_string() const {
     std::ostringstream oss;
-    oss << "MulAction: " << *lhs << " * " << *rhs << " -> " << *res;
+    oss << "MulAction: " << lhs->get_meta_info() << " * " << rhs->get_meta_info() << " -> " << res->get_meta_info();
     return oss.str();
 }
 
 void SumAction::execute() {
     assert(lhs != nullptr);
     assert(rhs == nullptr);
-    if (dim < 0 || dim >= lhs->get_rank()) {
+    if (dim < 0 || dim >= lhs->get_dim()) {
         std::cerr << "Error: Invalid dimension for sum operation" << std::endl;
         abort();
     }
@@ -109,7 +109,7 @@ void SumAction::execute() {
 
 std::string SumAction::to_string() const {
     std::ostringstream oss;
-    oss << "SumAction: " << *lhs << " -> " << *res << " along dim " << dim;
+    oss << "SumAction: " << lhs->get_meta_info() << " -> " << res->get_meta_info() << " along dim " << dim;
     return oss.str();
 }
 
@@ -121,7 +121,7 @@ void ReluAction::execute() {
 
 std::string ReluAction::to_string() const {
     std::ostringstream oss;
-    oss << "ReluAction: " << *lhs << " -> " << *res;
+    oss << "ReluAction: " << lhs->get_meta_info() << " -> " << res->get_meta_info();
     return oss.str();
 }
 
@@ -133,7 +133,7 @@ void ReluPrimeAction::execute() {
 
 std::string ReluPrimeAction::to_string() const {
     std::ostringstream oss;
-    oss << "ReluPrimeAction: " << *lhs << " -> " << *res;
+    oss << "ReluPrimeAction: " << lhs->get_meta_info() << " -> " << res->get_meta_info();
     return oss.str();
 }
 
@@ -148,7 +148,12 @@ void CrossEntropyAction::execute() {
 
 std::string CrossEntropyAction::to_string() const {
     std::ostringstream oss;
-    oss << "CrossEntropyAction: " << *lhs << " with labels " << *rhs << " -> " << *res << " context : " << *maxs << ", " << *sums;
+    oss << "CrossEntropyAction: " << 
+        lhs->get_meta_info() << " with labels " <<
+        rhs->get_meta_info() << " -> " <<
+        res->get_meta_info() << " context : " <<
+        maxs->get_meta_info() << ", " <<
+        sums->get_meta_info();
     return oss.str();
 }
 
@@ -166,7 +171,12 @@ void CrossEntropyBackwardAction::execute() {
 
 std::string CrossEntropyBackwardAction::to_string() const {
     std::ostringstream oss;
-    oss << "CrossEntropyBackwardAction: " << *lhs << " with labels " << *rhs << " -> " << *res << " context : " << *maxs << ", " << *sums;
+    oss << "CrossEntropyBackwardAction: " << 
+        lhs->get_meta_info() <<" with labels " <<
+        rhs->get_meta_info() << " -> " <<
+        res->get_meta_info() <<" context : " <<
+        maxs->get_meta_info() << ", " <<
+        sums->get_meta_info();
     return oss.str();
 }
 
@@ -177,7 +187,7 @@ void CalcAllGradNormAction::execute() {
 
 std::string CalcAllGradNormAction::to_string() const {
     std::ostringstream oss;
-    oss << "CalcAllGradNormAction: calculating gradient norm for " << grads.size() << " tensors" << " -> " << *res;
+    oss << "CalcAllGradNormAction: calculating gradient norm for " << grads.size() << " tensors" << " -> " << res->get_meta_info();
     return oss.str();
 }
 
@@ -189,7 +199,7 @@ void ClipGradAction::execute() {
 
 std::string ClipGradAction::to_string() const {
     std::ostringstream oss;
-    oss << "ClipGradAction: clipping gradient " << *lhs << " with norm " << *rhs << " to grad_clip_val: " << grad_clip_val;
+    oss << "ClipGradAction: clipping gradient " << lhs->get_meta_info() << " with norm " << rhs->get_meta_info() << " to grad_clip_val: " << grad_clip_val;
     return oss.str();
 }
 
@@ -206,7 +216,7 @@ void AdamStepAction::execute() {
 
 std::string AdamStepAction::to_string() const {
     std::ostringstream oss;
-    oss << "AdamStepAction: updating parameter " << *param->get_w() << " with learning rate " << lr;
+    oss << "AdamStepAction: updating parameter " << param->get_w()->get_meta_info() << " with learning rate " << lr;
     return oss.str();
 }
 
@@ -232,7 +242,7 @@ void InitWeightAction::execute() {
         assert(false);
         // g_backend_ops->kaiming(lhs);
     } else if (init_type == "dbg") {
-        g_backend_ops->init_weight_for_dbg(lhs);
+        g_backend_ops->init_weight_for_dbg(lhs, sigma);
     } else {
         std::cerr << "Error: Unknown initialization type: " << init_type << std::endl;
         abort();
@@ -241,7 +251,7 @@ void InitWeightAction::execute() {
 
 std::string InitWeightAction::to_string() const {
     std::ostringstream oss;
-    oss << "InitWeightAction: initializing " << *lhs << " with type " << init_type;
+    oss << "InitWeightAction: initializing " << lhs->get_meta_info() << " with type " << init_type;
     return oss.str();
 }
 
@@ -255,6 +265,121 @@ std::string BoundaryAction::to_string() const {
 
 bool BoundaryAction::is_backward_boundary() {
     return true;
+}
+
+AssignShapeAndStridesAction::AssignShapeAndStridesAction(
+    Tensor *tensor_shape,
+    Tensor *tensor_strides,
+    const std::vector<int> &_shape,
+    const std::vector<int> &_strides
+) : Action(tensor_shape, nullptr, tensor_strides),
+    shape(_shape),
+    strides(_strides) {
+    shape_data = static_cast<int32_t*>(::malloc(sizeof(int32_t) * shape.size()));
+    strides_data = static_cast<int32_t*>(::malloc(sizeof(int32_t) * strides.size()));
+    for (size_t i = 0; i < shape.size(); ++i) {
+        shape_data[i] = static_cast<int32_t>(shape[i]);
+    }
+    for (size_t i = 0; i < strides.size(); ++i) {
+        strides_data[i] = static_cast<int32_t>(strides[i]);
+    }
+}
+
+AssignShapeAndStridesAction::~AssignShapeAndStridesAction() {
+    assert(shape_data != nullptr);
+    assert(strides_data != nullptr);
+    ::free(strides_data);
+    ::free(shape_data);
+}
+
+void AssignShapeAndStridesAction::execute() {
+    assert(lhs != nullptr);
+    assert(res != nullptr);
+    assert(shape_data != nullptr);
+    assert(strides_data != nullptr);
+
+    g_backend_ops->cp_to_device(
+        lhs,
+        reinterpret_cast<char*>(shape_data),
+        sizeof(int32_t) * shape.size()
+    );
+
+    g_backend_ops->cp_to_device(
+        res,
+        reinterpret_cast<char*>(strides_data),
+        sizeof(int32_t) * strides.size()
+    );
+}
+
+std::string AssignShapeAndStridesAction::to_string() const {
+    std::ostringstream oss;
+    oss << "AssignShapeAndStridesAction: assigning shape " << lhs->get_meta_info() << " and strides " << res->get_meta_info();
+    return oss.str();
+}
+
+void ReshapeDeepCpAction::execute() {
+    assert(lhs != nullptr);
+    assert(rhs != nullptr);
+    g_backend_ops->reshape_deep_cp(lhs, rhs, shape, strides);
+}
+
+std::string ReshapeDeepCpAction::to_string() const {
+    std::ostringstream oss;
+    oss << "ReshapeDeepCpAction: deep copy " << lhs->get_meta_info() << " to " << rhs->get_meta_info() << " with strides " << strides->get_meta_info();
+    return oss.str();
+}
+
+void RepeatInterleaveAction::execute() {
+    assert(lhs != nullptr);
+    assert(res != nullptr);
+    g_backend_ops->repeat_interleave(lhs, res, n);
+}
+
+std::string RepeatInterleaveAction::to_string() const {
+    std::ostringstream oss;
+    oss << "RepeatInterleaveAction: repeat interleave " << lhs->get_meta_info() << " to " << res->get_meta_info() << " with n = " << n;
+    return oss.str();
+}
+
+void SequenceMaskAction::execute() {
+    assert(lhs != nullptr);
+    assert(rhs != nullptr);
+    assert(res != nullptr);
+    g_backend_ops->sequence_mask(lhs, rhs, res, value);
+}
+
+std::string SequenceMaskAction::to_string() const {
+    std::ostringstream oss;
+    oss << "SequenceMaskAction: sequence mask " << lhs->get_meta_info() << " with mask " << rhs->get_meta_info() << " to " << res->get_meta_info();
+    return oss.str();
+}
+
+void SoftmaxAction::execute() {
+    assert(lhs != nullptr);
+    assert(res != nullptr);
+    g_backend_ops->softmax(lhs, res);
+}
+
+std::string SoftmaxAction::to_string() const {
+    std::ostringstream oss;
+    oss << "SoftmaxAction: softmax " << lhs->get_meta_info() << " to " << res->get_meta_info();
+    return oss.str();
+}
+
+void SoftmaxBackwardAction::execute() {
+    assert(lhs != nullptr);
+    assert(rhs != nullptr);
+    assert(res != nullptr);
+    // lhs is target grad
+    // rhs is softmax result
+    // res is input grad
+    g_backend_ops->softmax_bacward(lhs, rhs, res);
+}
+
+std::string SoftmaxBackwardAction::to_string() const {
+    std::ostringstream oss;
+    oss << "SoftmaxBackwardAction: softmax backward " << lhs->get_meta_info() << " with softmax result " << rhs->get_meta_info() << " to " << res->get_meta_info();
+    return oss.str();
 }
 
 std::vector<Action*> g_actions;

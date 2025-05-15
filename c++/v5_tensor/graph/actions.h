@@ -183,6 +183,74 @@ class BoundaryAction : public Action {
         std::string to_string() const override;
 };
 
+class AssignShapeAndStridesAction : public Action {
+    public:
+        AssignShapeAndStridesAction(
+            Tensor *tensor_shape,
+            Tensor *tensor_strides,
+            const std::vector<int> &_shape,
+            const std::vector<int> &_strides
+        );
+        virtual ~AssignShapeAndStridesAction();
+        void execute() override;
+        std::string to_string() const override;
+    private:
+        std::vector<int> shape;
+        std::vector<int> strides;
+        int32_t *shape_data;
+        int32_t *strides_data;
+};
+
+class ReshapeDeepCpAction : public Action {
+    public:
+        ReshapeDeepCpAction(
+            Tensor *_lhs, const Tensor *_rhs,
+            const Tensor *_shape, const Tensor *_strides)
+            : Action(_lhs, _rhs, nullptr),
+            shape(_shape), strides(_strides) {}
+        void execute() override;
+        std::string to_string() const override;
+    private:
+        const Tensor *shape;
+        const Tensor *strides;
+};
+
+class RepeatInterleaveAction : public Action {
+    public:
+        RepeatInterleaveAction(Tensor *_lhs, Tensor *_res, int _n)
+            : Action(_lhs, nullptr, _res), n(_n) {}
+        void execute() override;
+        std::string to_string() const override;
+    private:
+        int n;
+};
+
+class SequenceMaskAction : public Action {
+    public:
+        SequenceMaskAction(Tensor *_lhs, const Tensor *_rhs, Tensor *_res, float _value)
+            : Action(_lhs, _rhs, _res), value(_value) {}
+        void execute() override;
+        std::string to_string() const override;
+    private:
+        float value;
+};
+
+class SoftmaxAction : public Action {
+    public:
+        SoftmaxAction(Tensor *_lhs, Tensor *_res)
+            : Action(_lhs, nullptr, _res) {}
+        void execute() override;
+        std::string to_string() const override;
+};
+
+class SoftmaxBackwardAction : public Action {
+    public:
+        SoftmaxBackwardAction(Tensor *_lhs, Tensor *_softmax_res, Tensor *grad)
+            : Action(_lhs, _softmax_res, grad) {}
+        void execute() override;
+        std::string to_string() const override;
+};
+
 std::vector<Action *> getOnceActions();
 void gCreateAction(Action *action);
 void gDoActions();

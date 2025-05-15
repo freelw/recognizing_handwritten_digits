@@ -54,15 +54,18 @@ namespace graph {
                 b_require_grad = _b_require_grad;
             }
             void backward();
-            Node *transpose();
+            Node *transpose(int a = 0, int b = 1);
             Node *reshape(const std::vector<int> &shape);
+            Node *sequence_mask(Tensor *mask, float value);
+            Node *softmax();
+            Node *masked_softmax(Tensor *valid_len);
             Node *expand_add(Node *rhs);
             Node *at(Node *rhs);
             Node *relu();
             Node *CrossEntropy(Tensor *labels);
             void init_weight_gauss(float sigma, float mean);
             void init_weight_uniform(float sigma);
-            void init_weight_for_dbg();
+            void init_weight_for_dbg(float scale = 1.0f);
         private:
             Tensor *t;
             Tensor *grad;
@@ -93,6 +96,8 @@ namespace graph {
         Norm,
         Softmax,
         Transpose,
+        Empty,
+        Reshape,
     };
 
     class Edge {
@@ -280,18 +285,53 @@ namespace graph {
             Tensor *sums;
     };
 
-    class TransposeEdge : public Edge {
+    class EmptyEdge : public Edge {
         public:
             static Edge* create(Node *_node) {
-                Edge *edge = new TransposeEdge(_node);
+                Edge *edge = new EmptyEdge(_node);
                 gAddEdge(edge);
                 return edge;
             }
-            TransposeEdge(Node *_node)
-                : Edge(Transpose, _node) {}
-            virtual ~TransposeEdge() {}
+            EmptyEdge(Node *_node)
+                : Edge(Empty, _node) {}
+            virtual ~EmptyEdge() {}
             void backward(Tensor *grad) override {
             }        
+    };
+
+    class ReshapeEdge : public Edge {
+        public:
+            static Edge* create(Node *_node) {
+                Edge *edge = new ReshapeEdge(_node);
+                gAddEdge(edge);
+                return edge;
+            }
+            ReshapeEdge(Node *_node)
+                : Edge(Reshape, _node) {}
+            virtual ~ReshapeEdge() {}
+            void backward(Tensor *grad) override {
+                gCreateAction(
+                    new AddEqAction(
+                        node->get_grad(),
+                        grad->reshape(node->get_grad()->get_shape())
+                    )
+                );
+            }        
+    };
+
+    class SoftmaxEdge : public Edge {
+        public:
+            static Edge* create(Node *_node, Tensor *_softmax_res) {
+                Edge *edge = new SoftmaxEdge(_node, _softmax_res);
+                gAddEdge(edge);
+                return edge;
+            }
+            SoftmaxEdge(Node *_node, Tensor *_softmax_res)
+                : Edge(Softmax, _node), softmax_res(_softmax_res) {}
+            virtual ~SoftmaxEdge() {}
+            void backward(Tensor *grad) override;
+        private:
+            Tensor *softmax_res;
     };
 
     Node *allocNode(Tensor *t);

@@ -26,8 +26,16 @@ class CUDAOps : public BackendOps {
         void adamStep(Tensor *w, Tensor *grad, Tensor *m, Tensor *v, int t, float lr, float beta1, float beta2, float epsilon) override;
         void init_weight_gauss(Tensor *tensor, float mean, float sigma) override;
         void init_weight_uniform(Tensor *tensor, float sigma) override;
-        void init_weight_for_dbg(Tensor *tensor) override;
+        void init_weight_for_dbg(Tensor *tensor, float scale) override;
         void fill(Tensor *tensor, float value) override;
+        void reshape_deep_cp(
+            Tensor *dst_tensor, const Tensor *src_tensor,
+            const Tensor *src_shape, const Tensor *src_strides
+        ) override;
+        void repeat_interleave(Tensor *lhs, Tensor *res, int n) override;
+        void sequence_mask(Tensor *lhs, const Tensor *mask, Tensor *res, float value) override;
+        void softmax(Tensor *lhs, Tensor *res) override;
+        void softmax_bacward(Tensor *target_grad, const Tensor *softmax_res, Tensor *grad) override;
 
         // Memory management
         void* alloc(size_t size) override;
@@ -35,7 +43,7 @@ class CUDAOps : public BackendOps {
         void cp_device_to_device(void* dst, const void* src, size_t size) override;
         void free(void* ptr) override;
         void cp_to_device(Tensor *dst_tensor, char *src, size_t size) override;
-        void cp_from_device(char *dst, Tensor *src_tensor, size_t size) override;
+        void cp_from_device(char *dst, const Tensor *src_tensor, size_t size) override;
 };
 
 #endif // GCC_ASAN

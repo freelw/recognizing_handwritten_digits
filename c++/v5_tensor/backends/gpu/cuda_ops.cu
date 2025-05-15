@@ -22,7 +22,7 @@ void CUDAOps::add(Tensor *lhs, const Tensor *rhs, Tensor *res) {
     auto rstrides = rhs->get_strides();
     auto res_strides = res->get_strides();
 
-    assert(lhs->get_rank() == 2);
+    assert(lhs->get_dim() == 2);
 
     dim3 gridDim(
         (lshape[1] + TILE_WIDTH - 1) / TILE_WIDTH,
@@ -59,7 +59,7 @@ void CUDAOps::addEq(Tensor *lhs, const Tensor *rhs) {
     auto lstrides = lhs->get_strides();
     auto rstrides = rhs->get_strides();
 
-    int rank = lhs->get_rank();
+    int rank = lhs->get_dim();
 
     assert(rank <= 2);
 
@@ -136,9 +136,9 @@ void CUDAOps::at(Tensor *lhs, const Tensor *rhs, Tensor *res) {
     auto rstrides = rhs->get_strides();
     auto res_strides = res->get_strides();
 
-    assert(lhs->get_rank() == 2);
-    assert(rhs->get_rank() == 2);
-    assert(res->get_rank() == 2);
+    assert(lhs->get_dim() == 2);
+    assert(rhs->get_dim() == 2);
+    assert(res->get_dim() == 2);
 
     assert(lshape[1] == rshape[0]);
     assert(res_shape[0] == lshape[0]);
@@ -190,7 +190,7 @@ void CUDAOps::mul(Tensor *lhs, const Tensor *rhs, Tensor *res) {
     assert(lhs != nullptr);
     assert(rhs != nullptr);
     assert(res != nullptr);
-    assert(lhs->get_rank() == 2);
+    assert(lhs->get_dim() == 2);
 
     auto lshape = lhs->get_shape();
     auto rshape = rhs->get_shape();
@@ -228,14 +228,14 @@ void CUDAOps::mul(Tensor *lhs, const Tensor *rhs, Tensor *res) {
 void CUDAOps::sum(Tensor *lhs, Tensor *res, int dim) {
     assert(lhs != nullptr);
     assert(res != nullptr);
-    assert(dim >= 0 && dim < lhs->get_rank());
+    assert(dim >= 0 && dim < lhs->get_dim());
 
     auto shape = lhs->get_shape();
     auto res_shape = res->get_shape();
     assert(dim == 0);
     auto lstrides = lhs->get_strides();
-    assert(lhs->get_rank() == 2);
-    assert(res->get_rank() == 1);
+    assert(lhs->get_dim() == 2);
+    assert(res->get_dim() == 1);
 
     dim3 gridDim(
         (shape[1] + TILE_WIDTH - 1) / TILE_WIDTH
@@ -477,14 +477,14 @@ void CUDAOps::init_weight_uniform(Tensor *tensor, float sigma) {
     assert(false); // Not implemented yet
 }
 
-void CUDAOps::init_weight_for_dbg(Tensor *tensor) {
+void CUDAOps::init_weight_for_dbg(Tensor *tensor, float scale) {
     auto size = tensor->size();
     void *_data = ::malloc(size);
 
     if (tensor->get_dtype() == FLOAT32) {
         float *data = static_cast<float*>(_data);
         for (int i = 0; i < tensor->length(); ++i) {
-            data[i] = static_cast<float>(i) * 1e-5;
+            data[i] = static_cast<float>(i) * 1e-5 * scale;
         }
     } else if (tensor->get_dtype() == INT32) {
         int32_t *data = static_cast<int32_t*>(_data);
@@ -510,6 +510,197 @@ void CUDAOps::fill(Tensor *tensor, float value) {
     );
 }
 
+void CUDAOps::reshape_deep_cp(
+    Tensor *dst_tensor, const Tensor *src_tensor,
+    const Tensor *src_shape, const Tensor *src_strides
+) {
+    assert(dst_tensor->get_dtype() == src_tensor->get_dtype());
+    assert(
+        dst_tensor->get_dtype() == INT32 ||
+        dst_tensor->get_dtype() == FLOAT32
+    );
+
+    auto dtype = dst_tensor->get_dtype();
+    auto src_shape_data = static_cast<int32_t*>(src_shape->get_data());
+    auto src_strides_data = static_cast<int32_t*>(src_strides->get_data());
+    auto dim = src_tensor->get_dim();
+    auto length = src_tensor->length();
+
+    if (dtype == INT32) {
+        assert(false);
+    } else if (dtype == FLOAT32) {
+        dim3 gridDim(
+            (length + TILE_WIDTH - 1) / TILE_WIDTH
+        );
+        dim3 blockDim(TILE_WIDTH);
+        reshape_deep_cp_float_kernel<<<gridDim, blockDim>>>(
+            (float *)dst_tensor->get_data(),
+            (float *)src_tensor->get_data(),
+            src_shape_data,
+            src_strides_data,
+            dim,
+            length
+        );
+    } else {
+        assert(false);
+    }
+}
+
+void CUDAOps::repeat_interleave(Tensor *lhs, Tensor *res, int n) {
+    assert(lhs->get_dtype() == INT32);
+    assert(res->get_dtype() == INT32);
+    assert(lhs != nullptr);
+    assert(res != nullptr);
+
+    assert(lhs->get_dim() == 1);
+    assert(res->get_dim() == 1);
+
+    auto l_length = lhs->length();
+    auto r_length = res->length();
+
+    assert(l_length * n == r_length);
+
+    dim3 gridDim(
+        (r_length + TILE_WIDTH - 1) / TILE_WIDTH
+    );
+
+    dim3 blockDim(TILE_WIDTH);
+
+    repeat_interleave_int32_kernel<<<gridDim, blockDim>>>(
+        (int32_t *)lhs->get_data(),
+        (int32_t *)res->get_data(),
+        l_length,
+        r_length,
+        n
+    );
+}
+
+void CUDAOps::sequence_mask(Tensor *lhs, const Tensor *mask, Tensor *res, float value) {
+    assert(lhs != nullptr);
+    assert(mask != nullptr);
+    assert(res != nullptr);
+
+    assert(lhs->get_dim() == 2);
+    assert(mask->get_dim() == 1);
+    assert(res->get_dim() == 2);
+
+    auto lshape = lhs->get_shape();
+    auto mshape = mask->get_shape();
+    auto rshape = res->get_shape();
+
+    assert(lshape[0] == mshape[0]);
+    assert(lshape[1] == rshape[1]);
+    assert(rshape[0] == mshape[0]);
+
+    auto lstrides = lhs->get_strides();
+    auto mstrides = mask->get_strides();
+    auto rstrides = res->get_strides();
+
+    dim3 gridDim(
+        (lshape[1] + TILE_WIDTH - 1) / TILE_WIDTH,
+        (lshape[0] + TILE_WIDTH - 1) / TILE_WIDTH
+    );
+
+    dim3 blockDim(TILE_WIDTH, TILE_WIDTH);
+
+    sequence_mask_kernel<<<gridDim, blockDim>>>(
+        (float *)lhs->get_data(),
+        (int32_t *)mask->get_data(),
+        (float *)res->get_data(),
+        lshape[0],
+        lshape[1],
+        lstrides[0],
+        lstrides[1],
+        mstrides[0],
+        rstrides[0],
+        rstrides[1],
+        value
+    );
+}
+
+void CUDAOps::softmax(Tensor *lhs, Tensor *res) {
+    auto l_shape = lhs->get_shape();
+    auto r_shape = res->get_shape();
+    assert(l_shape == r_shape);
+    assert(lhs->get_dtype() == FLOAT32);
+    assert(res->get_dtype() == FLOAT32);
+    assert(lhs->get_dim() == 3);
+    assert(res->get_dim() == 3);
+    auto lstrides = lhs->get_strides();
+    auto rstrides = res->get_strides();
+
+    dim3 gridDim(
+        (l_shape[1] + TILE_WIDTH - 1) / TILE_WIDTH,
+        (l_shape[0] + TILE_WIDTH - 1) / TILE_WIDTH
+    );
+
+    dim3 blockDim(TILE_WIDTH, TILE_WIDTH);
+
+    softmax_kernel<<<gridDim, blockDim>>>(
+        (float *)lhs->get_data(),
+        (float *)res->get_data(),
+        l_shape[0],
+        l_shape[1],
+        l_shape[2],
+        lstrides[0],
+        lstrides[1],
+        lstrides[2],
+        rstrides[0],
+        rstrides[1],
+        rstrides[2]
+    );
+}
+
+void CUDAOps::softmax_bacward(Tensor *target_grad, const Tensor *softmax_res, Tensor *grad) {
+    assert(target_grad != nullptr);
+    assert(softmax_res != nullptr);
+    assert(grad != nullptr);
+
+    assert(target_grad->get_dtype() == FLOAT32);
+    assert(softmax_res->get_dtype() == FLOAT32);
+    assert(grad->get_dtype() == FLOAT32);
+
+    assert(target_grad->get_dim() == 3);
+    assert(softmax_res->get_dim() == 3);
+    assert(grad->get_dim() == 3);
+
+    auto t_shape = target_grad->get_shape();
+    auto s_shape = softmax_res->get_shape();
+    auto g_shape = grad->get_shape();
+
+    assert(t_shape == s_shape);
+    assert(t_shape == g_shape);
+
+    auto t_strides = target_grad->get_strides();
+    auto s_strides = softmax_res->get_strides();
+    auto g_strides = grad->get_strides();
+
+    dim3 gridDim(
+        (t_shape[1] + TILE_WIDTH - 1) / TILE_WIDTH,
+        (t_shape[0] + TILE_WIDTH - 1) / TILE_WIDTH
+    );
+
+    dim3 blockDim(TILE_WIDTH, TILE_WIDTH);
+
+    softmax_backward_kernel<<<gridDim, blockDim>>>(
+        (float *)target_grad->get_data(),
+        (float *)softmax_res->get_data(),
+        (float *)grad->get_data(),
+        t_shape[0],
+        t_shape[1],
+        t_shape[2],
+        t_strides[0],
+        t_strides[1],
+        t_strides[2],
+        s_strides[0],
+        s_strides[1],
+        s_strides[2],
+        g_strides[0],
+        g_strides[1],
+        g_strides[2]
+    );
+}
+
 void* CUDAOps::alloc(size_t size) {
     void *ret = nullptr;
     cudaMalloc((void **)&ret, size);
@@ -532,7 +723,7 @@ void CUDAOps::cp_to_device(Tensor *dst_tensor, char *src, size_t size) {
     ::cudaMemcpy(dst_tensor->get_data(), src, size, cudaMemcpyHostToDevice);
 }
 
-void CUDAOps::cp_from_device(char *dst, Tensor *src_tensor, size_t size) {
+void CUDAOps::cp_from_device(char *dst, const Tensor *src_tensor, size_t size) {
     ::cudaMemcpy(dst, src_tensor->get_data(), size, cudaMemcpyDeviceToHost);
 }
 #endif // GCC_ASAN

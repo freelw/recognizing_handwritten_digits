@@ -314,4 +314,123 @@ __global__ void tensor_adam_step(
     }
 }
 
+__global__ void reshape_deep_cp_float_kernel(
+    float *dst, float *src,
+    int32_t *src_shape, int32_t *src_strides,
+    int32_t dim, int32_t length
+) {
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index >= length) {
+        return;
+    } else {
+        int tmp_length = length;
+        int tmp_index = index;
+        int offset = 0;
+        for (int j = 0; j < dim; ++j) {
+            tmp_length /= src_shape[j];
+            int cur_dim_index = tmp_index / tmp_length;
+            offset += cur_dim_index * src_strides[j];
+            tmp_index %= tmp_length;
+        }
+        dst[index] = src[offset];
+    }
+}
+
+__global__ void repeat_interleave_int32_kernel(
+    int32_t *src, int32_t *dst,
+    int32_t src_length, int32_t dst_length,
+    int32_t n
+) {
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index >= dst_length) {
+        return;
+    } else {
+        int tmp_index = index / n;
+        dst[index] = src[tmp_index];
+    }
+}
+
+__global__ void sequence_mask_kernel(
+    float *src, int32_t *mask, float *dst,
+    int M, int N,
+    int l_stride0,
+    int l_stride1,
+    int m_stride0,
+    int r_stride0,
+    int r_stride1,
+    float value
+) {
+    int row = blockIdx.y * blockDim.y + threadIdx.y;
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
+    if (row >= M || col >= N) {
+        return;
+    } else {
+        int index_l = row * l_stride0 + col * l_stride1;
+        int index_m = row * m_stride0;
+        int index_r = row * r_stride0 + col * r_stride1;
+        dst[index_r] = mask[index_m] <= col ? value : src[index_l];
+    }
+}
+
+__global__ void softmax_kernel(
+    float *src, float *dst,
+    int shape0, int shape1, int shape2,
+    int l_stride0, int l_stride1, int l_stride2,
+    int r_stride0, int r_stride1, int r_stride2
+) {
+    int row = blockIdx.y * blockDim.y + threadIdx.y;
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
+    if (row >= shape0 || col >= shape1) {
+        return;
+    } else {
+        float max = -1e10;
+        for (int i = 0; i < shape2; ++i) {
+            float val = src[row * l_stride0 + col * l_stride1 + i * l_stride2];
+            max = fmaxf(max, val);
+        }
+        float sum = 0.0f;
+        for (int i = 0; i < shape2; ++i) {
+            float val = src[row * l_stride0 + col * l_stride1 + i * l_stride2];
+            sum += expf(val - max);
+        }
+        for (int i = 0; i < shape2; ++i) {
+            float val = src[row * l_stride0 + col * l_stride1 + i * l_stride2];
+            dst[row * r_stride0 + col * r_stride1 + i * r_stride2] = expf(val - max) / sum;  
+        }
+    }
+}
+
+__global__ void softmax_backward_kernel(
+    float *target_grad, float *softmax_res, float *grad,
+    int shape0, int shape1, int shape2,
+    int t_stride0, int t_stride1, int t_stride2,
+    int s_stride0, int s_stride1, int s_stride2,
+    int g_stride0, int g_stride1, int g_stride2
+) {
+
+    int row = blockIdx.y * blockDim.y + threadIdx.y;
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
+    if (row >= shape0 || col >= shape1) {
+        return;
+    } else {
+        for (int target = 0; target < shape2; ++target) {
+            for (int k = 0; k < shape2; ++k) {
+                int tg_target_pos = row * t_stride0 + col * t_stride1 + target * t_stride2;
+                // int tg_k_pos = row * t_stride0 + col * t_stride1 + k * t_stride2;
+                int sm_target_pos = row * s_stride0 + col * s_stride1 + target * s_stride2;
+                int sm_k_pos = row * s_stride0 + col * s_stride1 + k * s_stride2;
+                // int g_target_pos = row * g_stride0 + col * g_stride1 + target * g_stride2;
+                int g_k_pos = row * g_stride0 + col * g_stride1 + k * g_stride2;
+
+                float softmax_res_target = softmax_res[sm_target_pos];
+                float softmax_res_k = softmax_res[sm_k_pos];
+                float grad_k = grad[g_k_pos];
+
+                target_grad[tg_target_pos] +=
+                    (target == k ? softmax_res_k * (1 - softmax_res_k) : -softmax_res_target * softmax_res_k) * grad_k;
+            }
+        }
+    }
+}
+
 #endif // GCC_ASAN

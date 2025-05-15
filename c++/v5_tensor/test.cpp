@@ -1151,6 +1151,983 @@ void test_mlp() {
     destruct_env();
 }
 
+void test_print_tensor() {
+    construct_env();
+    Tensor *input = allocTensor({2, 2, 4}, "input");
+    auto node = graph::allocNode(input);
+    node->init_weight_gauss(0.02, 0);
+    allocMemAndInitTensors();
+    gDoActions();
+    std::cout << *input << std::endl;
+    destruct_env();
+}
+
+bool compare_res_ans(
+    Tensor *res, float *ans, const std::string &name,
+    float eps = 1e-5f
+) {
+    auto res_size = res->size();
+    auto res_shape = res->get_shape();
+    auto res_strides = res->get_strides();
+    auto res_data = static_cast<float*>(::malloc(res_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(res_data),
+        res,
+        res_size
+    );
+    bool succ = true;
+    for (int i = 0; i < res_shape[0]; ++i) {
+        for (int j = 0; j < res_shape[1]; ++j) {
+            auto v = res_data[i * res_strides[0] + j * res_strides[1]];
+            if (fabs(ans[i * res_shape[1] + j] - v) > eps) {
+                std::cerr << std::setprecision(8) << RED << "Error: " << name
+                          << "[" << i << "][" << j << "] = " << v
+                          << ", ans[" << i << "][" << j << "] = " << ans[i * res_shape[1] + j] << RESET << std::endl;
+                succ = false;
+            }
+        }
+    }
+    if (succ) {
+        std::cout << GREEN << name << " succ" << RESET << std::endl;
+    }
+    ::free(res_data);
+    return succ;
+}
+
+bool compare_res_ans_1d(
+    Tensor *res, float *ans, const std::string &name,
+    float eps = 1e-5f
+) {
+    auto res_size = res->size();
+    auto res_length = res->length();
+    auto res_data = static_cast<float*>(::malloc(res_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(res_data),
+        res,
+        res_size
+    );
+    bool succ = true;
+    for (int i = 0; i < res_length; ++i) {
+        auto v = res_data[i];
+        if (fabs(ans[i] - v) > eps) {
+            std::cerr << std::setprecision(8) << RED << "Error: " << name
+                      << "[" << i << "] = " << v
+                      << ", ans[" << i << "] = " << ans[i] << RESET << std::endl;
+            succ = false;
+        }
+    }
+    if (succ) {
+        std::cout << GREEN << name << " succ" << RESET << std::endl;
+    }
+    ::free(res_data);
+    return succ;
+}
+
+bool compare_res_ans_1d_int32(
+    Tensor *res, int32_t *ans, const std::string &name
+) {
+    auto res_size = res->size();
+    auto res_length = res->length();
+    auto res_data = static_cast<int32_t*>(::malloc(res_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(res_data),
+        res,
+        res_size
+    );
+    bool succ = true;
+    for (int i = 0; i < res_length; ++i) {
+        auto v = res_data[i];
+        if (ans[i] != v) {
+            std::cerr << RED << "Error: " << name
+                      << "[" << i << "] = " << v
+                      << ", ans[" << i << "] = " << ans[i] << RESET << std::endl;
+            succ = false;
+        }
+    }
+    if (succ) {
+        std::cout << GREEN << name << " succ" << RESET << std::endl;
+    }
+    ::free(res_data);
+    return succ;
+}
+
+void test_reshape() {
+    construct_env();
+
+    Tensor *l = allocTensor({3, 4}, "input");
+    auto n = graph::allocNode(l);
+    n->init_weight_for_dbg();
+    auto l_t = l->transpose();
+    auto l_t_reshape = l_t->reshape({3, 4});
+    auto l_r = l->reshape({4, 3});
+
+    allocMemAndInitTensors();
+    // printAllActions();
+    gDoActions();
+
+    // std::cout << "l : " << std::endl << *l << std::endl;
+    // std::cout << "l_t : " << std::endl << *l_t << std::endl;
+    // std::cout << "l_t_reshape : " << std::endl << *l_t_reshape << std::endl;
+    // std::cout << "l_r : " << std::endl << *l_r << std::endl;
+
+    float l_ans[12] = {
+        0, 1e-05, 2e-05, 3e-05,
+        4e-05, 5e-05, 6e-05, 7e-05,
+        8e-05, 9e-05, 0.0001, 0.00011
+    };
+
+    float l_t_ans[12] = {
+        0, 4e-05, 8e-05,
+        1e-05, 5e-05, 9e-05,
+        2e-05, 6e-05, 0.0001,
+        3e-05, 7e-05, 0.00011
+    };
+
+    float l_t_shape_ans[12] = {
+        0, 4e-05, 8e-05, 1e-05,
+        5e-05, 9e-05, 2e-05, 6e-05,
+        0.0001, 3e-05, 7e-05, 0.00011
+    };
+
+    float l_r_ans[12] = {
+        0, 1e-05, 2e-05,
+        3e-05, 4e-05, 5e-05,
+        6e-05, 7e-05, 8e-05,
+        9e-05, 0.0001, 0.00011
+    };
+
+    bool succ = compare_res_ans(l, l_ans, "l") &&
+        compare_res_ans(l_t, l_t_ans, "l_t") &&
+        compare_res_ans(l_t_reshape, l_t_shape_ans, "l_t_reshape") &&
+        compare_res_ans(l_r, l_r_ans, "l_r");
+    
+    if (succ) {
+        std::cout << GREEN << "test_reshape succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_reshape failed" << RESET << std::endl;
+    }
+    
+    destruct_env();
+}
+
+void test_reshape_1() {
+    construct_env();
+
+    Tensor *l = allocTensor({3, 4}, "input");
+    auto n = graph::allocNode(l);
+    n->init_weight_for_dbg();
+    auto l_t = l->transpose();
+    auto l_t_reshape = l_t->reshape({3, 4});
+    auto l_r = l->reshape({4, 3});
+    auto l_t_m_1 = l_t->reshape({-1});
+    auto l_t_d3 = l_t->reshape({2, -1, 3});
+    auto l_t_d3_1 = l_t->reshape({-1, 3, 2});
+
+    allocMemAndInitTensors();
+    // printAllActions();
+    gDoActions();
+
+    std::string l_t_m_1_meta_ans = "Tensor(input_transpose_reshape_deep_copy)(12)";
+    std::string l_t_d3_meta_ans = "Tensor(input_transpose_reshape_deep_copy)(2, 2, 3)";
+    std::string l_t_d3_1_meta_ans = "Tensor(input_transpose_reshape_deep_copy)(2, 3, 2)";
+
+    bool meta_succ = l_t_m_1->get_meta_info() == l_t_m_1_meta_ans &&
+        l_t_d3->get_meta_info() == l_t_d3_meta_ans &&
+        l_t_d3_1->get_meta_info() == l_t_d3_1_meta_ans;
+
+    if (meta_succ) {
+        std::cout << GREEN << "test_reshape_1 meta succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_reshape_1 meta failed" << RESET << std::endl;
+    }
+
+    float l_t_m_1_ans[12] = {
+        0, 4e-05, 8e-05, 1e-05, 5e-05, 9e-05, 2e-05, 6e-05, 0.0001, 3e-05, 7e-05, 0.00011
+    };
+    float l_t_d3_ans[12] = {
+        0, 4e-05, 8e-05, 1e-05, 5e-05, 9e-05, 2e-05, 6e-05, 0.0001, 3e-05, 7e-05, 0.00011
+    };
+    float l_t_d3_1_ans[12] = {
+        0, 4e-05, 8e-05, 1e-05, 5e-05, 9e-05, 2e-05, 6e-05, 0.0001, 3e-05, 7e-05, 0.00011
+    };
+
+    bool l_t_m_1_succ = compare_res_ans_1d(l_t_m_1, l_t_m_1_ans, "l_t_m_1");
+    bool l_t_d3_succ = compare_res_ans_1d(l_t_d3, l_t_d3_ans, "l_t_d3");
+    bool l_t_d3_1_succ = compare_res_ans_1d(l_t_d3_1, l_t_d3_1_ans, "l_t_d3_1");
+
+    bool succ = l_t_m_1_succ && l_t_d3_succ && l_t_d3_1_succ;
+    if (succ) {
+        std::cout << GREEN << "test_reshape_1 succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_reshape_1 failed" << RESET << std::endl;
+    }
+    destruct_env();
+}
+
+void test_reshape_with_cpu_base(
+    int m, int n,
+    float *l_ans,
+    float *l_t_ans,
+    float *l_t_shape_ans,
+    float *l_r_ans
+) {
+    Tensor *l = allocTensor({m, n}, "input");
+    auto node = graph::allocNode(l);
+    node->init_weight_for_dbg();
+    auto l_t = l->transpose();
+    auto l_t_reshape = l_t->reshape({m, n});
+    auto l_r = l->reshape({m, n});
+    allocMemAndInitTensors();
+    gDoActions();
+
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(l_ans),
+        l,
+        l->size()
+    );
+
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(l_t_ans),
+        l_t,
+        l_t->size()
+    );
+
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(l_t_shape_ans),
+        l_t_reshape,
+        l_t_reshape->size()
+    );
+
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(l_r_ans),
+        l_r,
+        l_r->size()
+    );
+}
+
+bool compare_ans1_ans2(
+    float *ans1, float *ans2, int size
+) {
+    const float eps = 1e-5f;
+    for (int i = 0; i < size; ++i) {
+        if (fabs(ans1[i] - ans2[i]) > eps) {
+            std::cerr << std::setprecision(8) << RED << "Error: ans1[" << i << "] = " << ans1[i]
+                      << ", ans2[" << i << "] = " << ans2[i] << RESET << std::endl;
+            return false;
+        }
+    }
+    return true;
+}
+
+bool compare_ans1_ans2_int32(
+    int32_t *ans1, int32_t *ans2, int size
+) {
+    for (int i = 0; i < size; ++i) {
+        if (ans1[i] != ans2[i]) {
+            std::cerr << RED << "Error: ans1[" << i << "] = " << ans1[i]
+                      << ", ans2[" << i << "] = " << ans2[i] << RESET << std::endl;
+            return false;
+        }
+    }
+    return true;
+}
+
+
+void test_reshape_with_cpu() {
+
+    construct_env();
+    int m = 300;
+    int n = 400;
+    int size = m * n * sizeof(float);
+
+    float *l_ans_cpu = static_cast<float*>(::malloc(size));
+    float *l_t_ans_cpu = static_cast<float*>(::malloc(size));
+    float *l_t_shape_ans_cpu = static_cast<float*>(::malloc(size));
+    float *l_r_ans_cpu = static_cast<float*>(::malloc(size));
+
+    float *l_ans_gpu = static_cast<float*>(::malloc(size));
+    float *l_t_ans_gpu = static_cast<float*>(::malloc(size));
+    float *l_t_shape_ans_gpu = static_cast<float*>(::malloc(size));
+    float *l_r_ans_gpu = static_cast<float*>(::malloc(size));
+
+    use_gpu(false);
+    test_reshape_with_cpu_base(
+        m,
+        n,
+        l_ans_cpu,
+        l_t_ans_cpu,
+        l_t_shape_ans_cpu,
+        l_r_ans_cpu
+    );
+    destruct_env();
+
+    use_gpu(true);
+    construct_env();
+    test_reshape_with_cpu_base(
+        m,
+        n,
+        l_ans_gpu,
+        l_t_ans_gpu,
+        l_t_shape_ans_gpu,
+        l_r_ans_gpu
+    );
+    destruct_env();
+
+    bool l_succ = compare_ans1_ans2(l_ans_cpu, l_ans_gpu, m * n);
+    bool l_t_succ = compare_ans1_ans2(l_t_ans_cpu, l_t_ans_gpu, m * n);
+    bool l_t_shape_succ = compare_ans1_ans2(l_t_shape_ans_cpu, l_t_shape_ans_gpu, m * n);
+    bool l_r_succ = compare_ans1_ans2(l_r_ans_cpu, l_r_ans_gpu, m * n);
+
+    if (!l_succ) {
+        std::cerr << RED << "test_test_reshape_with_cpu l failed" << RESET << std::endl;
+    }
+    if (!l_t_succ) {
+        std::cerr << RED << "test_test_reshape_with_cpu l_t failed" << RESET << std::endl;
+    }
+    if (!l_t_shape_succ) {
+        std::cerr << RED << "test_test_reshape_with_cpu l_t_shape failed" << RESET << std::endl;
+    }
+    if (!l_r_succ) {
+        std::cerr << RED << "test_test_reshape_with_cpu l_r failed" << RESET << std::endl;
+    }
+
+    bool succ = l_succ && l_t_succ && l_t_shape_succ && l_r_succ;
+
+    if (succ) {
+        std::cout << GREEN << "test_test_reshape_with_cpu succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_test_reshape_with_cpu failed" << RESET << std::endl;
+    }
+
+    ::free(l_ans_cpu);
+    ::free(l_t_ans_cpu);
+    ::free(l_t_shape_ans_cpu);
+    ::free(l_r_ans_cpu);
+    ::free(l_ans_gpu);
+    ::free(l_t_ans_gpu);
+    ::free(l_t_shape_ans_gpu);
+    ::free(l_r_ans_gpu);
+}
+
+void test_reshape_bp() {
+
+    construct_env();
+    Tensor *input = allocTensor({5, 4}, "input");
+    Tensor *w = allocTensor({3, 2}, "w");
+    Tensor *bias = allocTensor({3}, "bias");
+    Tensor *w1 = allocTensor({3, 3}, "w1");
+    Tensor *bias1 = allocTensor({3}, "bias1");
+
+    graph::Node *ni = graph::allocNode(input);
+    ni->require_grad();
+    ni->init_weight_for_dbg();
+    graph::Node *ni_t = ni->transpose();
+    graph::Node *ni_t_r = ni_t->reshape({-1, 2});
+    graph::Node *nw = graph::allocNode(w);
+    graph::Node *nb = graph::allocNode(bias);
+    graph::Node *nw1 = graph::allocNode(w1);
+    graph::Node *nb1 = graph::allocNode(bias1);
+    
+    nw->require_grad();
+    nb->require_grad();
+    nw1->require_grad();
+    nb1->require_grad();
+
+    Tensor *labels = allocTensor({10}, "labels", INT32);
+    auto foward_res0 = ni_t_r->at(nw->transpose())
+        ->expand_add(nb)->relu();
+    auto foward_res1 = foward_res0
+        ->at(nw1->transpose())
+        ->expand_add(nb1);
+    auto nres = foward_res1
+        ->CrossEntropy(labels);
+
+    zero_grad();
+    nres->backward();
+    // printAllActions();
+    allocMemAndInitTensors();
+
+    auto input_size = input->size();
+    auto w_size = w->size();
+    auto bias_size = bias->size();
+    auto w1_size = w1->size();
+    auto bias1_size = bias1->size();
+    auto labels_size = labels->size();
+
+    float *input_tmp_buffer = static_cast<float*>(::malloc(input_size));
+    float *w_tmp_buffer = static_cast<float*>(::malloc(w_size));
+    float *bias_tmp_buffer = static_cast<float*>(::malloc(bias_size));
+    float *w1_tmp_buffer = static_cast<float*>(::malloc(w1_size));
+    float *bias1_tmp_buffer = static_cast<float*>(::malloc(bias1_size));
+    int32_t *labels_tmp_buffer = static_cast<int32_t*>(::malloc(labels_size));
+
+    for (int i = 0; i < 10; ++i) {
+        labels_tmp_buffer[i] = 1;
+    }
+
+    for (int i = 0; i < w->length(); ++i) {
+        w_tmp_buffer[i] = 0.1f;
+    }
+
+    for (int i = 0; i < bias->length(); ++i) {
+        bias_tmp_buffer[i] = 0.1f;
+    }
+
+    for (int i = 0; i < w1->length(); ++i) {
+        w1_tmp_buffer[i] = 0.1f;
+    }
+
+    for (int i = 0; i < bias1->length(); ++i) {
+        bias1_tmp_buffer[i] = 0.1f;
+    }
+
+    w_tmp_buffer[0] = 0.9f;
+    w_tmp_buffer[1*w->get_shape()[1]] = -0.9f;
+
+    w1_tmp_buffer[0] = 0.9f;
+    w1_tmp_buffer[1*w1->get_shape()[1]] = -0.9f;
+
+    g_backend_ops->cp_to_device(
+        input,
+        reinterpret_cast<char*>(input_tmp_buffer),
+        input_size
+    );
+
+    g_backend_ops->cp_to_device(
+        labels,
+        reinterpret_cast<char*>(labels_tmp_buffer),
+        labels_size
+    );
+
+    g_backend_ops->cp_to_device(
+        w,
+        reinterpret_cast<char*>(w_tmp_buffer),
+        w_size
+    );
+
+    g_backend_ops->cp_to_device(
+        bias,
+        reinterpret_cast<char*>(bias_tmp_buffer),
+        bias_size
+    );
+
+    g_backend_ops->cp_to_device(
+        w1,
+        reinterpret_cast<char*>(w1_tmp_buffer),
+        w1_size
+    );
+
+    g_backend_ops->cp_to_device(
+        bias1,
+        reinterpret_cast<char*>(bias1_tmp_buffer),
+        bias1_size
+    );
+
+    ::free(input_tmp_buffer);
+    ::free(w_tmp_buffer);
+    ::free(bias_tmp_buffer);
+    ::free(w1_tmp_buffer);
+    ::free(bias1_tmp_buffer);
+    ::free(labels_tmp_buffer);
+
+    gDoActions();
+
+    const float eps = 1e-4f;
+    float loss = 0;
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(&loss),
+        nres->get_tensor(),
+        sizeof(float)
+    );
+    loss /= 10;
+    if (fabs(loss - 1.19474f) > eps) {
+        std::cerr << RED << "Error: loss = " << loss << ", ans = 0.1" << RESET << std::endl;
+    } else {
+        std::cout << GREEN << "test_reshape_bp loss succ" << RESET << std::endl;
+    }
+
+    auto ni_grad = ni->get_grad();
+    auto ni_grad_size = ni_grad->size();
+    auto ni_grad_shape = ni_grad->get_shape();
+    auto ni_grad_strides = ni_grad->get_strides();
+    float *ni_grad_tmp_buffer = static_cast<float*>(::malloc(ni_grad_size));
+
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(ni_grad_tmp_buffer),
+        ni_grad,
+        ni_grad_size
+    );
+
+    float ni_grad_ans[5][4] = {
+        0.0888, 0.0099, 0.0889, 0.0099,
+        0.0099, 0.0889, 0.0099, 0.0889,
+        0.0889, 0.0099, 0.0889, 0.0099,
+        0.0099, 0.0889, 0.0099, 0.0889,
+        0.0889, 0.0099, 0.0889, 0.0099
+    };
+
+    bool ni_grad_succ = true;
+
+    for (int i = 0; i < ni_grad_shape[0]; ++i) {
+        for (int j = 0; j < ni_grad_shape[1]; ++j) {
+            auto v = ni_grad_tmp_buffer[i * ni_grad_strides[0] + j * ni_grad_strides[1]];
+            if (fabs(ni_grad_ans[i][j] - v) > eps) {
+                std::cerr << std::setprecision(8) << RED << "Error: ni_grad[" << i << "][" << j << "] = " << v
+                          << ", ni_grad_ans[" << i << "][" << j << "] = " << ni_grad_ans[i][j] << RESET << std::endl;
+                ni_grad_succ = false;
+            }
+        }
+    }
+    if (ni_grad_succ) {
+        std::cout << GREEN << "test_reshape_bp ni_grad succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_reshape_bp ni_grad failed" << RESET << std::endl;
+    }
+
+    ::free(ni_grad_tmp_buffer);
+    destruct_env();
+}
+
+void test_reshape_bp_1() {
+
+    construct_env();
+    Tensor *input = allocTensor({5, 4}, "input");
+    Tensor *w = allocTensor({3, 2}, "w");
+    Tensor *bias = allocTensor({3}, "bias");
+    Tensor *w1 = allocTensor({3, 3}, "w1");
+    Tensor *bias1 = allocTensor({3}, "bias1");
+
+    graph::Node *ni = graph::allocNode(input);
+    ni->require_grad();
+    ni->init_weight_for_dbg();
+    graph::Node *ni_t_r = ni->reshape({-1, 2});
+    graph::Node *nw = graph::allocNode(w);
+    graph::Node *nb = graph::allocNode(bias);
+    graph::Node *nw1 = graph::allocNode(w1);
+    graph::Node *nb1 = graph::allocNode(bias1);
+    
+    nw->require_grad();
+    nb->require_grad();
+    nw1->require_grad();
+    nb1->require_grad();
+
+    Tensor *labels = allocTensor({10}, "labels", INT32);
+    auto foward_res0 = ni_t_r->at(nw->transpose())
+        ->expand_add(nb)->relu();
+    auto foward_res1 = foward_res0
+        ->at(nw1->transpose())
+        ->expand_add(nb1);
+    auto nres = foward_res1
+        ->CrossEntropy(labels);
+
+    zero_grad();
+    nres->backward();
+    // printAllActions();
+    allocMemAndInitTensors();
+
+    auto input_size = input->size();
+    auto w_size = w->size();
+    auto bias_size = bias->size();
+    auto w1_size = w1->size();
+    auto bias1_size = bias1->size();
+    auto labels_size = labels->size();
+
+    float *input_tmp_buffer = static_cast<float*>(::malloc(input_size));
+    float *w_tmp_buffer = static_cast<float*>(::malloc(w_size));
+    float *bias_tmp_buffer = static_cast<float*>(::malloc(bias_size));
+    float *w1_tmp_buffer = static_cast<float*>(::malloc(w1_size));
+    float *bias1_tmp_buffer = static_cast<float*>(::malloc(bias1_size));
+    int32_t *labels_tmp_buffer = static_cast<int32_t*>(::malloc(labels_size));
+
+    for (int i = 0; i < 10; ++i) {
+        labels_tmp_buffer[i] = 1;
+    }
+
+    for (int i = 0; i < w->length(); ++i) {
+        w_tmp_buffer[i] = 0.1f;
+    }
+
+    for (int i = 0; i < bias->length(); ++i) {
+        bias_tmp_buffer[i] = 0.1f;
+    }
+
+    for (int i = 0; i < w1->length(); ++i) {
+        w1_tmp_buffer[i] = 0.1f;
+    }
+
+    for (int i = 0; i < bias1->length(); ++i) {
+        bias1_tmp_buffer[i] = 0.1f;
+    }
+
+    w_tmp_buffer[0] = 0.9f;
+    w_tmp_buffer[1*w->get_shape()[1]] = -0.9f;
+
+    w1_tmp_buffer[0] = 0.9f;
+    w1_tmp_buffer[1*w1->get_shape()[1]] = -0.9f;
+
+    g_backend_ops->cp_to_device(
+        input,
+        reinterpret_cast<char*>(input_tmp_buffer),
+        input_size
+    );
+
+    g_backend_ops->cp_to_device(
+        labels,
+        reinterpret_cast<char*>(labels_tmp_buffer),
+        labels_size
+    );
+
+    g_backend_ops->cp_to_device(
+        w,
+        reinterpret_cast<char*>(w_tmp_buffer),
+        w_size
+    );
+
+    g_backend_ops->cp_to_device(
+        bias,
+        reinterpret_cast<char*>(bias_tmp_buffer),
+        bias_size
+    );
+
+    g_backend_ops->cp_to_device(
+        w1,
+        reinterpret_cast<char*>(w1_tmp_buffer),
+        w1_size
+    );
+
+    g_backend_ops->cp_to_device(
+        bias1,
+        reinterpret_cast<char*>(bias1_tmp_buffer),
+        bias1_size
+    );
+
+    ::free(input_tmp_buffer);
+    ::free(w_tmp_buffer);
+    ::free(bias_tmp_buffer);
+    ::free(w1_tmp_buffer);
+    ::free(bias1_tmp_buffer);
+    ::free(labels_tmp_buffer);
+
+    gDoActions();
+
+    const float eps = 1e-4f;
+    float loss = 0;
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(&loss),
+        nres->get_tensor(),
+        sizeof(float)
+    );
+    loss /= 10;
+    if (fabs(loss - 1.1947f) > eps) {
+        std::cerr << RED << "Error: loss = " << loss << ", ans = 0.1" << RESET << std::endl;
+    } else {
+        std::cout << GREEN << "test_reshape_bp loss succ" << RESET << std::endl;
+    }
+
+    auto ni_grad = ni->get_grad();
+    auto ni_grad_size = ni_grad->size();
+    auto ni_grad_shape = ni_grad->get_shape();
+    auto ni_grad_strides = ni_grad->get_strides();
+    float *ni_grad_tmp_buffer = static_cast<float*>(::malloc(ni_grad_size));
+
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(ni_grad_tmp_buffer),
+        ni_grad,
+        ni_grad_size
+    );
+
+    float ni_grad_ans[5][4] = {
+        0.0888, 0.0099, 0.0889, 0.0099,
+        0.0889, 0.0099, 0.0889, 0.0099,
+        0.0889, 0.0099, 0.0889, 0.0099,
+        0.0889, 0.0099, 0.0889, 0.0099,
+        0.0889, 0.0099, 0.0889, 0.0099
+    };
+
+    bool ni_grad_succ = true;
+
+    for (int i = 0; i < ni_grad_shape[0]; ++i) {
+        for (int j = 0; j < ni_grad_shape[1]; ++j) {
+            auto v = ni_grad_tmp_buffer[i * ni_grad_strides[0] + j * ni_grad_strides[1]];
+            if (fabs(ni_grad_ans[i][j] - v) > eps) {
+                std::cerr << std::setprecision(8) << RED << "Error: ni_grad[" << i << "][" << j << "] = " << v
+                          << ", ni_grad_ans[" << i << "][" << j << "] = " << ni_grad_ans[i][j] << RESET << std::endl;
+                ni_grad_succ = false;
+            }
+        }
+    }
+    if (ni_grad_succ) {
+        std::cout << GREEN << "test_reshape_bp ni_grad succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_reshape_bp ni_grad failed" << RESET << std::endl;
+    }
+
+    ::free(ni_grad_tmp_buffer);
+    destruct_env();
+}
+
+
+void test_contiguous() {
+    construct_env();
+    Tensor *input = allocTensor({2, 2, 4}, "input");
+    auto t_input = input->transpose();
+    bool succ =
+        input->is_contiguous() && !t_input->is_contiguous() && input->is_shared_with(t_input);
+    if (succ) {
+        std::cout << GREEN << "test_contiguous succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_contiguous failed" << RESET << std::endl;
+    }
+    allocMemAndInitTensors();
+    gDoActions();
+    destruct_env();
+}
+
+void test_repeat_interleave() {
+    construct_env();
+    Tensor *input = allocTensor({3}, "input", INT32);
+    auto node = graph::allocNode(input);
+    node->init_weight_for_dbg();
+    auto res = input->repeat_interleave(2);
+    // printAllActions();
+    allocMemAndInitTensors();
+    gDoActions();
+    int32_t res_ans[6] = {
+        0, 0, 1, 1, 2, 2
+    };
+    bool succ = compare_res_ans_1d_int32(res, res_ans, "res");
+    if (succ) {
+        std::cout << GREEN << "test_repeat_interleave succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_repeat_interleave failed" << RESET << std::endl;
+    }
+    destruct_env();
+}
+
+void test_mask() {
+    construct_env();
+    int m = 3;
+    int n = 4;
+    int k = 5;
+    Tensor *input = allocTensor({m, n, k}, "input");
+    auto ni = graph::allocNode(input);
+    ni->init_weight_for_dbg();
+    Tensor *mask = allocTensor({m}, "mask", INT32);
+    auto nm = graph::allocNode(mask);
+    nm->init_weight_for_dbg();
+    auto res = input->reshape({-1, k})->sequence_mask(mask->repeat_interleave(n), 0.1f);
+    allocMemAndInitTensors();
+    gDoActions();
+    float ans[60] = {
+        0.1, 0.1, 0.1, 0.1, 0.1,
+        0.1, 0.1, 0.1, 0.1, 0.1,
+        0.1, 0.1, 0.1, 0.1, 0.1,
+        0.1, 0.1, 0.1, 0.1, 0.1,
+        0.0002, 0.1, 0.1, 0.1, 0.1,
+        0.00025, 0.1, 0.1, 0.1, 0.1,
+        0.0003, 0.1, 0.1, 0.1, 0.1,
+        0.00035, 0.1, 0.1, 0.1, 0.1,
+        0.0004, 0.00041, 0.1, 0.1, 0.1,
+        0.00045, 0.00046, 0.1, 0.1, 0.1,
+        0.0005, 0.00051, 0.1, 0.1, 0.1,
+        0.00055, 0.00056, 0.1, 0.1, 0.1
+    };
+    bool succ = compare_res_ans(res, ans, "res");
+    if (succ) {
+        std::cout << GREEN << "test_mask succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_mask failed" << RESET << std::endl;
+    }
+    destruct_env();
+}
+
+void test_mask_1() {
+    construct_env();
+    int m = 3;
+    int n = 4;
+    int k = 13;
+    Tensor *input = allocTensor({m, n, k}, "input");
+    auto ni = graph::allocNode(input);
+    ni->init_weight_for_dbg();
+    Tensor *mask = allocTensor({m*n}, "mask", INT32);
+    auto nm = graph::allocNode(mask);
+    nm->init_weight_for_dbg();
+    auto res = input->reshape({-1, k})->sequence_mask(mask, 0.1f);
+    allocMemAndInitTensors();
+    gDoActions();
+    float ans[156] = {
+        0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1,
+        0.00013, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1,
+        0.00026, 0.00027, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1,
+        0.00039, 0.0004, 0.00041, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1,
+        0.00052, 0.00053, 0.00054, 0.00055, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1,
+        0.00065, 0.00066, 0.00067, 0.00068, 0.00069, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1,
+        0.00078, 0.00079, 0.0008, 0.00081, 0.00082, 0.00083, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1,
+        0.00091, 0.00092, 0.00093, 0.00094, 0.00095, 0.00096, 0.00097, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1,
+        0.00104, 0.00105, 0.00106, 0.00107, 0.00108, 0.00109, 0.0011, 0.00111, 0.1, 0.1, 0.1, 0.1, 0.1,
+        0.00117, 0.00118, 0.00119, 0.0012, 0.00121, 0.00122, 0.00123, 0.00124, 0.00125, 0.1, 0.1, 0.1, 0.1,
+        0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1,
+        0.00143, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1
+    };
+    bool succ = compare_res_ans(res, ans, "res");
+    if (succ) {
+        std::cout << GREEN << "test_mask_1 succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_mask_1 failed" << RESET << std::endl;
+    }
+    destruct_env();
+}
+
+void test_softmax() {
+    construct_env();
+    Tensor *input = allocTensor({1, 3, 4}, "input");
+    auto ni = graph::allocNode(input);
+    ni->init_weight_for_dbg(10000.0f);
+    auto res = input->softmax();
+    allocMemAndInitTensors();
+    gDoActions();
+    float ans[12] = {
+        0.2138, 0.2363, 0.2612, 0.2887,
+        0.2138, 0.2363, 0.2612, 0.2887,
+        0.2138, 0.2363, 0.2612, 0.2887
+    };
+    bool succ_res = compare_res_ans_1d(res, ans, "res", 1e-4);
+    if (!succ_res) {
+        std::cout << RED << "test_softmax res failed" << RESET << std::endl;
+    }
+
+    bool succ = succ_res;
+    if (succ) {
+        std::cout << GREEN << "test_softmax succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_softmax failed" << RESET << std::endl;
+    }    
+    destruct_env();
+}
+
+void test_masked_softmax() {
+    construct_env();
+    Tensor *input = allocTensor({2, 2, 4}, "input");
+    auto ni = graph::allocNode(input);
+    ni->init_weight_for_dbg(10000.0f);
+    Tensor *valid_lens = allocTensor({2}, "mask", INT32);
+    auto res = ni->masked_softmax(valid_lens);
+    allocMemAndInitTensors();
+    
+    int valid_lens_buffer[2] = {2, 3};
+    g_backend_ops->cp_to_device(
+        valid_lens,
+        reinterpret_cast<char*>(valid_lens_buffer),
+        2 * sizeof(int32_t)
+    );
+    gDoActions();
+    float ans[16] = {
+        0.475021, 0.524979, 0, 0,
+        0.475021, 0.524979, 0, 0,
+        0.30061, 0.332225, 0.367165, 0,
+        0.30061, 0.332225, 0.367165, 0
+    };
+    bool succ = compare_res_ans_1d(res->get_tensor(), ans, "res");
+    if (!succ) {
+        std::cout << RED << "test_masked_softmax failed" << RESET << std::endl;
+    } else {
+        std::cout << GREEN << "test_masked_softmax succ" << RESET << std::endl;
+    }
+    destruct_env();
+}
+
+void test_masked_softmax_1() {
+    construct_env();
+    Tensor *input = allocTensor({2, 2, 4}, "input");
+    auto ni = graph::allocNode(input);
+    ni->init_weight_for_dbg(10000.0f);
+    Tensor *valid_lens = allocTensor({2, 2}, "mask", INT32);
+    auto res = ni->masked_softmax(valid_lens);
+    allocMemAndInitTensors();
+    
+    int valid_lens_buffer[4] = {1, 3, 2, 4};
+    g_backend_ops->cp_to_device(
+        valid_lens,
+        reinterpret_cast<char*>(valid_lens_buffer),
+        4 * sizeof(int32_t)
+    );
+    gDoActions();
+
+    float ans[16] = {
+        1, 0, 0, 0,
+        0.30061, 0.332225, 0.367165, 0,
+        0.475021, 0.524979, 0, 0,
+        0.213838, 0.236328, 0.261183, 0.288651
+    };
+
+    bool succ = compare_res_ans_1d(res->get_tensor(), ans, "res");
+    if (!succ) {
+        std::cout << RED << "test_masked_softmax_1 failed" << RESET << std::endl;
+    } else {
+        std::cout << GREEN << "test_masked_softmax_1 succ" << RESET << std::endl;
+    }
+    destruct_env();
+}
+
+void test_masked_softmax_bp() {
+    construct_env();
+    Tensor *labels = allocTensor({4}, "input", INT32);
+    Tensor *input = allocTensor({2, 2, 4}, "input");
+    auto ni = graph::allocNode(input);
+    ni->require_grad();
+    ni->init_weight_for_dbg(10000.0f);
+    Tensor *valid_lens = allocTensor({2, 2}, "mask", INT32);
+    auto res_softmax = ni->masked_softmax(valid_lens);
+    auto res_ce = res_softmax->reshape({-1, 4})->CrossEntropy(labels);
+    res_ce->backward();
+    allocMemAndInitTensors();
+    init_labels(labels);
+    
+    int valid_lens_buffer[4] = {1, 3, 2, 4};
+    g_backend_ops->cp_to_device(
+        valid_lens,
+        reinterpret_cast<char*>(valid_lens_buffer),
+        4 * sizeof(int32_t)
+    );
+    gDoActions();
+
+    float ans[16] = {
+        1, 0, 0, 0,
+        0.30061, 0.332225, 0.367165, 0,
+        0.475021, 0.524979, 0, 0,
+        0.213838, 0.236328, 0.261183, 0.288651
+    };
+
+    bool succ_softmax = compare_res_ans_1d(res_softmax->get_tensor(), ans, "res_softmax");
+    if (!succ_softmax) {
+        std::cout << RED << "test_masked_softmax_bp softmax failed" << RESET << std::endl;
+    }
+
+    float ni_grad_ans[16] = {
+        0, 0, 0, 0,
+        0.0242644, -0.0555455, 0.0312811, 0,
+        -0.00096927, 0.00096927, 0, 0,
+        0.0149098, 0.0168018, 0.0189739, -0.0506855
+    };
+
+    bool succ_ni_grad = compare_res_ans_1d(
+        ni->get_grad(),
+        ni_grad_ans,
+        "ni_grad"
+    );
+    if (!succ_ni_grad) {
+        std::cout << RED << "test_masked_softmax_bp ni_grad failed" << RESET << std::endl;
+    }
+
+    bool succ = succ_softmax && succ_ni_grad;
+    if (succ) {
+        std::cout << GREEN << "test_masked_softmax_bp succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_masked_softmax_bp failed" << RESET << std::endl;
+    }
+    destruct_env();
+}
+
 void test_cpu() {
     test_at();
     test_add();
@@ -1163,6 +2140,19 @@ void test_cpu() {
     test_bp();
     test_adam();
     test_mlp();
+    // test_print_tensor();
+    test_contiguous();
+    test_reshape();
+    test_reshape_1();
+    test_reshape_bp();
+    test_reshape_bp_1();
+    test_repeat_interleave();
+    test_mask();
+    test_mask_1();
+    test_softmax();
+    test_masked_softmax();
+    test_masked_softmax_1();
+    test_masked_softmax_bp();
 }
 
 Tensor *test_add_with_cpu_base(int m, int n) {
@@ -1416,6 +2406,8 @@ void test_gpu_add_eq_1d_with_cpu() {
     if (succ) {
         std::cout << GREEN << "test_add_eq_1d_with_cpu succ" << RESET << std::endl;
     }
+    ::free(cpu_res_buffer);
+    ::free(gpu_res_buffer);
 }
 
 void test_gpu_add_eq_2d_with_cpu() {
@@ -1461,6 +2453,8 @@ void test_gpu_add_eq_2d_with_cpu() {
     if (succ) {
         std::cout << GREEN << "test_add_eq_2d_with_cpu succ" << RESET << std::endl;
     }
+    ::free(cpu_res_buffer);
+    ::free(gpu_res_buffer);
 }
 
 Tensor *test_expand_add_with_cpu_base(int m, int n) {
@@ -1531,6 +2525,8 @@ void test_gpu_expand_add_with_cpu() {
     if (succ) {
         std::cout << GREEN << "test_expand_add_with_cpu succ" << RESET << std::endl;
     }
+    ::free(cpu_res_buffer);
+    ::free(gpu_res_buffer);
 }
 
 Tensor *test_mul_with_cpu_base(int m, int n) {
@@ -1605,6 +2601,8 @@ void test_gpu_mul_with_cpu() {
     if (succ) {
         std::cout << GREEN << "test_mul_with_cpu succ" << RESET << std::endl;
     }
+    ::free(cpu_res_buffer);
+    ::free(gpu_res_buffer);
 }
 
 Tensor *test_gpu_sum_with_cpu_base(int m, int n) {
@@ -1662,6 +2660,8 @@ void test_gpu_sum_with_cpu() {
     if (succ) {
         std::cout << GREEN << "test_sum_with_cpu succ" << RESET << std::endl;
     }
+    ::free(cpu_res_buffer);
+    ::free(gpu_res_buffer);
 }
 
 Tensor *test_cross_entropy_with_cpu_base(int m, int n) {
@@ -1722,6 +2722,8 @@ void test_gpu_cross_entropy_with_cpu() {
     if (succ) {
         std::cout << GREEN << "test_cross_entropy_with_cpu succ" << RESET << std::endl;
     }
+    ::free(gpu_res_buffer);
+    ::free(cpu_res_buffer);
 }
 
 Tensor *test_cross_entropy_backward_with_cpu_base(int m, int n) {
@@ -1786,6 +2788,8 @@ void test_gpu_cross_entropy_backward_with_cpu() {
     if (succ) {
         std::cout << GREEN << "test_cross_entropy_backward_with_cpu succ" << RESET << std::endl;
     }
+    ::free(cpu_res_buffer);
+    ::free(gpu_res_buffer);
 }
 
 void test_mlp_with_cpu_base(
@@ -1871,6 +2875,345 @@ void test_mlp_with_cpu() {
     }
 }
 
+Tensor *test_repeat_interleave_with_cpu_base(int m, int n) {
+    Tensor *input = allocTensor({m}, "input", INT32);
+    auto node = graph::allocNode(input);
+    node->init_weight_for_dbg();
+    auto res = input->repeat_interleave(n);
+    // printAllActions();
+    allocMemAndInitTensors();
+    gDoActions();
+    return res;
+}
+
+void test_repeat_interleave_with_cpu() {
+    int m = 100;
+    int n = 20;
+    use_gpu(false);
+    construct_env();
+    auto res_cpu = test_repeat_interleave_with_cpu_base(m, n);
+    auto res_cpu_size = res_cpu->size();
+    auto res_cpu_length = res_cpu->length();
+    int32_t *res_cpu_buffer = static_cast<int32_t*>(::malloc(res_cpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(res_cpu_buffer),
+        res_cpu,
+        res_cpu_size
+    );
+    destruct_env();
+    use_gpu(true);
+    construct_env();
+    auto res_gpu = test_repeat_interleave_with_cpu_base(m, n);
+    auto res_gpu_size = res_gpu->size();
+    auto res_gpu_length = res_gpu->length();
+    int32_t *res_gpu_buffer = static_cast<int32_t*>(::malloc(res_gpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(res_gpu_buffer),
+        res_gpu,
+        res_gpu_size
+    );
+    destruct_env();
+
+    assert(res_cpu_size == res_gpu_size);
+    assert(res_cpu_length == res_gpu_length);
+    bool succ = compare_ans1_ans2_int32(res_cpu_buffer, res_gpu_buffer, res_gpu_length);
+    if (succ) {
+        std::cout << GREEN << "test_repeat_interleave_with_gpu succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_repeat_interleave_with_gpu failed" << RESET << std::endl;
+    }
+    ::free(res_cpu_buffer);
+    ::free(res_gpu_buffer);
+}
+
+Tensor *test_mask_with_cpu_base(int m, int n, int k) {
+    Tensor *input = allocTensor({m, n, k}, "input");
+    auto ni = graph::allocNode(input);
+    ni->init_weight_for_dbg();
+    Tensor *mask = allocTensor({m}, "mask", INT32);
+    auto nm = graph::allocNode(mask);
+    nm->init_weight_for_dbg();
+    auto res = input->reshape({-1, k})->sequence_mask(mask->repeat_interleave(n), 0.1f);
+    allocMemAndInitTensors();
+    gDoActions();
+    return res;
+}
+
+void test_mask_with_cpu() {
+    use_gpu(false);
+    construct_env();
+    int m = 100;
+    int n = 500;
+    int k = 30;
+    auto res_cpu = test_mask_with_cpu_base(m, n, k);
+    auto res_cpu_size = res_cpu->size();
+    auto res_cpu_length = res_cpu->length();
+    float *res_cpu_buffer = static_cast<float*>(::malloc(res_cpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(res_cpu_buffer),
+        res_cpu,
+        res_cpu_size
+    );
+    destruct_env();
+    use_gpu(true);
+    construct_env();
+    auto res_gpu = test_mask_with_cpu_base(m, n, k);
+    auto res_gpu_size = res_gpu->size();
+    auto res_gpu_length = res_gpu->length();
+    float *res_gpu_buffer = static_cast<float*>(::malloc(res_gpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(res_gpu_buffer),
+        res_gpu,
+        res_gpu_size
+    );
+    destruct_env();
+    assert(res_cpu_size == res_gpu_size);
+    assert(res_cpu_length == res_gpu_length);
+    bool succ = compare_ans1_ans2(res_cpu_buffer, res_gpu_buffer, res_gpu_length);
+    if (succ) {
+        std::cout << GREEN << "test_mask_with_gpu succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_mask_with_gpu failed" << RESET << std::endl;
+    }
+    ::free(res_gpu_buffer);
+    ::free(res_cpu_buffer);
+}
+
+Tensor *test_mask_with_cpu_base_1(int m, int n, int k) {
+    Tensor *input = allocTensor({m, n, k}, "input");
+    auto ni = graph::allocNode(input);
+    ni->init_weight_for_dbg();
+    Tensor *mask = allocTensor({m*n}, "mask", INT32);
+    auto nm = graph::allocNode(mask);
+    nm->init_weight_for_dbg();
+    auto res = input->reshape({-1, k})->sequence_mask(mask, 0.1f);
+    allocMemAndInitTensors();
+    gDoActions();
+    return res;
+}
+
+void test_mask_with_cpu_1() {
+    use_gpu(false);
+    construct_env();
+    int m = 66;
+    int n = 30;
+    int k = 2000;
+    auto res_cpu = test_mask_with_cpu_base_1(m, n, k);
+    auto res_cpu_size = res_cpu->size();
+    auto res_cpu_length = res_cpu->length();
+    float *res_cpu_buffer = static_cast<float*>(::malloc(res_cpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(res_cpu_buffer),
+        res_cpu,
+        res_cpu_size
+    );
+    destruct_env();
+    use_gpu(true);
+    construct_env();
+    auto res_gpu = test_mask_with_cpu_base_1(m, n, k);
+    auto res_gpu_size = res_gpu->size();
+    auto res_gpu_length = res_gpu->length();
+    float *res_gpu_buffer = static_cast<float*>(::malloc(res_gpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(res_gpu_buffer),
+        res_gpu,
+        res_gpu_size
+    );
+    destruct_env();
+    assert(res_cpu_size == res_gpu_size);
+    assert(res_cpu_length == res_gpu_length);
+    bool succ = compare_ans1_ans2(res_cpu_buffer, res_gpu_buffer, res_gpu_length);
+    if (succ) {
+        std::cout << GREEN << "test_mask_with_gpu_1 succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_mask_with_gpu_1 failed" << RESET << std::endl;
+    }
+    ::free(res_gpu_buffer);
+    ::free(res_cpu_buffer);
+}
+
+Tensor *test_softmax_with_cpu_base(int m, int n, int k) {
+    Tensor *input = allocTensor({m, n, k}, "input");
+    
+    auto ni = graph::allocNode(input);
+    ni->init_weight_for_dbg(10000.0f);
+    auto res = input->softmax();
+    allocMemAndInitTensors();
+    // printAllActions();
+    gDoActions();
+    std::vector<Tensor *> res_vec;
+    return res;
+}
+
+void test_softmax_with_cpu() {
+
+    use_gpu(false);
+    construct_env();
+    int m = 100;
+    int n = 500;
+    int k = 30;
+    Tensor *res_cpu = test_softmax_with_cpu_base(m, n, k);
+    auto res_cpu_size = res_cpu->size();
+    auto res_cpu_length = res_cpu->length();
+    float *res_cpu_buffer = static_cast<float*>(::malloc(res_cpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(res_cpu_buffer),
+        res_cpu,
+        res_cpu_size
+    );
+    destruct_env();
+
+    use_gpu(true);
+    construct_env();
+    Tensor *res_gpu = test_softmax_with_cpu_base(m, n, k);
+    auto res_gpu_size = res_gpu->size();
+    auto res_gpu_length = res_gpu->length();
+    float *res_gpu_buffer = static_cast<float*>(::malloc(res_gpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(res_gpu_buffer),
+        res_gpu,
+        res_gpu_size
+    );
+    destruct_env();
+
+    assert(res_cpu_size == res_gpu_size);
+    assert(res_cpu_length == res_gpu_length);
+    bool succ_res = compare_ans1_ans2(res_cpu_buffer, res_gpu_buffer, res_gpu_length);
+    if (!succ_res) {
+        std::cerr << RED << "res mismatch" << RESET << std::endl;
+    } else {
+        std::cout << GREEN << "res succ" << RESET << std::endl;
+    }
+    
+    bool succ = succ_res;
+    if (succ) {
+        std::cout << GREEN << "test_softmax_with_cpu succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_softmax_with_cpu failed" << RESET << std::endl;
+    }
+    ::free(res_cpu_buffer);
+    ::free(res_gpu_buffer);
+}
+
+Tensor *test_masked_softmax_with_cpu_base(int m, int n, int k) {
+    Tensor *input = allocTensor({m, n, k}, "input");
+    auto ni = graph::allocNode(input);
+    ni->init_weight_for_dbg(10000.0f);
+    Tensor *valid_lens = allocTensor({m, n}, "mask", INT32);
+    auto nm = graph::allocNode(valid_lens);
+    nm->init_weight_for_dbg();
+    auto res = ni->masked_softmax(valid_lens);
+    allocMemAndInitTensors();
+    // printAllActions();
+    gDoActions();
+    return res->get_tensor();
+}
+
+void test_masked_softmax_with_cpu() {
+    int m = 100;
+    int n = 500;
+    int k = 30;
+
+    use_gpu(false);
+    construct_env();
+    auto res_cpu = test_masked_softmax_with_cpu_base(m, n, k);
+    auto res_cpu_size = res_cpu->size();
+    auto res_cpu_length = res_cpu->length();
+    float *res_cpu_buffer = static_cast<float*>(::malloc(res_cpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(res_cpu_buffer),
+        res_cpu,
+        res_cpu_size
+    );
+    destruct_env();
+    use_gpu(true);
+    construct_env();
+    auto res_gpu = test_masked_softmax_with_cpu_base(m, n, k);
+    auto res_gpu_size = res_gpu->size();
+    auto res_gpu_length = res_gpu->length();
+    float *res_gpu_buffer = static_cast<float*>(::malloc(res_gpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(res_gpu_buffer),
+        res_gpu,
+        res_gpu_size
+    );
+    destruct_env();
+    assert(res_cpu_size == res_gpu_size);
+    assert(res_cpu_length == res_gpu_length);
+    bool succ = compare_ans1_ans2(res_cpu_buffer, res_gpu_buffer, res_gpu_length);
+    if (succ) {
+        std::cout << GREEN << "test_masked_softmax_with_cpu succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_masked_softmax_with_cpu failed" << RESET << std::endl;
+    }
+    ::free(res_gpu_buffer);
+    ::free(res_cpu_buffer);
+}
+
+Tensor *test_masked_softmax_bp_with_cpu_base(
+    int m, int n, int k
+) {
+    Tensor *input = allocTensor({m, n, k}, "input");
+    auto ni = graph::allocNode(input);
+    ni->require_grad();
+    ni->init_weight_for_dbg(10000.0f);
+    Tensor *valid_lens = allocTensor({m, n}, "mask", INT32);
+    auto nm = graph::allocNode(valid_lens);
+    nm->init_weight_for_dbg();
+    Tensor *labels = allocTensor({m*n}, "input", INT32);
+    auto nl = graph::allocNode(labels);
+    nl->init_weight_for_dbg();
+    auto res = ni->masked_softmax(valid_lens)->reshape({-1, k})->CrossEntropy(labels);
+    res->backward();
+    // printAllActions();
+    allocMemAndInitTensors();
+    gDoActions();
+    return ni->get_grad();
+}
+
+void test_masked_softmax_bp_with_cpu() {
+    int m = 100;
+    int n = 500;
+    int k = 10;
+
+    use_gpu(false);
+    construct_env();
+    auto res_cpu = test_masked_softmax_bp_with_cpu_base(m, n, k);
+    auto res_cpu_size = res_cpu->size();
+    auto res_cpu_length = res_cpu->length();
+    float *res_cpu_buffer = static_cast<float*>(::malloc(res_cpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(res_cpu_buffer),
+        res_cpu,
+        res_cpu_size
+    );
+    destruct_env();
+    use_gpu(true);
+    construct_env();
+    auto res_gpu = test_masked_softmax_bp_with_cpu_base(m, n, k);
+    auto res_gpu_size = res_gpu->size();
+    auto res_gpu_length = res_gpu->length();
+    float *res_gpu_buffer = static_cast<float*>(::malloc(res_gpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(res_gpu_buffer),
+        res_gpu,
+        res_gpu_size
+    );
+    destruct_env();
+    assert(res_cpu_size == res_gpu_size);
+    assert(res_cpu_length == res_gpu_length);
+
+    bool succ = compare_ans1_ans2(res_cpu_buffer, res_gpu_buffer, res_gpu_length);
+    if (succ) {
+        std::cout << GREEN << "test_masked_softmax_bp_with_cpu succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_masked_softmax_bp_with_cpu failed" << RESET << std::endl;
+    }
+
+    ::free(res_gpu_buffer);
+    ::free(res_cpu_buffer);
+}
+
 void test_gpu() {
     test_at();
     test_at_1();
@@ -1894,6 +3237,26 @@ void test_gpu() {
     test_adam();
     test_mlp();
     test_mlp_with_cpu();
+    // test_print_tensor();
+    test_contiguous();
+    test_reshape();
+    test_reshape_with_cpu();
+    test_reshape_1();
+    test_reshape_bp();
+    test_reshape_bp_1();
+    test_repeat_interleave();
+    test_repeat_interleave_with_cpu();
+    test_mask();
+    test_mask_with_cpu();
+    test_mask_1();
+    test_mask_with_cpu_1();
+    test_softmax();
+    test_softmax_with_cpu();
+    test_masked_softmax();
+    test_masked_softmax_1();
+    test_masked_softmax_with_cpu();
+    test_masked_softmax_bp();
+    test_masked_softmax_bp_with_cpu();
 }
 
 int main(int argc, char *argv[]) {

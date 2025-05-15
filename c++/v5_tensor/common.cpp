@@ -22,8 +22,8 @@ void init_backend() {
         #ifndef GCC_ASAN
         g_backend_ops = new CUDAOps();
         #else
-        std::cerr << "Error: GPU backend is not available in ASAN build." << std::endl;
-        abort();
+        std::cerr << "Error: GPU backend is not available in ASAN build. Now use cpu instead!!!" << std::endl;
+        g_backend_ops = new CPUOps();
         #endif
     } else {
         g_backend_ops = new CPUOps();
@@ -54,4 +54,8 @@ void destruct_env() {
 
 void use_gpu(bool use) {
     b_use_gpu = use;
+}
+
+bool is_use_gpu() {
+    return b_use_gpu;
 }

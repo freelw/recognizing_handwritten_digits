@@ -101,6 +101,44 @@ __global__ void tensor_adam_step(
     float lr, float eps
 );
 
+__global__ void reshape_deep_cp_float_kernel(
+    float *dst, float *src,
+    int32_t *src_shape, int32_t *src_strides,
+    int32_t dim, int32_t length
+);
+
+__global__ void repeat_interleave_int32_kernel(
+    int32_t *src, int32_t *dst,
+    int32_t src_length, int32_t dst_length,
+    int32_t n
+);
+
+__global__ void sequence_mask_kernel(
+    float *src, int32_t *mask, float *dst,
+    int M, int N,
+    int l_stride0,
+    int l_stride1,
+    int m_stride0,
+    int r_stride0,
+    int r_stride1,
+    float value
+);
+
+__global__ void softmax_kernel(
+    float *src, float *dst,
+    int shape0, int shape1, int shape2,
+    int l_stride0, int l_stride1, int l_stride2,
+    int r_stride0, int r_stride1, int r_stride2
+);
+
+__global__ void softmax_backward_kernel(
+    float *target_grad, float *softmax_res, float *grad,
+    int shape0, int shape1, int shape2,
+    int t_stride0, int t_stride1, int t_stride2,
+    int s_stride0, int s_stride1, int s_stride2,
+    int g_stride0, int g_stride1, int g_stride2
+);
+
 #endif // GCC_ASAN
 
 #endif // V5_TENSOR_BACKENDS_GPU_KERNEL_CUH

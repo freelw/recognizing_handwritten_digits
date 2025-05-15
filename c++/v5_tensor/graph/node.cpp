@@ -24,14 +24,14 @@ namespace graph {
         }
     }
 
-    Node *Node::transpose() {
+    Node *Node::transpose(int a, int b) {
         Tensor *l_tensor = this->get_tensor();
-        Tensor *res_tensor = l_tensor->transpose();
+        Tensor *res_tensor = l_tensor->transpose(a, b);
         Node *res_node = nullptr;
         if (is_require_grad()) {
-            res_node = allocNode(res_tensor, this->get_grad()->transpose());
+            res_node = allocNode(res_tensor, this->get_grad()->transpose(a, b));
             res_node->require_grad();
-            res_node->edges.push_back(TransposeEdge::create(this));
+            res_node->edges.push_back(EmptyEdge::create(this));
         } else {
             res_node = allocNode(res_tensor);
         }
@@ -39,7 +39,67 @@ namespace graph {
     }
 
     Node *Node::reshape(const std::vector<int> &shape) {
-        assert(false);
+        Tensor *l_tensor = this->get_tensor();
+        Tensor *res_tensor = l_tensor->reshape(shape);
+        bool share_mem = l_tensor->is_shared_with(res_tensor);
+        assert(l_tensor->is_contiguous() == share_mem);
+        Node *res_node = nullptr;
+        if (is_require_grad()) {
+            Tensor *grad = this->get_grad();
+            Tensor *res_grad = grad->reshape(shape);
+            assert(grad->is_contiguous() == share_mem);
+            assert(grad->is_shared_with(res_grad) == share_mem);
+            res_node = allocNode(res_tensor, res_grad);
+            res_node->require_grad();
+            if (share_mem) {
+                res_node->edges.push_back(EmptyEdge::create(this));
+            } else {
+                res_node->edges.push_back(ReshapeEdge::create(this));
+            }   
+        } else {
+            res_node = allocNode(res_tensor);
+        }
+        return res_node;
+    }
+
+    Node *Node::sequence_mask(Tensor *mask, float value) {
+        Tensor *res_tensor = this->get_tensor()->sequence_mask(mask, value);
+        Node *res_node = nullptr;
+        if (is_require_grad()) {
+            res_node = allocNode(res_tensor, this->get_grad());
+            res_node->edges.push_back(EmptyEdge::create(this));
+        } else {
+            res_node = allocNode(res_tensor);
+        }
+        return res_node;
+    }
+
+    Node *Node::softmax() {
+        assert(this->get_tensor()->get_dim() == 3);
+        auto shape = this->get_tensor()->get_shape();
+        auto res_node = allocNode(
+            this->get_tensor()->softmax()
+        );
+        if (is_require_grad()) {
+            res_node->require_grad();
+            res_node->edges.push_back(SoftmaxEdge::create(this, res_node->get_tensor()));
+        }
+        return res_node;
+    }
+
+    Node *Node::masked_softmax(Tensor *valid_len) {
+        assert(this->get_tensor()->get_dim() == 3);
+        if (valid_len == nullptr) {
+            return this->softmax();
+        } else {
+            auto shape = this->get_tensor()->get_shape();
+            Tensor *mask = valid_len->get_dim() == 1 ?  
+                valid_len->repeat_interleave(shape[1]) : valid_len->reshape({-1});
+            return this->reshape({-1, shape[2]})
+                ->sequence_mask(mask, -1e6f)
+                ->reshape(shape)
+                ->softmax();
+        }
     }
 
     Node *Node::expand_add(Node *rhs) {
@@ -68,8 +128,8 @@ namespace graph {
     Node *Node::at(Node *rhs) {
         Tensor *r_tensor = rhs->get_tensor();
         Tensor *l_tensor = this->get_tensor();
-        assert(l_tensor->get_rank() == 2);
-        assert(r_tensor->get_rank() == 2);
+        assert(l_tensor->get_dim() == 2);
+        assert(r_tensor->get_dim() == 2);
         assert(l_tensor->get_shape()[1] == r_tensor->get_shape()[0]);
         Tensor *res_tensor = allocTensor({l_tensor->get_shape()[0], r_tensor->get_shape()[1]}, "res_at");
         gCreateAction(
@@ -110,7 +170,7 @@ namespace graph {
     }
 
     Node *Node::CrossEntropy(Tensor *labels) {
-        assert(labels->get_rank() == 1);
+        assert(labels->get_dim() == 1);
         assert(
             labels->get_dtype() == INT32 
         );
@@ -158,12 +218,12 @@ namespace graph {
         );
     }
 
-    void Node::init_weight_for_dbg() {
+    void Node::init_weight_for_dbg(float scale) {
         gCreateAction(
             new InitWeightAction(
                 this->get_tensor(),
                 "dbg",
-                0,
+                scale,
                 0
             )
         );
@@ -177,6 +237,16 @@ namespace graph {
                 maxs,
                 sums,
                 node->get_grad()
+            )
+        );
+    }
+
+    void SoftmaxEdge::backward(Tensor *grad) {
+        gCreateAction(
+            new SoftmaxBackwardAction(
+                node->get_grad(),
+                softmax_res,
+                grad
             )
         );
     }
