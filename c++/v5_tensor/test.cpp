@@ -2365,6 +2365,10 @@ void test_bmm_bp() {
     destruct_env();
 }
 
+void test_div_bp() {
+    assert(false);
+}
+
 void test_cpu() {
     test_at();
     test_add();
@@ -2394,6 +2398,7 @@ void test_cpu() {
     test_bmm_1();
     test_bmm_2();
     test_bmm_bp();
+    test_div_bp();
 }
 
 Tensor *test_add_with_cpu_base(int m, int n) {
@@ -3620,6 +3625,7 @@ void test_gpu() {
     test_bmm_2();
     test_bmm_bp();
     test_bmm_bp_with_cpu();
+    test_div_bp();
 }
 
 int main(int argc, char *argv[]) {
