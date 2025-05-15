@@ -33,7 +33,6 @@ ifeq ($(ASAN),1)
 else
 	NVCC = nvcc
 	NVCC_CFLAGS = $(DIR_INC) $(DIR_LIB) -g -G -O3
-	# NVCC_CFLAGS = $(DIR_INC) $(DIR_LIB) -g -O3
 endif
 
 ifeq ($(RELEASE),1)
