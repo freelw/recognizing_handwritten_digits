@@ -2025,6 +2025,70 @@ void test_softmax() {
     destruct_env();
 }
 
+void test_masked_softmax() {
+    construct_env();
+    Tensor *input = allocTensor({2, 2, 4}, "input");
+    auto ni = graph::allocNode(input);
+    ni->init_weight_for_dbg(10000.0f);
+    Tensor *valid_lens = allocTensor({2}, "mask", INT32);
+    auto res = ni->masked_softmax(valid_lens);
+    allocMemAndInitTensors();
+    
+    int valid_lens_buffer[2] = {2, 3};
+    g_backend_ops->cp_to_device(
+        valid_lens,
+        reinterpret_cast<char*>(valid_lens_buffer),
+        2 * sizeof(int32_t)
+    );
+    gDoActions();
+    float ans[16] = {
+        0.475021, 0.524979, 0, 0,
+        0.475021, 0.524979, 0, 0,
+        0.30061, 0.332225, 0.367165, 0,
+        0.30061, 0.332225, 0.367165, 0
+    };
+    bool succ = compare_res_ans_1d(res->get_tensor(), ans, "res");
+    if (!succ) {
+        std::cout << RED << "test_masked_softmax failed" << RESET << std::endl;
+    } else {
+        std::cout << GREEN << "test_masked_softmax succ" << RESET << std::endl;
+    }
+    destruct_env();
+}
+
+void test_masked_softmax_1() {
+    construct_env();
+    Tensor *input = allocTensor({2, 2, 4}, "input");
+    auto ni = graph::allocNode(input);
+    ni->init_weight_for_dbg(10000.0f);
+    Tensor *valid_lens = allocTensor({2, 2}, "mask", INT32);
+    auto res = ni->masked_softmax(valid_lens);
+    allocMemAndInitTensors();
+    
+    int valid_lens_buffer[4] = {1, 3, 2, 4};
+    g_backend_ops->cp_to_device(
+        valid_lens,
+        reinterpret_cast<char*>(valid_lens_buffer),
+        4 * sizeof(int32_t)
+    );
+    gDoActions();
+
+    float ans[16] = {
+        1, 0, 0, 0,
+        0.30061, 0.332225, 0.367165, 0,
+        0.475021, 0.524979, 0, 0,
+        0.213838, 0.236328, 0.261183, 0.288651
+    };
+
+    bool succ = compare_res_ans_1d(res->get_tensor(), ans, "res");
+    if (!succ) {
+        std::cout << RED << "test_masked_softmax_1 failed" << RESET << std::endl;
+    } else {
+        std::cout << GREEN << "test_masked_softmax_1 succ" << RESET << std::endl;
+    }
+    destruct_env();
+}
+
 void test_cpu() {
     test_at();
     test_add();
@@ -2047,6 +2111,8 @@ void test_cpu() {
     test_mask();
     test_mask_1();
     test_softmax();
+    test_masked_softmax();
+    test_masked_softmax_1();
 }
 
 Tensor *test_add_with_cpu_base(int m, int n) {
@@ -3087,6 +3153,8 @@ void test_gpu() {
     test_mask_with_cpu_1();
     test_softmax();
     test_softmax_with_cpu();
+    test_masked_softmax();
+    test_masked_softmax_1();
 }
 
 int main(int argc, char *argv[]) {
