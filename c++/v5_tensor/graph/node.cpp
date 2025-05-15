@@ -240,20 +240,23 @@ namespace graph {
                 this->get_tensor(),
                 {shape[1], shape[2]},
                 new_strides,
-                this->get_tensor()->get_name() + "_split_" + std::to_string(i)
+                this->get_tensor()->get_name() + "_split_" + std::to_string(i),
+                offset
             );
             if (this->is_require_grad()) {
                 Tensor *new_grad = allocTensorView(
                     this->get_grad(),
                     {shape[1], shape[2]},
                     new_strides,
-                    this->get_grad()->get_name() + "_split_" + std::to_string(i)
+                    this->get_grad()->get_name() + "_split_" + std::to_string(i),
+                    offset
                 );
                 node = allocNode(new_tensor, new_grad);
                 node->edges.push_back(EmptyEdge::create(this));
             } else {
                 node = allocNode(new_tensor);
             }
+            offset += block;
             res_nodes.push_back(node);
         }
     }
