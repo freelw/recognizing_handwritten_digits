@@ -131,6 +131,14 @@ __global__ void softmax_kernel(
     int r_stride0, int r_stride1, int r_stride2
 );
 
+__global__ void softmax_backward_kernel(
+    float *target_grad, float *softmax_res, float *grad,
+    int shape0, int shape1, int shape2,
+    int t_stride0, int t_stride1, int t_stride2,
+    int s_stride0, int s_stride1, int s_stride2,
+    int g_stride0, int g_stride1, int g_stride2
+);
+
 #endif // GCC_ASAN
 
 #endif // V5_TENSOR_BACKENDS_GPU_KERNEL_CUH

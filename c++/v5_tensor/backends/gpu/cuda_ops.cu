@@ -652,7 +652,53 @@ void CUDAOps::softmax(Tensor *lhs, Tensor *res) {
 }
 
 void CUDAOps::softmax_bacward(Tensor *target_grad, const Tensor *softmax_res, Tensor *grad) {
-    assert(false);
+    assert(target_grad != nullptr);
+    assert(softmax_res != nullptr);
+    assert(grad != nullptr);
+
+    assert(target_grad->get_dtype() == FLOAT32);
+    assert(softmax_res->get_dtype() == FLOAT32);
+    assert(grad->get_dtype() == FLOAT32);
+
+    assert(target_grad->get_dim() == 3);
+    assert(softmax_res->get_dim() == 3);
+    assert(grad->get_dim() == 3);
+
+    auto t_shape = target_grad->get_shape();
+    auto s_shape = softmax_res->get_shape();
+    auto g_shape = grad->get_shape();
+
+    assert(t_shape == s_shape);
+    assert(t_shape == g_shape);
+
+    auto t_strides = target_grad->get_strides();
+    auto s_strides = softmax_res->get_strides();
+    auto g_strides = grad->get_strides();
+
+    dim3 gridDim(
+        (t_shape[1] + TILE_WIDTH - 1) / TILE_WIDTH,
+        (t_shape[0] + TILE_WIDTH - 1) / TILE_WIDTH
+    );
+
+    dim3 blockDim(TILE_WIDTH, TILE_WIDTH);
+
+    softmax_backward_kernel<<<gridDim, blockDim>>>(
+        (float *)target_grad->get_data(),
+        (float *)softmax_res->get_data(),
+        (float *)grad->get_data(),
+        t_shape[0],
+        t_shape[1],
+        t_shape[2],
+        t_strides[0],
+        t_strides[1],
+        t_strides[2],
+        s_strides[0],
+        s_strides[1],
+        s_strides[2],
+        g_strides[0],
+        g_strides[1],
+        g_strides[2]
+    );
 }
 
 void* CUDAOps::alloc(size_t size) {

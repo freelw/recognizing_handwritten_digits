@@ -539,16 +539,20 @@ void CPUOps::softmax_bacward(Tensor *target_grad, const Tensor *softmax_res, Ten
         for (int j = 0; j < t_shape[1]; ++j) {
             for (int target = 0; target < t_shape[2]; ++target) {
                 for (int k = 0; k < t_shape[2]; ++k) {
-                    auto target_pos = i * t_strides[0] + j * t_strides[1] + target * t_strides[2];
-                    auto k_pos = i * t_strides[0] + j * t_strides[1] + k * t_strides[2];
-                    auto softmax_res_k = softmax_res_data[k_pos];
-                    auto softmax_res_target = softmax_res_data[target_pos];
-                    auto grad_k = grad_data[k_pos];
+                    auto tg_target_pos = i * t_strides[0] + j * t_strides[1] + target * t_strides[2];
+                    // auto tg_k_pos = i * t_strides[0] + j * t_strides[1] + k * t_strides[2];
+                    auto sm_target_pos = i * s_strides[0] + j * s_strides[1] + target * s_strides[2];
+                    auto sm_k_pos = i * s_strides[0] + j * s_strides[1] + k * s_strides[2];
+                    // auto g_target_pos = i * g_strides[0] + j * g_strides[1] + target * g_strides[2];
+                    auto g_k_pos = i * g_strides[0] + j * g_strides[1] + k * g_strides[2];
+                    auto softmax_res_k = softmax_res_data[sm_k_pos];
+                    auto softmax_res_target = softmax_res_data[sm_target_pos];
+                    auto grad_k = grad_data[g_k_pos];
                     if (target == k) {
-                        target_grad_data[target_pos] += 
+                        target_grad_data[tg_target_pos] += 
                             softmax_res_k * (1 - softmax_res_k) * grad_k;
                     } else {
-                        target_grad_data[target_pos] += 
+                        target_grad_data[tg_target_pos] += 
                             -softmax_res_target * softmax_res_k * grad_k;
                     }
                 }
