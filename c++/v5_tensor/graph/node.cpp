@@ -205,7 +205,7 @@ namespace graph {
             res_node->require_grad();
         }
         std::vector<Node *> res_nodes;
-        res_node->split_3d(res_nodes);
+        res_node->split_3d(res_nodes, true); // opposite = true
         assert(res_nodes.size() == l_split_2d_nodes.size());
         for (int i = 0; i < l_split_2d_nodes.size(); ++i) {
             Node *l_split_2d_node = l_split_2d_nodes[i];
@@ -216,11 +216,14 @@ namespace graph {
                 r_split_2d_node,
                 res_split_2d_node
             );
+            if (res_split_2d_node->is_require_grad()) {
+                res_node->edges.push_back(EmptyEdge::create(res_split_2d_node));
+            }
         }
         return res_node;
     }
 
-    void Node::split_3d(std::vector<Node *> &res_nodes) {
+    void Node::split_3d(std::vector<Node *> &res_nodes, bool opposite) {
         assert(this->get_tensor()->get_dim() == 3);
         if (this->is_require_grad()) {
             assert(this->get_grad()->get_dim() == 3);
@@ -252,7 +255,11 @@ namespace graph {
                     offset
                 );
                 node = allocNode(new_tensor, new_grad);
-                node->edges.push_back(EmptyEdge::create(this));
+                if (opposite) { // 考虑split的操作数是结果，梯度需要从整个结果传递给子结果
+                    this->edges.push_back(EmptyEdge::create(node));
+                } else { // 考虑split的操作数是输入，梯度需要从子结果传递给整个结果
+                    node->edges.push_back(EmptyEdge::create(this));
+                }
             } else {
                 node = allocNode(new_tensor);
             }

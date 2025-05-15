@@ -62,7 +62,7 @@ namespace graph {
             Node *expand_add(Node *rhs);
             Node *at(Node *rhs);
             Node *bmm(Node *rhs);
-            void split_3d(std::vector<Node *> &res_nodes);
+            void split_3d(std::vector<Node *> &res_nodes, bool opposite = false);
             Node *relu();
             Node *CrossEntropy(Tensor *labels);
             void init_weight_gauss(float sigma, float mean);

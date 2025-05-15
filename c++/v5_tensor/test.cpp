@@ -2271,10 +2271,10 @@ void test_bmm_bp() {
 
     auto bmm_res = ni->bmm(nw);
     auto ce_res = bmm_res->reshape({-1, 6})->CrossEntropy(labels);
-
     ce_res->backward();
+
+    // printAllActions();
     allocMemAndInitTensors();
-    
     gDoActions();
     float loss = 0;
     g_backend_ops->cp_from_device(
@@ -2283,20 +2283,14 @@ void test_bmm_bp() {
         sizeof(float)
     );
     loss /= 6;
-    
-    std::cout << "input :" << std::endl << *input << std::endl;
-    std::cout << "w :" << std::endl << *w << std::endl;
-    std::cout << "labels :" << std::endl << *labels << std::endl;
-    std::cout << "bmm_res :" << std::endl << *bmm_res->get_tensor() << std::endl;
-    std::cout << std::setprecision(8) << "loss = " << loss << std::endl;
 
     float loss_ans = 1.6919627f;
 
     const float eps = 1e-5f;
-    if (fabs(loss - loss_ans) > eps) {
+
+    bool succ_loss = fabs(loss - loss_ans) < eps;
+    if (!succ_loss) {
         std::cerr << RED << "Error: loss = " << loss << ", ans = " << loss_ans << RESET << std::endl;
-    } else {
-        std::cout << GREEN << "test_bmm_bp loss succ" << RESET << std::endl;
     }
 
     float bmm_res_ans[36] = {
@@ -2321,8 +2315,53 @@ void test_bmm_bp() {
     auto ni_grad = ni->get_grad();
     auto nw_grad = nw->get_grad();
 
-    std::cout << "ni_grad :" << std::endl << *ni_grad << std::endl;
-    std::cout << "nw_grad :" << std::endl << *nw_grad << std::endl;
+    float ni_grad_ans[24] = {
+        0.0445769, 0.0445769, 0.0445769, 0.0445769,
+        0.035388, 0.035388, 0.035388, 0.035388,
+        0.025341, 0.025341, 0.025341, 0.025341,
+        0.0141321, 0.0141321, 0.0141321, 0.0141321,
+        0.00174849, 0.0017485, 0.00174847, 0.00174847,
+        -0.011649, -0.011649, -0.011649, -0.011649
+    };
+
+    float nw_grad_ans[48] = {
+        0.0130027, -0.0489459, -0.109031, 0.0335287, 0.0465271, 0.0649188,
+        0.00108722, -0.0599406, -0.118818, 0.0420134, 0.0571685, 0.0784897,
+        -0.0108283, -0.0709353, -0.128605, 0.0504981, 0.06781, 0.0920605,
+        -0.0227438, -0.0819301, -0.138392, 0.0589828, 0.0784514, 0.105631,
+        0.0125765, 0.0245049, 0.0485311, -0.102268, -0.0665401, 0.0831956,
+        0.0134513, 0.0261676, 0.0517392, -0.112645, -0.0706674, 0.091954,
+        0.0143261, 0.0278303, 0.0549473, -0.123021, -0.0747947, 0.100712,
+        0.015201, 0.029493, 0.0581554, -0.133398, -0.0789219, 0.109471
+    };
+
+    bool succ_ni_grad = compare_res_ans_1d(
+        ni_grad,
+        ni_grad_ans,
+        "ni_grad"
+    );
+
+    if (!succ_ni_grad) {
+        std::cout << RED << "test_bmm_bp ni_grad failed" << RESET << std::endl;
+    }
+
+    bool succ_nw_grad = compare_res_ans_1d(
+        nw_grad,
+        nw_grad_ans,
+        "nw_grad"
+    );
+
+    if (!succ_nw_grad) {
+        std::cout << RED << "test_bmm_bp nw_grad failed" << RESET << std::endl;
+    }
+
+    bool succ = succ_loss && succ_bmm_res && succ_ni_grad && succ_nw_grad;
+
+    if (succ) {
+        std::cout << GREEN << "test_bmm_bp succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_bmm_bp failed" << RESET << std::endl;
+    }
 
     destruct_env();
 }
