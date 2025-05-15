@@ -126,7 +126,6 @@ __global__ void sequence_mask_kernel(
 
 __global__ void softmax_kernel(
     float *src, float *dst,
-    float *maxs, float *sums,
     int shape0, int shape1, int shape2,
     int l_stride0, int l_stride1, int l_stride2,
     int r_stride0, int r_stride1, int r_stride2

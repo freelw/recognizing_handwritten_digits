@@ -78,25 +78,12 @@ namespace graph {
     Node *Node::softmax() {
         assert(this->get_tensor()->get_dim() == 3);
         auto shape = this->get_tensor()->get_shape();
-        auto maxs_shape = {shape[0], shape[1]};
-        auto sums_shape = {shape[0], shape[1]};
-        auto name = this->get_tensor()->get_name();
-        Tensor *maxs = allocTensor(
-            maxs_shape,
-            name + "_softmax_maxs",
-            FLOAT32
-        );
-        Tensor *sums = allocTensor(
-            sums_shape,
-            name + "_softmax_sums",
-            FLOAT32
-        );
         auto res_node = allocNode(
-            this->get_tensor()->softmax(maxs, sums)
+            this->get_tensor()->softmax()
         );
         if (is_require_grad()) {
             res_node->require_grad();
-            res_node->edges.push_back(SoftmaxEdge::create(this));
+            res_node->edges.push_back(SoftmaxEdge::create(this, res_node->get_tensor()));
         }
         return res_node;
     }

@@ -237,13 +237,10 @@ class SequenceMaskAction : public Action {
 
 class SoftmaxAction : public Action {
     public:
-        SoftmaxAction(Tensor *_lhs, Tensor *_res, Tensor *_maxs, Tensor *_sums)
-            : Action(_lhs, nullptr, _res), maxs(_maxs), sums(_sums) {}
+        SoftmaxAction(Tensor *_lhs, Tensor *_res)
+            : Action(_lhs, nullptr, _res) {}
         void execute() override;
         std::string to_string() const override;
-    private:
-        Tensor *maxs;
-        Tensor *sums;
 };
 
 std::vector<Action *> getOnceActions();

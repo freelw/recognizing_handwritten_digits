@@ -226,9 +226,7 @@ Tensor *Tensor::sequence_mask(Tensor *mask, float value) {
     return sequence_mask_tensor;
 }
 
-Tensor *Tensor::softmax(Tensor *maxs, Tensor *sums) {
-    assert(!maxs->is_view());
-    assert(!sums->is_view());
+Tensor *Tensor::softmax() {
     Tensor *res = allocTensor(
         shape,
         this->get_name() + "_softmax",
@@ -237,9 +235,7 @@ Tensor *Tensor::softmax(Tensor *maxs, Tensor *sums) {
     gCreateAction(
         new SoftmaxAction(
             this,
-            res,
-            maxs,
-            sums
+            res
         )
     );
     return res;
