@@ -3150,6 +3150,70 @@ void test_masked_softmax_with_cpu() {
     ::free(res_cpu_buffer);
 }
 
+Tensor *test_masked_softmax_bp_with_cpu_base(
+    int m, int n, int k
+) {
+    Tensor *input = allocTensor({m, n, k}, "input");
+    auto ni = graph::allocNode(input);
+    ni->require_grad();
+    ni->init_weight_for_dbg(10000.0f);
+    Tensor *valid_lens = allocTensor({m, n}, "mask", INT32);
+    auto nm = graph::allocNode(valid_lens);
+    nm->init_weight_for_dbg();
+    Tensor *labels = allocTensor({m*n}, "input", INT32);
+    auto nl = graph::allocNode(labels);
+    nl->init_weight_for_dbg();
+    auto res = ni->masked_softmax(valid_lens)->reshape({-1, k})->CrossEntropy(labels);
+    res->backward();
+    // printAllActions();
+    allocMemAndInitTensors();
+    gDoActions();
+    return ni->get_grad();
+}
+
+void test_masked_softmax_bp_with_cpu() {
+    int m = 100;
+    int n = 500;
+    int k = 10;
+
+    use_gpu(false);
+    construct_env();
+    auto res_cpu = test_masked_softmax_bp_with_cpu_base(m, n, k);
+    auto res_cpu_size = res_cpu->size();
+    auto res_cpu_length = res_cpu->length();
+    float *res_cpu_buffer = static_cast<float*>(::malloc(res_cpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(res_cpu_buffer),
+        res_cpu,
+        res_cpu_size
+    );
+    destruct_env();
+    use_gpu(true);
+    construct_env();
+    auto res_gpu = test_masked_softmax_bp_with_cpu_base(m, n, k);
+    auto res_gpu_size = res_gpu->size();
+    auto res_gpu_length = res_gpu->length();
+    float *res_gpu_buffer = static_cast<float*>(::malloc(res_gpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(res_gpu_buffer),
+        res_gpu,
+        res_gpu_size
+    );
+    destruct_env();
+    assert(res_cpu_size == res_gpu_size);
+    assert(res_cpu_length == res_gpu_length);
+
+    bool succ = compare_ans1_ans2(res_cpu_buffer, res_gpu_buffer, res_gpu_length);
+    if (succ) {
+        std::cout << GREEN << "test_masked_softmax_bp_with_cpu succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_masked_softmax_bp_with_cpu failed" << RESET << std::endl;
+    }
+
+    ::free(res_gpu_buffer);
+    ::free(res_cpu_buffer);
+}
+
 void test_gpu() {
     test_at();
     test_at_1();
@@ -3192,6 +3256,7 @@ void test_gpu() {
     test_masked_softmax_1();
     test_masked_softmax_with_cpu();
     test_masked_softmax_bp();
+    test_masked_softmax_bp_with_cpu();
 }
 
 int main(int argc, char *argv[]) {
