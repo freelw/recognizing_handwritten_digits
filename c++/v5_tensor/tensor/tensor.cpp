@@ -112,10 +112,19 @@ int Tensor::capacity() const {
 }
 
 Tensor *Tensor::transpose(int a, int b) {
+    auto strides = this->get_strides();
+    auto shape = this->get_shape();
+
+    assert(a < shape.size());
+    assert(b < shape.size());
+    assert(a != b);
+
+    std::swap(strides[a], strides[b]);
+    std::swap(shape[a], shape[b]);
     Tensor *transpose_view = allocTensorView(
         this,
-        {this->get_shape()[b], this->get_shape()[a]},
-        {this->get_strides()[b], this->get_strides()[a]},
+        shape,
+        strides,
         this->get_name() + "_transpose"
     );
     return transpose_view;

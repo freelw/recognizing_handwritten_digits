@@ -43,6 +43,38 @@ void init_w_wt(Tensor *w, Tensor *wt) {
     ::free(w_tmp_buffer);
 }
 
+void init_w_wt_for_bmm(Tensor *w, Tensor *wt) {
+    std::vector<int> w_strides = w->get_strides();
+    std::vector<int> wt_strides = wt->get_strides();
+    float *w_tmp_buffer = static_cast<float*>(::malloc(w->size()));
+    float *wt_tmp_buffer = static_cast<float*>(::malloc(wt->size()));
+    auto shape = w->get_shape();
+
+    for (int k = 0; k < shape[0]; ++ k) {    
+        for (int i = 0; i < shape[1]; ++ i) {
+            for (int j = 0; j < shape[2]; ++ j) {
+                float *loc_w_tmp = w_tmp_buffer + k * w_strides[0] + i * w_strides[1] + j * w_strides[2];
+                float *loc_wt_tmp = wt_tmp_buffer + k * wt_strides[0] + j * wt_strides[1] + i * wt_strides[2];
+                float v = k*shape[1] + i * shape[2] + j;
+                *loc_w_tmp = v;
+                *loc_wt_tmp = v;
+            }
+        }
+    }
+    g_backend_ops->cp_to_device(
+        w,
+        reinterpret_cast<char*>(w_tmp_buffer),
+        w->size()
+    );
+    g_backend_ops->cp_to_device(
+        wt,
+        reinterpret_cast<char*>(wt_tmp_buffer),
+        wt->size()
+    );
+    ::free(wt_tmp_buffer);
+    ::free(w_tmp_buffer);
+}
+
 bool compare_res_wi_wt_ans(
     Tensor *res_wi_tensor, Tensor *res_wti_tensor,
     float *res_ans, const std::string & test_name) {
@@ -107,6 +139,34 @@ void test_at() {
     allocMemAndInitTensors();
     input->fill(1.0f);
     init_w_wt(w, wt);
+    gDoActions();
+    auto res_wi_tensor = res_wi->get_tensor();
+    auto res_wti_tensor = res_wti->get_tensor();
+    auto res_wi_data = static_cast<float*>(res_wi_tensor->get_data());
+    auto res_wti_data = static_cast<float*>(res_wti_tensor->get_data());
+    float res_ans[8] = {12,15,18,21,12,15,18,21};
+    compare_res_wi_wt_ans(
+        res_wi_tensor, res_wti_tensor,
+        res_ans, "test_at"
+    );
+    destruct_env();
+}
+
+void test_bmm() {
+    construct_env();
+    Tensor *input = allocTensor({1, 2, 3}, "input");
+    Tensor *w = allocTensor({1, 3, 4}, "w");
+    Tensor *wt = allocTensor({1, 4, 3}, "wt");
+    graph::Node *ni = graph::allocNode(input);
+    graph::Node *nw = graph::allocNode(w);
+    graph::Node *nwt = graph::allocNode(wt);
+    auto res_wi = ni->bmm(nw);
+    auto res_wti = ni->bmm(nwt->transpose(1, 2));
+    // printAllTensors();
+    printAllActions();
+    allocMemAndInitTensors();
+    input->fill(1.0f);
+    init_w_wt_for_bmm(w, wt);
     gDoActions();
     auto res_wi_tensor = res_wi->get_tensor();
     auto res_wti_tensor = res_wti->get_tensor();
@@ -2153,6 +2213,7 @@ void test_cpu() {
     test_masked_softmax();
     test_masked_softmax_1();
     test_masked_softmax_bp();
+    test_bmm();
 }
 
 Tensor *test_add_with_cpu_base(int m, int n) {
@@ -3257,6 +3318,7 @@ void test_gpu() {
     test_masked_softmax_with_cpu();
     test_masked_softmax_bp();
     test_masked_softmax_bp_with_cpu();
+    test_bmm();
 }
 
 int main(int argc, char *argv[]) {
