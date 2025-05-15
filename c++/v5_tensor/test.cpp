@@ -2253,6 +2253,46 @@ void test_masked_softmax_bp() {
     destruct_env();
 }
 
+void test_bmm_bp() {
+
+    construct_env();
+    Tensor *input = allocTensor({2, 3, 4}, "input");
+    auto ni = graph::allocNode(input);
+    ni->require_grad();
+    ni->init_weight_for_dbg(10000.0f);
+    Tensor *w = allocTensor({2, 4, 6}, "w");
+    auto nw = graph::allocNode(w);
+    nw->require_grad();
+    nw->init_weight_for_dbg(10000.0f);
+
+    Tensor *labels = allocTensor({6}, "labels", INT32);
+    auto n_labels = graph::allocNode(labels);
+    n_labels->init_weight_for_dbg();
+
+    auto bmm_res = ni->bmm(nw);
+    auto ce_res = bmm_res->reshape({-1, 6})->CrossEntropy(labels);
+
+    ce_res->backward();
+    allocMemAndInitTensors();
+    
+    gDoActions();
+    float loss = 0;
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(&loss),
+        ce_res->get_tensor(),
+        sizeof(float)
+    );
+    loss /= 6;
+    
+    std::cout << "input :" << std::endl << *input << std::endl;
+    std::cout << "w :" << std::endl << *w << std::endl;
+    std::cout << "labels :" << std::endl << *labels << std::endl;
+    std::cout << "bmm_res :" << std::endl << *bmm_res->get_tensor() << std::endl;
+    std::cout << "loss = " << loss << std::endl;
+    
+    destruct_env();
+}
+
 void test_cpu() {
     test_at();
     test_add();
@@ -2281,6 +2321,7 @@ void test_cpu() {
     test_bmm();
     test_bmm_1();
     test_bmm_2();
+    test_bmm_bp();
 }
 
 Tensor *test_add_with_cpu_base(int m, int n) {
@@ -3388,6 +3429,7 @@ void test_gpu() {
     test_bmm();
     test_bmm_1();
     test_bmm_2();
+    test_bmm_bp();
 }
 
 int main(int argc, char *argv[]) {

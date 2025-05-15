@@ -231,6 +231,7 @@ void CPUOps::crossEntropy(Tensor *lhs, const Tensor *labels, Tensor *maxs, Tenso
         }
         float sum = 0;
         auto target = labels_data[j];
+        assert(target >= 0 && target < size);
         float zt = data[j * lstrides[0] + target * lstrides[1]];
         for (int i = 0; i < size; ++i) {
             float e = data[j* lstrides[0] + i * lstrides[1]];
