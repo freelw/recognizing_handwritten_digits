@@ -23,8 +23,9 @@ enum TensorDType {
 std::string TensorDtype_to_string(TensorDType dtype);
 
 struct TensorStorage {
-    TensorStorage() : data(nullptr) {}
+    TensorStorage(int _size) : data(nullptr), size(_size) {}
     void *data;
+    int size;
 };
 
 class Tensor {
@@ -33,12 +34,18 @@ class Tensor {
         Tensor(const std::vector<int> &_shape, TensorDType _dtype);
         Tensor(
             const std::vector<int> &_shape, const std::vector<int> &_strides,
+            const std::string &_name, TensorDType _dtype, TensorStorage *_storage,
+            int _offset
+        );
+        Tensor(
+            const std::vector<int> &_shape, const std::vector<int> &_strides,
             const std::string &_name, TensorDType _dtype, TensorStorage *_storage
         );
         virtual ~Tensor();
         virtual void set_data(void *ptr);
-        virtual void *get_data() const { return storage->data; }
+        virtual void *get_data() const;
         TensorStorage *get_storage() const { return storage; }
+        int get_offset() const { return offset; }
         virtual int size() const;
         virtual int length() const;
         virtual int capacity() const;
@@ -70,6 +77,7 @@ class Tensor {
     private:
         const bool own_storage;
         TensorStorage *storage;
+        int offset;
 };
 
 extern std::vector<Tensor*> g_tensors;
@@ -78,7 +86,10 @@ extern std::vector<Tensor*> g_grad_tensors;
 
 Tensor *allocTensor(const std::vector<int> &shape, const std::string &name, TensorDType _dtype = FLOAT32);
 Tensor *allocTensor(const std::vector<int> &shape, TensorDType _dtype = FLOAT32);
-Tensor *allocTensorView(Tensor *parent, const std::vector<int> &shape, const std::vector<int> &strides, const std::string &name);
+Tensor *allocTensorView(
+    Tensor *parent, const std::vector<int> &shape,
+    const std::vector<int> &strides, const std::string &name,
+    int offset = 0);
 Tensor *allocGradTensor(const std::vector<int> &shape, const std::string &name);
 Tensor *allocGradTensor(const std::vector<int> &shape);
 void printAllTensors();

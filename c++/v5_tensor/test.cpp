@@ -43,6 +43,38 @@ void init_w_wt(Tensor *w, Tensor *wt) {
     ::free(w_tmp_buffer);
 }
 
+void init_w_wt_for_bmm(Tensor *w, Tensor *wt) {
+    std::vector<int> w_strides = w->get_strides();
+    std::vector<int> wt_strides = wt->get_strides();
+    float *w_tmp_buffer = static_cast<float*>(::malloc(w->size()));
+    float *wt_tmp_buffer = static_cast<float*>(::malloc(wt->size()));
+    auto shape = w->get_shape();
+
+    for (int k = 0; k < shape[0]; ++ k) {    
+        for (int i = 0; i < shape[1]; ++ i) {
+            for (int j = 0; j < shape[2]; ++ j) {
+                float *loc_w_tmp = w_tmp_buffer + k * w_strides[0] + i * w_strides[1] + j * w_strides[2];
+                float *loc_wt_tmp = wt_tmp_buffer + k * wt_strides[0] + j * wt_strides[1] + i * wt_strides[2];
+                float v = k*shape[1] + i * shape[2] + j;
+                *loc_w_tmp = v;
+                *loc_wt_tmp = v;
+            }
+        }
+    }
+    g_backend_ops->cp_to_device(
+        w,
+        reinterpret_cast<char*>(w_tmp_buffer),
+        w->size()
+    );
+    g_backend_ops->cp_to_device(
+        wt,
+        reinterpret_cast<char*>(wt_tmp_buffer),
+        wt->size()
+    );
+    ::free(wt_tmp_buffer);
+    ::free(w_tmp_buffer);
+}
+
 bool compare_res_wi_wt_ans(
     Tensor *res_wi_tensor, Tensor *res_wti_tensor,
     float *res_ans, const std::string & test_name) {
@@ -90,6 +122,99 @@ bool compare_res_wi_wt_ans(
     ::free(res_wti_tmp_buffer);
     ::free(res_wi_tmp_buffer);
     return succ;
+}
+
+void test_bmm() {
+    construct_env();
+    Tensor *input = allocTensor({1, 2, 3}, "input");
+    Tensor *w = allocTensor({1, 3, 4}, "w");
+    Tensor *wt = allocTensor({1, 4, 3}, "wt");
+    graph::Node *ni = graph::allocNode(input);
+    graph::Node *nw = graph::allocNode(w);
+    graph::Node *nwt = graph::allocNode(wt);
+    auto res_wi = ni->bmm(nw);
+    auto res_wti = ni->bmm(nwt->transpose(1, 2));
+    // printAllTensors();
+    // printAllActions();
+    allocMemAndInitTensors();
+    input->fill(1.0f);
+    init_w_wt_for_bmm(w, wt);
+    gDoActions();
+    auto res_wi_tensor = res_wi->get_tensor();
+    auto res_wti_tensor = res_wti->get_tensor();
+    auto res_wi_data = static_cast<float*>(res_wi_tensor->get_data());
+    auto res_wti_data = static_cast<float*>(res_wti_tensor->get_data());
+    float res_ans[8] = {12,15,18,21,12,15,18,21};
+    compare_res_wi_wt_ans(
+        res_wi_tensor, res_wti_tensor,
+        res_ans, "test_bmm"
+    );
+    destruct_env();
+}
+
+void test_bmm_1() {
+    construct_env();
+    int m = 330;
+    int n = 620;
+    int p = 102;
+    Tensor *input = allocTensor({1, m, n}, "input");
+    Tensor *w = allocTensor({1, n, p}, "w");
+    Tensor *wt = allocTensor({1, p, n}, "wt");
+    graph::Node *ni = graph::allocNode(input);
+    graph::Node *nw = graph::allocNode(w);
+    graph::Node *nwt = graph::allocNode(wt);
+    auto res_wi = ni->bmm(nw);
+    auto res_wti = ni->bmm(nwt->transpose(1, 2));
+    // printAllTensors();
+    // printAllActions();
+    allocMemAndInitTensors();
+    input->fill(1.0f);
+    init_w_wt_for_bmm(w, wt);
+    gDoActions();
+    auto res_wi_tensor = res_wi->get_tensor();
+    auto res_wti_tensor = res_wti->get_tensor();
+    auto res_wi_data = static_cast<float*>(res_wi_tensor->get_data());
+    auto res_wti_data = static_cast<float*>(res_wti_tensor->get_data());
+    compare_res_wi_wt_ans(
+        res_wi_tensor, res_wti_tensor,
+        nullptr, "test_bmm_1"
+    );
+    destruct_env();
+}
+
+void test_bmm_2() {
+    construct_env();
+    Tensor *input = allocTensor({2, 2, 3}, "input");
+    Tensor *w = allocTensor({2, 3, 4}, "w");
+    Tensor *wt = allocTensor({2, 4, 3}, "wt");
+    graph::Node *ni = graph::allocNode(input);
+    graph::Node *nw = graph::allocNode(w);
+    graph::Node *nwt = graph::allocNode(wt);
+    auto res_wi = ni->bmm(nw);
+    auto res_wti = ni->bmm(nwt->transpose(1, 2));
+    // printAllTensors();
+    // printAllActions();
+    allocMemAndInitTensors();
+    input->fill(1.0f);
+    init_w_wt_for_bmm(w, wt);
+    gDoActions();
+    auto res_wi_tensor = res_wi->get_tensor();
+    auto res_wti_tensor = res_wti->get_tensor();
+    
+    auto res_wi_data = static_cast<float*>(res_wi_tensor->get_data());
+    auto res_wti_data = static_cast<float*>(res_wti_tensor->get_data());
+
+    float ans[16] = {
+        12, 15, 18, 21,
+        12, 15, 18, 21,
+        21, 24, 27, 30,
+        21, 24, 27, 30
+    };
+    compare_res_wi_wt_ans(
+        res_wi_tensor, res_wti_tensor,
+        ans, "test_bmm_1"
+    );
+    destruct_env();
 }
 
 void test_at() {
@@ -1406,9 +1531,8 @@ void test_reshape_with_cpu_base(
 }
 
 bool compare_ans1_ans2(
-    float *ans1, float *ans2, int size
+    float *ans1, float *ans2, int size, float eps = 1e-5f
 ) {
-    const float eps = 1e-5f;
     for (int i = 0; i < size; ++i) {
         if (fabs(ans1[i] - ans2[i]) > eps) {
             std::cerr << std::setprecision(8) << RED << "Error: ans1[" << i << "] = " << ans1[i]
@@ -2128,6 +2252,119 @@ void test_masked_softmax_bp() {
     destruct_env();
 }
 
+void test_bmm_bp() {
+
+    construct_env();
+    Tensor *input = allocTensor({2, 3, 4}, "input");
+    auto ni = graph::allocNode(input);
+    ni->require_grad();
+    ni->init_weight_for_dbg(10000.0f);
+    Tensor *w = allocTensor({2, 4, 6}, "w");
+    auto nw = graph::allocNode(w);
+    nw->require_grad();
+    nw->init_weight_for_dbg(10000.0f);
+
+    Tensor *labels = allocTensor({6}, "labels", INT32);
+    auto n_labels = graph::allocNode(labels);
+    n_labels->init_weight_for_dbg();
+
+    auto bmm_res = ni->bmm(nw);
+    auto ce_res = bmm_res->reshape({-1, 6})->CrossEntropy(labels);
+    ce_res->backward();
+
+    // printAllActions();
+    allocMemAndInitTensors();
+    gDoActions();
+    float loss = 0;
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(&loss),
+        ce_res->get_tensor(),
+        sizeof(float)
+    );
+    loss /= 6;
+
+    float loss_ans = 1.6919627f;
+
+    const float eps = 1e-5f;
+
+    bool succ_loss = fabs(loss - loss_ans) < eps;
+    if (!succ_loss) {
+        std::cerr << RED << "Error: loss = " << loss << ", ans = " << loss_ans << RESET << std::endl;
+    }
+
+    float bmm_res_ans[36] = {
+        0.84, 0.9, 0.96, 1.02, 1.08, 1.14,
+        2.28, 2.5, 2.72, 2.94, 3.16, 3.38,
+        3.72, 4.1, 4.48, 4.86, 5.24, 5.62,
+        18.12, 18.66, 19.2, 19.74, 20.28, 20.82,
+        23.4, 24.1, 24.8, 25.5, 26.2, 26.9,
+        28.68, 29.54, 30.4, 31.26, 32.12, 32.98
+    };
+
+    bool succ_bmm_res = compare_res_ans_1d(
+        bmm_res->get_tensor(),
+        bmm_res_ans,
+        "bmm_res"
+    );
+
+    if (!succ_bmm_res) {
+        std::cout << RED << "test_bmm_bp bmm_res failed" << RESET << std::endl;
+    }
+
+    auto ni_grad = ni->get_grad();
+    auto nw_grad = nw->get_grad();
+
+    float ni_grad_ans[24] = {
+        0.0445769, 0.0445769, 0.0445769, 0.0445769,
+        0.035388, 0.035388, 0.035388, 0.035388,
+        0.025341, 0.025341, 0.025341, 0.025341,
+        0.0141321, 0.0141321, 0.0141321, 0.0141321,
+        0.00174849, 0.0017485, 0.00174847, 0.00174847,
+        -0.011649, -0.011649, -0.011649, -0.011649
+    };
+
+    float nw_grad_ans[48] = {
+        0.0130027, -0.0489459, -0.109031, 0.0335287, 0.0465271, 0.0649188,
+        0.00108722, -0.0599406, -0.118818, 0.0420134, 0.0571685, 0.0784897,
+        -0.0108283, -0.0709353, -0.128605, 0.0504981, 0.06781, 0.0920605,
+        -0.0227438, -0.0819301, -0.138392, 0.0589828, 0.0784514, 0.105631,
+        0.0125765, 0.0245049, 0.0485311, -0.102268, -0.0665401, 0.0831956,
+        0.0134513, 0.0261676, 0.0517392, -0.112645, -0.0706674, 0.091954,
+        0.0143261, 0.0278303, 0.0549473, -0.123021, -0.0747947, 0.100712,
+        0.015201, 0.029493, 0.0581554, -0.133398, -0.0789219, 0.109471
+    };
+
+    bool succ_ni_grad = compare_res_ans_1d(
+        ni_grad,
+        ni_grad_ans,
+        "ni_grad"
+    );
+
+    if (!succ_ni_grad) {
+        std::cout << RED << "test_bmm_bp ni_grad failed" << RESET << std::endl;
+    }
+
+    bool succ_nw_grad = compare_res_ans_1d(
+        nw_grad,
+        nw_grad_ans,
+        "nw_grad"
+    );
+
+    if (!succ_nw_grad) {
+        std::cout << RED << "test_bmm_bp nw_grad failed" << RESET << std::endl;
+    }
+
+    bool succ = succ_loss && succ_bmm_res && succ_ni_grad && succ_nw_grad;
+
+    if (succ) {
+        std::cout << GREEN << "test_bmm_bp succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_bmm_bp failed" << RESET << std::endl;
+    }
+
+    destruct_env();
+}
+
 void test_cpu() {
     test_at();
     test_add();
@@ -2153,6 +2390,10 @@ void test_cpu() {
     test_masked_softmax();
     test_masked_softmax_1();
     test_masked_softmax_bp();
+    test_bmm();
+    test_bmm_1();
+    test_bmm_2();
+    test_bmm_bp();
 }
 
 Tensor *test_add_with_cpu_base(int m, int n) {
@@ -3214,6 +3455,123 @@ void test_masked_softmax_bp_with_cpu() {
     ::free(res_cpu_buffer);
 }
 
+std::vector<Tensor *> test_bmm_bp_with_cpu_base(
+    int batch, int m, int n, int k
+) {
+    Tensor *input = allocTensor({batch, m, n}, "input");
+    auto ni = graph::allocNode(input);
+    ni->require_grad();
+    ni->init_weight_for_dbg(10000.0f);
+    Tensor *w = allocTensor({batch, n, k}, "w");
+    auto nw = graph::allocNode(w);
+    nw->require_grad();
+    nw->init_weight_for_dbg();
+    Tensor *labels = allocTensor({batch * m}, "labels", INT32);
+    auto nl = graph::allocNode(labels);
+    nl->init_weight_for_dbg();
+    auto res = ni->bmm(nw)->softmax();
+    auto res_ce = res->reshape({-1, k})->CrossEntropy(labels);
+    res_ce->backward();
+    allocMemAndInitTensors();
+    gDoActions();
+    return {res->get_tensor(), ni->get_grad(), nw->get_grad()};
+}
+
+void test_bmm_bp_with_cpu() {
+    int batch = 32;
+    int m = 50;
+    int n = 512;
+    int k = 10;
+
+    use_gpu(false);
+    construct_env();
+    auto res_cpu_vec = test_bmm_bp_with_cpu_base(batch, m, n, k);
+    auto res_cpu = res_cpu_vec[0];
+    auto ni_grad_cpu = res_cpu_vec[1];
+    auto nw_grad_cpu = res_cpu_vec[2];
+    auto res_cpu_size = res_cpu->size();
+    auto res_cpu_length = res_cpu->length();
+    float *res_cpu_buffer = static_cast<float*>(::malloc(res_cpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(res_cpu_buffer),
+        res_cpu,
+        res_cpu_size
+    );
+    auto ni_grad_cpu_size = ni_grad_cpu->size();
+    auto ni_grad_cpu_length = ni_grad_cpu->length();
+    float *ni_grad_cpu_buffer = static_cast<float*>(::malloc(ni_grad_cpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(ni_grad_cpu_buffer),
+        ni_grad_cpu,
+        ni_grad_cpu_size
+    );
+    auto nw_grad_cpu_size = nw_grad_cpu->size();
+    auto nw_grad_cpu_length = nw_grad_cpu->length();
+    float *nw_grad_cpu_buffer = static_cast<float*>(::malloc(nw_grad_cpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(nw_grad_cpu_buffer),
+        nw_grad_cpu,
+        nw_grad_cpu_size
+    );
+    destruct_env();
+    use_gpu(true);
+    construct_env();
+    auto res_gpu_vec = test_bmm_bp_with_cpu_base(batch, m, n, k);
+    auto res_gpu = res_gpu_vec[0];
+    auto ni_grad_gpu = res_gpu_vec[1];
+    auto nw_grad_gpu = res_gpu_vec[2];
+    auto res_gpu_size = res_gpu->size();
+    auto res_gpu_length = res_gpu->length();
+    float *res_gpu_buffer = static_cast<float*>(::malloc(res_gpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(res_gpu_buffer),
+        res_gpu,
+        res_gpu_size
+    );
+    auto ni_grad_gpu_size = ni_grad_gpu->size();
+    auto ni_grad_gpu_length = ni_grad_gpu->length();
+    float *ni_grad_gpu_buffer = static_cast<float*>(::malloc(ni_grad_gpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(ni_grad_gpu_buffer),
+        ni_grad_gpu,
+        ni_grad_gpu_size
+    );
+    auto nw_grad_gpu_size = nw_grad_gpu->size();
+    auto nw_grad_gpu_length = nw_grad_gpu->length();
+    float *nw_grad_gpu_buffer = static_cast<float*>(::malloc(nw_grad_gpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(nw_grad_gpu_buffer),
+        nw_grad_gpu,
+        nw_grad_gpu_size
+    );
+    destruct_env();
+    assert(res_cpu_size == res_gpu_size);
+    assert(res_cpu_length == res_gpu_length);
+    assert(ni_grad_cpu_size == ni_grad_gpu_size);
+    assert(ni_grad_cpu_length == ni_grad_gpu_length);
+    assert(nw_grad_cpu_size == nw_grad_gpu_size);
+    assert(nw_grad_cpu_length == nw_grad_gpu_length);
+    
+    bool succ_res = compare_ans1_ans2(res_cpu_buffer, res_gpu_buffer, res_gpu_length, 1e-3);
+    if (!succ_res) {
+        std::cerr << RED << "res mismatch" << RESET << std::endl;
+    }
+    bool succ_ni_grad = compare_ans1_ans2(ni_grad_cpu_buffer, ni_grad_gpu_buffer, ni_grad_gpu_length, 1e-3);
+    if (!succ_ni_grad) {
+        std::cerr << RED << "ni_grad mismatch" << RESET << std::endl;
+    }
+    bool succ_nw_grad = compare_ans1_ans2(nw_grad_cpu_buffer, nw_grad_gpu_buffer, nw_grad_gpu_length, 1e-3);
+    if (!succ_nw_grad) {
+        std::cerr << RED << "nw_grad mismatch" << RESET << std::endl;
+    }
+    bool succ = succ_res && succ_ni_grad && succ_nw_grad;
+    if (succ) {
+        std::cout << GREEN << "test_bmm_bp_with_cpu succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_bmm_bp_with_cpu failed" << RESET << std::endl;
+    }
+}
+
 void test_gpu() {
     test_at();
     test_at_1();
@@ -3257,6 +3615,11 @@ void test_gpu() {
     test_masked_softmax_with_cpu();
     test_masked_softmax_bp();
     test_masked_softmax_bp_with_cpu();
+    test_bmm();
+    test_bmm_1();
+    test_bmm_2();
+    test_bmm_bp();
+    test_bmm_bp_with_cpu();
 }
 
 int main(int argc, char *argv[]) {

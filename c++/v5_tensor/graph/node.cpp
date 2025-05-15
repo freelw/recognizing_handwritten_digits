@@ -125,6 +125,28 @@ namespace graph {
         return res_node;
     }
 
+    void atImpl(Node *lhs, Node *rhs, Node *res_node) {
+        Tensor *l_tensor = lhs->get_tensor();
+        Tensor *r_tensor = rhs->get_tensor();
+        Tensor *res_tensor = res_node->get_tensor();
+        gCreateAction(
+            new AtAction(
+                l_tensor,
+                r_tensor,
+                res_tensor
+            )
+        );
+        if (lhs->is_require_grad() || rhs->is_require_grad()) {
+            res_node->require_grad();
+            if (lhs->is_require_grad()) {
+                res_node->edges.push_back(MatMulLEdge::create(lhs, rhs));
+            }
+            if (rhs->is_require_grad()) {
+                res_node->edges.push_back(MatMulREdge::create(rhs, lhs));
+            }
+        }
+    }
+
     Node *Node::at(Node *rhs) {
         Tensor *r_tensor = rhs->get_tensor();
         Tensor *l_tensor = this->get_tensor();
@@ -132,24 +154,118 @@ namespace graph {
         assert(r_tensor->get_dim() == 2);
         assert(l_tensor->get_shape()[1] == r_tensor->get_shape()[0]);
         Tensor *res_tensor = allocTensor({l_tensor->get_shape()[0], r_tensor->get_shape()[1]}, "res_at");
-        gCreateAction(
-            new AtAction(
-                this->get_tensor(),
-                rhs->get_tensor(),
-                res_tensor
-            )
+        Node *res_node = allocNode(res_tensor);
+        atImpl(this, rhs, res_node);
+        return res_node;
+    }
+
+    Node *Node::bmm(Node *rhs) {
+        Node *l_node = this;
+        Node *r_node = rhs;
+
+        if (!l_node->get_tensor()->is_contiguous()) {
+            l_node = l_node->reshape(l_node->get_tensor()->get_shape());
+        }
+        if (!r_node->get_tensor()->is_contiguous()) {
+            r_node = r_node->reshape(r_node->get_tensor()->get_shape());
+        }
+
+        auto l_tensor = l_node->get_tensor();
+        auto r_tensor = r_node->get_tensor();
+        assert(l_tensor->get_dim() == 3);
+        assert(r_tensor->get_dim() == 3);
+        assert(l_tensor->get_shape()[2] == r_tensor->get_shape()[1]);
+        
+        if (l_node->is_require_grad()) {
+            auto l_grad = l_node->get_grad();
+            assert(l_tensor->get_shape() == l_grad->get_shape());
+            assert(l_grad->get_dim() == 3);
+            assert(l_tensor->is_contiguous() == l_grad->is_contiguous());
+        }
+        
+        if (r_node->is_require_grad()) {
+            auto r_grad = r_node->get_grad();
+            assert(r_tensor->get_shape() == r_grad->get_shape());
+            assert(r_grad->get_dim() == 3);
+            assert(r_tensor->is_contiguous() == r_grad->is_contiguous());
+        }
+        std::vector<Node *> l_split_2d_nodes;
+        std::vector<Node *> r_split_2d_nodes;
+
+        l_node->split_3d(l_split_2d_nodes);
+        r_node->split_3d(r_split_2d_nodes);
+
+        assert(l_split_2d_nodes.size() == r_split_2d_nodes.size());
+        Tensor *res_tensor = allocTensor(
+            {l_tensor->get_shape()[0], l_tensor->get_shape()[1], r_tensor->get_shape()[2]},
+            "bmm_res"
         );
         Node *res_node = allocNode(res_tensor);
-        if (is_require_grad() || rhs->is_require_grad()) {
+        if (l_node->is_require_grad() || r_node->is_require_grad()) {
             res_node->require_grad();
-            if (is_require_grad()) {
-                res_node->edges.push_back(MatMulLEdge::create(this, rhs));
-            }
-            if (rhs->is_require_grad()) {
-                res_node->edges.push_back(MatMulREdge::create(rhs, this));
+        }
+        std::vector<Node *> res_nodes;
+        res_node->split_3d(res_nodes, true); // opposite = true
+        assert(res_nodes.size() == l_split_2d_nodes.size());
+        for (int i = 0; i < l_split_2d_nodes.size(); ++i) {
+            Node *l_split_2d_node = l_split_2d_nodes[i];
+            Node *r_split_2d_node = r_split_2d_nodes[i];
+            Node *res_split_2d_node = res_nodes[i];
+            atImpl(
+                l_split_2d_node,
+                r_split_2d_node,
+                res_split_2d_node
+            );
+            if (res_split_2d_node->is_require_grad()) {
+                res_node->edges.push_back(EmptyEdge::create(res_split_2d_node));
             }
         }
         return res_node;
+    }
+
+    void Node::split_3d(std::vector<Node *> &res_nodes, bool opposite) {
+        assert(this->get_tensor()->get_dim() == 3);
+        if (this->is_require_grad()) {
+            assert(this->get_grad()->get_dim() == 3);
+        }
+        auto shape = this->get_tensor()->get_shape();
+        res_nodes.clear();
+        res_nodes.reserve(shape[0]);
+        int offset = 0;
+        int block = shape[1] * shape[2];
+        for (int i = 0; i < shape[0]; ++i) {
+            Node *node = nullptr;
+            std::vector<int> new_strides;
+            new_strides.resize(2);
+            new_strides[0] = shape[2];
+            new_strides[1] = 1;
+            Tensor *new_tensor = allocTensorView(
+                this->get_tensor(),
+                {shape[1], shape[2]},
+                new_strides,
+                this->get_tensor()->get_name() + "_split_" + std::to_string(i),
+                offset
+            );
+            if (this->is_require_grad()) {
+                Tensor *new_grad = allocTensorView(
+                    this->get_grad(),
+                    {shape[1], shape[2]},
+                    new_strides,
+                    this->get_grad()->get_name() + "_split_" + std::to_string(i),
+                    offset
+                );
+                node = allocNode(new_tensor, new_grad);
+                if (opposite) { // 考虑split的操作数是结果，梯度需要从整个结果传递给子结果
+                    this->edges.push_back(EmptyEdge::create(node));
+                } else { // 考虑split的操作数是输入，梯度需要从子结果传递给整个结果
+                    node->edges.push_back(EmptyEdge::create(this));
+                }
+            } else {
+                node = allocNode(new_tensor);
+            }
+            offset += block;
+            res_nodes.push_back(node);
+        }
     }
 
     Node *Node::relu() {
@@ -264,6 +380,19 @@ namespace graph {
         Node *node = new Node(t, grad);
         nodes.push_back(node);
         return node;
+    }
+
+    void validateAllNodes() {
+        for (Node *node : nodes) {
+            if (node->is_require_grad()) {
+                bool grad_contiguous = node->get_grad()->is_contiguous();
+                bool tensor_contiguous = node->get_tensor()->is_contiguous();
+                assert(grad_contiguous == tensor_contiguous);
+                auto grad_shape = node->get_grad()->get_shape();
+                auto tensor_shape = node->get_tensor()->get_shape();
+                assert(grad_shape == tensor_shape);
+            }
+        }
     }
 
     void gAddEdge(Edge *edge) {

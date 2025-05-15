@@ -1,6 +1,7 @@
 #include "tensor.h"
 #include "backends/backend_ops.h"
 #include "graph/actions.h"
+#include "graph/node.h"
 #include <sstream>
 
 std::string TensorDtype_to_string(TensorDType dtype) {
@@ -18,13 +19,13 @@ std::string TensorDtype_to_string(TensorDType dtype) {
 }
 
 Tensor::Tensor(const std::vector<int> &_shape, const std::string &_name, TensorDType _dtype)
-    : shape(_shape), name(_name), dtype(_dtype), own_storage(true) {
+    : shape(_shape), name(_name), dtype(_dtype), own_storage(true), offset(0) {
     strides.resize(shape.size());
     strides[shape.size() - 1] = 1;
     for (int i = shape.size() - 2; i >= 0; --i) {
         strides[i] = strides[i + 1] * shape[i + 1];
     }
-    storage = new TensorStorage();
+    storage = new TensorStorage(size());
 }
 
 Tensor::Tensor(const std::vector<int> &_shape, TensorDType _dtype)
@@ -37,10 +38,27 @@ Tensor::Tensor(
     const std::vector<int> &_strides,
     const std::string &_name,
     TensorDType _dtype,
-    TensorStorage *_storage)
+    TensorStorage *_storage,
+    int _offset)
     : shape(_shape), strides(_strides),
     name(_name), dtype(_dtype),
-    own_storage(false), storage(_storage) {
+    own_storage(false), storage(_storage),
+    offset(_offset) {
+    assert(shape.size() == strides.size());
+    assert(_storage != nullptr);
+    assert(_offset >= 0);
+    assert(_offset < _storage->size);
+}
+
+Tensor::Tensor(
+    const std::vector<int> &_shape,
+    const std::vector<int> &_strides,
+    const std::string &_name,
+    TensorDType _dtype,
+    TensorStorage *_storage)
+    : Tensor(
+        _shape, _strides, _name, _dtype, _storage, 0
+    ) {
     assert(shape.size() == strides.size());
 }
 
@@ -51,7 +69,16 @@ Tensor::~Tensor() {
 }
 
 void Tensor::set_data(void *ptr) {
+    assert(ptr != nullptr);
+    assert(storage != nullptr);
+    assert(storage->data == nullptr);
     storage->data = ptr;
+}
+
+void *Tensor::get_data() const {
+    assert(storage != nullptr);
+    assert(storage->data != nullptr);
+    return static_cast<char*>(storage->data) + offset*cell_size();
 }
 
 int Tensor::size() const {
@@ -85,10 +112,19 @@ int Tensor::capacity() const {
 }
 
 Tensor *Tensor::transpose(int a, int b) {
+    auto strides = this->get_strides();
+    auto shape = this->get_shape();
+
+    assert(a < shape.size());
+    assert(b < shape.size());
+    assert(a != b);
+
+    std::swap(strides[a], strides[b]);
+    std::swap(shape[a], shape[b]);
     Tensor *transpose_view = allocTensorView(
         this,
-        {this->get_shape()[b], this->get_shape()[a]},
-        {this->get_strides()[b], this->get_strides()[a]},
+        shape,
+        strides,
         this->get_name() + "_transpose"
     );
     return transpose_view;
@@ -341,11 +377,13 @@ Tensor *allocTensor(const std::vector<int> &shape, TensorDType dtype) {
 
 Tensor *allocTensorView(
     Tensor *parent, const std::vector<int> &shape,
-    const std::vector<int> &strides, const std::string &name
+    const std::vector<int> &strides, const std::string &name,
+    int offset
 ) {
     Tensor *tensor_view = new Tensor(
         shape, strides, name,
-        parent->get_dtype(), parent->get_storage()
+        parent->get_dtype(), parent->get_storage(),
+        parent->get_offset() + offset
     );
     g_tensor_views.push_back(tensor_view);
     return tensor_view;
@@ -403,6 +441,8 @@ size_t tensors_data_capacity = 0;
 size_t grad_tensors_data_capacity = 0;
 
 void allocMemAndInitTensors() {
+
+    graph::validateAllNodes();
     assert(tensors_data == nullptr);
     assert(grad_tensors_data == nullptr);
     assert(tensors_data_capacity == 0);
