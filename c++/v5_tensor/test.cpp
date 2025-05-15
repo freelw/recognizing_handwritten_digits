@@ -2090,6 +2090,8 @@ void test_masked_softmax_bp() {
         4 * sizeof(int32_t)
     );
     gDoActions();
+    std::cout << "input : " << std::endl << *input << std::endl;
+    std::cout << "labels : " << std::endl << *labels << std::endl;
 
     float ans[16] = {
         1, 0, 0, 0,
