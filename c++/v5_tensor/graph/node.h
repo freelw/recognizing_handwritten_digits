@@ -68,6 +68,7 @@ namespace graph {
             void init_weight_gauss(float sigma, float mean);
             void init_weight_uniform(float sigma);
             void init_weight_for_dbg(float scale = 1.0f);
+            friend void atImpl(Node *lhs, Node *rhs, Node *res_node);
         private:
             Tensor *t;
             Tensor *grad;

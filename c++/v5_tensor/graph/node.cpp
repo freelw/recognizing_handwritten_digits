@@ -125,6 +125,28 @@ namespace graph {
         return res_node;
     }
 
+    void atImpl(Node *lhs, Node *rhs, Node *res_node) {
+        Tensor *l_tensor = lhs->get_tensor();
+        Tensor *r_tensor = rhs->get_tensor();
+        Tensor *res_tensor = res_node->get_tensor();
+        gCreateAction(
+            new AtAction(
+                l_tensor,
+                r_tensor,
+                res_tensor
+            )
+        );
+        if (lhs->is_require_grad() || rhs->is_require_grad()) {
+            res_node->require_grad();
+            if (lhs->is_require_grad()) {
+                res_node->edges.push_back(MatMulLEdge::create(lhs, rhs));
+            }
+            if (rhs->is_require_grad()) {
+                res_node->edges.push_back(MatMulREdge::create(rhs, lhs));
+            }
+        }
+    }
+
     Node *Node::at(Node *rhs) {
         Tensor *r_tensor = rhs->get_tensor();
         Tensor *l_tensor = this->get_tensor();
@@ -132,23 +154,8 @@ namespace graph {
         assert(r_tensor->get_dim() == 2);
         assert(l_tensor->get_shape()[1] == r_tensor->get_shape()[0]);
         Tensor *res_tensor = allocTensor({l_tensor->get_shape()[0], r_tensor->get_shape()[1]}, "res_at");
-        gCreateAction(
-            new AtAction(
-                this->get_tensor(),
-                rhs->get_tensor(),
-                res_tensor
-            )
-        );
         Node *res_node = allocNode(res_tensor);
-        if (is_require_grad() || rhs->is_require_grad()) {
-            res_node->require_grad();
-            if (is_require_grad()) {
-                res_node->edges.push_back(MatMulLEdge::create(this, rhs));
-            }
-            if (rhs->is_require_grad()) {
-                res_node->edges.push_back(MatMulREdge::create(rhs, this));
-            }
-        }
+        atImpl(this, rhs, res_node);
         return res_node;
     }
 
@@ -189,10 +196,28 @@ namespace graph {
         r_node->split_3d(r_split_2d_nodes);
 
         assert(l_split_2d_nodes.size() == r_split_2d_nodes.size());
-
-
-        assert(false);
-        return nullptr;
+        Tensor *res_tensor = allocTensor(
+            {l_tensor->get_shape()[0], l_tensor->get_shape()[1], r_tensor->get_shape()[2]},
+            "bmm_res"
+        );
+        Node *res_node = allocNode(res_tensor);
+        if (l_node->is_require_grad() || r_node->is_require_grad()) {
+            res_node->require_grad();
+        }
+        std::vector<Node *> res_nodes;
+        res_node->split_3d(res_nodes);
+        assert(res_nodes.size() == l_split_2d_nodes.size());
+        for (int i = 0; i < l_split_2d_nodes.size(); ++i) {
+            Node *l_split_2d_node = l_split_2d_nodes[i];
+            Node *r_split_2d_node = r_split_2d_nodes[i];
+            Node *res_split_2d_node = res_nodes[i];
+            atImpl(
+                l_split_2d_node,
+                r_split_2d_node,
+                res_split_2d_node
+            );
+        }
+        return res_node;
     }
 
     void Node::split_3d(std::vector<Node *> &res_nodes) {
