@@ -65,6 +65,7 @@ namespace graph {
             void split_3d(std::vector<Node *> &res_nodes, bool opposite = false);
             Node *relu();
             Node *CrossEntropy(Tensor *labels);
+            Node *div(float value);
             void init_weight_gauss(float sigma, float mean);
             void init_weight_uniform(float sigma);
             void init_weight_for_dbg(float scale = 1.0f);
@@ -335,6 +336,39 @@ namespace graph {
             void backward(Tensor *grad) override;
         private:
             Tensor *softmax_res;
+    };
+
+    class DivEdge : public Edge {
+        public:
+            static Edge* create(Node *_node, float value) {
+                Edge *edge = new DivEdge(_node, value);
+                gAddEdge(edge);
+                return edge;
+            }
+            DivEdge(Node *_node, float value)
+                : Edge(Div, _node), value(value) {}
+            virtual ~DivEdge() {}
+            void backward(Tensor *grad) override {
+                Tensor *tmp = allocTensor(
+                    node->get_tensor()->get_shape(),
+                    "div_tmp"
+                );
+                gCreateAction(
+                    new DivAction(
+                        grad,
+                        tmp,
+                        value
+                    )
+                );
+                gCreateAction(
+                    new AddEqAction(
+                        node->get_grad(),
+                        tmp
+                    )
+                );
+            }
+        private:
+            float value;
     };
 
     Node *allocNode(Tensor *t);

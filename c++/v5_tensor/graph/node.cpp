@@ -312,6 +312,24 @@ namespace graph {
         return res_node;
     }
 
+    Node *Node::div(float value) {
+        Tensor *l_tensor = this->get_tensor();
+        Tensor *res_tensor = allocTensor(l_tensor->get_shape(), "div_res");
+        gCreateAction(
+            new DivAction(
+                l_tensor,
+                res_tensor,
+                value
+            )
+        );
+        Node *res_node = allocNode(res_tensor);
+        if (is_require_grad()) {
+            res_node->require_grad();
+            res_node->edges.push_back(DivEdge::create(this, value));
+        }
+        return res_node;
+    }
+
     void Node::init_weight_gauss(float sigma, float mean) {
         gCreateAction(
             new InitWeightAction(

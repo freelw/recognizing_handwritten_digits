@@ -701,6 +701,10 @@ void CUDAOps::softmax_bacward(Tensor *target_grad, const Tensor *softmax_res, Te
     );
 }
 
+void CUDAOps::div(Tensor *dst, Tensor *src, float value) {
+    assert(false);
+}
+
 void* CUDAOps::alloc(size_t size) {
     void *ret = nullptr;
     cudaMalloc((void **)&ret, size);

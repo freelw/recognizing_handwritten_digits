@@ -277,6 +277,10 @@ void CPUOps::crossEntropyBackward(Tensor *lhs, const Tensor *labels, Tensor *max
     }
 }
 
+void CPUOps::div(Tensor *dst, Tensor *src, float value) {
+    assert(false);
+}
+
 void CPUOps::calcAllGradNorm(const std::vector<Tensor*> &grads, Tensor *norm) {
     float tmp = 0;
     for (auto grad : grads) {
