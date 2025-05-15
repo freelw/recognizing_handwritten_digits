@@ -18,13 +18,13 @@ std::string TensorDtype_to_string(TensorDType dtype) {
 }
 
 Tensor::Tensor(const std::vector<int> &_shape, const std::string &_name, TensorDType _dtype)
-    : shape(_shape), name(_name), dtype(_dtype), own_storage(true) {
+    : shape(_shape), name(_name), dtype(_dtype), own_storage(true), offset(0) {
     strides.resize(shape.size());
     strides[shape.size() - 1] = 1;
     for (int i = shape.size() - 2; i >= 0; --i) {
         strides[i] = strides[i + 1] * shape[i + 1];
     }
-    storage = new TensorStorage();
+    storage = new TensorStorage(size());
 }
 
 Tensor::Tensor(const std::vector<int> &_shape, TensorDType _dtype)
@@ -37,10 +37,27 @@ Tensor::Tensor(
     const std::vector<int> &_strides,
     const std::string &_name,
     TensorDType _dtype,
-    TensorStorage *_storage)
+    TensorStorage *_storage,
+    int _offset)
     : shape(_shape), strides(_strides),
     name(_name), dtype(_dtype),
-    own_storage(false), storage(_storage) {
+    own_storage(false), storage(_storage),
+    offset(_offset) {
+    assert(shape.size() == strides.size());
+    assert(_storage != nullptr);
+    assert(_offset >= 0);
+    assert(_offset < _storage->size);
+}
+
+Tensor::Tensor(
+    const std::vector<int> &_shape,
+    const std::vector<int> &_strides,
+    const std::string &_name,
+    TensorDType _dtype,
+    TensorStorage *_storage)
+    : Tensor(
+        _shape, _strides, _name, _dtype, _storage, 0
+    ) {
     assert(shape.size() == strides.size());
 }
 
@@ -51,7 +68,16 @@ Tensor::~Tensor() {
 }
 
 void Tensor::set_data(void *ptr) {
+    assert(ptr != nullptr);
+    assert(storage != nullptr);
+    assert(storage->data == nullptr);
     storage->data = ptr;
+}
+
+void *Tensor::get_data() const {
+    assert(storage != nullptr);
+    assert(storage->data != nullptr);
+    return static_cast<char*>(storage->data) + offset*cell_size();
 }
 
 int Tensor::size() const {

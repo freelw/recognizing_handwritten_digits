@@ -23,8 +23,9 @@ enum TensorDType {
 std::string TensorDtype_to_string(TensorDType dtype);
 
 struct TensorStorage {
-    TensorStorage() : data(nullptr) {}
+    TensorStorage(int _size) : data(nullptr), size(_size) {}
     void *data;
+    int size;
 };
 
 class Tensor {
@@ -33,11 +34,16 @@ class Tensor {
         Tensor(const std::vector<int> &_shape, TensorDType _dtype);
         Tensor(
             const std::vector<int> &_shape, const std::vector<int> &_strides,
+            const std::string &_name, TensorDType _dtype, TensorStorage *_storage,
+            int _offset
+        );
+        Tensor(
+            const std::vector<int> &_shape, const std::vector<int> &_strides,
             const std::string &_name, TensorDType _dtype, TensorStorage *_storage
         );
         virtual ~Tensor();
         virtual void set_data(void *ptr);
-        virtual void *get_data() const { return storage->data; }
+        virtual void *get_data() const;
         TensorStorage *get_storage() const { return storage; }
         virtual int size() const;
         virtual int length() const;
@@ -70,6 +76,7 @@ class Tensor {
     private:
         const bool own_storage;
         TensorStorage *storage;
+        int offset;
 };
 
 extern std::vector<Tensor*> g_tensors;
