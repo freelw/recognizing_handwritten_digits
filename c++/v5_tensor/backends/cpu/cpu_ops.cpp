@@ -508,7 +508,28 @@ void CPUOps::softmax(Tensor *lhs, Tensor *res) {
 }
 
 void CPUOps::softmax_bacward(Tensor *target_grad, const Tensor *softmax_res, Tensor *grad) {
-    assert(false);
+    assert(target_grad != nullptr);
+    assert(softmax_res != nullptr);
+    assert(grad != nullptr);
+
+    assert(target_grad->get_dtype() == FLOAT32);
+    assert(softmax_res->get_dtype() == FLOAT32);
+    assert(grad->get_dtype() == FLOAT32);
+
+    assert(target_grad->get_dim() == 3);
+    assert(softmax_res->get_dim() == 3);
+    assert(grad->get_dim() == 3);
+
+    auto t_shape = target_grad->get_shape();
+    auto s_shape = softmax_res->get_shape();
+    auto g_shape = grad->get_shape();
+
+    assert(t_shape == s_shape);
+    assert(t_shape == g_shape);
+
+    auto t_strides = target_grad->get_strides();
+    auto s_strides = softmax_res->get_strides();
+    auto g_strides = grad->get_strides();
 }
 
 void* CPUOps::alloc(size_t size) {

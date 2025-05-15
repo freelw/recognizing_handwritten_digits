@@ -2098,7 +2098,7 @@ void test_masked_softmax_bp() {
         0.213838, 0.236328, 0.261183, 0.288651
     };
 
-    bool succ = compare_res_ans_1d(res_ce->get_tensor(), ans, "res_ce");
+    bool succ = compare_res_ans_1d(res_softmax->get_tensor(), ans, "res_softmax");
     if (!succ) {
         std::cout << RED << "test_masked_softmax_bp softmax failed" << RESET << std::endl;
     } else {
