@@ -1211,7 +1211,8 @@ void test_mlp() {
 
     MLP mlp(
         784,
-        {30, 10}
+        {30, 10},
+        1.001f
     );
     Adam adam(
         mlp.get_parameters(),
