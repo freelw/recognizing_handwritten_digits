@@ -198,7 +198,7 @@ namespace graph {
         assert(l_split_2d_nodes.size() == r_split_2d_nodes.size());
         Tensor *res_tensor = allocTensor(
             {l_tensor->get_shape()[0], l_tensor->get_shape()[1], r_tensor->get_shape()[2]},
-            "bmm_res"
+            "bmm_res_" + l_tensor->get_name() + "_" + r_tensor->get_name()
         );
         Node *res_node = allocNode(res_tensor);
         if (l_node->is_require_grad() || r_node->is_require_grad()) {

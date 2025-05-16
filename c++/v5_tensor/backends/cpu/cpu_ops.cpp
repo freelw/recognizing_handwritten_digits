@@ -44,7 +44,7 @@ void CPUOps::addEq(Tensor *lhs, const Tensor *rhs) {
 
     int dim = lhs->get_dim();
 
-    assert(dim <= 2);
+    assert(dim <= 3);
     if (dim == 1) {
         for (int i = 0; i < lshape[0]; ++i) {
             static_cast<float*>(lhs->get_data())[i * lstrides[0]] += 
@@ -57,8 +57,16 @@ void CPUOps::addEq(Tensor *lhs, const Tensor *rhs) {
                     static_cast<float*>(rhs->get_data())[i * rstrides[0] + j * rstrides[1]];
             }
         }
+    } else if (dim == 3) {
+        for (int i = 0; i < lshape[0]; ++i) {
+            for (int j = 0; j < lshape[1]; ++j) {
+                for (int k = 0; k < lshape[2]; ++k) {
+                    static_cast<float*>(lhs->get_data())[i * lstrides[0] + j * lstrides[1] + k * lstrides[2]] += 
+                        static_cast<float*>(rhs->get_data())[i * rstrides[0] + j * rstrides[1] + k * rstrides[2]];
+                }
+            }
+        }
     }
-    
 }
 
 void CPUOps::expandAdd(Tensor *lhs, const Tensor *rhs, Tensor *res) {

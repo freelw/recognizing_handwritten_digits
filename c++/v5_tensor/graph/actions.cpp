@@ -378,7 +378,7 @@ void SoftmaxBackwardAction::execute() {
 
 std::string SoftmaxBackwardAction::to_string() const {
     std::ostringstream oss;
-    oss << "SoftmaxBackwardAction: softmax backward " << lhs->get_meta_info() << " with softmax result " << rhs->get_meta_info() << " to " << res->get_meta_info();
+    oss << "SoftmaxBackwardAction: softmax backward " << res->get_meta_info() << " with softmax result " << rhs->get_meta_info() << " to " << lhs->get_meta_info();
     return oss.str();
 }
 

@@ -1,4 +1,5 @@
 #include "kernel.cuh"
+#include <stdio.h>
 
 #ifndef GCC_ASAN
 
@@ -96,6 +97,25 @@ __global__ void tensor_add_eq_2d(
     } else {
         int index_M = row * stride_M0 + col * stride_M1;
         int index_N = row * stride_N0 + col * stride_N1;
+        Md[index_M] += Nd[index_N];
+    }
+}
+
+__global__ void tensor_add_eq_3d(
+    float *Md, float *Nd,
+    int M, int N, int P,
+    int stride_M0, int stride_M1, int stride_M2,
+    int stride_N0, int stride_N1, int stride_N2
+) {
+    int row = blockIdx.z * blockDim.z + threadIdx.z;
+    int col = blockIdx.y * blockDim.y + threadIdx.y;
+    int depth = blockIdx.x * blockDim.x + threadIdx.x;
+
+    if (row >= M || col >= N || depth >= P) {
+        return;
+    } else {
+        int index_M = row * stride_M0 + col * stride_M1 + depth * stride_M2;
+        int index_N = row * stride_N0 + col * stride_N1 + depth * stride_N2;
         Md[index_M] += Nd[index_N];
     }
 }

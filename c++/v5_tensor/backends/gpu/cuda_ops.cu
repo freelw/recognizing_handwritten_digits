@@ -59,11 +59,11 @@ void CUDAOps::addEq(Tensor *lhs, const Tensor *rhs) {
     auto lstrides = lhs->get_strides();
     auto rstrides = rhs->get_strides();
 
-    int rank = lhs->get_dim();
+    int dim = lhs->get_dim();
 
-    assert(rank <= 2);
+    assert(dim <= 3);
 
-    if (rank == 1) {
+    if (dim == 1) {
         dim3 gridDim(
             (lshape[0] + TILE_WIDTH - 1) / TILE_WIDTH
         );
@@ -73,7 +73,7 @@ void CUDAOps::addEq(Tensor *lhs, const Tensor *rhs) {
             (float *)rhs->get_data(),
             lshape[0]
         );
-    } else if (rank == 2) {
+    } else if (dim == 2) {
         dim3 gridDim(
             (lshape[1] + TILE_WIDTH - 1) / TILE_WIDTH,
             (lshape[0] + TILE_WIDTH - 1) / TILE_WIDTH
@@ -89,6 +89,34 @@ void CUDAOps::addEq(Tensor *lhs, const Tensor *rhs) {
             rstrides[0],
             rstrides[1]
         );
+    } else if (dim == 3) {
+        dim3 gridDim(
+            lshape[2],
+            (lshape[1] + TILE_WIDTH - 1) / TILE_WIDTH,
+            (lshape[0] + TILE_WIDTH - 1) / TILE_WIDTH
+        );
+        dim3 blockDim(1, TILE_WIDTH, TILE_WIDTH);
+        tensor_add_eq_3d<<<gridDim, blockDim>>>(
+            (float *)lhs->get_data(),
+            (float *)rhs->get_data(),
+            lshape[0],
+            lshape[1],
+            lshape[2],
+            lstrides[0],
+            lstrides[1],
+            lstrides[2],
+            rstrides[0],
+            rstrides[1],
+            rstrides[2]
+        );
+        // check cuda error
+        cudaError_t err = cudaGetLastError();
+        if (err != cudaSuccess) {
+            std::cerr << "cuda err : " << cudaGetErrorString(err) << std::endl;
+            abort();
+        }
+    } else {
+        assert(false);
     }
 }
 

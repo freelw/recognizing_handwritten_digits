@@ -4,6 +4,7 @@
 #include "optimizers/parameter.h"
 #include "optimizers/adam.h"
 #include "model/mlp.h"
+#include "module/attention.h"
 #include "common.h"
 #include <iomanip>
 #include <cmath>
@@ -2365,6 +2366,98 @@ void test_bmm_bp() {
     destruct_env();
 }
 
+void test_bmm_bp_1() {
+    construct_env();
+    Tensor *input = allocTensor({2, 3, 4}, "input");
+    auto ni = graph::allocNode(input);
+    ni->require_grad();
+    ni->init_weight_for_dbg(10000.0f);
+    Tensor *w = allocTensor({2, 6, 4}, "w");
+    auto nw = graph::allocNode(w);
+    nw->require_grad();
+    nw->init_weight_for_dbg(10000.0f);
+
+    Tensor *labels = allocTensor({6}, "labels", INT32);
+    auto n_labels = graph::allocNode(labels);
+    n_labels->init_weight_for_dbg();
+
+    auto bmm_res = ni->bmm(nw->transpose(1, 2));
+    auto ce_res = bmm_res->reshape({-1, 6})->CrossEntropy(labels);
+    insert_boundary_action();
+    zero_grad();
+    ce_res->backward();
+
+    // printAllActions();
+    allocMemAndInitTensors();
+    gDoActions();
+
+    float loss = 0;
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(&loss),
+        ce_res->get_tensor(),
+        sizeof(float)
+    );
+
+    // std::cout << "input : " << std::endl << *input << std::endl;
+    // std::cout << "w : " << std::endl << *w << std::endl;
+    // std::cout << "loss = " << loss / 6 << std::endl;
+    // std::cout << "input grad : " << std::endl << *ni->get_grad() << std::endl;
+    // std::cout << "w grad : " << std::endl << *nw->get_grad() << std::endl;
+
+    float input_grad_ans[24] = {
+        0.211754, 0.211754, 0.211754, 0.211754,
+        0.221463, 0.221463, 0.221463, 0.221463,
+        0.181381, 0.181381, 0.181381, 0.181381,
+
+        0.124644, 0.124644, 0.124644, 0.124644,
+        0.0623503, 0.0623503, 0.0623502, 0.0623502,
+        -0.00220847, -0.00220847, -0.00220847, -0.00220847
+    };
+    float w_grad_ans[48] = {
+        0.000533584, -0.0146025, -0.0297386, -0.0448748,
+        -0.0652676, -0.0798298, -0.0943921, -0.108954,
+        -0.129445, -0.143007, -0.15657, -0.170132,
+        0.0117302, 0.0169236, 0.0221169, 0.0273103,
+        0.0390515, 0.0496321, 0.0602126, 0.0707932,
+        0.143397, 0.170884, 0.198371, 0.225858,
+        3.82859e-06, 4.14294e-06, 4.45729e-06, 4.77163e-06,
+        3.50633e-05, 3.79026e-05, 4.07418e-05, 4.3581e-05,
+        0.00033834, 0.000365007, 0.000391675, 0.000418342,
+        -0.196389, -0.212785, -0.229181, -0.245577,
+        -0.220686, -0.234183, -0.24768, -0.261177,
+        0.416698, 0.446561, 0.476425, 0.506288
+    };
+
+    bool succ_input_grad = compare_res_ans_1d(
+        ni->get_grad(),
+        input_grad_ans,
+        "input_grad"
+    );
+
+    if (!succ_input_grad) {
+        std::cout << RED << "test_bmm_bp_1 input_grad failed" << RESET << std::endl;
+    }
+
+    bool succ_w_grad = compare_res_ans_1d(
+        nw->get_grad(),
+        w_grad_ans,
+        "w_grad"
+    );
+
+    if (!succ_w_grad) {
+        std::cout << RED << "test_bmm_bp_1 w_grad failed" << RESET << std::endl;
+    }
+
+    bool succ = succ_input_grad && succ_w_grad;
+
+    if (succ) {
+        std::cout << GREEN << "test_bmm_bp_1 succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_bmm_bp_1 failed" << RESET << std::endl;
+    }
+    destruct_env();
+}
+
 void test_div_bp() {
     construct_env();
     Tensor *input = allocTensor({3, 4}, "input");
@@ -2448,6 +2541,284 @@ void test_div_bp() {
     destruct_env();
 }
 
+void test_attention_bp_part() {
+    construct_env();
+    auto d = 2;
+    Tensor *querys = allocTensor({2, 1, d}, "querys");
+    Tensor *keys = allocTensor({2, 10, d}, "keys");
+    // Tensor *values = allocTensor({2, 10, 4}, "values");
+    Tensor *valid_lens = allocTensor({2}, "valid_lens", INT32);
+    
+    Tensor *labels = allocTensor({2}, "labels", INT32);
+    auto n_labels = graph::allocNode(labels);
+    n_labels->init_weight_for_dbg();
+    auto nq = graph::allocNode(querys);
+    nq->require_grad();
+    nq->init_weight_for_dbg(100.0f);
+    auto nk = graph::allocNode(keys);
+    nk->require_grad();
+    nk->init_weight_for_dbg(100.0f);
+    // auto nv = graph::allocNode(values);
+    // nv->require_grad();
+    // nv->init_weight_for_dbg(10000.0f);
+
+    auto bmm_res = nq->bmm(nk->transpose(1, 2));
+    auto softmax_res = bmm_res
+        ->div(std::sqrt(static_cast<float>(d)))
+        ->masked_softmax(valid_lens);
+    auto ce_res = softmax_res->reshape({-1, 10})->CrossEntropy(labels);
+    insert_boundary_action();
+    zero_grad();
+    ce_res->backward();
+    // printAllActions();
+    allocMemAndInitTensors();
+    int32_t valid_lens_buffer[2] = {2, 6};
+    g_backend_ops->cp_to_device(
+        valid_lens,
+        reinterpret_cast<char*>(valid_lens_buffer),
+        2 * sizeof(int32_t)
+    );
+    gDoActions();
+    float loss = 0;
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(&loss),
+        ce_res->get_tensor(),
+        sizeof(float)
+    );
+    // std::cout << "loss : " << loss/2 << std::endl;
+    // std::cout << "labels : " << std::endl << *labels << std::endl;
+    // std::cout << "query : " << std::endl << *querys << std::endl;
+    // std::cout << "keys : " << std::endl << *keys << std::endl;
+    // std::cout << "bmm_res : " << std::endl << *bmm_res->get_tensor() << std::endl;
+    // std::cout << "softmax_res : " << std::endl << *softmax_res->get_tensor() << std::endl;
+    // // print nq grad nk grad nv grad
+    // std::cout << "nq grad : " << std::endl << *nq->get_grad() << std::endl;
+    // std::cout << "nk grad : " << std::endl << *nk->get_grad() << std::endl;
+    // std::cout << "bmm grad : " << std::endl << *bmm_res->get_grad() << std::endl;
+    // std::cout << "softmax_res grad : " << std::endl << *softmax_res->get_grad() << std::endl;
+
+    float softmax_res_ans[20] = {
+        0.5, 0.5, 0, 0, 0, 0, 0, 0, 0, 0,
+        0.166664, 0.166665, 0.166666, 0.166667, 0.166668, 0.16667, 0, 0, 0, 0
+    };
+
+    float nq_grad_ans[4] = {
+        0.000176777, 0.000176777,
+        0.000176777, 0.000176777
+    };
+
+    float nk_grad_ans[40] = {
+        0, -8.83884e-05,
+        0, 8.83884e-05,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        1.96413e-05, 2.94619e-05,
+        -9.82085e-05, -0.000147313,
+        1.96416e-05, 2.94624e-05,
+        1.96417e-05, 2.94626e-05,
+        1.96419e-05, 2.94628e-05,
+        1.9642e-05, 2.9463e-05,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0
+    };
+
+    bool succ_softmax_res = compare_res_ans_1d(
+        softmax_res->get_tensor(),
+        softmax_res_ans,
+        "softmax_res"
+    );
+
+    if (!succ_softmax_res) {
+        std::cout << RED << "test_attention_bp_part softmax_res failed" << RESET << std::endl;
+    }
+
+    bool succ_nq_grad = compare_res_ans_1d(
+        nq->get_grad(),
+        nq_grad_ans,
+        "nq_grad"
+    );
+
+    if (!succ_nq_grad) {
+        std::cout << RED << "test_attention_bp_part nq_grad failed" << RESET << std::endl;
+    }
+
+    bool succ_nk_grad = compare_res_ans_1d(
+        nk->get_grad(),
+        nk_grad_ans,
+        "nk_grad"
+    );
+
+    if (!succ_nk_grad) {
+        std::cout << RED << "test_attention_bp_part nk_grad failed" << RESET << std::endl;
+    }
+
+    bool succ = succ_softmax_res && succ_nq_grad && succ_nk_grad;
+
+    if (succ) {
+        std::cout << GREEN << "test_attention_bp_part succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_attention_bp_part failed" << RESET << std::endl;
+    }
+    destruct_env();
+}
+
+void test_attention_bp() {
+    construct_env();
+    DotProductAttention attention;
+    Tensor *querys = allocTensor({2, 1, 2}, "querys");
+    Tensor *keys = allocTensor({2, 10, 2}, "keys");
+    Tensor *values = allocTensor({2, 10, 4}, "values");
+    Tensor *valid_lens = allocTensor({2}, "valid_lens", INT32);
+
+    Tensor *labels = allocTensor({2}, "labels", INT32);
+    auto n_labels = graph::allocNode(labels);
+    n_labels->init_weight_for_dbg();
+    auto nq = graph::allocNode(querys);
+    nq->require_grad();
+    // nq->init_weight_for_dbg(1000000.0f);
+    auto nk = graph::allocNode(keys);
+    nk->require_grad();
+    // nk->init_weight_for_dbg(1000000.0f);
+    auto nv = graph::allocNode(values);
+    nv->require_grad();
+    nv->init_weight_for_dbg(10000.0f);
+    int32_t valid_lens_buffer[2] = {2, 6};
+    auto softmax_res = attention.forward(nq, nk, nv, valid_lens)->softmax();
+    auto ce_res = softmax_res->reshape({-1, 4})->CrossEntropy(labels);
+    zero_grad();
+    insert_boundary_action();
+    ce_res->backward();
+    // printAllActions();
+    allocMemAndInitTensors();
+    querys->fill(10.6f);
+    keys->fill(55.5f);
+    g_backend_ops->cp_to_device(
+        valid_lens,
+        reinterpret_cast<char*>(valid_lens_buffer),
+        2 * sizeof(int32_t)
+    );
+    gDoActions();
+
+    float loss = 0;
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(&loss),
+        ce_res->get_tensor(),
+        sizeof(float)
+    );
+
+    float softmax_res_ans[8] = {
+        0.213838, 0.236328, 0.261183, 0.288651,
+        0.213838, 0.236328, 0.261183, 0.288651
+    };
+
+    float nq_grad_ans[4] = {
+        0, 0,
+        -7.42405e-09, -7.42405e-09
+    };
+
+    float nk_grad_ans[40] = {
+        -6.98057e-09, -6.98057e-09,
+        6.98057e-09, 6.98057e-09,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        2.73769e-08, 2.73769e-08,
+        -2.80314e-08, -2.80314e-08,
+        2.73769e-08, 2.73769e-08,
+        -4.67916e-08, -4.67916e-08,
+        -9.27107e-09, -9.27107e-09,
+        2.79223e-08, 2.79223e-08,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0
+    };
+
+    float nv_grad_ans[80] = {
+        -0.0425492, 0.0123817, 0.014089, 0.0160786,
+        -0.0425492, 0.0123817, 0.014089, 0.0160786,
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        0.00403754, -0.0151238, 0.00518581, 0.00590049,
+        0.00403754, -0.0151238, 0.00518581, 0.00590049,
+        0.00403754, -0.0151238, 0.00518581, 0.00590049,
+        0.00403754, -0.0151238, 0.00518581, 0.00590049,
+        0.00403754, -0.0151238, 0.00518581, 0.00590049,
+        0.00403754, -0.0151238, 0.00518581, 0.00590049,
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 0
+    };
+
+    bool succ_softmax_res = compare_res_ans_1d(
+        softmax_res->get_tensor(),
+        softmax_res_ans,
+        "softmax_res"
+    );
+
+    if (!succ_softmax_res) {
+        std::cout << RED << "test_attention_bp softmax_res failed" << RESET << std::endl;
+    }
+
+    bool succ_nq_grad = compare_res_ans_1d(
+        nq->get_grad(),
+        nq_grad_ans,
+        "nq_grad"
+    );
+
+    if (!succ_nq_grad) {
+        std::cout << RED << "test_attention_bp nq_grad failed" << RESET << std::endl;
+    }
+
+    bool succ_nk_grad = compare_res_ans_1d(
+        nk->get_grad(),
+        nk_grad_ans,
+        "nk_grad"
+    );
+
+    if (!succ_nk_grad) {
+        std::cout << RED << "test_attention_bp nk_grad failed" << RESET << std::endl;
+    }
+
+    bool nv_grad = compare_res_ans_1d(
+        nv->get_grad(),
+        nv_grad_ans,
+        "nv_grad"
+    );
+
+    if (!nv_grad) {
+        std::cout << RED << "test_attention_bp nv_grad failed" << RESET << std::endl;
+    }
+
+    bool succ = succ_softmax_res && succ_nq_grad && succ_nk_grad && nv_grad;
+    if (succ) {
+        std::cout << GREEN << "test_attention_bp succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_attention_bp failed" << RESET << std::endl;
+    }
+    destruct_env();
+}
+
 void test_cpu() {
     test_at();
     test_add();
@@ -2478,6 +2849,9 @@ void test_cpu() {
     test_bmm_2();
     test_bmm_bp();
     test_div_bp();
+    test_bmm_bp_1();
+    test_attention_bp();
+    test_attention_bp_part();
 }
 
 Tensor *test_add_with_cpu_base(int m, int n) {
@@ -3805,6 +4179,190 @@ void test_div_bp_with_cpu() {
     ::free(nw_grad_cpu_buffer);
 }
 
+std::vector<Tensor *> test_attention_bp_with_cpu_base(
+    int batch, int m, int n, int k, int p
+) {
+
+    DotProductAttention attention;
+    Tensor *querys = allocTensor({batch, m, n}, "querys");
+    Tensor *keys = allocTensor({batch, k, n}, "keys");
+    Tensor *values = allocTensor({batch, k, p}, "values");
+    Tensor *valid_lens = allocTensor({batch}, "valid_lens", INT32);
+    auto n_valied_lens = graph::allocNode(valid_lens);
+    n_valied_lens->init_weight_for_dbg();
+    Tensor *labels = allocTensor({batch*m}, "labels", INT32);
+    auto n_labels = graph::allocNode(labels);
+    n_labels->init_weight_for_dbg();
+    auto nq = graph::allocNode(querys);
+    nq->require_grad();
+    nq->init_weight_for_dbg(1000000.0f);
+    auto nk = graph::allocNode(keys);
+    nk->require_grad();
+    nk->init_weight_for_dbg(1000000.0f);
+    auto nv = graph::allocNode(values);
+    nv->require_grad();
+    nv->init_weight_for_dbg(10000.0f);
+
+    auto softmax_res = attention.forward(nq, nk, nv, valid_lens)->softmax();
+    auto ce_res = softmax_res->reshape({-1, p})->CrossEntropy(labels);
+    zero_grad();
+    
+    insert_boundary_action();
+    ce_res->backward();
+    // printAllActions();
+    allocMemAndInitTensors();
+    gDoActions();
+    // std::cout << "nq grad: " << std::endl << *nq->get_grad() << std::endl;
+    // std::cout << "softmax_res grad : " << std::endl << *softmax_res->get_grad() << std::endl;
+    // std::cout << "nk grad: " << std::endl << *nk->get_grad() << std::endl;
+    // std::cout << "nv grad: " << std::endl << *nv->get_grad() << std::endl;
+    std::vector<Tensor *> res_vec;
+    res_vec.push_back(softmax_res->get_tensor());
+    res_vec.push_back(nq->get_grad());
+    res_vec.push_back(nk->get_grad());
+    res_vec.push_back(nv->get_grad());
+    return res_vec;
+}
+
+void test_attention_bp_with_cpu() {
+
+    int m = 100;
+    int n = 400;
+    int k = 512;
+    int p = 10;
+    int batch = 32;
+    const float eps = 1e-2;
+
+    // int m = 1;
+    // int n = 1;
+    // int k = 40;
+    // int p = 10;
+    // int batch = 1;
+    use_gpu(false);
+    construct_env();
+    auto res_cpu_vec = test_attention_bp_with_cpu_base(batch, m, n, k, p);
+    auto res_cpu = res_cpu_vec[0];
+    auto nq_grad_cpu = res_cpu_vec[1];
+    auto nk_grad_cpu = res_cpu_vec[2];
+    auto nv_grad_cpu = res_cpu_vec[3];
+    auto res_cpu_size = res_cpu->size();
+    auto res_cpu_length = res_cpu->length();
+    float *res_cpu_buffer = static_cast<float*>(::malloc(res_cpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(res_cpu_buffer),
+        res_cpu,
+        res_cpu_size
+    );
+    auto nq_grad_cpu_size = nq_grad_cpu->size();
+    auto nq_grad_cpu_length = nq_grad_cpu->length();
+    float *nq_grad_cpu_buffer = static_cast<float*>(::malloc(nq_grad_cpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(nq_grad_cpu_buffer),
+        nq_grad_cpu,
+        nq_grad_cpu_size
+    );
+    // std::cout << "nq_grad_cpu : " << std::endl << *nq_grad_cpu << std::endl;
+    auto nk_grad_cpu_size = nk_grad_cpu->size();
+    auto nk_grad_cpu_length = nk_grad_cpu->length();
+    float *nk_grad_cpu_buffer = static_cast<float*>(::malloc(nk_grad_cpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(nk_grad_cpu_buffer),
+        nk_grad_cpu,
+        nk_grad_cpu_size
+    );
+    auto nv_grad_cpu_size = nv_grad_cpu->size();
+    auto nv_grad_cpu_length = nv_grad_cpu->length();
+    float *nv_grad_cpu_buffer = static_cast<float*>(::malloc(nv_grad_cpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(nv_grad_cpu_buffer),
+        nv_grad_cpu,
+        nv_grad_cpu_size
+    );
+    destruct_env();
+    use_gpu(true);
+    construct_env();
+    auto res_gpu_vec = test_attention_bp_with_cpu_base(batch, m, n, k, p);
+    auto res_gpu = res_gpu_vec[0];
+    auto nq_grad_gpu = res_gpu_vec[1];
+    auto nk_grad_gpu = res_gpu_vec[2];
+    auto nv_grad_gpu = res_gpu_vec[3];
+    auto res_gpu_size = res_gpu->size();
+    auto res_gpu_length = res_gpu->length();
+    float *res_gpu_buffer = static_cast<float*>(::malloc(res_gpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(res_gpu_buffer),
+        res_gpu,
+        res_gpu_size
+    );
+    auto nq_grad_gpu_size = nq_grad_gpu->size();
+    auto nq_grad_gpu_length = nq_grad_gpu->length();
+    float *nq_grad_gpu_buffer = static_cast<float*>(::malloc(nq_grad_gpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(nq_grad_gpu_buffer),
+        nq_grad_gpu,
+        nq_grad_gpu_size
+    );
+    // std::cout << "nq_grad_gpu : " << std::endl << *nq_grad_gpu << std::endl;
+    auto nk_grad_gpu_size = nk_grad_gpu->size();
+    auto nk_grad_gpu_length = nk_grad_gpu->length();
+    float *nk_grad_gpu_buffer = static_cast<float*>(::malloc(nk_grad_gpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(nk_grad_gpu_buffer),
+        nk_grad_gpu,
+        nk_grad_gpu_size
+    );
+    auto nv_grad_gpu_size = nv_grad_gpu->size();
+    auto nv_grad_gpu_length = nv_grad_gpu->length();
+    float *nv_grad_gpu_buffer = static_cast<float*>(::malloc(nv_grad_gpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(nv_grad_gpu_buffer),
+        nv_grad_gpu,
+        nv_grad_gpu_size
+    );
+    destruct_env();
+    assert(res_cpu_size == res_gpu_size);
+    assert(res_cpu_length == res_gpu_length);
+    assert(nq_grad_cpu_size == nq_grad_gpu_size);
+    assert(nq_grad_cpu_length == nq_grad_gpu_length);
+    assert(nk_grad_cpu_size == nk_grad_gpu_size);
+    assert(nk_grad_cpu_length == nk_grad_gpu_length);
+    assert(nv_grad_cpu_size == nv_grad_gpu_size);
+    assert(nv_grad_cpu_length == nv_grad_gpu_length);
+
+    bool succ_res = compare_ans1_ans2(res_cpu_buffer, res_gpu_buffer, res_gpu_length, eps);
+    if (!succ_res) {
+        std::cerr << RED << "res mismatch" << RESET << std::endl;
+    }
+    bool succ_nq_grad = compare_ans1_ans2(nq_grad_cpu_buffer, nq_grad_gpu_buffer, nq_grad_gpu_length, eps);
+    if (!succ_nq_grad) {
+        std::cerr << RED << "nq_grad mismatch" << RESET << std::endl;
+    }
+    bool succ_nk_grad = compare_ans1_ans2(nk_grad_cpu_buffer, nk_grad_gpu_buffer, nk_grad_gpu_length, eps);
+    if (!succ_nk_grad) {
+        std::cerr << RED << "nk_grad mismatch" << RESET << std::endl;
+    }
+    bool succ_nv_grad = compare_ans1_ans2(nv_grad_cpu_buffer, nv_grad_gpu_buffer, nv_grad_gpu_length, eps);
+    if (!succ_nv_grad) {
+        std::cerr << RED << "nv_grad mismatch" << RESET << std::endl;
+    }
+
+    bool succ = succ_res && succ_nq_grad && succ_nk_grad && succ_nv_grad;
+    if (succ) {
+        std::cout << GREEN << "test_attention_bp_with_cpu succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_attention_bp_with_cpu failed" << RESET << std::endl;
+    }
+
+    ::free(res_gpu_buffer);
+    ::free(res_cpu_buffer);
+    ::free(nq_grad_gpu_buffer);
+    ::free(nq_grad_cpu_buffer);
+    ::free(nk_grad_gpu_buffer);
+    ::free(nk_grad_cpu_buffer);
+    ::free(nv_grad_gpu_buffer);
+    ::free(nv_grad_cpu_buffer);
+}
+
 void test_gpu() {
     test_at();
     test_at_1();
@@ -3855,6 +4413,10 @@ void test_gpu() {
     test_bmm_bp_with_cpu();
     test_div_bp();
     test_div_bp_with_cpu();
+    test_bmm_bp_1();
+    test_attention_bp();
+    test_attention_bp_part();
+    test_attention_bp_with_cpu();
 }
 
 int main(int argc, char *argv[]) {

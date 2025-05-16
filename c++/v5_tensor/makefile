@@ -15,6 +15,7 @@ SRCDIR := ./tensor \
           ./backends/ \
           ./optimizers \
           ./model \
+		  ./module \
           ../utils/dataloader
 SRCS := $(wildcard *.cpp) $(wildcard $(addsuffix /*.cpp, $(SRCDIR)))
 ifeq ($(ASAN),1)

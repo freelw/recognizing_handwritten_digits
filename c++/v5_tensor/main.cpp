@@ -63,8 +63,8 @@ void train(int epochs, float lr, int batch_size) {
     auto forward_res = m.forward(n_inputs);
     auto loss = forward_res->CrossEntropy(labels);
     assert(loss->get_tensor()->size() == sizeof(float));
-    zero_grad();
     insert_boundary_action();
+    zero_grad();
     loss->backward();
     optimizer.clip_grad(1.0f);
     optimizer.step();
