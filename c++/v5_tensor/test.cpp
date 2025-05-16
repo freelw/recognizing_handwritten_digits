@@ -2366,7 +2366,86 @@ void test_bmm_bp() {
 }
 
 void test_div_bp() {
-    assert(false);
+    construct_env();
+    Tensor *input = allocTensor({3, 4}, "input");
+    auto ni = graph::allocNode(input);
+    ni->require_grad();
+    ni->init_weight_for_dbg(10000.0f);
+    Tensor *w = allocTensor({4, 6}, "w");
+    auto nw = graph::allocNode(w);
+    nw->require_grad();
+    nw->init_weight_for_dbg(10000.0f);
+
+    Tensor *labels = allocTensor({3}, "labels", INT32);
+    auto n_labels = graph::allocNode(labels);
+    n_labels->init_weight_for_dbg();
+
+    auto res = ni->at(nw)->div(10.0f);
+    auto ce_res = res->CrossEntropy(labels);
+    ce_res->backward();
+
+    allocMemAndInitTensors();
+    gDoActions();
+
+    float res_ans[18] = {
+        0.084, 0.09, 0.096, 0.102, 0.108, 0.114,
+        0.228, 0.25, 0.272, 0.294, 0.316, 0.338,
+        0.372, 0.41, 0.448, 0.486, 0.524, 0.562
+    };
+
+    float ni_grad_ans[12] = {
+        0.00839167, 0.00839167, 0.00839167, 0.00839167,
+        0.00521382, 0.00521382, 0.00521382, 0.00521382,
+        0.00203578, 0.00203578, 0.00203579, 0.00203579
+    };
+
+    float nw_grad_ans[24] = {
+        0.00613498, -0.0069954, -0.0201187, 0.00676539, 0.0069904, 0.00722331,
+        0.0043785, -0.00871737, -0.0218051, 0.00844891, 0.00871165, 0.00898342,
+        0.00262202, -0.0104393, -0.0234915, 0.0101324, 0.0104329, 0.0107435,
+        0.00086554, -0.0121613, -0.025178, 0.011816, 0.0121541, 0.0125036
+    };
+
+    bool succ_res = compare_res_ans_1d(
+        res->get_tensor(),
+        res_ans,
+        "res"
+    );
+
+    if (!succ_res) {
+        std::cout << RED << "test_div_bp res failed" << RESET << std::endl;
+    }
+
+    bool succ_ni_grad = compare_res_ans_1d(
+        ni->get_grad(),
+        ni_grad_ans,
+        "ni_grad"
+    );
+
+    if (!succ_ni_grad) {
+        std::cout << RED << "test_div_bp ni_grad failed" << RESET << std::endl;
+    }
+
+    bool succ_nw_grad = compare_res_ans_1d(
+        nw->get_grad(),
+        nw_grad_ans,
+        "nw_grad"
+    );
+
+    if (!succ_nw_grad) {
+        std::cout << RED << "test_div_bp nw_grad failed" << RESET << std::endl;
+    }
+    
+
+    bool succ = succ_res && succ_ni_grad && succ_nw_grad;
+
+    if (succ) {
+        std::cout << GREEN << "test_div_bp succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_div_bp failed" << RESET << std::endl;
+    }
+
+    destruct_env();
 }
 
 void test_cpu() {
