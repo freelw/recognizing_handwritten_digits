@@ -2541,6 +2541,135 @@ void test_div_bp() {
     destruct_env();
 }
 
+void test_attention_bp_part() {
+    construct_env();
+    auto d = 2;
+    Tensor *querys = allocTensor({2, 1, d}, "querys");
+    Tensor *keys = allocTensor({2, 10, d}, "keys");
+    // Tensor *values = allocTensor({2, 10, 4}, "values");
+    Tensor *valid_lens = allocTensor({2}, "valid_lens", INT32);
+    
+    Tensor *labels = allocTensor({2}, "labels", INT32);
+    auto n_labels = graph::allocNode(labels);
+    n_labels->init_weight_for_dbg();
+    auto nq = graph::allocNode(querys);
+    nq->require_grad();
+    nq->init_weight_for_dbg(100.0f);
+    auto nk = graph::allocNode(keys);
+    nk->require_grad();
+    nk->init_weight_for_dbg(100.0f);
+    // auto nv = graph::allocNode(values);
+    // nv->require_grad();
+    // nv->init_weight_for_dbg(10000.0f);
+
+    auto bmm_res = nq->bmm(nk->transpose(1, 2));
+    auto softmax_res = bmm_res
+        ->div(std::sqrt(static_cast<float>(d)))
+        ->masked_softmax(valid_lens);
+    auto ce_res = softmax_res->reshape({-1, 10})->CrossEntropy(labels);
+    insert_boundary_action();
+    zero_grad();
+    ce_res->backward();
+    // printAllActions();
+    allocMemAndInitTensors();
+    int32_t valid_lens_buffer[2] = {2, 6};
+    g_backend_ops->cp_to_device(
+        valid_lens,
+        reinterpret_cast<char*>(valid_lens_buffer),
+        2 * sizeof(int32_t)
+    );
+    gDoActions();
+    float loss = 0;
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(&loss),
+        ce_res->get_tensor(),
+        sizeof(float)
+    );
+    // std::cout << "loss : " << loss/2 << std::endl;
+    // std::cout << "labels : " << std::endl << *labels << std::endl;
+    // std::cout << "query : " << std::endl << *querys << std::endl;
+    // std::cout << "keys : " << std::endl << *keys << std::endl;
+    // std::cout << "bmm_res : " << std::endl << *bmm_res->get_tensor() << std::endl;
+    // std::cout << "softmax_res : " << std::endl << *softmax_res->get_tensor() << std::endl;
+    // // print nq grad nk grad nv grad
+    // std::cout << "nq grad : " << std::endl << *nq->get_grad() << std::endl;
+    // std::cout << "nk grad : " << std::endl << *nk->get_grad() << std::endl;
+    // std::cout << "bmm grad : " << std::endl << *bmm_res->get_grad() << std::endl;
+    // std::cout << "softmax_res grad : " << std::endl << *softmax_res->get_grad() << std::endl;
+
+    float softmax_res_ans[20] = {
+        0.5, 0.5, 0, 0, 0, 0, 0, 0, 0, 0,
+        0.166664, 0.166665, 0.166666, 0.166667, 0.166668, 0.16667, 0, 0, 0, 0
+    };
+
+    float nq_grad_ans[4] = {
+        0.000176777, 0.000176777,
+        0.000176777, 0.000176777
+    };
+
+    float nk_grad_ans[40] = {
+        0, -8.83884e-05,
+        0, 8.83884e-05,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        1.96413e-05, 2.94619e-05,
+        -9.82085e-05, -0.000147313,
+        1.96416e-05, 2.94624e-05,
+        1.96417e-05, 2.94626e-05,
+        1.96419e-05, 2.94628e-05,
+        1.9642e-05, 2.9463e-05,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0
+    };
+
+    bool succ_softmax_res = compare_res_ans_1d(
+        softmax_res->get_tensor(),
+        softmax_res_ans,
+        "softmax_res"
+    );
+
+    if (!succ_softmax_res) {
+        std::cout << RED << "test_attention_bp_part softmax_res failed" << RESET << std::endl;
+    }
+
+    bool succ_nq_grad = compare_res_ans_1d(
+        nq->get_grad(),
+        nq_grad_ans,
+        "nq_grad"
+    );
+
+    if (!succ_nq_grad) {
+        std::cout << RED << "test_attention_bp_part nq_grad failed" << RESET << std::endl;
+    }
+
+    bool succ_nk_grad = compare_res_ans_1d(
+        nk->get_grad(),
+        nk_grad_ans,
+        "nk_grad"
+    );
+
+    if (!succ_nk_grad) {
+        std::cout << RED << "test_attention_bp_part nk_grad failed" << RESET << std::endl;
+    }
+
+    bool succ = succ_softmax_res && succ_nq_grad && succ_nk_grad;
+
+    if (succ) {
+        std::cout << GREEN << "test_attention_bp_part succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_attention_bp_part failed" << RESET << std::endl;
+    }
+    destruct_env();
+}
+
 void test_attention_bp() {
     construct_env();
     DotProductAttention attention;
@@ -2554,10 +2683,10 @@ void test_attention_bp() {
     n_labels->init_weight_for_dbg();
     auto nq = graph::allocNode(querys);
     nq->require_grad();
-    nq->init_weight_for_dbg(1000000.0f);
+    // nq->init_weight_for_dbg(1000000.0f);
     auto nk = graph::allocNode(keys);
     nk->require_grad();
-    nk->init_weight_for_dbg(100000.0f);
+    // nk->init_weight_for_dbg(1000000.0f);
     auto nv = graph::allocNode(values);
     nv->require_grad();
     nv->init_weight_for_dbg(10000.0f);
@@ -2567,19 +2696,16 @@ void test_attention_bp() {
     zero_grad();
     insert_boundary_action();
     ce_res->backward();
-    printAllActions();
+    // printAllActions();
     allocMemAndInitTensors();
+    querys->fill(10.6f);
+    keys->fill(55.5f);
     g_backend_ops->cp_to_device(
         valid_lens,
         reinterpret_cast<char*>(valid_lens_buffer),
         2 * sizeof(int32_t)
     );
     gDoActions();
-    std::cout << "query : " << std::endl << *querys << std::endl;
-    std::cout << "keys : " << std::endl << *keys << std::endl;
-    std::cout << "values : " << std::endl << *values << std::endl;
-    std::cout << "valid_lens : " << std::endl << *valid_lens << std::endl;
-    std::cout << "labels : " << std::endl << *labels << std::endl;
 
     float loss = 0;
     g_backend_ops->cp_from_device(
@@ -2587,12 +2713,109 @@ void test_attention_bp() {
         ce_res->get_tensor(),
         sizeof(float)
     );
-    std::cout << "loss : " << loss/2 << std::endl;
-    std::cout << "softmax_res : " << std::endl << *softmax_res->get_tensor() << std::endl;
-    // print nq grad nk grad nv grad
-    std::cout << "nq grad : " << std::endl << *nq->get_grad() << std::endl;
-    std::cout << "nk grad : " << std::endl << *nk->get_grad() << std::endl;
-    std::cout << "nv grad : " << std::endl << *nv->get_grad() << std::endl;
+
+    float softmax_res_ans[8] = {
+        0.213838, 0.236328, 0.261183, 0.288651,
+        0.213838, 0.236328, 0.261183, 0.288651
+    };
+
+    float nq_grad_ans[4] = {
+        0, 0,
+        -7.42405e-09, -7.42405e-09
+    };
+
+    float nk_grad_ans[40] = {
+        -6.98057e-09, -6.98057e-09,
+        6.98057e-09, 6.98057e-09,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        2.73769e-08, 2.73769e-08,
+        -2.80314e-08, -2.80314e-08,
+        2.73769e-08, 2.73769e-08,
+        -4.67916e-08, -4.67916e-08,
+        -9.27107e-09, -9.27107e-09,
+        2.79223e-08, 2.79223e-08,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0
+    };
+
+    float nv_grad_ans[80] = {
+        -0.0425492, 0.0123817, 0.014089, 0.0160786,
+        -0.0425492, 0.0123817, 0.014089, 0.0160786,
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        0.00403754, -0.0151238, 0.00518581, 0.00590049,
+        0.00403754, -0.0151238, 0.00518581, 0.00590049,
+        0.00403754, -0.0151238, 0.00518581, 0.00590049,
+        0.00403754, -0.0151238, 0.00518581, 0.00590049,
+        0.00403754, -0.0151238, 0.00518581, 0.00590049,
+        0.00403754, -0.0151238, 0.00518581, 0.00590049,
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 0
+    };
+
+    bool succ_softmax_res = compare_res_ans_1d(
+        softmax_res->get_tensor(),
+        softmax_res_ans,
+        "softmax_res"
+    );
+
+    if (!succ_softmax_res) {
+        std::cout << RED << "test_attention_bp softmax_res failed" << RESET << std::endl;
+    }
+
+    bool succ_nq_grad = compare_res_ans_1d(
+        nq->get_grad(),
+        nq_grad_ans,
+        "nq_grad"
+    );
+
+    if (!succ_nq_grad) {
+        std::cout << RED << "test_attention_bp nq_grad failed" << RESET << std::endl;
+    }
+
+    bool succ_nk_grad = compare_res_ans_1d(
+        nk->get_grad(),
+        nk_grad_ans,
+        "nk_grad"
+    );
+
+    if (!succ_nk_grad) {
+        std::cout << RED << "test_attention_bp nk_grad failed" << RESET << std::endl;
+    }
+
+    bool nv_grad = compare_res_ans_1d(
+        nv->get_grad(),
+        nv_grad_ans,
+        "nv_grad"
+    );
+
+    if (!nv_grad) {
+        std::cout << RED << "test_attention_bp nv_grad failed" << RESET << std::endl;
+    }
+
+    bool succ = succ_softmax_res && succ_nq_grad && succ_nk_grad && nv_grad;
+    if (succ) {
+        std::cout << GREEN << "test_attention_bp succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_attention_bp failed" << RESET << std::endl;
+    }
     destruct_env();
 }
 
@@ -2627,7 +2850,7 @@ void test_cpu() {
     test_bmm_bp();
     test_div_bp();
     test_bmm_bp_1();
-    // test_attention_bp();
+    test_attention_bp();
 }
 
 Tensor *test_add_with_cpu_base(int m, int n) {
@@ -4006,7 +4229,8 @@ void test_gpu() {
     test_div_bp();
     test_div_bp_with_cpu();
     test_bmm_bp_1();
-    // test_attention_bp();
+    test_attention_bp();
+    test_attention_bp_part();
 }
 
 int main(int argc, char *argv[]) {
