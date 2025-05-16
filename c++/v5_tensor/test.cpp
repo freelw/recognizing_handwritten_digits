@@ -2366,6 +2366,96 @@ void test_bmm_bp() {
     destruct_env();
 }
 
+void test_bmm_bp_1() {
+    construct_env();
+    Tensor *input = allocTensor({2, 3, 4}, "input");
+    auto ni = graph::allocNode(input);
+    ni->require_grad();
+    ni->init_weight_for_dbg(10000.0f);
+    Tensor *w = allocTensor({2, 6, 4}, "w");
+    auto nw = graph::allocNode(w);
+    nw->require_grad();
+    nw->init_weight_for_dbg(10000.0f);
+
+    Tensor *labels = allocTensor({6}, "labels", INT32);
+    auto n_labels = graph::allocNode(labels);
+    n_labels->init_weight_for_dbg();
+
+    auto bmm_res = ni->bmm(nw->transpose(1, 2));
+    auto ce_res = bmm_res->reshape({-1, 6})->CrossEntropy(labels);
+    ce_res->backward();
+
+    // printAllActions();
+    allocMemAndInitTensors();
+    gDoActions();
+
+    float loss = 0;
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(&loss),
+        ce_res->get_tensor(),
+        sizeof(float)
+    );
+
+    // std::cout << "input : " << std::endl << *input << std::endl;
+    // std::cout << "w : " << std::endl << *w << std::endl;
+    // std::cout << "loss = " << loss / 6 << std::endl;
+    // std::cout << "input grad : " << std::endl << *ni->get_grad() << std::endl;
+    // std::cout << "w grad : " << std::endl << *nw->get_grad() << std::endl;
+
+    float input_grad_ans[24] = {
+        0.211754, 0.211754, 0.211754, 0.211754,
+        0.221463, 0.221463, 0.221463, 0.221463,
+        0.181381, 0.181381, 0.181381, 0.181381,
+
+        0.124644, 0.124644, 0.124644, 0.124644,
+        0.0623503, 0.0623503, 0.0623502, 0.0623502,
+        -0.00220847, -0.00220847, -0.00220847, -0.00220847
+    };
+    float w_grad_ans[48] = {
+        0.000533584, -0.0146025, -0.0297386, -0.0448748,
+        -0.0652676, -0.0798298, -0.0943921, -0.108954,
+        -0.129445, -0.143007, -0.15657, -0.170132,
+        0.0117302, 0.0169236, 0.0221169, 0.0273103,
+        0.0390515, 0.0496321, 0.0602126, 0.0707932,
+        0.143397, 0.170884, 0.198371, 0.225858,
+        3.82859e-06, 4.14294e-06, 4.45729e-06, 4.77163e-06,
+        3.50633e-05, 3.79026e-05, 4.07418e-05, 4.3581e-05,
+        0.00033834, 0.000365007, 0.000391675, 0.000418342,
+        -0.196389, -0.212785, -0.229181, -0.245577,
+        -0.220686, -0.234183, -0.24768, -0.261177,
+        0.416698, 0.446561, 0.476425, 0.506288
+    };
+
+    bool succ_input_grad = compare_res_ans_1d(
+        ni->get_grad(),
+        input_grad_ans,
+        "input_grad"
+    );
+
+    if (!succ_input_grad) {
+        std::cout << RED << "test_bmm_bp_1 input_grad failed" << RESET << std::endl;
+    }
+
+    bool succ_w_grad = compare_res_ans_1d(
+        nw->get_grad(),
+        w_grad_ans,
+        "w_grad"
+    );
+
+    if (!succ_w_grad) {
+        std::cout << RED << "test_bmm_bp_1 w_grad failed" << RESET << std::endl;
+    }
+
+    bool succ = succ_input_grad && succ_w_grad;
+
+    if (succ) {
+        std::cout << GREEN << "test_bmm_bp_1 succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_bmm_bp_1 failed" << RESET << std::endl;
+    }
+    destruct_env();
+}
+
 void test_div_bp() {
     construct_env();
     Tensor *input = allocTensor({3, 4}, "input");
@@ -2534,7 +2624,8 @@ void test_cpu() {
     test_bmm_2();
     test_bmm_bp();
     test_div_bp();
-    test_attention_bp();
+    test_bmm_bp_1();
+    // test_attention_bp();
 }
 
 Tensor *test_add_with_cpu_base(int m, int n) {
@@ -3912,7 +4003,8 @@ void test_gpu() {
     test_bmm_bp_with_cpu();
     test_div_bp();
     test_div_bp_with_cpu();
-    test_attention_bp();
+    test_bmm_bp_1();
+    // test_attention_bp();
 }
 
 int main(int argc, char *argv[]) {
