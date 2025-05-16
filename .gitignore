@@ -28,3 +28,4 @@ c++/v5_tensor/test
 c++/v5_tensor/nsight_out/*
 c++/v5_tensor/transformer
 c++/v5_tensor/p.log
+c++/curand/curand
