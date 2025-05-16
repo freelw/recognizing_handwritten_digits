@@ -309,7 +309,7 @@ void CPUOps::dropout(Tensor *dst, Tensor *src, float p) {
     auto length = dst->length();
     for (int i = 0; i < length; ++i) {
         static_cast<float*>(dst->get_data())[i] = 
-            static_cast<float*>(src->get_data())[i] * (dis(gen) > p ? 1 : 0);
+            static_cast<float*>(src->get_data())[i] * (dis(gen) < p ? 0 : 1);
     }
 }
 

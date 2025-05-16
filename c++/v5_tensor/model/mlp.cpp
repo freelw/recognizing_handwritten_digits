@@ -1,8 +1,12 @@
 #include "mlp.h"
 #include "graph/node.h"
 
-
-MLP::MLP(int32_t _input, const std::vector<int32_t> &_outputs, bool const_weight) {
+MLP::MLP(
+    int32_t _input,
+    const std::vector<int32_t> &_outputs,
+    float dropout_p,
+    bool const_weight
+) {
     w1 = allocTensor({ _input, _outputs[0] }, "w1");
     w2 = allocTensor({ _outputs[0], _outputs[1] }, "w2");
     bias1 = allocTensor({ _outputs[0] }, "bias1");
@@ -30,6 +34,13 @@ MLP::MLP(int32_t _input, const std::vector<int32_t> &_outputs, bool const_weight
     pw2 = allocParameter(nw2);
     pb1 = allocParameter(nb1);
     pb2 = allocParameter(nb2);
+
+    dropout = new Dropout(dropout_p);
+}
+
+MLP::~MLP() {
+    assert(dropout != nullptr);
+    delete dropout;
 }
 
 std::vector<Parameter*> MLP::get_parameters() {
@@ -42,5 +53,7 @@ graph::Node *MLP::forward(graph::Node *input) {
     x = x->relu();
     x = x->at(nw2);
     x = x->expand_add(nb2);
+    auto x_shape = x->get_tensor()->get_shape();
+    x = dropout->forward(x->reshape({ -1 }))->reshape(x_shape);
     return x;
 }

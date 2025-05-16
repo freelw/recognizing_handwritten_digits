@@ -7,6 +7,8 @@
 #include "backends/backend_ops.h"
 #include "optimizers/parameter.h"
 
+extern bool g_training;
+
 bool Action::is_do_once() const {
     return false;
 }
@@ -423,6 +425,7 @@ void gCreateAction(Action *action) {
 }
 
 void gDoActions() {
+    g_training = true;
     for (Action *action : g_actions) {
         if (action->is_do_once() && action->executed_once()) {
             continue;
@@ -433,6 +436,7 @@ void gDoActions() {
 }
 
 void gDoForwardActions() {
+    g_training = false;
     for (Action *action : g_actions) {
         if (action->is_do_once() && action->executed_once()) {
             continue;
