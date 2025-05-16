@@ -2383,6 +2383,8 @@ void test_bmm_bp_1() {
 
     auto bmm_res = ni->bmm(nw->transpose(1, 2));
     auto ce_res = bmm_res->reshape({-1, 6})->CrossEntropy(labels);
+    insert_boundary_action();
+    zero_grad();
     ce_res->backward();
 
     // printAllActions();

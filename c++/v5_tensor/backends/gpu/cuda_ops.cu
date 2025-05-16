@@ -91,11 +91,11 @@ void CUDAOps::addEq(Tensor *lhs, const Tensor *rhs) {
         );
     } else if (dim == 3) {
         dim3 gridDim(
-            (lshape[2] + TILE_WIDTH - 1) / TILE_WIDTH,
+            lshape[2],
             (lshape[1] + TILE_WIDTH - 1) / TILE_WIDTH,
             (lshape[0] + TILE_WIDTH - 1) / TILE_WIDTH
         );
-        dim3 blockDim(TILE_WIDTH, TILE_WIDTH, TILE_WIDTH);
+        dim3 blockDim(1, TILE_WIDTH, TILE_WIDTH);
         tensor_add_eq_3d<<<gridDim, blockDim>>>(
             (float *)lhs->get_data(),
             (float *)rhs->get_data(),

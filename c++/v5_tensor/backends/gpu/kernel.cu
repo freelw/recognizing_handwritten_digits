@@ -1,4 +1,5 @@
 #include "kernel.cuh"
+#include <stdio.h>
 
 #ifndef GCC_ASAN
 
