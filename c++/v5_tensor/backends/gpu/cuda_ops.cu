@@ -701,6 +701,24 @@ void CUDAOps::softmax_bacward(Tensor *target_grad, const Tensor *softmax_res, Te
     );
 }
 
+void CUDAOps::div(Tensor *dst, Tensor *src, float value) {
+    assert(dst->length() == src->length());
+    auto length = dst->length();
+
+    dim3 gridDim(
+        (length + TILE_WIDTH - 1) / TILE_WIDTH
+    );
+
+    dim3 blockDim(TILE_WIDTH);
+
+    tensor_div<<<gridDim, blockDim>>>(
+        (float *)dst->get_data(),
+        (float *)src->get_data(),
+        length,
+        value
+    );
+}
+
 void* CUDAOps::alloc(size_t size) {
     void *ret = nullptr;
     cudaMalloc((void **)&ret, size);

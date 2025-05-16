@@ -433,4 +433,16 @@ __global__ void softmax_backward_kernel(
     }
 }
 
+__global__ void tensor_div(
+    float *dst, float *src,
+    int length, float value
+) {
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index >= length) {
+        return;
+    } else {
+        dst[index] = src[index] / value;
+    }
+}
+
 #endif // GCC_ASAN

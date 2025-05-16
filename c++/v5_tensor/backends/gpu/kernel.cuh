@@ -139,6 +139,11 @@ __global__ void softmax_backward_kernel(
     int g_stride0, int g_stride1, int g_stride2
 );
 
+__global__ void tensor_div(
+    float *dst, float *src,
+    int length, float value
+);
+
 #endif // GCC_ASAN
 
 #endif // V5_TENSOR_BACKENDS_GPU_KERNEL_CUH
