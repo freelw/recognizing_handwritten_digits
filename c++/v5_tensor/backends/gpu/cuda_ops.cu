@@ -778,6 +778,8 @@ void CUDAOps::div(Tensor *dst, Tensor *src, float value) {
 void CUDAOps::dropout(Tensor *dst, Tensor *src, float p) {
     assert(dst->size() == src->size());
     assert(!dst->is_shared_with(src));
+    assert(dst->get_dim() == src->get_dim());
+    assert(dst->get_dim() == 1);
     CURAND_CHECK(curandGenerateUniform(gen, reinterpret_cast<float*>(dst->get_data()), dst->length()));
     dim3 gridDim(
         (dst->length() + TILE_WIDTH - 1) / TILE_WIDTH
