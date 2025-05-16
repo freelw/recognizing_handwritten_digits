@@ -1,6 +1,16 @@
 #include "attention.h"
 #include <cmath>
 
+DotProductAttention::DotProductAttention(float p)
+    :  attention_weights(nullptr) {
+    dropout = new Dropout(p);
+}
+
+DotProductAttention::~DotProductAttention() {
+    assert(dropout != nullptr);
+    delete dropout;
+}
+
 graph::Node *DotProductAttention::forward(
     graph::Node *query, graph::Node *key,
     graph::Node *value, Tensor *valid_lens
@@ -29,5 +39,5 @@ graph::Node *DotProductAttention::forward(
         ->div(std::sqrt(static_cast<float>(d)))
         ->masked_softmax(valid_lens);
     // todo : dropout
-    return attention_weights->bmm(value);
+    return dropout->forward(attention_weights)->bmm(value);
 }

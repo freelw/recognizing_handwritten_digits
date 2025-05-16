@@ -2,6 +2,7 @@
 #include "optimizers/parameter.h"
 
 BackendOps *g_backend_ops = nullptr;
+bool g_training = true;
 
 bool b_use_gpu = false;
 
