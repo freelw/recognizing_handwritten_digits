@@ -465,4 +465,16 @@ __global__ void tensor_div(
     }
 }
 
+__global__ void dropout_kernel(
+    float *dst, float *src,
+    int length, float p
+) {
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index >= length) {
+        return;
+    } else {
+        dst[index] = dst[index] < p ? 0.0f : src[index];
+    }
+}
+
 #endif // GCC_ASAN

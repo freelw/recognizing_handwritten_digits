@@ -6,10 +6,10 @@ DIR_INC = -I./ \
 DIR_LIB = -L./
 TARGET = curand
 CUDA_TOOLKIT := $(shell dirname $$(command -v nvcc))/..
-LIBS         := -L$(CUDA_TOOLKIT)/lib64 -lcudart -lcurand
+CUDA_LIBS         := -L$(CUDA_TOOLKIT)/lib64 -lcudart -lcurand
 
 
-LDFLAGS = -lstdc++ $(LIBS)
+LDFLAGS = -lstdc++ $(CUDA_LIBS)
 SRCDIR := ./tensor \
           ./graph \
           ./backends/cpu \

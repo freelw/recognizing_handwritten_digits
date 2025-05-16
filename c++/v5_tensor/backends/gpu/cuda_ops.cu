@@ -6,6 +6,34 @@
 #include <random>
 #include <chrono>
 
+// CUDA API error checking
+#define CUDA_CHECK(err)                                                        \
+  do {                                                                         \
+    cudaError_t err_ = (err);                                                  \
+    if (err_ != cudaSuccess) {                                                 \
+      std::printf("CUDA error %d at %s:%d\n", err_, __FILE__, __LINE__);       \
+      throw std::runtime_error("CUDA error");                                  \
+    }                                                                          \
+  } while (0)
+
+// curand API error checking
+#define CURAND_CHECK(err)                                                      \
+  do {                                                                         \
+    curandStatus_t err_ = (err);                                               \
+    if (err_ != CURAND_STATUS_SUCCESS) {                                       \
+      std::printf("curand error %d at %s:%d\n", err_, __FILE__, __LINE__);     \
+      throw std::runtime_error("curand error");                                \
+    }                                                                          \
+  } while (0)
+
+CUDAOps::CUDAOps() {
+    curandOrdering_t order = CURAND_ORDERING_PSEUDO_DEFAULT;
+    const unsigned long long seed = std::chrono::system_clock::now().time_since_epoch().count();
+    CURAND_CHECK(curandCreateGenerator(&gen, CURAND_RNG_PSEUDO_MT19937));
+    CURAND_CHECK(curandSetGeneratorOrdering(gen, order));
+    CURAND_CHECK(curandSetPseudoRandomGeneratorSeed(gen, seed));
+}
+
 void CUDAOps::add(Tensor *lhs, const Tensor *rhs, Tensor *res) {
     assert(lhs != nullptr);
     assert(rhs != nullptr);
@@ -750,8 +778,17 @@ void CUDAOps::div(Tensor *dst, Tensor *src, float value) {
 void CUDAOps::dropout(Tensor *dst, Tensor *src, float p) {
     assert(dst->size() == src->size());
     assert(!dst->is_shared_with(src));
-    // fix me with curandGenerateUniform
-    this->cp_device_to_device(dst->get_data(), src->get_data(), dst->size());
+    CURAND_CHECK(curandGenerateUniform(gen, reinterpret_cast<float*>(dst->get_data()), dst->length()));
+    dim3 gridDim(
+        (dst->length() + TILE_WIDTH - 1) / TILE_WIDTH
+    );
+    dim3 blockDim(TILE_WIDTH);
+    dropout_kernel<<<gridDim, blockDim>>>(
+        (float *)dst->get_data(),
+        (float *)src->get_data(),
+        dst->length(),
+        p
+    );
 }
 
 void* CUDAOps::alloc(size_t size) {

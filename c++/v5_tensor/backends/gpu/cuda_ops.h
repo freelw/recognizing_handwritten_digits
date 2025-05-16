@@ -1,14 +1,15 @@
 #ifndef CUDA_OPS_H
 #define CUDA_OPS_H
 
-
 #include "backends/backend_ops.h"
+#include <cuda_runtime.h>
+#include <curand.h>
 
 #ifndef GCC_ASAN
 
 class CUDAOps : public BackendOps {
     public:
-        CUDAOps() = default;
+        CUDAOps();
         ~CUDAOps() override = default;
         void add(Tensor *lhs, const Tensor *rhs, Tensor *res) override;
         void addEq(Tensor *lhs, const Tensor *rhs) override;
@@ -46,6 +47,9 @@ class CUDAOps : public BackendOps {
         void free(void* ptr) override;
         void cp_to_device(Tensor *dst_tensor, char *src, size_t size) override;
         void cp_from_device(char *dst, const Tensor *src_tensor, size_t size) override;
+    private:
+        curandGenerator_t gen;
+
 };
 
 #endif // GCC_ASAN

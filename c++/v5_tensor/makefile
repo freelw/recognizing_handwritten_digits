@@ -7,7 +7,9 @@ DIR_LIB = -L./
 TARGET = mnist_cuda
 TEST_TARGET = test
 TRANSFORMER_TARGET = transformer
-LDFLAGS = -lstdc++
+CUDA_TOOLKIT := $(shell dirname $$(command -v nvcc))/..
+CUDA_LIBS := -L$(CUDA_TOOLKIT)/lib64 -lcudart -lcurand
+LDFLAGS = -lstdc++ $(CUDA_LIBS)
 SRCDIR := ./tensor \
           ./graph \
           ./backends/cpu \
