@@ -22,12 +22,12 @@ graph::Node *DotProductAttention::forward(
     // k v validate
     assert(k_shape[1] == v_shape[1]);
 
-    auto q_length = query->get_tensor()->length();
-    auto d = q_shape[q_length-1];
+    auto q_dim = query->get_tensor()->get_dim();
+    auto d = q_shape[q_dim-1];
 
-    auto scores = query->bmm(key->transpose(1, 2))
-        ->div(std::sqrt(static_cast<float>(d)));
-    attention_weights = scores->masked_softmax(valid_lens);
+    attention_weights = query->bmm(key->transpose(1, 2))
+        ->div(std::sqrt(static_cast<float>(d)))
+        ->masked_softmax(valid_lens);
     // todo : dropout
     return attention_weights->bmm(value);
 }

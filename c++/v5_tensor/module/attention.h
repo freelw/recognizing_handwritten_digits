@@ -5,14 +5,13 @@
 
 class DotProductAttention {
     public:
-        DotProductAttention() {
-
-        }
+        DotProductAttention()
+        : attention_weights(nullptr) {}
         graph::Node *forward(
             graph::Node *query, graph::Node *key,
             graph::Node *value, Tensor *valid_lens
         );
-    private:
+    public:
         graph::Node *attention_weights;
 };
 

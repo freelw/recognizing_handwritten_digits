@@ -4,6 +4,7 @@
 #include "optimizers/parameter.h"
 #include "optimizers/adam.h"
 #include "model/mlp.h"
+#include "module/attention.h"
 #include "common.h"
 #include <iomanip>
 #include <cmath>
@@ -2448,6 +2449,46 @@ void test_div_bp() {
     destruct_env();
 }
 
+void test_attention_bp() {
+    construct_env();
+    DotProductAttention attention;
+    Tensor *querys = allocTensor({2, 1, 2}, "querys");
+    Tensor *keys = allocTensor({2, 10, 2}, "keys");
+    Tensor *values = allocTensor({2, 10, 4}, "values");
+    Tensor *valid_lens = allocTensor({2}, "valid_lens", INT32);
+
+    Tensor *labels = allocTensor({2}, "labels", INT32);
+    auto n_labels = graph::allocNode(labels);
+    n_labels->init_weight_for_dbg();
+    auto nq = graph::allocNode(querys);
+    nq->require_grad();
+    nq->init_weight_for_dbg(10000.0f);
+    auto nk = graph::allocNode(keys);
+    nk->require_grad();
+    nk->init_weight_for_dbg(10000.0f);
+    auto nv = graph::allocNode(values);
+    nv->require_grad();
+    nv->init_weight_for_dbg(10000.0f);
+    int32_t valid_lens_buffer[2] = {2, 6};
+    auto res = attention.forward(nq, nk, nv, valid_lens)->softmax();
+    auto ce_res = res->reshape({-1, 4})->CrossEntropy(labels);
+    ce_res->backward();
+    printAllActions();
+    allocMemAndInitTensors();
+    g_backend_ops->cp_to_device(
+        valid_lens,
+        reinterpret_cast<char*>(valid_lens_buffer),
+        2 * sizeof(int32_t)
+    );
+    gDoActions();
+    std::cout << "res : " << std::endl << *res->get_tensor() << std::endl;
+    // print nq grad nk grad nv grad
+    std::cout << "nq grad : " << std::endl << *nq->get_grad() << std::endl;
+    std::cout << "nk grad : " << std::endl << *nk->get_grad() << std::endl;
+    std::cout << "nv grad : " << std::endl << *nv->get_grad() << std::endl;
+    destruct_env();
+}
+
 void test_cpu() {
     test_at();
     test_add();
@@ -2478,6 +2519,7 @@ void test_cpu() {
     test_bmm_2();
     test_bmm_bp();
     test_div_bp();
+    test_attention_bp();
 }
 
 Tensor *test_add_with_cpu_base(int m, int n) {
@@ -3855,6 +3897,7 @@ void test_gpu() {
     test_bmm_bp_with_cpu();
     test_div_bp();
     test_div_bp_with_cpu();
+    test_attention_bp();
 }
 
 int main(int argc, char *argv[]) {

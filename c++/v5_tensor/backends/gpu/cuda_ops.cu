@@ -59,11 +59,11 @@ void CUDAOps::addEq(Tensor *lhs, const Tensor *rhs) {
     auto lstrides = lhs->get_strides();
     auto rstrides = rhs->get_strides();
 
-    int rank = lhs->get_dim();
+    int dim = lhs->get_dim();
 
-    assert(rank <= 2);
+    assert(dim <= 2);
 
-    if (rank == 1) {
+    if (dim == 1) {
         dim3 gridDim(
             (lshape[0] + TILE_WIDTH - 1) / TILE_WIDTH
         );
@@ -73,7 +73,7 @@ void CUDAOps::addEq(Tensor *lhs, const Tensor *rhs) {
             (float *)rhs->get_data(),
             lshape[0]
         );
-    } else if (rank == 2) {
+    } else if (dim == 2) {
         dim3 gridDim(
             (lshape[1] + TILE_WIDTH - 1) / TILE_WIDTH,
             (lshape[0] + TILE_WIDTH - 1) / TILE_WIDTH
