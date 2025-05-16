@@ -2850,6 +2850,7 @@ void test_dropout() {
     } else {
         std::cout << RED << "test_dropout failed" << RESET << std::endl;
     }
+    ::free(res_buffer);
     destruct_env();
 }
 
