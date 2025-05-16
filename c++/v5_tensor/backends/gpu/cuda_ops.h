@@ -2,10 +2,10 @@
 #define CUDA_OPS_H
 
 #include "backends/backend_ops.h"
-#include <cuda_runtime.h>
-#include <curand.h>
 
 #ifndef GCC_ASAN
+#include <cuda_runtime.h>
+#include <curand.h>
 
 class CUDAOps : public BackendOps {
     public:
