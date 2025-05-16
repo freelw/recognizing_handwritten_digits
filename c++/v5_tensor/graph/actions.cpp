@@ -394,6 +394,18 @@ std::string DivAction::to_string() const {
     return oss.str();
 }
 
+void DropoutAction::execute() {
+    assert(lhs != nullptr);
+    assert(res != nullptr);
+    g_backend_ops->dropout(res, lhs, p);
+}
+
+std::string DropoutAction::to_string() const {
+    std::ostringstream oss;
+    oss << "DropoutAction: dropout " << lhs->get_meta_info() << " to " << res->get_meta_info() << " with rate " << p;
+    return oss.str();
+}
+
 std::vector<Action*> g_actions;
 
 std::vector<Action *> getOnceActions() {

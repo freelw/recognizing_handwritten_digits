@@ -5,6 +5,8 @@
 #include <vector>
 #include "actions.h"
 
+class Dropout;
+
 namespace graph {
     class Edge;
     void gAddEdge(Edge *edge);
@@ -76,6 +78,7 @@ namespace graph {
             std::vector<Edge *> edges;
             int ref_cnt;
             bool b_require_grad;
+        friend class ::Dropout;
     };
 
     enum OpType {
@@ -369,6 +372,26 @@ namespace graph {
             }
         private:
             float value;
+    };
+
+    class DropoutEdge : public Edge {
+        public:
+            static Edge* create(Node *_node) {
+                Edge *edge = new DropoutEdge(_node);
+                gAddEdge(edge);
+                return edge;
+            }
+            DropoutEdge(Node *_node)
+                : Edge(Empty, _node) {}
+            virtual ~DropoutEdge() {}
+            void backward(Tensor *grad) override {
+                gCreateAction(
+                    new AddEqAction(
+                        node->get_grad(),
+                        grad
+                    )
+                );
+            }
     };
 
     Node *allocNode(Tensor *t);

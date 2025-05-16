@@ -2,10 +2,12 @@
 #define CPU_OPS_H
 
 #include "backends/backend_ops.h"
+#include <random>
+#include <chrono>
 
 class CPUOps : public BackendOps {
     public:
-        CPUOps() = default;
+        CPUOps();
         ~CPUOps() override = default;
         void add(Tensor *lhs, const Tensor *rhs, Tensor *res) override;
         void addEq(Tensor *lhs, const Tensor *rhs) override;
@@ -34,6 +36,7 @@ class CPUOps : public BackendOps {
         void softmax(Tensor *lhs, Tensor *res) override;
         void softmax_bacward(Tensor *target_grad, const Tensor *softmax_res, Tensor *grad) override;
         void div(Tensor *dst, Tensor *src, float value) override;
+        void dropout(Tensor *dst, Tensor *src, float p) override;
 
         // Memory management
         void* alloc(size_t size) override;
@@ -42,6 +45,9 @@ class CPUOps : public BackendOps {
         void free(void* ptr) override;
         void cp_to_device(Tensor *dst_tensor, char *src, size_t size) override;
         void cp_from_device(char *dst, const Tensor *src_tensor, size_t size) override;
+    private:
+        std::mt19937 gen;
+        std::uniform_real_distribution<> dis;
 };
 
 #endif

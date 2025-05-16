@@ -4,6 +4,12 @@
 #include <random>
 #include <chrono>
 
+CPUOps::CPUOps() {
+    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+    gen = std::mt19937(seed);
+    dis = std::uniform_real_distribution<>(0, 1);
+}
+
 void CPUOps::add(Tensor *lhs, const Tensor *rhs, Tensor *res) {
     assert(lhs != nullptr);
     assert(rhs != nullptr);
@@ -291,6 +297,19 @@ void CPUOps::div(Tensor *dst, Tensor *src, float value) {
     for (int i = 0; i < length; ++i) {
         static_cast<float*>(dst->get_data())[i] = 
             static_cast<float*>(src->get_data())[i] / value;
+    }
+}
+
+void CPUOps::dropout(Tensor *dst, Tensor *src, float p) {
+    assert(dst != nullptr);
+    assert(src != nullptr);
+    assert(dst->length() == src->length());
+    assert(dst->get_dim() == src->get_dim());
+    assert(dst->get_dim() == 1);
+    auto length = dst->length();
+    for (int i = 0; i < length; ++i) {
+        static_cast<float*>(dst->get_data())[i] = 
+            static_cast<float*>(src->get_data())[i] * (dis(gen) > p ? 1 : 0);
     }
 }
 

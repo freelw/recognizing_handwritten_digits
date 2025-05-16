@@ -34,6 +34,7 @@ class BackendOps {
         virtual void softmax(Tensor *lhs, Tensor *res) = 0;
         virtual void softmax_bacward(Tensor *target_grad, const Tensor *softmax_res, Tensor *grad) = 0;
         virtual void div(Tensor *dst, Tensor *src, float value) = 0;
+        virtual void dropout(Tensor *dst, Tensor *src, float p) = 0;
         
         // Memory management
         virtual void *alloc(size_t size) = 0;

@@ -261,6 +261,16 @@ class DivAction : public Action {
         float value;
 };
 
+class DropoutAction : public Action {
+    public:
+        DropoutAction(Tensor *dst, Tensor *src, float _p)
+            : Action(src, nullptr, dst), p(_p) {}
+        void execute() override;
+        std::string to_string() const override;
+    private:
+        float p;
+};
+
 std::vector<Action *> getOnceActions();
 void gCreateAction(Action *action);
 void gDoActions();
