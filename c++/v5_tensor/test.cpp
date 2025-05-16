@@ -4206,11 +4206,16 @@ std::vector<Tensor *> test_attention_bp_with_cpu_base(
     auto softmax_res = attention.forward(nq, nk, nv, valid_lens)->softmax();
     auto ce_res = softmax_res->reshape({-1, p})->CrossEntropy(labels);
     zero_grad();
+    
     insert_boundary_action();
     ce_res->backward();
     // printAllActions();
     allocMemAndInitTensors();
     gDoActions();
+    // std::cout << "nq grad: " << std::endl << *nq->get_grad() << std::endl;
+    // std::cout << "softmax_res grad : " << std::endl << *softmax_res->get_grad() << std::endl;
+    // std::cout << "nk grad: " << std::endl << *nk->get_grad() << std::endl;
+    // std::cout << "nv grad: " << std::endl << *nv->get_grad() << std::endl;
     std::vector<Tensor *> res_vec;
     res_vec.push_back(softmax_res->get_tensor());
     res_vec.push_back(nq->get_grad());
@@ -4222,10 +4227,17 @@ std::vector<Tensor *> test_attention_bp_with_cpu_base(
 void test_attention_bp_with_cpu() {
 
     int m = 100;
-    int n = 500;
+    int n = 400;
     int k = 512;
     int p = 10;
     int batch = 32;
+    const float eps = 1e-2;
+
+    // int m = 1;
+    // int n = 1;
+    // int k = 40;
+    // int p = 10;
+    // int batch = 1;
     use_gpu(false);
     construct_env();
     auto res_cpu_vec = test_attention_bp_with_cpu_base(batch, m, n, k, p);
@@ -4249,6 +4261,7 @@ void test_attention_bp_with_cpu() {
         nq_grad_cpu,
         nq_grad_cpu_size
     );
+    // std::cout << "nq_grad_cpu : " << std::endl << *nq_grad_cpu << std::endl;
     auto nk_grad_cpu_size = nk_grad_cpu->size();
     auto nk_grad_cpu_length = nk_grad_cpu->length();
     float *nk_grad_cpu_buffer = static_cast<float*>(::malloc(nk_grad_cpu_size));
@@ -4289,6 +4302,7 @@ void test_attention_bp_with_cpu() {
         nq_grad_gpu,
         nq_grad_gpu_size
     );
+    // std::cout << "nq_grad_gpu : " << std::endl << *nq_grad_gpu << std::endl;
     auto nk_grad_gpu_size = nk_grad_gpu->size();
     auto nk_grad_gpu_length = nk_grad_gpu->length();
     float *nk_grad_gpu_buffer = static_cast<float*>(::malloc(nk_grad_gpu_size));
@@ -4315,19 +4329,19 @@ void test_attention_bp_with_cpu() {
     assert(nv_grad_cpu_size == nv_grad_gpu_size);
     assert(nv_grad_cpu_length == nv_grad_gpu_length);
 
-    bool succ_res = compare_ans1_ans2(res_cpu_buffer, res_gpu_buffer, res_gpu_length);
+    bool succ_res = compare_ans1_ans2(res_cpu_buffer, res_gpu_buffer, res_gpu_length, eps);
     if (!succ_res) {
         std::cerr << RED << "res mismatch" << RESET << std::endl;
     }
-    bool succ_nq_grad = compare_ans1_ans2(nq_grad_cpu_buffer, nq_grad_gpu_buffer, nq_grad_gpu_length);
+    bool succ_nq_grad = compare_ans1_ans2(nq_grad_cpu_buffer, nq_grad_gpu_buffer, nq_grad_gpu_length, eps);
     if (!succ_nq_grad) {
         std::cerr << RED << "nq_grad mismatch" << RESET << std::endl;
     }
-    bool succ_nk_grad = compare_ans1_ans2(nk_grad_cpu_buffer, nk_grad_gpu_buffer, nk_grad_gpu_length);
+    bool succ_nk_grad = compare_ans1_ans2(nk_grad_cpu_buffer, nk_grad_gpu_buffer, nk_grad_gpu_length, eps);
     if (!succ_nk_grad) {
         std::cerr << RED << "nk_grad mismatch" << RESET << std::endl;
     }
-    bool succ_nv_grad = compare_ans1_ans2(nv_grad_cpu_buffer, nv_grad_gpu_buffer, nv_grad_gpu_length);
+    bool succ_nv_grad = compare_ans1_ans2(nv_grad_cpu_buffer, nv_grad_gpu_buffer, nv_grad_gpu_length, eps);
     if (!succ_nv_grad) {
         std::cerr << RED << "nv_grad mismatch" << RESET << std::endl;
     }

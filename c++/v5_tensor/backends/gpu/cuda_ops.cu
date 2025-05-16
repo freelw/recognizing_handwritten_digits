@@ -109,6 +109,12 @@ void CUDAOps::addEq(Tensor *lhs, const Tensor *rhs) {
             rstrides[1],
             rstrides[2]
         );
+        // check cuda error
+        cudaError_t err = cudaGetLastError();
+        if (err != cudaSuccess) {
+            std::cerr << "cuda err : " << cudaGetErrorString(err) << std::endl;
+            abort();
+        }
     } else {
         assert(false);
     }
