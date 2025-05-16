@@ -2851,6 +2851,7 @@ void test_cpu() {
     test_div_bp();
     test_bmm_bp_1();
     test_attention_bp();
+    test_attention_bp_part();
 }
 
 Tensor *test_add_with_cpu_base(int m, int n) {
@@ -4178,6 +4179,176 @@ void test_div_bp_with_cpu() {
     ::free(nw_grad_cpu_buffer);
 }
 
+std::vector<Tensor *> test_attention_bp_with_cpu_base(
+    int batch, int m, int n, int k, int p
+) {
+
+    DotProductAttention attention;
+    Tensor *querys = allocTensor({batch, m, n}, "querys");
+    Tensor *keys = allocTensor({batch, k, n}, "keys");
+    Tensor *values = allocTensor({batch, k, p}, "values");
+    Tensor *valid_lens = allocTensor({batch}, "valid_lens", INT32);
+    auto n_valied_lens = graph::allocNode(valid_lens);
+    n_valied_lens->init_weight_for_dbg();
+    Tensor *labels = allocTensor({batch*m}, "labels", INT32);
+    auto n_labels = graph::allocNode(labels);
+    n_labels->init_weight_for_dbg();
+    auto nq = graph::allocNode(querys);
+    nq->require_grad();
+    nq->init_weight_for_dbg(1000000.0f);
+    auto nk = graph::allocNode(keys);
+    nk->require_grad();
+    nk->init_weight_for_dbg(1000000.0f);
+    auto nv = graph::allocNode(values);
+    nv->require_grad();
+    nv->init_weight_for_dbg(10000.0f);
+
+    auto softmax_res = attention.forward(nq, nk, nv, valid_lens)->softmax();
+    auto ce_res = softmax_res->reshape({-1, p})->CrossEntropy(labels);
+    zero_grad();
+    insert_boundary_action();
+    ce_res->backward();
+    // printAllActions();
+    allocMemAndInitTensors();
+    gDoActions();
+    std::vector<Tensor *> res_vec;
+    res_vec.push_back(softmax_res->get_tensor());
+    res_vec.push_back(nq->get_grad());
+    res_vec.push_back(nk->get_grad());
+    res_vec.push_back(nv->get_grad());
+    return res_vec;
+}
+
+void test_attention_bp_with_cpu() {
+
+    int m = 100;
+    int n = 500;
+    int k = 512;
+    int p = 10;
+    int batch = 32;
+    use_gpu(false);
+    construct_env();
+    auto res_cpu_vec = test_attention_bp_with_cpu_base(batch, m, n, k, p);
+    auto res_cpu = res_cpu_vec[0];
+    auto nq_grad_cpu = res_cpu_vec[1];
+    auto nk_grad_cpu = res_cpu_vec[2];
+    auto nv_grad_cpu = res_cpu_vec[3];
+    auto res_cpu_size = res_cpu->size();
+    auto res_cpu_length = res_cpu->length();
+    float *res_cpu_buffer = static_cast<float*>(::malloc(res_cpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(res_cpu_buffer),
+        res_cpu,
+        res_cpu_size
+    );
+    auto nq_grad_cpu_size = nq_grad_cpu->size();
+    auto nq_grad_cpu_length = nq_grad_cpu->length();
+    float *nq_grad_cpu_buffer = static_cast<float*>(::malloc(nq_grad_cpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(nq_grad_cpu_buffer),
+        nq_grad_cpu,
+        nq_grad_cpu_size
+    );
+    auto nk_grad_cpu_size = nk_grad_cpu->size();
+    auto nk_grad_cpu_length = nk_grad_cpu->length();
+    float *nk_grad_cpu_buffer = static_cast<float*>(::malloc(nk_grad_cpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(nk_grad_cpu_buffer),
+        nk_grad_cpu,
+        nk_grad_cpu_size
+    );
+    auto nv_grad_cpu_size = nv_grad_cpu->size();
+    auto nv_grad_cpu_length = nv_grad_cpu->length();
+    float *nv_grad_cpu_buffer = static_cast<float*>(::malloc(nv_grad_cpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(nv_grad_cpu_buffer),
+        nv_grad_cpu,
+        nv_grad_cpu_size
+    );
+    destruct_env();
+    use_gpu(true);
+    construct_env();
+    auto res_gpu_vec = test_attention_bp_with_cpu_base(batch, m, n, k, p);
+    auto res_gpu = res_gpu_vec[0];
+    auto nq_grad_gpu = res_gpu_vec[1];
+    auto nk_grad_gpu = res_gpu_vec[2];
+    auto nv_grad_gpu = res_gpu_vec[3];
+    auto res_gpu_size = res_gpu->size();
+    auto res_gpu_length = res_gpu->length();
+    float *res_gpu_buffer = static_cast<float*>(::malloc(res_gpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(res_gpu_buffer),
+        res_gpu,
+        res_gpu_size
+    );
+    auto nq_grad_gpu_size = nq_grad_gpu->size();
+    auto nq_grad_gpu_length = nq_grad_gpu->length();
+    float *nq_grad_gpu_buffer = static_cast<float*>(::malloc(nq_grad_gpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(nq_grad_gpu_buffer),
+        nq_grad_gpu,
+        nq_grad_gpu_size
+    );
+    auto nk_grad_gpu_size = nk_grad_gpu->size();
+    auto nk_grad_gpu_length = nk_grad_gpu->length();
+    float *nk_grad_gpu_buffer = static_cast<float*>(::malloc(nk_grad_gpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(nk_grad_gpu_buffer),
+        nk_grad_gpu,
+        nk_grad_gpu_size
+    );
+    auto nv_grad_gpu_size = nv_grad_gpu->size();
+    auto nv_grad_gpu_length = nv_grad_gpu->length();
+    float *nv_grad_gpu_buffer = static_cast<float*>(::malloc(nv_grad_gpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(nv_grad_gpu_buffer),
+        nv_grad_gpu,
+        nv_grad_gpu_size
+    );
+    destruct_env();
+    assert(res_cpu_size == res_gpu_size);
+    assert(res_cpu_length == res_gpu_length);
+    assert(nq_grad_cpu_size == nq_grad_gpu_size);
+    assert(nq_grad_cpu_length == nq_grad_gpu_length);
+    assert(nk_grad_cpu_size == nk_grad_gpu_size);
+    assert(nk_grad_cpu_length == nk_grad_gpu_length);
+    assert(nv_grad_cpu_size == nv_grad_gpu_size);
+    assert(nv_grad_cpu_length == nv_grad_gpu_length);
+
+    bool succ_res = compare_ans1_ans2(res_cpu_buffer, res_gpu_buffer, res_gpu_length);
+    if (!succ_res) {
+        std::cerr << RED << "res mismatch" << RESET << std::endl;
+    }
+    bool succ_nq_grad = compare_ans1_ans2(nq_grad_cpu_buffer, nq_grad_gpu_buffer, nq_grad_gpu_length);
+    if (!succ_nq_grad) {
+        std::cerr << RED << "nq_grad mismatch" << RESET << std::endl;
+    }
+    bool succ_nk_grad = compare_ans1_ans2(nk_grad_cpu_buffer, nk_grad_gpu_buffer, nk_grad_gpu_length);
+    if (!succ_nk_grad) {
+        std::cerr << RED << "nk_grad mismatch" << RESET << std::endl;
+    }
+    bool succ_nv_grad = compare_ans1_ans2(nv_grad_cpu_buffer, nv_grad_gpu_buffer, nv_grad_gpu_length);
+    if (!succ_nv_grad) {
+        std::cerr << RED << "nv_grad mismatch" << RESET << std::endl;
+    }
+
+    bool succ = succ_res && succ_nq_grad && succ_nk_grad && succ_nv_grad;
+    if (succ) {
+        std::cout << GREEN << "test_attention_bp_with_cpu succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_attention_bp_with_cpu failed" << RESET << std::endl;
+    }
+
+    ::free(res_gpu_buffer);
+    ::free(res_cpu_buffer);
+    ::free(nq_grad_gpu_buffer);
+    ::free(nq_grad_cpu_buffer);
+    ::free(nk_grad_gpu_buffer);
+    ::free(nk_grad_cpu_buffer);
+    ::free(nv_grad_gpu_buffer);
+    ::free(nv_grad_cpu_buffer);
+}
+
 void test_gpu() {
     test_at();
     test_at_1();
@@ -4231,6 +4402,7 @@ void test_gpu() {
     test_bmm_bp_1();
     test_attention_bp();
     test_attention_bp_part();
+    test_attention_bp_with_cpu();
 }
 
 int main(int argc, char *argv[]) {
