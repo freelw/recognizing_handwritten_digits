@@ -2462,16 +2462,18 @@ void test_attention_bp() {
     n_labels->init_weight_for_dbg();
     auto nq = graph::allocNode(querys);
     nq->require_grad();
-    nq->init_weight_for_dbg(10000.0f);
+    nq->init_weight_for_dbg(1000000.0f);
     auto nk = graph::allocNode(keys);
     nk->require_grad();
-    nk->init_weight_for_dbg(10000.0f);
+    nk->init_weight_for_dbg(100000.0f);
     auto nv = graph::allocNode(values);
     nv->require_grad();
     nv->init_weight_for_dbg(10000.0f);
     int32_t valid_lens_buffer[2] = {2, 6};
-    auto res = attention.forward(nq, nk, nv, valid_lens)->softmax();
-    auto ce_res = res->reshape({-1, 4})->CrossEntropy(labels);
+    auto softmax_res = attention.forward(nq, nk, nv, valid_lens)->softmax();
+    auto ce_res = softmax_res->reshape({-1, 4})->CrossEntropy(labels);
+    zero_grad();
+    insert_boundary_action();
     ce_res->backward();
     printAllActions();
     allocMemAndInitTensors();
@@ -2481,7 +2483,20 @@ void test_attention_bp() {
         2 * sizeof(int32_t)
     );
     gDoActions();
-    std::cout << "res : " << std::endl << *res->get_tensor() << std::endl;
+    std::cout << "query : " << std::endl << *querys << std::endl;
+    std::cout << "keys : " << std::endl << *keys << std::endl;
+    std::cout << "values : " << std::endl << *values << std::endl;
+    std::cout << "valid_lens : " << std::endl << *valid_lens << std::endl;
+    std::cout << "labels : " << std::endl << *labels << std::endl;
+
+    float loss = 0;
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(&loss),
+        ce_res->get_tensor(),
+        sizeof(float)
+    );
+    std::cout << "loss : " << loss/2 << std::endl;
+    std::cout << "softmax_res : " << std::endl << *softmax_res->get_tensor() << std::endl;
     // print nq grad nk grad nv grad
     std::cout << "nq grad : " << std::endl << *nq->get_grad() << std::endl;
     std::cout << "nk grad : " << std::endl << *nk->get_grad() << std::endl;
