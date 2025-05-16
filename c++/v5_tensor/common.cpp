@@ -2,6 +2,7 @@
 #include "optimizers/parameter.h"
 
 BackendOps *g_backend_ops = nullptr;
+bool g_training = true;
 
 bool b_use_gpu = false;
 
@@ -22,7 +23,7 @@ void init_backend() {
         #ifndef GCC_ASAN
         g_backend_ops = new CUDAOps();
         #else
-        std::cerr << "Error: GPU backend is not available in ASAN build. Now use cpu instead!!!" << std::endl;
+        std::cerr << "Warning: GPU backend is not available in ASAN build. Now use cpu instead!!!" << std::endl;
         g_backend_ops = new CPUOps();
         #endif
     } else {

@@ -7,6 +7,7 @@
 #include "graph/node.h"
 
 extern BackendOps *g_backend_ops;
+extern bool g_training;
 void zero_grad();
 void insert_boundary_action();
 void init_backend();

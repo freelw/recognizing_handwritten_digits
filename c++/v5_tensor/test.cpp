@@ -2819,6 +2819,41 @@ void test_attention_bp() {
     destruct_env();
 }
 
+void test_dropout() {
+    construct_env();
+    Dropout dropout(0.5f);
+    Tensor *input = allocTensor({22, 33, 55}, "input");
+    auto input_shape = input->get_shape();
+    auto ni = graph::allocNode(input);
+    auto res = dropout.forward(ni->reshape({-1}))->reshape(input_shape);
+    // printAllActions();
+    allocMemAndInitTensors();
+    input->fill(1.0f);
+    gDoActions();
+    // std::cout << "input : " << std::endl << *input << std::endl;
+    // std::cout << "res : " << std::endl << *res->get_tensor() << std::endl;
+    float *res_buffer = static_cast<float*>(::malloc(res->get_tensor()->size()));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(res_buffer),
+        res->get_tensor(),
+        res->get_tensor()->size()
+    );
+    float sum = 0;
+    auto length = res->get_tensor()->length();
+    for (int i = 0; i < length; ++ i) {
+        sum += res_buffer[i];
+    }
+    float percent = sum / length;
+    bool succ = percent > 0.4f && percent < 0.6f;
+    if (succ) {
+        std::cout << GREEN << "test_dropout succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_dropout failed" << RESET << std::endl;
+    }
+    ::free(res_buffer);
+    destruct_env();
+}
+
 void test_cpu() {
     test_at();
     test_add();
@@ -2852,6 +2887,7 @@ void test_cpu() {
     test_bmm_bp_1();
     test_attention_bp();
     test_attention_bp_part();
+    test_dropout();
 }
 
 Tensor *test_add_with_cpu_base(int m, int n) {
@@ -4417,6 +4453,7 @@ void test_gpu() {
     test_attention_bp();
     test_attention_bp_part();
     test_attention_bp_with_cpu();
+    test_dropout();
 }
 
 int main(int argc, char *argv[]) {

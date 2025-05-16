@@ -151,6 +151,11 @@ __global__ void tensor_div(
     int length, float value
 );
 
+__global__ void dropout_kernel(
+    float *dst, float *src,
+    int length, float p
+);
+
 #endif // GCC_ASAN
 
 #endif // V5_TENSOR_BACKENDS_GPU_KERNEL_CUH

@@ -4,11 +4,11 @@ DIR_INC = -I./ \
     -I../utils/
 
 DIR_LIB = -L./
-TARGET = mnist_cuda
-TEST_TARGET = test
-TRANSFORMER_TARGET = transformer
+TARGET = curand
 CUDA_TOOLKIT := $(shell dirname $$(command -v nvcc))/..
-CUDA_LIBS := -L$(CUDA_TOOLKIT)/lib64 -lcudart -lcurand
+CUDA_LIBS         := -L$(CUDA_TOOLKIT)/lib64 -lcudart -lcurand
+
+
 LDFLAGS = -lstdc++ $(CUDA_LIBS)
 SRCDIR := ./tensor \
           ./graph \
@@ -43,14 +43,11 @@ ifeq ($(RELEASE),1)
 	NVCC_CFLAGS := $(filter-out -G,$(NVCC_CFLAGS))
 endif
 
-all: $(TARGET) $(TEST_TARGET) $(TRANSFORMER_TARGET)
+all: $(TARGET)
 
-$(TRANSFORMER_TARGET) : $(OBJECTS_TRANSFORMER)
-	${NVCC} $(NVCC_CFLAGS) $^ -o $@ $(LDFLAGS)
 $(TARGET) : $(OBJECTS_MAIN)
 	${NVCC} $(NVCC_CFLAGS) $^ -o $@ $(LDFLAGS)
-$(TEST_TARGET) : $(OBJECTS_TEST)
-	${NVCC} $(NVCC_CFLAGS) $^ -o $@ $(LDFLAGS)
+
 
 %.o : %.cu
 	${NVCC} -c $(NVCC_CFLAGS) $< -o $@
@@ -58,27 +55,6 @@ $(TEST_TARGET) : $(OBJECTS_TEST)
 	${NVCC} -c $(NVCC_CFLAGS) $< -o $@
 
 clean:
-	@rm -f ${OBJECTS} $(TARGET) $(TEST_TARGET) $(TRANSFORMER_TARGET)
+	@rm -f ${OBJECTS} $(TARGET)
 
-.PHONY: clean prepare_data run_test all
-prepare_data:
-	@cd ../../resources && \
-	gunzip -c train-labels-idx1-ubyte.gz > train-labels-idx1-ubyte && \
-	gunzip -c train-images-idx3-ubyte.gz > train-images-idx3-ubyte
-dbg:
-	@echo "CFLAGS is $(CFLAGS)"
-	@echo "SRCS is $(SRCS)"
-	@echo "OBJECTS is $(OBJECTS)"
-	@echo "SRCDIR is $(SRCDIR)"
-	@echo "DIR_INC is $(DIR_INC)"
-	@echo "DIR_LIB is $(DIR_LIB)"
-	@echo "TARGET is $(TARGET)"
-	@echo "NVCC is $(NVCC)"
-run_test: $(TEST_TARGET)
-	@echo "Test cpu"
-	@./$(TEST_TARGET) -t 0
-	@echo "Test cpu done"
-	@echo "Test gpu"
-	@./$(TEST_TARGET) -t 1
-	@echo "Test gpu done"
-	@echo "Test completed"
+.PHONY: clean 
