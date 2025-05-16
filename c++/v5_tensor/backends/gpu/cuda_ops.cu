@@ -750,7 +750,7 @@ void CUDAOps::div(Tensor *dst, Tensor *src, float value) {
 void CUDAOps::dropout(Tensor *dst, Tensor *src, float p) {
     assert(dst->size() == src->size());
     assert(!dst->is_shared_with(src));
-    // fix me
+    // fix me with curandGenerateUniform
     this->cp_device_to_device(dst->get_data(), src->get_data(), dst->size());
 }
 

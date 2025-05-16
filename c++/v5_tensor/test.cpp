@@ -2822,7 +2822,7 @@ void test_attention_bp() {
 void test_dropout() {
     construct_env();
     Dropout dropout(0.5f);
-    Tensor *input = allocTensor({2, 3, 5}, "input");
+    Tensor *input = allocTensor({22, 33, 55}, "input");
     auto input_shape = input->get_shape();
     auto ni = graph::allocNode(input);
     auto res = dropout.forward(ni->reshape({-1}))->reshape(input_shape);
@@ -2830,8 +2830,26 @@ void test_dropout() {
     allocMemAndInitTensors();
     input->fill(1.0f);
     gDoActions();
-    std::cout << "input : " << std::endl << *input << std::endl;
-    std::cout << "res : " << std::endl << *res->get_tensor() << std::endl;
+    // std::cout << "input : " << std::endl << *input << std::endl;
+    // std::cout << "res : " << std::endl << *res->get_tensor() << std::endl;
+    float *res_buffer = static_cast<float*>(::malloc(res->get_tensor()->size()));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(res_buffer),
+        res->get_tensor(),
+        res->get_tensor()->size()
+    );
+    float sum = 0;
+    auto length = res->get_tensor()->length();
+    for (int i = 0; i < length; ++ i) {
+        sum += res_buffer[i];
+    }
+    float percent = sum / length;
+    bool succ = percent > 0.4f && percent < 0.6f;
+    if (succ) {
+        std::cout << GREEN << "test_dropout succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_dropout failed" << RESET << std::endl;
+    }
     destruct_env();
 }
 
