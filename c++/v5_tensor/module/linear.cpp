@@ -1,0 +1,54 @@
+#include "linear.h"
+#include <cmath>
+
+Linear::Linear(int input_num, int output_num, ACTIVATION act, bool _bias)
+    : bias(_bias) {
+    auto w_tensor = allocTensor({input_num, output_num}, "w_linear");
+    w = graph::allocNode(w_tensor);
+    w->require_grad();
+    Pw = allocParameter(w);
+
+    float sigma = 0.0f;
+    float mean = 0.0f;
+
+    switch (act) {
+        case RELU:
+            sigma = std::sqrt(2.0f/input_num);
+            break;
+        case SIGMOID:
+        case NONE:
+            sigma = std::sqrt(2.0f/(input_num + output_num));
+            break;
+        case TANH:
+            sigma = std::sqrt(2.0 / (input_num + output_num)) * 4;
+            break;
+        default:
+            assert(false);
+    }
+    w->init_weight_gauss(sigma, mean);
+    if (bias) {
+        auto b_tensor = allocTensor({output_num}, "b_linear");
+        b = graph::allocNode(b_tensor);
+        b->require_grad();
+        b->init_weight_gauss(0.01f, 0.01f); // this is very important, break the symmetry
+        Pb = allocParameter(b);
+    } else {
+        b = nullptr;
+    }
+}
+
+graph::Node *Linear::forward(graph::Node *input) {
+    assert(false);
+    return nullptr;
+}
+
+std::vector<Parameter *> Linear::get_parameters() {
+    std::vector<Parameter *> params;
+    params.push_back(Pw);
+    if (bias) {
+        assert(b != nullptr);
+        assert(Pb != nullptr);
+        params.push_back(Pb);
+    }
+    return params;
+}

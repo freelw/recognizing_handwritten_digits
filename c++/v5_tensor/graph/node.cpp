@@ -363,6 +363,17 @@ namespace graph {
         );
     }
 
+    void Node::init_weight_fill(float value) {
+        gCreateAction(
+            new InitWeightAction(
+                this->get_tensor(),
+                "fill",
+                value,
+                0
+            )
+        );
+    }
+
     void CrossEntropyEdge::backward(Tensor *) {
         gCreateAction(
             new CrossEntropyBackwardAction(
