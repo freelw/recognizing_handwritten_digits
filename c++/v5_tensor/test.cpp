@@ -2876,6 +2876,7 @@ void test_dropout() {
         std::cout << RED << "test_dropout failed" << RESET << std::endl;
     }
     ::free(res_buffer);
+    ::free(ni_grad_buffer);
     destruct_env();
 }
 
