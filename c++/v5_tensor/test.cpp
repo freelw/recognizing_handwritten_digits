@@ -2824,15 +2824,17 @@ void test_dropout() {
     construct_env();
     Dropout dropout(0.5f);
     Tensor *input = allocTensor({22, 33, 55}, "input");
+    // Tensor *input = allocTensor({2, 3, 5}, "input");
     auto input_shape = input->get_shape();
     auto ni = graph::allocNode(input);
+    ni->require_grad();
     auto res = dropout.forward(ni->reshape({-1}))->reshape(input_shape);
-    // printAllActions();
     allocMemAndInitTensors();
     input->fill(1.0f);
+    res->backward();
+    res->get_grad()->fill(1.0f);
+    // printAllActions();
     gDoActions();
-    // std::cout << "input : " << std::endl << *input << std::endl;
-    // std::cout << "res : " << std::endl << *res->get_tensor() << std::endl;
     float *res_buffer = static_cast<float*>(::malloc(res->get_tensor()->size()));
     g_backend_ops->cp_from_device(
         reinterpret_cast<char*>(res_buffer),
@@ -2845,7 +2847,29 @@ void test_dropout() {
         sum += res_buffer[i];
     }
     float percent = sum / length;
-    bool succ = percent > 0.4f && percent < 0.6f;
+    bool succ_res = percent > 0.4f && percent < 0.6f;
+    if (!succ_res) {
+        std::cout << RED << "test_dropout res failed" << RESET << std::endl;
+    }
+
+    float *ni_grad_buffer = static_cast<float*>(::malloc(ni->get_grad()->size()));
+    auto ni_grad_length = ni->get_grad()->length();
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(ni_grad_buffer),
+        ni->get_grad(),
+        ni->get_grad()->size()
+    );
+    sum = 0;
+    for (int i = 0; i < ni_grad_length; ++ i) {
+        sum += ni_grad_buffer[i];
+    }
+    percent = sum / ni_grad_length;
+    bool succ_grad = percent > 0.4f && percent < 0.6f;
+    if (!succ_grad) {
+        std::cout << RED << "test_dropout ni_grad failed" << RESET << std::endl;
+    }
+
+    bool succ = succ_res && succ_grad;
     if (succ) {
         std::cout << GREEN << "test_dropout succ" << RESET << std::endl;
     } else {

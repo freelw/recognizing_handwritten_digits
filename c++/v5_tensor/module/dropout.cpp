@@ -34,7 +34,7 @@ graph::Node *Dropout::forward(graph::Node *x) {
         if (x->is_require_grad()) {
             Tensor *res_grad = allocTensor(
                 x->get_grad()->get_shape(),
-                x->get_grad()->get_name() + "dropout_grad",
+                x->get_grad()->get_name() + "_dropout_grad",
                 x->get_grad()->get_dtype()
             );
             res_node = graph::allocNode(res_tensor, res_grad);
