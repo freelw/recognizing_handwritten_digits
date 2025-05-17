@@ -215,7 +215,7 @@ Tensor *Tensor::reshape(const std::vector<int> &shape) {
 }
 
 Tensor *Tensor::fill(float value) {
-    assert(!is_view());
+    // assert(!is_view());
     assert(dtype == FLOAT32);
     g_backend_ops->fill(this, value);
     return this;

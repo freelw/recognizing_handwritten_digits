@@ -143,7 +143,7 @@ void CPUOps::mul(Tensor *lhs, const Tensor *rhs, Tensor *res) {
     assert(lhs != nullptr);
     assert(rhs != nullptr);
     assert(res != nullptr);
-    assert(lhs->get_dim() == 2);
+    assert(lhs->get_dim() == 2 || lhs->get_dim() == 1);
 
     auto lshape = lhs->get_shape();
     auto rshape = rhs->get_shape();
@@ -156,11 +156,19 @@ void CPUOps::mul(Tensor *lhs, const Tensor *rhs, Tensor *res) {
     auto rstrides = rhs->get_strides();
     auto res_strides = res->get_strides();
 
-    for (int i = 0; i < lshape[0]; ++i) {
-        for (int j = 0; j < lshape[1]; ++j) {
-            static_cast<float*>(res->get_data())[i * res_strides[0] + j * res_strides[1]] = 
-                static_cast<float*>(lhs->get_data())[i * lstrides[0] + j * lstrides[1]] * 
-                static_cast<float*>(rhs->get_data())[i * rstrides[0] + j * rstrides[1]];
+    if (lhs->get_dim() == 1) {
+        for (int i = 0; i < lshape[0]; ++i) {
+            static_cast<float*>(res->get_data())[i] = 
+                static_cast<float*>(lhs->get_data())[i * lstrides[0]] * 
+                static_cast<float*>(rhs->get_data())[i * rstrides[0]];
+        }
+    } else if (lhs->get_dim() == 2) {
+        for (int i = 0; i < lshape[0]; ++i) {
+            for (int j = 0; j < lshape[1]; ++j) {
+                static_cast<float*>(res->get_data())[i * res_strides[0] + j * res_strides[1]] = 
+                    static_cast<float*>(lhs->get_data())[i * lstrides[0] + j * lstrides[1]] * 
+                    static_cast<float*>(rhs->get_data())[i * rstrides[0] + j * rstrides[1]];
+            }
         }
     }
 }
@@ -300,16 +308,12 @@ void CPUOps::div(Tensor *dst, Tensor *src, float value) {
     }
 }
 
-void CPUOps::dropout(Tensor *dst, Tensor *src, float p) {
-    assert(dst != nullptr);
-    assert(src != nullptr);
-    assert(dst->length() == src->length());
-    assert(dst->get_dim() == src->get_dim());
-    assert(dst->get_dim() == 1);
-    auto length = dst->length();
+void CPUOps::build_dropout_mask(Tensor *mask, float p) {
+    assert(mask != nullptr);
+    assert(mask->get_dim() == 1);
+    auto length = mask->length();
     for (int i = 0; i < length; ++i) {
-        static_cast<float*>(dst->get_data())[i] = 
-            static_cast<float*>(src->get_data())[i] * (dis(gen) < p ? 0 : 1);
+        static_cast<float*>(mask->get_data())[i] = dis(gen) < p ? 0 : 1;
     }
 }
 

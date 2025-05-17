@@ -246,7 +246,10 @@ void CUDAOps::mul(Tensor *lhs, const Tensor *rhs, Tensor *res) {
     assert(lhs != nullptr);
     assert(rhs != nullptr);
     assert(res != nullptr);
-    assert(lhs->get_dim() == 2);
+    assert(
+        lhs->get_dim() == 1 ||
+        lhs->get_dim() == 2
+    );
 
     auto lshape = lhs->get_shape();
     auto rshape = rhs->get_shape();
@@ -258,27 +261,41 @@ void CUDAOps::mul(Tensor *lhs, const Tensor *rhs, Tensor *res) {
     auto lstrides = lhs->get_strides();
     auto rstrides = rhs->get_strides();
     auto res_strides = res->get_strides();
+    if (lhs->get_dim() == 1) {
+        dim3 gridDim(
+            (lshape[0] + TILE_WIDTH - 1) / TILE_WIDTH
+        );
+        dim3 blockDim(TILE_WIDTH);
+        tensor_mul_1d<<<gridDim, blockDim>>>(
+            (float *)lhs->get_data(),
+            (float *)rhs->get_data(),
+            (float *)res->get_data(),
+            lshape[0]
+        );
+    } else if (lhs->get_dim() == 2) {
+        dim3 gridDim(
+            (lshape[1] + TILE_WIDTH - 1) / TILE_WIDTH,
+            (lshape[0] + TILE_WIDTH - 1) / TILE_WIDTH
+        );
 
-    dim3 gridDim(
-        (lshape[1] + TILE_WIDTH - 1) / TILE_WIDTH,
-        (lshape[0] + TILE_WIDTH - 1) / TILE_WIDTH
-    );
+        dim3 blockDim(TILE_WIDTH, TILE_WIDTH);
 
-    dim3 blockDim(TILE_WIDTH, TILE_WIDTH);
-
-    tensor_mul_2d<<<gridDim, blockDim>>>(
-        (float *)lhs->get_data(),
-        (float *)rhs->get_data(),
-        (float *)res->get_data(),
-        lshape[0],
-        lshape[1],
-        lstrides[0],
-        lstrides[1],
-        rstrides[0],
-        rstrides[1],
-        res_strides[0],
-        res_strides[1]
-    );
+        tensor_mul_2d<<<gridDim, blockDim>>>(
+            (float *)lhs->get_data(),
+            (float *)rhs->get_data(),
+            (float *)res->get_data(),
+            lshape[0],
+            lshape[1],
+            lstrides[0],
+            lstrides[1],
+            rstrides[0],
+            rstrides[1],
+            res_strides[0],
+            res_strides[1]
+        );
+    } else {
+        assert(false);
+    }
 }
 
 void CUDAOps::sum(Tensor *lhs, Tensor *res, int dim) {
@@ -760,13 +777,10 @@ void CUDAOps::softmax_bacward(Tensor *target_grad, const Tensor *softmax_res, Te
 void CUDAOps::div(Tensor *dst, Tensor *src, float value) {
     assert(dst->length() == src->length());
     auto length = dst->length();
-
     dim3 gridDim(
         (length + TILE_WIDTH - 1) / TILE_WIDTH
     );
-
     dim3 blockDim(TILE_WIDTH);
-
     tensor_div<<<gridDim, blockDim>>>(
         (float *)dst->get_data(),
         (float *)src->get_data(),
@@ -775,20 +789,21 @@ void CUDAOps::div(Tensor *dst, Tensor *src, float value) {
     );
 }
 
-void CUDAOps::dropout(Tensor *dst, Tensor *src, float p) {
-    assert(dst->size() == src->size());
-    assert(!dst->is_shared_with(src));
-    assert(dst->get_dim() == src->get_dim());
-    assert(dst->get_dim() == 1);
-    CURAND_CHECK(curandGenerateUniform(gen, reinterpret_cast<float*>(dst->get_data()), dst->length()));
+void CUDAOps::build_dropout_mask(Tensor *mask, float p) {
+    assert(mask != nullptr);
+    assert(mask->get_dim() == 1);
+    CURAND_CHECK(curandGenerateUniform(
+        gen,
+        reinterpret_cast<float*>(mask->get_data()),
+        mask->length())
+    );
     dim3 gridDim(
-        (dst->length() + TILE_WIDTH - 1) / TILE_WIDTH
+        (mask->length() + TILE_WIDTH - 1) / TILE_WIDTH
     );
     dim3 blockDim(TILE_WIDTH);
-    dropout_kernel<<<gridDim, blockDim>>>(
-        (float *)dst->get_data(),
-        (float *)src->get_data(),
-        dst->length(),
+    build_dropout_mask_kernel<<<gridDim, blockDim>>>(
+        (float *)mask->get_data(),
+        mask->length(),
         p
     );
 }

@@ -376,22 +376,25 @@ namespace graph {
 
     class DropoutEdge : public Edge {
         public:
-            static Edge* create(Node *_node) {
-                Edge *edge = new DropoutEdge(_node);
+            static Edge* create(Node *_node, Tensor *_mask) {
+                Edge *edge = new DropoutEdge(_node, _mask);
                 gAddEdge(edge);
                 return edge;
             }
-            DropoutEdge(Node *_node)
-                : Edge(Empty, _node) {}
+            DropoutEdge(Node *_node, Tensor *_mask)
+                : Edge(Empty, _node), mask(_mask) {}
             virtual ~DropoutEdge() {}
             void backward(Tensor *grad) override {
                 gCreateAction(
-                    new AddEqAction(
-                        node->get_grad(),
-                        grad
+                    new MulAction(
+                        grad,
+                        mask,
+                        node->get_grad()
                     )
                 );
             }
+        private:
+            Tensor *mask;
     };
 
     Node *allocNode(Tensor *t);

@@ -38,7 +38,7 @@ class CUDAOps : public BackendOps {
         void softmax(Tensor *lhs, Tensor *res) override;
         void softmax_bacward(Tensor *target_grad, const Tensor *softmax_res, Tensor *grad) override;
         void div(Tensor *dst, Tensor *src, float value) override;
-        void dropout(Tensor *dst, Tensor *src, float p) override;
+        void build_dropout_mask(Tensor *mask, float p) override;
 
         // Memory management
         void* alloc(size_t size) override;

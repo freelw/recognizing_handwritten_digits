@@ -137,6 +137,17 @@ __global__ void expand_add(
     }
 }
 
+__global__ void tensor_mul_1d(
+    float *Md, float *Nd, float *Pd, int M
+) {
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index >= M) {
+        return;
+    } else {
+        Pd[index] = Md[index] * Nd[index];
+    }
+}
+
 __global__ void tensor_mul_2d(
     float *Md, float *Nd, float *Pd,
     int M, int N,
@@ -465,15 +476,14 @@ __global__ void tensor_div(
     }
 }
 
-__global__ void dropout_kernel(
-    float *dst, float *src,
-    int length, float p
+__global__ void build_dropout_mask_kernel(
+    float *mask, int length, float p
 ) {
     int index = blockIdx.x * blockDim.x + threadIdx.x;
     if (index >= length) {
         return;
     } else {
-        dst[index] = dst[index] < p ? 0.0f : src[index];
+        mask[index] = mask[index] < p ? 0.0f : 1.0f;
     }
 }
 
