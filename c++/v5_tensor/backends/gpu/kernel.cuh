@@ -52,6 +52,10 @@ __global__ void expand_add(
     int stride_P0, int stride_P1
 );
 
+__global__ void tensor_mul_1d(
+    float *Md, float *Nd, float *Pd, int M
+);
+
 __global__ void tensor_mul_2d(
     float *Md, float *Nd, float *Pd,
     int M, int N,
@@ -151,9 +155,8 @@ __global__ void tensor_div(
     int length, float value
 );
 
-__global__ void dropout_kernel(
-    float *dst, float *src,
-    int length, float p
+__global__ void build_dropout_mask_kernel(
+    float *mask, int length, float p
 );
 
 #endif // GCC_ASAN

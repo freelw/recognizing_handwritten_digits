@@ -261,10 +261,10 @@ class DivAction : public Action {
         float value;
 };
 
-class DropoutAction : public Action {
+class DropoutMaskAction : public Action {
     public:
-        DropoutAction(Tensor *dst, Tensor *src, float _p)
-            : Action(src, nullptr, dst), p(_p) {}
+        DropoutMaskAction(Tensor *mask, float _p)
+            : Action(nullptr, nullptr, mask), p(_p) {}
         void execute() override;
         std::string to_string() const override;
     private:

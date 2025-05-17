@@ -396,15 +396,14 @@ std::string DivAction::to_string() const {
     return oss.str();
 }
 
-void DropoutAction::execute() {
-    assert(lhs != nullptr);
+void DropoutMaskAction::execute() {
     assert(res != nullptr);
-    g_backend_ops->dropout(res, lhs, p);
+    g_backend_ops->build_dropout_mask(res, p);
 }
 
-std::string DropoutAction::to_string() const {
+std::string DropoutMaskAction::to_string() const {
     std::ostringstream oss;
-    oss << "DropoutAction: dropout " << lhs->get_meta_info() << " to " << res->get_meta_info() << " with rate " << p;
+    oss << "Build Dropout mask: " << res->get_meta_info() << " with rate " << p;
     return oss.str();
 }
 
