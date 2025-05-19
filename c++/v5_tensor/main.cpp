@@ -54,7 +54,7 @@ void train(int epochs, float lr, int batch_size) {
     loader.load();
     std::cout << "data loaded." << std::endl;
 
-    MLP m(INPUT_LAYER_SIZE, {30, 10}, 0.1f);
+    MLP m(INPUT_LAYER_SIZE, {30, 10}, -0.01f);
     Tensor *inputs = allocTensor({batch_size, 784}, "inputs");
     Tensor *labels = allocTensor({batch_size}, "labels", INT32);
     auto n_inputs = graph::allocNode(inputs);
