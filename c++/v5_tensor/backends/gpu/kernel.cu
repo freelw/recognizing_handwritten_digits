@@ -121,13 +121,30 @@ __global__ void tensor_add_eq_3d(
 }
 
 __global__ void tensor_add_eq_kernel(
-    float *Md, float *Nd,
+    float *dst, float *src,
     int32_t *shape,
-    int32_t *strides_M,
-    int32_t *strides_N,
-    int32_t dim
+    int32_t *strides_dst,
+    int32_t *strides_src,
+    int32_t dim,
+    int32_t length
 ) {
-
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index >= length) {
+        return;
+    } else {
+        int tmp_length = length;
+        int tmp_index = index;
+        int offset_src = 0;
+        int offset_dst = 0;
+        for (int j = 0; j < dim; ++j) {
+            tmp_length /= shape[j];
+            int cur_dim_index = tmp_index / tmp_length;
+            offset_src += cur_dim_index * strides_src[j];
+            offset_dst += cur_dim_index * strides_dst[j];
+            tmp_index %= tmp_length;
+        }
+        dst[offset_dst] += src[offset_src];
+    }
 }
 
 __global__ void expand_add(

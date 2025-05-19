@@ -1646,7 +1646,6 @@ void test_reshape_with_cpu() {
 }
 
 void test_reshape_bp() {
-
     construct_env();
     Tensor *input = allocTensor({5, 4}, "input");
     Tensor *w = allocTensor({3, 2}, "w");
@@ -1680,7 +1679,7 @@ void test_reshape_bp() {
     insert_boundary_action();
     zero_grad();
     nres->backward();
-    printAllActions();
+    // printAllActions();
     allocMemAndInitTensors();
 
     auto input_size = input->size();
@@ -2851,7 +2850,7 @@ void test_dropout() {
     input->fill(1.0f);
     res->backward();
     res->get_grad()->fill(1.0f);
-    printAllActions();
+    // printAllActions();
     gDoActions();
     float *res_buffer = static_cast<float*>(::malloc(res->get_tensor()->size()));
     g_backend_ops->cp_from_device(
@@ -2911,7 +2910,7 @@ void test_permute() {
     auto w_res = r_res->at(nw);
     insert_boundary_action();
     w_res->backward();
-    printAllActions();
+    // printAllActions();
     allocMemAndInitTensors();
     float grad_buffer[96] = {0};
     assert(w_res->get_grad()->length() == 96);

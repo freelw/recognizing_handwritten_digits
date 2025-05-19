@@ -35,7 +35,11 @@ void CPUOps::add(Tensor *lhs, const Tensor *rhs, Tensor *res) {
     }
 }
 
-void CPUOps::addEq(Tensor *lhs, const Tensor *rhs) {
+void CPUOps::addEq(
+    Tensor *lhs, const Tensor *rhs,
+    Tensor */*l_shape*/, Tensor */*l_strides*/,
+    Tensor */*r_shape*/, Tensor */*r_striedes*/
+) {
     assert(lhs != nullptr);
     assert(rhs != nullptr);
     auto lshape = lhs->get_shape();

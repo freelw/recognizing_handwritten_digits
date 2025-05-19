@@ -40,10 +40,14 @@ class AddAction : public Action {
 // AddEqAction 永远不会出现在forward中
 class AddEqAction : public Action {
     public:
-        AddEqAction(Tensor *_lhs, const Tensor *_rhs)
-            : Action(_lhs, _rhs, nullptr) {}
+        AddEqAction(Tensor *_lhs, const Tensor *_rhs);
         void execute() override;
         std::string to_string() const override;
+    private:
+        Tensor *lhs_shape;
+        Tensor *lhs_strides;
+        Tensor *rhs_shape;
+        Tensor *rhs_strides;
 };
 
 class ExpandAddAction : public Action {

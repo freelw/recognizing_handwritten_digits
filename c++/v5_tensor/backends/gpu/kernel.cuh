@@ -46,11 +46,12 @@ __global__ void tensor_add_eq_3d(
 );
 
 __global__ void tensor_add_eq_kernel(
-    float *Md, float *Nd,
+    float *dst, float *src,
     int32_t *shape,
-    int32_t *strides_M,
-    int32_t *strides_N,
-    int32_t dim
+    int32_t *strides_dst,
+    int32_t *strides_src,
+    int32_t dim,
+    int32_t length
 );
 
 __global__ void expand_add(
