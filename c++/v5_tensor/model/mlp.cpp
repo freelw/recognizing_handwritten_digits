@@ -14,7 +14,11 @@ MLP::MLP(
 }
 
 MLP::~MLP() {
+    assert(l1 != nullptr);
+    assert(l2 != nullptr);
     assert(dropout != nullptr);
+    delete l1;
+    delete l2;
     delete dropout;
 }
 

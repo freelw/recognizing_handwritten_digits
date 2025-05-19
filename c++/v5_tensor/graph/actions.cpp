@@ -255,7 +255,7 @@ void InitWeightAction::execute() {
 
 std::string InitWeightAction::to_string() const {
     std::ostringstream oss;
-    oss << "InitWeightAction: initializing " << lhs->get_meta_info() << " with type " << init_type;
+    oss << "InitWeightAction: initializing " << lhs->get_meta_info() << " with type " << init_type << " sigma " << sigma;
     return oss.str();
 }
 

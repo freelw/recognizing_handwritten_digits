@@ -70,3 +70,16 @@ std::vector<Parameter *> Linear::get_parameters() {
     }
     return params;
 }
+
+LazyLinear::~LazyLinear() {
+    if (linear != nullptr) {
+        delete linear;
+    }
+}
+
+graph::Node *LazyLinear::forward(graph::Node *input) {
+    if (linear == nullptr) {
+        linear = new Linear(input_num, output_num, prefix, sigma, act, bias, const_weight);
+    }
+    return linear->forward(input);
+}
