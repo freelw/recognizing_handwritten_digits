@@ -3079,6 +3079,54 @@ void test_permute() {
     destruct_env();
 }
 
+void test_lazy_linear() {
+
+    construct_env();
+
+    Tensor *input = allocTensor({20, 30, 10}, "input");
+    Tensor *input1 = allocTensor({20 * 30, 10}, "input");
+    auto ni = graph::allocNode(input);
+    auto ni1 = graph::allocNode(input1);
+
+    LazyLinear l(20, "", 0, 0, ACTIVATION::NONE, false, true);
+
+    auto res = l.forward(ni);
+    auto res1 = l.forward(ni1);
+
+    auto res_buffer = static_cast<float*>(::malloc(res->get_tensor()->size()));
+    auto res1_buffer = static_cast<float*>(::malloc(res1->get_tensor()->size()));
+
+    insert_boundary_action();
+    allocMemAndInitTensors();
+    gDoForwardActions();
+
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(res_buffer),
+        res->get_tensor(),
+        res->get_tensor()->size()
+    );
+
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(res1_buffer),
+        res1->get_tensor(),
+        res1->get_tensor()->size()
+    );
+
+    bool succ = compare_ans1_ans2(
+        res_buffer,
+        res1_buffer,
+        res->get_tensor()->length()
+    );
+
+    if (!succ) {
+        std::cout << RED << "test_lazy_linear res failed" << RESET << std::endl;
+    } else {
+        std::cout << GREEN << "test_lazy_linear succ" << RESET << std::endl;
+    }
+
+    destruct_env();
+}
+
 void test_cpu() {
     test_at();
     test_add();
@@ -3115,6 +3163,7 @@ void test_cpu() {
     test_attention_bp_part();
     test_dropout();
     test_permute();
+    test_lazy_linear();
 }
 
 Tensor *test_add_with_cpu_base(int m, int n) {
@@ -4810,6 +4859,7 @@ void test_gpu() {
     test_dropout();
     test_permute();
     test_permute_with_cpu();
+    test_lazy_linear();
 }
 
 int main(int argc, char *argv[]) {
