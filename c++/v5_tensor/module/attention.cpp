@@ -43,10 +43,8 @@ graph::Node *DotProductAttention::forward(
 
     auto dropout_attention_weights = attention_weights;
     if (g_training) {
-        auto atw_shape = dropout_attention_weights->get_tensor()->get_shape();
         dropout_attention_weights = dropout
-            ->forward(dropout_attention_weights->reshape({-1}))
-            ->reshape(atw_shape);
+            ->forward(dropout_attention_weights);
     }
     return attention_weights->bmm(value);
 }
