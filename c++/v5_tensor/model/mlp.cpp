@@ -37,6 +37,6 @@ graph::Node *MLP::forward(graph::Node *input) {
     x = x->relu();
     x = l2->forward(x);
     auto x_shape = x->get_tensor()->get_shape();
-    x = dropout->forward(x->reshape({ -1 }))->reshape(x_shape);
+    x = dropout->forward(x)->reshape(x_shape);
     return x;
 }
