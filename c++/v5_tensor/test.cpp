@@ -137,6 +137,7 @@ void test_bmm() {
     auto res_wti = ni->bmm(nwt->transpose(1, 2));
     // printAllTensors();
     // printAllActions();
+    insert_boundary_action();
     allocMemAndInitTensors();
     input->fill(1.0f);
     init_w_wt_for_bmm(w, wt);
@@ -171,6 +172,7 @@ void test_bmm_1() {
     allocMemAndInitTensors();
     input->fill(1.0f);
     init_w_wt_for_bmm(w, wt);
+    insert_boundary_action();
     gDoActions();
     auto res_wi_tensor = res_wi->get_tensor();
     auto res_wti_tensor = res_wti->get_tensor();
@@ -195,6 +197,7 @@ void test_bmm_2() {
     auto res_wti = ni->bmm(nwt->transpose(1, 2));
     // printAllTensors();
     // printAllActions();
+    insert_boundary_action();
     allocMemAndInitTensors();
     input->fill(1.0f);
     init_w_wt_for_bmm(w, wt);
@@ -1677,7 +1680,7 @@ void test_reshape_bp() {
     insert_boundary_action();
     zero_grad();
     nres->backward();
-    // printAllActions();
+    printAllActions();
     allocMemAndInitTensors();
 
     auto input_size = input->size();
@@ -2216,6 +2219,7 @@ void test_masked_softmax_bp() {
     Tensor *valid_lens = allocTensor({2, 2}, "mask", INT32);
     auto res_softmax = ni->masked_softmax(valid_lens);
     auto res_ce = res_softmax->reshape({-1, 4})->CrossEntropy(labels);
+    insert_boundary_action();
     res_ce->backward();
     allocMemAndInitTensors();
     init_labels(labels);
@@ -2283,6 +2287,7 @@ void test_bmm_bp() {
 
     auto bmm_res = ni->bmm(nw);
     auto ce_res = bmm_res->reshape({-1, 6})->CrossEntropy(labels);
+    insert_boundary_action();
     ce_res->backward();
 
     // printAllActions();
@@ -2488,6 +2493,7 @@ void test_div_bp() {
     auto res = ni->at(nw)->div(10.0f);
     auto ce_res = res->CrossEntropy(labels);
     ce_res->backward();
+    insert_boundary_action();
 
     allocMemAndInitTensors();
     gDoActions();
@@ -2840,6 +2846,7 @@ void test_dropout() {
     auto ni = graph::allocNode(input);
     ni->require_grad();
     auto res = dropout.forward(ni->reshape({-1}))->reshape(input_shape);
+    insert_boundary_action();
     allocMemAndInitTensors();
     input->fill(1.0f);
     res->backward();
@@ -2902,6 +2909,7 @@ void test_permute() {
     auto p_res = ni->permute({2, 0, 1, 3});
     auto r_res = p_res->reshape({-1, 5});
     auto w_res = r_res->at(nw);
+    insert_boundary_action();
     w_res->backward();
     printAllActions();
     allocMemAndInitTensors();
