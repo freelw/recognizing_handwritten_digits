@@ -5,6 +5,7 @@
 #include "optimizers/adam.h"
 #include "model/mlp.h"
 #include "module/attention.h"
+#include "module/mha.h"
 #include "common.h"
 #include <iomanip>
 #include <cmath>
@@ -3123,7 +3124,160 @@ void test_lazy_linear() {
     } else {
         std::cout << GREEN << "test_lazy_linear succ" << RESET << std::endl;
     }
+    destruct_env();
+}
 
+void test_mha() {
+    construct_env();
+
+    Tensor *queries = allocTensor({2, 1, 2}, "queries");
+
+    float queries_buffer[2 * 1 * 2] = {
+        0.1, 0.1,
+        0.2, 0.2
+    };
+
+    Tensor *keys = allocTensor({2, 5, 2}, "keys");
+
+    float keys_buffer[2 * 5 * 2] = {
+        1.1, 1.1,
+        1.2, 1.2,
+        1.3, 1.3,
+        1.4, 1.4,
+        1.5, 1.5,
+        2.1, 2.1,
+        2.2, 2.2,
+        2.3, 2.3,
+        2.4, 2.4,
+        2.5, 2.5
+    };
+
+    Tensor *values = allocTensor({2, 5, 4}, "values");
+
+    float values_buffer[2 * 5 * 4] = {
+        3.1, 3.1, 3.1, 3.1,
+        3.2, 3.2, 3.2, 3.2,
+        3.3, 3.3, 3.3, 3.3,
+        3.4, 3.4, 3.4, 3.4,
+        3.5, 3.5, 3.5, 3.5,
+        4.1, 4.1, 4.1, 4.1,
+        4.2, 4.2, 4.2, 4.2,
+        4.3, 4.3, 4.3, 4.3,
+        4.4, 4.4, 4.4, 4.4,
+        4.5, 4.5, 4.5, 4.5
+    };
+
+    auto nq = graph::allocNode(queries);
+    auto nk = graph::allocNode(keys);
+    auto nv = graph::allocNode(values);
+
+    nq->require_grad();
+    nk->require_grad();
+    nv->require_grad();
+
+    Tensor *labels = allocTensor({2}, "labels", INT32);
+
+    int32_t labels_buffer[2] = {0, 0};
+
+    Tensor *valid_lens = allocTensor({2}, "valid_lens", INT32);
+
+    int32_t valid_lens_buffer[2] = {2, 4};
+
+    MHA mha(10, 2, 0.0f, false, true);
+    auto res = mha.forward(nq, nk, nv, valid_lens);
+    std::vector<Parameter *> params = mha.get_parameters();
+
+    for (auto param : params) {
+        // param->init_weight_for_dbg();
+        std::cout << param->get_w()->get_meta_info() << std::endl;
+    }
+
+    insert_boundary_action();
+    printAllActions();
+    allocMemAndInitTensors();
+
+
+    auto w_q_w_linear = params[0]->get_w();
+    auto w_k_w_linear = params[1]->get_w();
+    auto w_v_w_linear = params[2]->get_w();
+    auto w_o_w_linear = params[3]->get_w();
+
+    float *w_q_w_linear_buffer = static_cast<float*>(::malloc(w_q_w_linear->size()));
+    float *w_k_w_linear_buffer = static_cast<float*>(::malloc(w_k_w_linear->size()));
+    float *w_v_w_linear_buffer = static_cast<float*>(::malloc(w_v_w_linear->size()));
+    float *w_o_w_linear_buffer = static_cast<float*>(::malloc(w_o_w_linear->size()));
+
+    for (int i = 0; i < w_q_w_linear->length(); ++ i) {
+        w_q_w_linear_buffer[i] = 1.0f;
+    }
+    for (int i = 0; i < w_k_w_linear->length(); ++ i) {
+        w_k_w_linear_buffer[i] = 1.0f;
+    }
+    for (int i = 0; i < w_v_w_linear->length(); ++ i) {
+        w_v_w_linear_buffer[i] = 1.0f;
+    }
+    for (int i = 0; i < w_o_w_linear->length(); ++ i) {
+        w_o_w_linear_buffer[i] = 1.0f;
+    }
+
+    w_q_w_linear_buffer[0] = 0.1f;
+    w_k_w_linear_buffer[0] = 0.1f;
+    w_v_w_linear_buffer[0] = 0.1f;
+    w_o_w_linear_buffer[0] = 0.1f;
+
+    g_backend_ops->cp_to_device(
+        queries,
+        reinterpret_cast<char*>(queries_buffer),
+        queries->size()
+    );
+    g_backend_ops->cp_to_device(
+        keys,
+        reinterpret_cast<char*>(keys_buffer),
+        keys->size()
+    );
+    g_backend_ops->cp_to_device(
+        values,
+        reinterpret_cast<char*>(values_buffer),
+        values->size()
+    );
+    g_backend_ops->cp_to_device(
+        labels,
+        reinterpret_cast<char*>(labels_buffer),
+        labels->size()
+    );
+    g_backend_ops->cp_to_device(
+        valid_lens,
+        reinterpret_cast<char*>(valid_lens_buffer),
+        valid_lens->size()
+    );
+    g_backend_ops->cp_to_device(
+        w_q_w_linear,
+        reinterpret_cast<char*>(w_q_w_linear_buffer),
+        w_q_w_linear->size()
+    );
+    g_backend_ops->cp_to_device(
+        w_k_w_linear,
+        reinterpret_cast<char*>(w_k_w_linear_buffer),
+        w_k_w_linear->size()
+    );
+    g_backend_ops->cp_to_device(
+        w_v_w_linear,
+        reinterpret_cast<char*>(w_v_w_linear_buffer),
+        w_v_w_linear->size()
+    );
+    g_backend_ops->cp_to_device(
+        w_o_w_linear,
+        reinterpret_cast<char*>(w_o_w_linear_buffer),
+        w_o_w_linear->size()
+    );
+    ::free(w_q_w_linear_buffer);
+    ::free(w_k_w_linear_buffer);
+    ::free(w_v_w_linear_buffer);
+    ::free(w_o_w_linear_buffer);
+
+    disableOnceAction();
+    gDoActions();
+    std::cout << "res : " << std::endl << *res->get_tensor() << std::endl;
     destruct_env();
 }
 
@@ -4802,6 +4956,8 @@ void test_permute_with_cpu() {
 }
 
 void test_gpu() {
+    test_mha();
+    return ;
     test_at();
     test_at_1();
     test_gpu_at_with_cpu();

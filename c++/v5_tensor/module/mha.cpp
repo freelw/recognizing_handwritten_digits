@@ -112,7 +112,7 @@ graph::Node *MHA::transpose_qkv(
 graph::Node *MHA::transpose_output(
     graph::Node *X
 ) {
-    X = X->reshape({-1, num_heads, X->get_tensor()->get_shape()[1]});
+    X = X->reshape({-1, num_heads, X->get_tensor()->get_shape()[1], X->get_tensor()->get_shape()[2]});
     X = X->permute({0, 2, 1, 3});
     auto shape = X->get_tensor()->get_shape();
     return X->reshape({shape[0], shape[1], -1});

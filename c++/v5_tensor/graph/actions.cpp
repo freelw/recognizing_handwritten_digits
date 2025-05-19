@@ -612,3 +612,11 @@ void freeAllActions() {
     }
     g_actions.clear();
 }
+
+void disableOnceAction() {
+    for (Action *action : g_actions) {
+        if (action->is_do_once()) {
+            action->increase_exec_times();
+        }
+    }
+}

@@ -285,4 +285,7 @@ void gDoForwardActions();
 void printAllActions();
 void freeAllActions();
 
+// for test
+void disableOnceAction();
+
 #endif

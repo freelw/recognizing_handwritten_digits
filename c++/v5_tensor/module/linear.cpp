@@ -54,6 +54,7 @@ Linear::Linear(
 
 graph::Node *Linear::forward(graph::Node *input) {
     auto dim = input->get_tensor()->get_dim();
+    auto input_shape = input->get_tensor()->get_shape();
     assert(dim >= 2);
     if (dim > 2) {
         input = input->reshape({-1, input_num});
@@ -64,7 +65,7 @@ graph::Node *Linear::forward(graph::Node *input) {
         res = res->expand_add(b);
     }
     if (dim > 2) {
-        auto shape = input->get_tensor()->get_shape();
+        auto shape = input_shape;
         shape.pop_back();
         shape.push_back(output_num);
         res = res->reshape(shape);
