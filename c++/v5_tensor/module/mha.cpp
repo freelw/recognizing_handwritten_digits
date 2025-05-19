@@ -59,7 +59,6 @@ MHA::~MHA() {
     delete attention;
 }
 
-
 graph::Node *MHA::forward(
     graph::Node *queries,
     graph::Node *keys,
@@ -77,14 +76,12 @@ graph::Node *MHA::forward(
         assert(valid_lens->get_dim() == 1);
         valid_lens = valid_lens->repeat_interleave(num_heads);
     }
-
     auto output = attention->forward(
         queries,
         keys,
         values,
         valid_lens
     );
-
     auto output_concat = transpose_output(output);
     return w_o->forward(output_concat);
 }
