@@ -129,8 +129,8 @@ void CPUOps::emb_at(Tensor *lhs, const Tensor *indices, const Tensor *rhs, Tenso
 void CPUOps::mul(
     Tensor *lhs, const Tensor *rhs, Tensor *res,
     Tensor */*l_shape*/, Tensor */*l_strides*/,
-    Tensor */*r_shape*/, Tensor */*r_striedes*/,
-    Tensor */*res_shape*/, Tensor */*res_striedes*/
+    Tensor */*r_striedes*/,
+    Tensor */*res_striedes*/
 ) {
     assert(lhs != nullptr);
     assert(rhs != nullptr);

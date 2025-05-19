@@ -67,10 +67,14 @@ class AtAction : public Action {
 
 class MulAction : public Action {
     public:
-        MulAction(Tensor *_lhs, const Tensor *_rhs, Tensor *_res)
-            : Action(_lhs, _rhs, _res) {}
+        MulAction(Tensor *_lhs, const Tensor *_rhs, Tensor *_res);
         void execute() override;
         std::string to_string() const override;
+    private:
+        Tensor *lhs_shape;
+        Tensor *lhs_strides;
+        Tensor *rhs_strides;
+        Tensor *res_strides;
 };
 
 class SumAction : public Action {

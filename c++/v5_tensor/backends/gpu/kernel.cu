@@ -72,54 +72,6 @@ __global__ void tensor_at_2d(
     }
 }
 
-__global__ void tensor_add_eq_1d(
-    float *Md, float *Nd, int M
-) {
-    int index = blockIdx.x * blockDim.x + threadIdx.x;
-    if (index >= M) {
-        return;
-    } else {
-        Md[index] += Nd[index];
-    }
-}
-
-__global__ void tensor_add_eq_2d(
-    float *Md, float *Nd,
-    int M, int N,
-    int stride_M0, int stride_M1,
-    int stride_N0, int stride_N1
-) {
-    int row = blockIdx.y * blockDim.y + threadIdx.y;
-    int col = blockIdx.x * blockDim.x + threadIdx.x;
-
-    if (row >= M || col >= N) {
-        return;
-    } else {
-        int index_M = row * stride_M0 + col * stride_M1;
-        int index_N = row * stride_N0 + col * stride_N1;
-        Md[index_M] += Nd[index_N];
-    }
-}
-
-__global__ void tensor_add_eq_3d(
-    float *Md, float *Nd,
-    int M, int N, int P,
-    int stride_M0, int stride_M1, int stride_M2,
-    int stride_N0, int stride_N1, int stride_N2
-) {
-    int row = blockIdx.z * blockDim.z + threadIdx.z;
-    int col = blockIdx.y * blockDim.y + threadIdx.y;
-    int depth = blockIdx.x * blockDim.x + threadIdx.x;
-
-    if (row >= M || col >= N || depth >= P) {
-        return;
-    } else {
-        int index_M = row * stride_M0 + col * stride_M1 + depth * stride_M2;
-        int index_N = row * stride_N0 + col * stride_N1 + depth * stride_N2;
-        Md[index_M] += Nd[index_N];
-    }
-}
-
 __global__ void tensor_add_eq_kernel(
     float *dst, float *src,
     int32_t *shape,
@@ -164,33 +116,33 @@ __global__ void expand_add(
     }
 }
 
-__global__ void tensor_mul_1d(
-    float *Md, float *Nd, float *Pd, int M
+__global__ void tensor_mul_kernel(
+    float *dst, float *src1, float *src2,
+    int32_t *shape,
+    int32_t *strides_dst,
+    int32_t *strides_src1,
+    int32_t *strides_src2,
+    int32_t dim,
+    int32_t length
 ) {
     int index = blockIdx.x * blockDim.x + threadIdx.x;
-    if (index >= M) {
+    if (index >= length) {
         return;
     } else {
-        Pd[index] = Md[index] * Nd[index];
-    }
-}
-
-__global__ void tensor_mul_2d(
-    float *Md, float *Nd, float *Pd,
-    int M, int N,
-    int stride_M0, int stride_M1,
-    int stride_N0, int stride_N1,
-    int stride_P0, int stride_P1
-) {
-    int row = blockIdx.y * blockDim.y + threadIdx.y;
-    int col = blockIdx.x * blockDim.x + threadIdx.x;
-    if (row >= M || col >= N) {
-        return;
-    } else {
-        int index_M = row * stride_M0 + col * stride_M1;
-        int index_N = row * stride_N0 + col * stride_N1;
-        int index_P = row * stride_P0 + col * stride_P1;
-        Pd[index_P] = Md[index_M] * Nd[index_N];
+        int tmp_length = length;
+        int tmp_index = index;
+        int offset_src1 = 0;
+        int offset_src2 = 0;
+        int offset_dst = 0;
+        for (int j = 0; j < dim; ++j) {
+            tmp_length /= shape[j];
+            int cur_dim_index = tmp_index / tmp_length;
+            offset_src1 += cur_dim_index * strides_src1[j];
+            offset_src2 += cur_dim_index * strides_src2[j];
+            offset_dst += cur_dim_index * strides_dst[j];
+            tmp_index %= tmp_length;
+        }
+        dst[offset_dst] = src1[offset_src1] * src2[offset_src2];
     }
 }
 

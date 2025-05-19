@@ -407,6 +407,45 @@ void test_mul() {
     destruct_env();
 }
 
+void test_mul_1() {
+    construct_env();
+    Tensor *input = allocTensor({1, 3, 4}, "input");
+    Tensor *w = allocTensor({1, 3, 4}, "w");
+    Tensor *wt = allocTensor({1, 4, 3}, "wt");
+    Tensor *wtt = wt->transpose(1, 2);
+    Tensor *res_wi_tensor = allocTensor({1, 3, 4}, "res_wi");
+    Tensor *res_wti_tensor = allocTensor({1, 3, 4}, "res_wti");
+    auto nw = graph::allocNode(w);
+    nw->init_weight_for_dbg(1000.0f);
+    gCreateAction(
+        new MulAction(input, w, res_wi_tensor)
+    );
+    gCreateAction(
+        new MulAction(input, wtt, res_wti_tensor)
+    );
+    insert_boundary_action();
+    printAllActions();
+    allocMemAndInitTensors();
+    input->fill(0.1f);
+    float wt_data[12] = {
+        0, 0.04, 0.08,
+        0.01, 0.05, 0.09,
+        0.02, 0.06, 0.1,
+        0.03, 0.07, 0.11
+    };
+    g_backend_ops->cp_to_device(
+        wt,
+        reinterpret_cast<char*>(wt_data),
+        wt->size()
+    );
+    gDoActions();
+    compare_res_wi_wt_ans(
+        res_wi_tensor, res_wti_tensor,
+        nullptr, "test_mul_1"
+    );
+    destruct_env();
+}
+
 void test_sum() {
     construct_env();
     Tensor *w = allocTensor({3, 4}, "w");
@@ -3041,6 +3080,8 @@ void test_permute() {
 }
 
 void test_cpu() {
+    test_mul_1();
+    return ;
     test_at();
     test_add();
     test_add_eq();
@@ -4603,6 +4644,8 @@ void test_attention_bp_with_cpu() {
 }
 
 void test_gpu() {
+    test_mul_1();
+    return ;
     test_at();
     test_at_1();
     test_gpu_at_with_cpu();

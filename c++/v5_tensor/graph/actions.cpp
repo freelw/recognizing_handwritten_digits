@@ -124,15 +124,69 @@ std::string AtAction::to_string() const {
     return oss.str();
 }
 
+MulAction::MulAction(Tensor *_lhs, const Tensor *_rhs, Tensor *_res)
+    : Action(_lhs, _rhs, _res) {
+    assert(_lhs->get_dim() == _rhs->get_dim());
+    assert(_lhs->get_shape() == _rhs->get_shape());
+    auto dim = _lhs->get_dim();
+
+    lhs_shape = allocTensor(
+        {dim},
+        _lhs->get_name() + "_shape",
+        INT32
+    );
+    lhs_strides = allocTensor(
+        {dim},
+        _lhs->get_name() + "_strides",
+        INT32
+    );
+    rhs_strides = allocTensor(
+        {dim},
+        _rhs->get_name() + "_strides",
+        INT32
+    );
+    res_strides = allocTensor(
+        {dim},
+        _res->get_name() + "_strides",
+        INT32
+    );
+
+    gCreateAction(
+        new AssignShapeAndStridesAction(
+            lhs_shape,
+            lhs_strides,
+            _lhs->get_shape(),
+            _lhs->get_strides()
+        )
+    );
+
+    gCreateAction(
+        new AssignShapeAndStridesAction(
+            nullptr,
+            rhs_strides,
+            {},
+            _rhs->get_strides()
+        )
+    );
+
+    gCreateAction(
+        new AssignShapeAndStridesAction(
+            nullptr,
+            res_strides,
+            {},
+            _res->get_strides()
+        )
+    );
+}
+
 void MulAction::execute() {
     assert(lhs != nullptr);
     assert(rhs != nullptr);
     assert(res != nullptr);
     g_backend_ops->mul(
         lhs, rhs, res,
-        nullptr, nullptr,
-        nullptr, nullptr,
-        nullptr, nullptr // fixme
+        lhs_shape, lhs_strides,
+        rhs_strides, res_strides
     );
 }
 
@@ -368,7 +422,8 @@ void AssignShapeAndStridesAction::execute() {
 
 std::string AssignShapeAndStridesAction::to_string() const {
     std::ostringstream oss;
-    oss << "AssignShapeAndStridesAction: assigning shape " << lhs->get_meta_info() << " and strides " << res->get_meta_info();
+    oss << "AssignShapeAndStridesAction: assigning shape " << (lhs == nullptr ? "null" : lhs->get_meta_info())
+        << " and strides " << (res == nullptr ? "null" : res->get_meta_info());
     return oss.str();
 }
 

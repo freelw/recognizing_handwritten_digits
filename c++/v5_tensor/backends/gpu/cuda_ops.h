@@ -23,8 +23,7 @@ class CUDAOps : public BackendOps {
         void mul(
             Tensor *lhs, const Tensor *rhs, Tensor *res,
             Tensor *l_shape, Tensor *l_strides,
-            Tensor *r_shape, Tensor *r_striedes,
-            Tensor *res_shape, Tensor *res_striedes
+            Tensor *r_striedes, Tensor *res_striedes
         ) override;
         void sum(Tensor *lhs, Tensor *res, int dim) override;
         void relu(Tensor *lhs, Tensor *res) override;

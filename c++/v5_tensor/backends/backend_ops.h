@@ -19,8 +19,7 @@ class BackendOps {
         virtual void mul(
             Tensor *lhs, const Tensor *rhs, Tensor *res,
             Tensor *l_shape, Tensor *l_strides,
-            Tensor *r_shape, Tensor *r_striedes,
-            Tensor *res_shape, Tensor *res_striedes
+            Tensor *r_striedes, Tensor *res_striedes
         ) = 0;
         virtual void sum(Tensor *lhs, Tensor *res, int dim) = 0;
         virtual void relu(Tensor *lhs, Tensor *res) = 0;
