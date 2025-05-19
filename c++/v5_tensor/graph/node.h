@@ -57,6 +57,7 @@ namespace graph {
             }
             void backward();
             Node *transpose(int a = 0, int b = 1);
+            Node *permute(const std::vector<int> &dims);
             Node *reshape(const std::vector<int> &shape);
             Node *sequence_mask(Tensor *mask, float value);
             Node *softmax();

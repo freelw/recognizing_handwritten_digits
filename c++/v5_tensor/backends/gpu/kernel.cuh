@@ -27,22 +27,13 @@ __global__ void tensor_at_2d(
     int stride_P0, int stride_P1
 );
 
-__global__ void tensor_add_eq_1d(
-    float *Md, float *Nd, int M
-);
-
-__global__ void tensor_add_eq_2d(
-    float *Md, float *Nd,
-    int M, int N,
-    int stride_M0, int stride_M1,
-    int stride_N0, int stride_N1
-);
-
-__global__ void tensor_add_eq_3d(
-    float *Md, float *Nd,
-    int M, int N, int P,
-    int stride_M0, int stride_M1, int stride_M2,
-    int stride_N0, int stride_N1, int stride_N2
+__global__ void tensor_add_eq_kernel(
+    float *dst, float *src,
+    int32_t *shape,
+    int32_t *strides_dst,
+    int32_t *strides_src,
+    int32_t dim,
+    int32_t length
 );
 
 __global__ void expand_add(
@@ -52,16 +43,14 @@ __global__ void expand_add(
     int stride_P0, int stride_P1
 );
 
-__global__ void tensor_mul_1d(
-    float *Md, float *Nd, float *Pd, int M
-);
-
-__global__ void tensor_mul_2d(
-    float *Md, float *Nd, float *Pd,
-    int M, int N,
-    int stride_M0, int stride_M1,
-    int stride_N0, int stride_N1,
-    int stride_P0, int stride_P1
+__global__ void tensor_mul_kernel(
+    float *dst, float *src1, float *src2,
+    int32_t *shape,
+    int32_t *strides_dst,
+    int32_t *strides_src1,
+    int32_t *strides_src2,
+    int32_t dim,
+    int32_t length
 );
 
 __global__ void tensor_sum_2d_dim0(
@@ -156,7 +145,10 @@ __global__ void tensor_div(
 );
 
 __global__ void build_dropout_mask_kernel(
-    float *mask, int length, float p
+    float *mask,
+    int32_t *shape,
+    int32_t *strides,
+    int length, int dim, float p
 );
 
 #endif // GCC_ASAN

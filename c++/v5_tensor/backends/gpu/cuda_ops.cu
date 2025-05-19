@@ -74,78 +74,34 @@ void CUDAOps::add(Tensor *lhs, const Tensor *rhs, Tensor *res) {
     );
 }
 
-void CUDAOps::addEq(Tensor *lhs, const Tensor *rhs) {
-    
+void CUDAOps::addEq(
+    Tensor *lhs, const Tensor *rhs,
+    Tensor *l_shape,
+    Tensor *l_strides, Tensor *r_striedes
+) {
     assert(lhs != nullptr);
     assert(rhs != nullptr);
-    
     auto lshape = lhs->get_shape();
     auto rshape = rhs->get_shape();
-    
     assert(lshape == rshape);
-
-    auto lstrides = lhs->get_strides();
-    auto rstrides = rhs->get_strides();
-
     int dim = lhs->get_dim();
+    auto length = lhs->length();
 
-    assert(dim <= 3);
+    dim3 gridDim(
+        (length + TILE_WIDTH - 1) / TILE_WIDTH
+    );
 
-    if (dim == 1) {
-        dim3 gridDim(
-            (lshape[0] + TILE_WIDTH - 1) / TILE_WIDTH
-        );
-        dim3 blockDim(TILE_WIDTH);
-        tensor_add_eq_1d<<<gridDim, blockDim>>>(
-            (float *)lhs->get_data(),
-            (float *)rhs->get_data(),
-            lshape[0]
-        );
-    } else if (dim == 2) {
-        dim3 gridDim(
-            (lshape[1] + TILE_WIDTH - 1) / TILE_WIDTH,
-            (lshape[0] + TILE_WIDTH - 1) / TILE_WIDTH
-        );
-        dim3 blockDim(TILE_WIDTH, TILE_WIDTH);
-        tensor_add_eq_2d<<<gridDim, blockDim>>>(
-            (float *)lhs->get_data(),
-            (float *)rhs->get_data(),
-            lshape[0],
-            lshape[1],
-            lstrides[0],
-            lstrides[1],
-            rstrides[0],
-            rstrides[1]
-        );
-    } else if (dim == 3) {
-        dim3 gridDim(
-            lshape[2],
-            (lshape[1] + TILE_WIDTH - 1) / TILE_WIDTH,
-            (lshape[0] + TILE_WIDTH - 1) / TILE_WIDTH
-        );
-        dim3 blockDim(1, TILE_WIDTH, TILE_WIDTH);
-        tensor_add_eq_3d<<<gridDim, blockDim>>>(
-            (float *)lhs->get_data(),
-            (float *)rhs->get_data(),
-            lshape[0],
-            lshape[1],
-            lshape[2],
-            lstrides[0],
-            lstrides[1],
-            lstrides[2],
-            rstrides[0],
-            rstrides[1],
-            rstrides[2]
-        );
-        // check cuda error
-        cudaError_t err = cudaGetLastError();
-        if (err != cudaSuccess) {
-            std::cerr << "cuda err : " << cudaGetErrorString(err) << std::endl;
-            abort();
-        }
-    } else {
-        assert(false);
-    }
+    dim3 blockDim(TILE_WIDTH);
+
+    tensor_add_eq_kernel<<<gridDim, blockDim>>>(
+        (float *)lhs->get_data(),
+        (float *)rhs->get_data(),
+        (int32_t *)l_shape->get_data(),
+        (int32_t *)l_strides->get_data(),
+        (int32_t *)r_striedes->get_data(),
+        dim,
+        length
+    );
 }
 
 void CUDAOps::expandAdd(Tensor *lhs, const Tensor *rhs, Tensor *res) {
@@ -242,60 +198,37 @@ void CUDAOps::emb_at(Tensor *lhs, const Tensor *indices, const Tensor *rhs, Tens
     assert(false);
 }
 
-void CUDAOps::mul(Tensor *lhs, const Tensor *rhs, Tensor *res) {
+void CUDAOps::mul(
+    Tensor *lhs, const Tensor *rhs, Tensor *res,
+    Tensor *l_shape, Tensor *l_strides,
+    Tensor *r_striedes, Tensor *res_striedes
+) {
     assert(lhs != nullptr);
     assert(rhs != nullptr);
     assert(res != nullptr);
-    assert(
-        lhs->get_dim() == 1 ||
-        lhs->get_dim() == 2
+    assert(l_shape != nullptr);
+    assert(l_strides != nullptr);
+    assert(r_striedes != nullptr);
+    assert(res_striedes != nullptr);
+    
+    auto length = lhs->length();
+    dim3 gridDim(
+        (length + TILE_WIDTH - 1) / TILE_WIDTH
     );
 
-    auto lshape = lhs->get_shape();
-    auto rshape = rhs->get_shape();
-    auto res_shape = res->get_shape();
+    dim3 blockDim(TILE_WIDTH);
 
-    assert(lshape == rshape);
-    assert(res_shape == lshape);
-
-    auto lstrides = lhs->get_strides();
-    auto rstrides = rhs->get_strides();
-    auto res_strides = res->get_strides();
-    if (lhs->get_dim() == 1) {
-        dim3 gridDim(
-            (lshape[0] + TILE_WIDTH - 1) / TILE_WIDTH
-        );
-        dim3 blockDim(TILE_WIDTH);
-        tensor_mul_1d<<<gridDim, blockDim>>>(
-            (float *)lhs->get_data(),
-            (float *)rhs->get_data(),
-            (float *)res->get_data(),
-            lshape[0]
-        );
-    } else if (lhs->get_dim() == 2) {
-        dim3 gridDim(
-            (lshape[1] + TILE_WIDTH - 1) / TILE_WIDTH,
-            (lshape[0] + TILE_WIDTH - 1) / TILE_WIDTH
-        );
-
-        dim3 blockDim(TILE_WIDTH, TILE_WIDTH);
-
-        tensor_mul_2d<<<gridDim, blockDim>>>(
-            (float *)lhs->get_data(),
-            (float *)rhs->get_data(),
-            (float *)res->get_data(),
-            lshape[0],
-            lshape[1],
-            lstrides[0],
-            lstrides[1],
-            rstrides[0],
-            rstrides[1],
-            res_strides[0],
-            res_strides[1]
-        );
-    } else {
-        assert(false);
-    }
+    tensor_mul_kernel<<<gridDim, blockDim>>>(
+        (float *)res->get_data(),
+        (float *)lhs->get_data(),
+        (float *)rhs->get_data(),
+        (int32_t *)l_shape->get_data(),
+        (int32_t *)res_striedes->get_data(),
+        (int32_t *)l_strides->get_data(),
+        (int32_t *)r_striedes->get_data(),
+        lhs->get_dim(),
+        length
+    );
 }
 
 void CUDAOps::sum(Tensor *lhs, Tensor *res, int dim) {
@@ -789,9 +722,12 @@ void CUDAOps::div(Tensor *dst, Tensor *src, float value) {
     );
 }
 
-void CUDAOps::build_dropout_mask(Tensor *mask, float p) {
+void CUDAOps::build_dropout_mask(
+    Tensor *mask, float p,
+    Tensor *shape, Tensor *strides
+) {
     assert(mask != nullptr);
-    assert(mask->get_dim() == 1);
+    // assert(mask->get_dim() == 1);
     CURAND_CHECK(curandGenerateUniform(
         gen,
         reinterpret_cast<float*>(mask->get_data()),
@@ -803,7 +739,10 @@ void CUDAOps::build_dropout_mask(Tensor *mask, float p) {
     dim3 blockDim(TILE_WIDTH);
     build_dropout_mask_kernel<<<gridDim, blockDim>>>(
         (float *)mask->get_data(),
+        (int32_t *)shape->get_data(),
+        (int32_t *)strides->get_data(),
         mask->length(),
+        mask->get_dim(),
         p
     );
 }

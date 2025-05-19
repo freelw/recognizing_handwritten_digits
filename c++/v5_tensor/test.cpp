@@ -137,6 +137,7 @@ void test_bmm() {
     auto res_wti = ni->bmm(nwt->transpose(1, 2));
     // printAllTensors();
     // printAllActions();
+    insert_boundary_action();
     allocMemAndInitTensors();
     input->fill(1.0f);
     init_w_wt_for_bmm(w, wt);
@@ -171,6 +172,7 @@ void test_bmm_1() {
     allocMemAndInitTensors();
     input->fill(1.0f);
     init_w_wt_for_bmm(w, wt);
+    insert_boundary_action();
     gDoActions();
     auto res_wi_tensor = res_wi->get_tensor();
     auto res_wti_tensor = res_wti->get_tensor();
@@ -195,6 +197,7 @@ void test_bmm_2() {
     auto res_wti = ni->bmm(nwt->transpose(1, 2));
     // printAllTensors();
     // printAllActions();
+    insert_boundary_action();
     allocMemAndInitTensors();
     input->fill(1.0f);
     init_w_wt_for_bmm(w, wt);
@@ -228,6 +231,7 @@ void test_at() {
     graph::Node *nwt = graph::allocNode(wt);
     auto res_wi = ni->at(nw);
     auto res_wti = ni->at(nwt->transpose());
+    insert_boundary_action();
     // printAllTensors();
     // printAllActions();
     allocMemAndInitTensors();
@@ -259,6 +263,7 @@ void test_at_1() {
     graph::Node *nwt = graph::allocNode(wt);
     auto res_wi = ni->at(nw);
     auto res_wti = ni->at(nwt->transpose());
+    insert_boundary_action();
     allocMemAndInitTensors();
     input->fill(1.0f);
     init_w_wt(w, wt);
@@ -287,6 +292,7 @@ void test_add() {
     gCreateAction(
         new AddAction(input, wt->transpose(), res_wti_tensor)
     );
+    insert_boundary_action();
     // printAllTensors();
     // printAllActions();
     allocMemAndInitTensors();
@@ -323,6 +329,7 @@ void test_add_eq() {
     Tensor *input1 = allocTensor({3, 4}, "input1");
     Tensor *w = allocTensor({3, 4}, "w");
     Tensor *wt = allocTensor({4, 3}, "wt");
+    insert_boundary_action();
     gCreateAction(
         new AddEqAction(input, w)
     );
@@ -358,6 +365,7 @@ void test_expand_add() {
     gCreateAction(
         new ExpandAddAction(wt->transpose(), bias, res_wti_tensor)
     );
+    insert_boundary_action();
     // printAllTensors();
     // printAllActions();
     allocMemAndInitTensors();
@@ -384,6 +392,7 @@ void test_mul() {
     gCreateAction(
         new MulAction(input, wt->transpose(), res_wti_tensor)
     );
+    insert_boundary_action();
     // printAllTensors();
     // printAllActions();
     allocMemAndInitTensors();
@@ -394,6 +403,45 @@ void test_mul() {
     compare_res_wi_wt_ans(
         res_wi_tensor, res_wti_tensor,
         nullptr, "test_mul"
+    );
+    destruct_env();
+}
+
+void test_mul_1() {
+    construct_env();
+    Tensor *input = allocTensor({1, 3, 4}, "input");
+    Tensor *w = allocTensor({1, 3, 4}, "w");
+    Tensor *wt = allocTensor({1, 4, 3}, "wt");
+    Tensor *wtt = wt->transpose(1, 2);
+    Tensor *res_wi_tensor = allocTensor({1, 3, 4}, "res_wi");
+    Tensor *res_wti_tensor = allocTensor({1, 3, 4}, "res_wti");
+    auto nw = graph::allocNode(w);
+    nw->init_weight_for_dbg(1000.0f);
+    gCreateAction(
+        new MulAction(input, w, res_wi_tensor)
+    );
+    gCreateAction(
+        new MulAction(input, wtt, res_wti_tensor)
+    );
+    insert_boundary_action();
+    printAllActions();
+    allocMemAndInitTensors();
+    input->fill(0.1f);
+    float wt_data[12] = {
+        0, 0.04, 0.08,
+        0.01, 0.05, 0.09,
+        0.02, 0.06, 0.1,
+        0.03, 0.07, 0.11
+    };
+    g_backend_ops->cp_to_device(
+        wt,
+        reinterpret_cast<char*>(wt_data),
+        wt->size()
+    );
+    gDoActions();
+    compare_res_wi_wt_ans(
+        res_wi_tensor, res_wti_tensor,
+        nullptr, "test_mul_1"
     );
     destruct_env();
 }
@@ -410,6 +458,7 @@ void test_sum() {
     gCreateAction(
         new SumAction(wt->transpose(), res_wti_tensor, 0)
     );
+    insert_boundary_action();
     // printAllTensors();
     // printAllActions();
     allocMemAndInitTensors();
@@ -453,6 +502,7 @@ void test_cross_entropy() {
     gCreateAction(
         new CrossEntropyAction(wt->transpose(), labels, maxs_wti, sums_wti, res_wti_tensor)
     );
+    insert_boundary_action();
     // printAllTensors();
     // printAllActions();
     allocMemAndInitTensors();
@@ -486,12 +536,14 @@ void test_cross_entropy_backward() {
     gCreateAction(
         new CrossEntropyAction(wt->transpose(), labels, maxs_wti, sums_wti, res_wti_tensor)
     );
+    insert_boundary_action();
     gCreateAction(
         new CrossEntropyBackwardAction(w, labels, maxs_wi, sums_wi, grad_wi)
     );
     gCreateAction(
         new CrossEntropyBackwardAction(wt->transpose(), labels, maxs_wti, sums_wti, grad_wti)
     );
+    
     // printAllTensors();
     // printAllActions();
     allocMemAndInitTensors();
@@ -535,7 +587,7 @@ void test_bp() {
         ->expand_add(nb1);
     auto nres = foward_res1
         ->CrossEntropy(labels);
-
+    insert_boundary_action();
     zero_grad();
     nres->backward();
     // printAllTensors();
@@ -833,7 +885,7 @@ void test_adam() {
         ->expand_add(nb1);
     auto nres = foward_res1
         ->CrossEntropy(labels);
-
+    insert_boundary_action();
     zero_grad();
     nres->backward();
     // Tensor *norm_before_clip = calc_norm(params);
@@ -1208,28 +1260,25 @@ float calc_std(Tensor *tensor) {
 
 void test_mlp() {
     construct_env();
-
     MLP mlp(
         784,
         {30, 10},
         0.0f
     );
-    Adam adam(
-        mlp.get_parameters(),
-        0.001f
-    );
-
     Tensor *input = allocTensor({1, 784}, "input");
     Tensor *labels = allocTensor({1}, "labels", INT32);
     auto n_input = graph::allocNode(input);
     auto res = mlp.forward(n_input)->CrossEntropy(labels);
     zero_grad();
     insert_boundary_action();
+    Adam adam(
+        mlp.get_parameters(),
+        0.001f
+    );
     res->backward();
     adam.clip_grad(1.0f);
-    adam.step();
+    // adam.step(); // 这里不应该step 否则会改变参数的值
     // printAllTensors();
-    // printAllActions();
     allocMemAndInitTensors();
     for (int i = 0; i < 500; ++ i) {
         gDoActions();
@@ -1243,7 +1292,7 @@ void test_mlp() {
     }
 
     auto w1_tensor = mlp.get_parameters()[0]->get_w();
-    auto w2_tensor = mlp.get_parameters()[1]->get_w();
+    auto w2_tensor = mlp.get_parameters()[2]->get_w();
 
     float w1_mean = calc_mean(w1_tensor);
     float w1_std = calc_std(w1_tensor);
@@ -1274,7 +1323,6 @@ void test_mlp() {
     } else {
         std::cout << RED << "test_mlp once action failed" << RESET << std::endl;
     }
-
     destruct_env();
 }
 
@@ -1387,7 +1435,7 @@ void test_reshape() {
     auto l_t = l->transpose();
     auto l_t_reshape = l_t->reshape({3, 4});
     auto l_r = l->reshape({4, 3});
-
+    insert_boundary_action();
     allocMemAndInitTensors();
     // printAllActions();
     gDoActions();
@@ -1449,7 +1497,7 @@ void test_reshape_1() {
     auto l_t_m_1 = l_t->reshape({-1});
     auto l_t_d3 = l_t->reshape({2, -1, 3});
     auto l_t_d3_1 = l_t->reshape({-1, 3, 2});
-
+    insert_boundary_action();
     allocMemAndInitTensors();
     // printAllActions();
     gDoActions();
@@ -1504,6 +1552,7 @@ void test_reshape_with_cpu_base(
     auto l_t = l->transpose();
     auto l_t_reshape = l_t->reshape({m, n});
     auto l_r = l->reshape({m, n});
+    insert_boundary_action();
     allocMemAndInitTensors();
     gDoActions();
 
@@ -1636,7 +1685,6 @@ void test_reshape_with_cpu() {
 }
 
 void test_reshape_bp() {
-
     construct_env();
     Tensor *input = allocTensor({5, 4}, "input");
     Tensor *w = allocTensor({3, 2}, "w");
@@ -1667,7 +1715,7 @@ void test_reshape_bp() {
         ->expand_add(nb1);
     auto nres = foward_res1
         ->CrossEntropy(labels);
-
+    insert_boundary_action();
     zero_grad();
     nres->backward();
     // printAllActions();
@@ -1845,7 +1893,7 @@ void test_reshape_bp_1() {
         ->expand_add(nb1);
     auto nres = foward_res1
         ->CrossEntropy(labels);
-
+    insert_boundary_action();
     zero_grad();
     nres->backward();
     // printAllActions();
@@ -2004,6 +2052,7 @@ void test_contiguous() {
     } else {
         std::cout << RED << "test_contiguous failed" << RESET << std::endl;
     }
+    insert_boundary_action();
     allocMemAndInitTensors();
     gDoActions();
     destruct_env();
@@ -2015,6 +2064,7 @@ void test_repeat_interleave() {
     auto node = graph::allocNode(input);
     node->init_weight_for_dbg();
     auto res = input->repeat_interleave(2);
+    insert_boundary_action();
     // printAllActions();
     allocMemAndInitTensors();
     gDoActions();
@@ -2042,6 +2092,7 @@ void test_mask() {
     auto nm = graph::allocNode(mask);
     nm->init_weight_for_dbg();
     auto res = input->reshape({-1, k})->sequence_mask(mask->repeat_interleave(n), 0.1f);
+    insert_boundary_action();
     allocMemAndInitTensors();
     gDoActions();
     float ans[60] = {
@@ -2079,6 +2130,7 @@ void test_mask_1() {
     auto nm = graph::allocNode(mask);
     nm->init_weight_for_dbg();
     auto res = input->reshape({-1, k})->sequence_mask(mask, 0.1f);
+    insert_boundary_action();
     allocMemAndInitTensors();
     gDoActions();
     float ans[156] = {
@@ -2110,6 +2162,7 @@ void test_softmax() {
     auto ni = graph::allocNode(input);
     ni->init_weight_for_dbg(10000.0f);
     auto res = input->softmax();
+    insert_boundary_action();
     allocMemAndInitTensors();
     gDoActions();
     float ans[12] = {
@@ -2138,8 +2191,8 @@ void test_masked_softmax() {
     ni->init_weight_for_dbg(10000.0f);
     Tensor *valid_lens = allocTensor({2}, "mask", INT32);
     auto res = ni->masked_softmax(valid_lens);
+    insert_boundary_action();
     allocMemAndInitTensors();
-    
     int valid_lens_buffer[2] = {2, 3};
     g_backend_ops->cp_to_device(
         valid_lens,
@@ -2169,8 +2222,8 @@ void test_masked_softmax_1() {
     ni->init_weight_for_dbg(10000.0f);
     Tensor *valid_lens = allocTensor({2, 2}, "mask", INT32);
     auto res = ni->masked_softmax(valid_lens);
+    insert_boundary_action();
     allocMemAndInitTensors();
-    
     int valid_lens_buffer[4] = {1, 3, 2, 4};
     g_backend_ops->cp_to_device(
         valid_lens,
@@ -2178,7 +2231,6 @@ void test_masked_softmax_1() {
         4 * sizeof(int32_t)
     );
     gDoActions();
-
     float ans[16] = {
         1, 0, 0, 0,
         0.30061, 0.332225, 0.367165, 0,
@@ -2205,6 +2257,7 @@ void test_masked_softmax_bp() {
     Tensor *valid_lens = allocTensor({2, 2}, "mask", INT32);
     auto res_softmax = ni->masked_softmax(valid_lens);
     auto res_ce = res_softmax->reshape({-1, 4})->CrossEntropy(labels);
+    insert_boundary_action();
     res_ce->backward();
     allocMemAndInitTensors();
     init_labels(labels);
@@ -2272,6 +2325,7 @@ void test_bmm_bp() {
 
     auto bmm_res = ni->bmm(nw);
     auto ce_res = bmm_res->reshape({-1, 6})->CrossEntropy(labels);
+    insert_boundary_action();
     ce_res->backward();
 
     // printAllActions();
@@ -2477,6 +2531,7 @@ void test_div_bp() {
     auto res = ni->at(nw)->div(10.0f);
     auto ce_res = res->CrossEntropy(labels);
     ce_res->backward();
+    insert_boundary_action();
 
     allocMemAndInitTensors();
     gDoActions();
@@ -2828,10 +2883,11 @@ void test_dropout() {
     auto input_shape = input->get_shape();
     auto ni = graph::allocNode(input);
     ni->require_grad();
-    auto res = dropout.forward(ni->reshape({-1}))->reshape(input_shape);
+    auto res = dropout.forward(ni)->reshape(input_shape);
+    res->backward();
+    insert_boundary_action();
     allocMemAndInitTensors();
     input->fill(1.0f);
-    res->backward();
     res->get_grad()->fill(1.0f);
     // printAllActions();
     gDoActions();
@@ -2880,12 +2936,156 @@ void test_dropout() {
     destruct_env();
 }
 
+void test_permute() {
+    construct_env();
+    Tensor *input = allocTensor({2, 3, 4, 5}, "input");
+    Tensor *w = allocTensor({5, 4}, "w");
+    auto ni = graph::allocNode(input);
+    auto nw = graph::allocNode(w);
+    nw->init_weight_for_dbg(10000.0f);
+    ni->require_grad();
+    auto p_res = ni->permute({2, 0, 1, 3});
+    auto r_res = p_res->reshape({-1, 5});
+    auto w_res = r_res->at(nw);
+    insert_boundary_action();
+    w_res->backward();
+    // printAllActions();
+    allocMemAndInitTensors();
+    float grad_buffer[96] = {0};
+    assert(w_res->get_grad()->length() == 96);
+    for (int i = 0; i < w_res->get_grad()->length(); ++ i) {
+       grad_buffer[i] = 1.0f;
+    }
+
+    g_backend_ops->cp_to_device(
+        w_res->get_grad(),
+        reinterpret_cast<char*>(grad_buffer),
+        96 * sizeof(float)
+    );
+
+    float input_buffer[120] = {
+        0.1, 0.2, 0.3, 0.4, 0.5,
+        0.6, 0.7, 0.8, 0.9, 1.0,
+        1.1, 1.2, 1.3, 1.4, 1.5,
+        1.6, 1.7, 1.8, 1.9, 2.0,
+        2.1, 2.2, 2.3, 2.4, 2.5,
+        2.6, 2.7, 2.8, 2.9, 3.0,
+        3.1, 3.2, 3.3, 3.4, 3.5,
+        3.6, 3.7, 3.8, 3.9, 4.0,
+        4.1, 4.2, 4.3, 4.4, 4.5,
+        4.6, 4.7, 4.8, 4.9, 5.0,
+        5.0, 5.1, 5.2, 5.3, 5.4,
+        5.5, 5.6, 5.7, 5.8, 5.9,
+        6.0, 6.1, 6.2, 6.3, 6.4,
+        6.5, 6.6, 6.7, 6.8, 6.9,
+        7.0, 7.1, 7.2, 7.3, 7.4,
+        7.5, 7.6, 7.7, 7.8, 7.9,
+        8.0, 8.1, 8.2, 8.3, 8.4,
+        8.5, 8.6, 8.7, 8.8, 8.9,
+        9.0, 9.1, 9.2, 9.3, 9.4,
+        9.5, 9.6, 9.7, 9.8, 9.9,
+        10.0, 10.1, 10.2, 10.3, 10.4,
+        10.5, 10.6, 10.7, 10.8, 10.9,
+        11.0, 11.1, 11.2, 11.3, 11.4,
+        11.5, 11.6, 11.7, 11.8, 11.9
+    };
+
+    float input_p_buffer[120] = {
+        0.1000,  0.2000,  0.3000,  0.4000,  0.5000,
+        2.1000,  2.2000,  2.3000,  2.4000,  2.5000,
+        4.1000,  4.2000,  4.3000,  4.4000,  4.5000,
+        6.0000,  6.1000,  6.2000,  6.3000,  6.4000,
+        8.0000,  8.1000,  8.2000,  8.3000,  8.4000,
+        10.0000, 10.1000, 10.2000, 10.3000, 10.4000,
+        0.6000,  0.7000,  0.8000,  0.9000,  1.0000,
+        2.6000,  2.7000,  2.8000,  2.9000,  3.0000,
+        4.6000,  4.7000,  4.8000,  4.9000,  5.0000,
+        6.5000,  6.6000,  6.7000,  6.8000,  6.9000,
+        8.5000,  8.6000,  8.7000,  8.8000,  8.9000,
+        10.5000, 10.6000, 10.7000, 10.8000, 10.9000,
+        1.1000,  1.2000,  1.3000,  1.4000,  1.5000,
+        3.1000,  3.2000,  3.3000,  3.4000,  3.5000,
+        5.0000,  5.1000,  5.2000,  5.3000,  5.4000,
+        7.0000,  7.1000,  7.2000,  7.3000,  7.4000,
+        9.0000,  9.1000,  9.2000,  9.3000,  9.4000,
+        11.0000, 11.1000, 11.2000, 11.3000, 11.4000,
+        1.6000,  1.7000,  1.8000,  1.9000,  2.0000,
+        3.6000,  3.7000,  3.8000,  3.9000,  4.0000,
+        5.5000,  5.6000,  5.7000,  5.8000,  5.9000,
+        7.5000,  7.6000,  7.7000,  7.8000,  7.9000,
+        9.5000,  9.6000,  9.7000,  9.8000,  9.9000,
+        11.5000, 11.6000, 11.7000, 11.8000, 11.9000
+    };
+    g_backend_ops->cp_to_device(
+        input,
+        reinterpret_cast<char*>(input_buffer),
+        input->size()
+    );
+
+    gDoActions();
+    bool succ_permute = compare_res_ans_1d(
+        r_res->get_tensor(),
+        input_p_buffer,
+        "res"
+    );
+
+    if (!succ_permute) {
+        std::cout << RED << "test_permute res failed" << RESET << std::endl;
+    }
+
+    float w_res_ans[96] = {
+        1.6000,  1.7500,  1.9000,  2.0500,
+        9.6000, 10.7500, 11.9000, 13.0500,
+        17.6000, 19.7500, 21.9000, 24.0500,
+        25.2000, 28.3000, 31.4000, 34.5000,
+        33.2000, 37.3000, 41.4000, 45.5000,
+        41.2000, 46.3000, 51.4000, 56.5000,
+        3.6000,  4.0000,  4.4000,  4.8000,
+        11.6000, 13.0000, 14.4000, 15.8000,
+        19.6000, 22.0000, 24.4000, 26.8000,
+        27.2000, 30.5500, 33.9000, 37.2500,
+        35.2000, 39.5500, 43.9000, 48.2500,
+        43.2000, 48.5500, 53.9000, 59.2500,
+        5.6000,  6.2500,  6.9000,  7.5500,
+        13.6000, 15.2500, 16.9000, 18.5500,
+        21.2000, 23.8000, 26.4000, 29.0000,
+        29.2000, 32.8000, 36.4000, 40.0000,
+        37.2000, 41.8000, 46.4000, 51.0000,
+        45.2000, 50.8000, 56.4000, 62.0000,
+        7.6000,  8.5000,  9.4000, 10.3000,
+        15.6000, 17.5000, 19.4000, 21.3000,
+        23.2000, 26.0500, 28.9000, 31.7500,
+        31.2000, 35.0500, 38.9000, 42.7500,
+        39.2000, 44.0500, 48.9000, 53.7500,
+        47.2000, 53.0500, 58.9000, 64.7500
+    };
+
+    bool succ_w = compare_res_ans_1d(
+        w_res->get_tensor(),
+        w_res_ans,
+        "w_res"
+    );
+
+    if (!succ_w) {
+        std::cout << RED << "test_permute w_res failed" << RESET << std::endl;
+    }
+
+    bool succ = succ_permute && succ_w;
+    if (!succ) {
+        std::cout << RED << "test_permute res failed" << RESET << std::endl;
+    } else {
+        std::cout << GREEN << "test_permute succ" << RESET << std::endl;
+    }
+    destruct_env();
+}
+
 void test_cpu() {
     test_at();
     test_add();
     test_add_eq();
     test_expand_add();
     test_mul();
+    test_mul_1();
     test_sum();
     test_cross_entropy();
     test_cross_entropy_backward();
@@ -2914,6 +3114,7 @@ void test_cpu() {
     test_attention_bp();
     test_attention_bp_part();
     test_dropout();
+    test_permute();
 }
 
 Tensor *test_add_with_cpu_base(int m, int n) {
@@ -2923,6 +3124,7 @@ Tensor *test_add_with_cpu_base(int m, int n) {
     gCreateAction(
         new AddAction(input, w, res_wi_tensor)
     );
+    insert_boundary_action();
     allocMemAndInitTensors();
     input->fill(0.1f);
     std::vector<int> w_strides = w->get_strides();
@@ -2952,6 +3154,7 @@ Tensor *test_at_with_cpu_base(int m, int n, int p) {
     gCreateAction(
         new AtAction(input, w, res_wi_tensor)
     );
+    insert_boundary_action();
     allocMemAndInitTensors();
     input->fill(0.1f);
     std::vector<int> w_strides = w->get_strides();
@@ -3077,6 +3280,7 @@ Tensor *test_add_eq_1d_with_cpu_base(int m) {
     gCreateAction(
         new AddEqAction(input, w)
     );
+    insert_boundary_action();
     allocMemAndInitTensors();
     input->fill(0.1f);
     std::vector<int> w_strides = w->get_strides();
@@ -3103,6 +3307,7 @@ Tensor *test_add_eq_2d_with_cpu_base(int m, int n) {
     gCreateAction(
         new AddEqAction(input, w)
     );
+    insert_boundary_action();
     allocMemAndInitTensors();
     input->fill(0.1f);
     std::vector<int> w_strides = w->get_strides();
@@ -3225,6 +3430,7 @@ Tensor *test_expand_add_with_cpu_base(int m, int n) {
     gCreateAction(
         new ExpandAddAction(input, w, res_wi_tensor)
     );
+    insert_boundary_action();
     allocMemAndInitTensors();
     input->fill(0.1f);
     std::vector<int> w_strides = w->get_strides();
@@ -3297,6 +3503,7 @@ Tensor *test_mul_with_cpu_base(int m, int n) {
     gCreateAction(
         new MulAction(input, w, res_wi_tensor)
     );
+    insert_boundary_action();
     allocMemAndInitTensors();
     input->fill(0.1f);
     std::vector<int> w_strides = w->get_strides();
@@ -3372,6 +3579,7 @@ Tensor *test_gpu_sum_with_cpu_base(int m, int n) {
     gCreateAction(
         new SumAction(input, res_wi_tensor, 0)
     );
+    insert_boundary_action();
     allocMemAndInitTensors();
     input->fill(0.1f);
     gDoActions();
@@ -3434,6 +3642,7 @@ Tensor *test_cross_entropy_with_cpu_base(int m, int n) {
     gCreateAction(
         new CrossEntropyAction(input, labels, sums, maxs, res_wi_tensor)
     );
+    insert_boundary_action();
     allocMemAndInitTensors();
     input->fill(0.1f);
     gDoActions();
@@ -3497,6 +3706,7 @@ Tensor *test_cross_entropy_backward_with_cpu_base(int m, int n) {
     gCreateAction(
         new CrossEntropyAction(w, labels, maxs_wi, sums_wi, res_wi_tensor)
     );
+    insert_boundary_action();
     gCreateAction(
         new CrossEntropyBackwardAction(w, labels, maxs_wi, sums_wi, grad_wi)
     );
@@ -3563,10 +3773,7 @@ void test_mlp_with_cpu_base(
         {n, k},
         true
     );
-    Adam adam(
-        mlp.get_parameters(),
-        0.001f
-    );
+    
     Tensor *input = allocTensor({batch_size, m}, "input");
     Tensor *labels = allocTensor({batch_size}, "labels", INT32);
     gCreateAction(
@@ -3583,6 +3790,10 @@ void test_mlp_with_cpu_base(
     zero_grad();
     insert_boundary_action();
     res->backward();
+    Adam adam(
+        mlp.get_parameters(),
+        0.001f
+    );
     adam.clip_grad(1.0f);
     adam.step();
     allocMemAndInitTensors();
@@ -3641,6 +3852,7 @@ Tensor *test_repeat_interleave_with_cpu_base(int m, int n) {
     auto node = graph::allocNode(input);
     node->init_weight_for_dbg();
     auto res = input->repeat_interleave(n);
+    insert_boundary_action();
     // printAllActions();
     allocMemAndInitTensors();
     gDoActions();
@@ -3695,6 +3907,7 @@ Tensor *test_mask_with_cpu_base(int m, int n, int k) {
     auto nm = graph::allocNode(mask);
     nm->init_weight_for_dbg();
     auto res = input->reshape({-1, k})->sequence_mask(mask->repeat_interleave(n), 0.1f);
+    insert_boundary_action();
     allocMemAndInitTensors();
     gDoActions();
     return res;
@@ -3748,6 +3961,7 @@ Tensor *test_mask_with_cpu_base_1(int m, int n, int k) {
     auto nm = graph::allocNode(mask);
     nm->init_weight_for_dbg();
     auto res = input->reshape({-1, k})->sequence_mask(mask, 0.1f);
+    insert_boundary_action();
     allocMemAndInitTensors();
     gDoActions();
     return res;
@@ -3795,19 +4009,18 @@ void test_mask_with_cpu_1() {
 
 Tensor *test_softmax_with_cpu_base(int m, int n, int k) {
     Tensor *input = allocTensor({m, n, k}, "input");
-    
     auto ni = graph::allocNode(input);
     ni->init_weight_for_dbg(10000.0f);
     auto res = input->softmax();
-    allocMemAndInitTensors();
+    insert_boundary_action();
     // printAllActions();
+    allocMemAndInitTensors();
     gDoActions();
     std::vector<Tensor *> res_vec;
     return res;
 }
 
 void test_softmax_with_cpu() {
-
     use_gpu(false);
     construct_env();
     int m = 100;
@@ -3864,6 +4077,7 @@ Tensor *test_masked_softmax_with_cpu_base(int m, int n, int k) {
     auto nm = graph::allocNode(valid_lens);
     nm->init_weight_for_dbg();
     auto res = ni->masked_softmax(valid_lens);
+    insert_boundary_action();
     allocMemAndInitTensors();
     // printAllActions();
     gDoActions();
@@ -3925,6 +4139,7 @@ Tensor *test_masked_softmax_bp_with_cpu_base(
     auto nl = graph::allocNode(labels);
     nl->init_weight_for_dbg();
     auto res = ni->masked_softmax(valid_lens)->reshape({-1, k})->CrossEntropy(labels);
+    insert_boundary_action();
     res->backward();
     // printAllActions();
     allocMemAndInitTensors();
@@ -3991,6 +4206,7 @@ std::vector<Tensor *> test_bmm_bp_with_cpu_base(
     nl->init_weight_for_dbg();
     auto res = ni->bmm(nw)->softmax();
     auto res_ce = res->reshape({-1, k})->CrossEntropy(labels);
+    insert_boundary_action();
     res_ce->backward();
     allocMemAndInitTensors();
     gDoActions();
@@ -4120,6 +4336,7 @@ std::vector<Tensor *> test_div_bp_with_cpu_base(
 
     auto res = ni->at(nw)->div(10.0f)->reshape({1, i_shape[0], w_shape[1]})->softmax()->reshape({i_shape[0], w_shape[1]});
     auto ce_res = res->CrossEntropy(labels);
+    insert_boundary_action();
     ce_res->backward();
 
     allocMemAndInitTensors();
@@ -4425,6 +4642,116 @@ void test_attention_bp_with_cpu() {
     ::free(nv_grad_cpu_buffer);
 }
 
+std::vector<Tensor *> test_permute_with_cpu_base(
+    int m, int n, int k, int p, int q
+) {
+    Tensor *input = allocTensor({m, n, k, p}, "input");
+    Tensor *w = allocTensor({p, q}, "w");
+    auto ni = graph::allocNode(input);
+    ni->require_grad();
+    ni->init_weight_for_dbg();
+    auto nw = graph::allocNode(w);
+    auto res = ni->permute({2, 0, 1, 3})->reshape({-1, p})->at(nw);
+    res->backward();
+    insert_boundary_action();
+    allocMemAndInitTensors();
+    float *grad_buffer = static_cast<float*>(::malloc(m * n * k * q * sizeof(float)));
+    assert(res->get_grad()->length() == m * n * k * q);
+    for (int i = 0; i < res->get_grad()->length(); ++ i) {
+       grad_buffer[i] = 1.0f;
+    }
+    g_backend_ops->cp_to_device(
+        res->get_grad(),
+        reinterpret_cast<char*>(grad_buffer),
+        res->get_grad()->size()
+    );
+    ::free(grad_buffer);
+    gDoActions();
+    std::vector<Tensor *> res_vec;
+    res_vec.push_back(res->get_tensor());
+    res_vec.push_back(ni->get_grad());
+    return res_vec;
+}
+
+void test_permute_with_cpu() {
+    use_gpu(false);
+    construct_env();
+    int m = 10;
+    int n = 50;
+    int k = 30;
+    int p = 10;
+    int q = 20;
+
+    auto res_cpu_vec = test_permute_with_cpu_base(m, n, k, p, q);
+    auto res_cpu = res_cpu_vec[0];
+    auto ni_grad_cpu = res_cpu_vec[1];
+    auto res_cpu_size = res_cpu->size();
+    auto res_cpu_length = res_cpu->length();
+    float *res_cpu_buffer = static_cast<float*>(::malloc(res_cpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(res_cpu_buffer),
+        res_cpu,
+        res_cpu_size
+    );
+    auto ni_grad_cpu_size = ni_grad_cpu->size();
+    auto ni_grad_cpu_length = ni_grad_cpu->length();
+    float *ni_grad_cpu_buffer = static_cast<float*>(::malloc(ni_grad_cpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(ni_grad_cpu_buffer),
+        ni_grad_cpu,
+        ni_grad_cpu_size
+    );
+    destruct_env();
+
+    use_gpu(true);
+    construct_env();
+    auto res_gpu_vec = test_permute_with_cpu_base(m, n, k, p, q);
+    auto res_gpu = res_gpu_vec[0];
+    auto ni_grad_gpu = res_gpu_vec[1];
+    auto res_gpu_size = res_gpu->size();
+    auto res_gpu_length = res_gpu->length();
+    float *res_gpu_buffer = static_cast<float*>(::malloc(res_gpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(res_gpu_buffer),
+        res_gpu,
+        res_gpu_size
+    );
+    auto ni_grad_gpu_size = ni_grad_gpu->size();
+    auto ni_grad_gpu_length = ni_grad_gpu->length();
+    float *ni_grad_gpu_buffer = static_cast<float*>(::malloc(ni_grad_gpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(ni_grad_gpu_buffer),
+        ni_grad_gpu,
+        ni_grad_gpu_size
+    );
+    destruct_env();
+    assert(res_cpu_size == res_gpu_size);
+    assert(res_cpu_length == res_gpu_length);
+    assert(ni_grad_cpu_size == ni_grad_gpu_size);
+    assert(ni_grad_cpu_length == ni_grad_gpu_length);
+
+    bool succ_res = compare_ans1_ans2(res_cpu_buffer, res_gpu_buffer, res_gpu_length);
+    if (!succ_res) {
+        std::cerr << RED << "res mismatch" << RESET << std::endl;
+    }
+    bool succ_ni_grad = compare_ans1_ans2(ni_grad_cpu_buffer, ni_grad_gpu_buffer, ni_grad_gpu_length);
+
+    if (!succ_ni_grad) {
+        std::cerr << RED << "ni_grad mismatch" << RESET << std::endl;
+    }
+
+    bool succ = succ_res && succ_ni_grad;
+    if (succ) {
+        std::cout << GREEN << "test_permute_with_cpu succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_permute_with_cpu failed" << RESET << std::endl;
+    }
+    ::free(res_gpu_buffer);
+    ::free(res_cpu_buffer);
+    ::free(ni_grad_gpu_buffer);
+    ::free(ni_grad_cpu_buffer);
+}
+
 void test_gpu() {
     test_at();
     test_at_1();
@@ -4437,6 +4764,7 @@ void test_gpu() {
     test_expand_add();
     test_gpu_expand_add_with_cpu();
     test_mul();
+    test_mul_1();
     test_gpu_mul_with_cpu();
     test_sum();
     test_gpu_sum_with_cpu();
@@ -4480,6 +4808,8 @@ void test_gpu() {
     test_attention_bp_part();
     test_attention_bp_with_cpu();
     test_dropout();
+    test_permute();
+    test_permute_with_cpu();
 }
 
 int main(int argc, char *argv[]) {

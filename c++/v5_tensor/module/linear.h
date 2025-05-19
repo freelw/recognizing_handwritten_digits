@@ -15,7 +15,8 @@ class Linear {
         Linear(
             int input_num, int output_num,
             const std::string & prefix = "",
-            float sigma = -0.1f,
+            float w_sigma = -0.1f,
+            float b_sigma = -0.1f,
             ACTIVATION act = ACTIVATION::NONE,
             bool _bias = true,
             bool const_weight = false
@@ -36,7 +37,8 @@ class LazyLinear {
         LazyLinear(
             int _input_num, int _output_num,
             const std::string & _prefix = "",
-            float _sigma = -0.1f,
+            float _w_sigma = -0.1f,
+            float _b_sigma = -0.1f,
             ACTIVATION _act = ACTIVATION::NONE,
             bool _bias = true,
             bool _const_weight = false
@@ -44,7 +46,8 @@ class LazyLinear {
             input_num(_input_num),
             output_num(_output_num),
             prefix(_prefix),
-            sigma(_sigma),
+            w_sigma(_w_sigma),
+            b_sigma(_b_sigma),
             act(_act),
             bias(_bias),
             const_weight(_const_weight) {
@@ -58,7 +61,8 @@ class LazyLinear {
         int input_num;
         int output_num;
         std::string prefix;
-        float sigma;
+        float w_sigma;
+        float b_sigma;
         ACTIVATION act;
         bool bias;
         bool const_weight;

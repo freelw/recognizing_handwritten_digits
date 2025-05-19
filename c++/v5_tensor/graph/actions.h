@@ -37,12 +37,16 @@ class AddAction : public Action {
         std::string to_string() const override;
 };
 
+// AddEqAction 永远不会出现在forward中
 class AddEqAction : public Action {
     public:
-        AddEqAction(Tensor *_lhs, const Tensor *_rhs)
-            : Action(_lhs, _rhs, nullptr) {}
+        AddEqAction(Tensor *_lhs, const Tensor *_rhs);
         void execute() override;
         std::string to_string() const override;
+    private:
+        Tensor *lhs_shape;
+        Tensor *lhs_strides;
+        Tensor *rhs_strides;
 };
 
 class ExpandAddAction : public Action {
@@ -63,10 +67,14 @@ class AtAction : public Action {
 
 class MulAction : public Action {
     public:
-        MulAction(Tensor *_lhs, const Tensor *_rhs, Tensor *_res)
-            : Action(_lhs, _rhs, _res) {}
+        MulAction(Tensor *_lhs, const Tensor *_rhs, Tensor *_res);
         void execute() override;
         std::string to_string() const override;
+    private:
+        Tensor *lhs_shape;
+        Tensor *lhs_strides;
+        Tensor *rhs_strides;
+        Tensor *res_strides;
 };
 
 class SumAction : public Action {
@@ -188,15 +196,13 @@ class AssignShapeAndStridesAction : public Action {
         AssignShapeAndStridesAction(
             Tensor *tensor_shape,
             Tensor *tensor_strides,
-            const std::vector<int> &_shape,
-            const std::vector<int> &_strides
+            const std::vector<int> &shape,
+            const std::vector<int> &strides
         );
         virtual ~AssignShapeAndStridesAction();
         void execute() override;
         std::string to_string() const override;
     private:
-        std::vector<int> shape;
-        std::vector<int> strides;
         int32_t *shape_data;
         int32_t *strides_data;
 };
@@ -263,12 +269,13 @@ class DivAction : public Action {
 
 class DropoutMaskAction : public Action {
     public:
-        DropoutMaskAction(Tensor *mask, float _p)
-            : Action(nullptr, nullptr, mask), p(_p) {}
+        DropoutMaskAction(Tensor *mask, float _p);
         void execute() override;
         std::string to_string() const override;
     private:
         float p;
+        Tensor *shape;
+        Tensor *strides;
 };
 
 std::vector<Action *> getOnceActions();

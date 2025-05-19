@@ -8,11 +8,19 @@ class BackendOps {
         BackendOps() = default;
         virtual ~BackendOps() = default;
         virtual void add(Tensor *lhs, const Tensor *rhs, Tensor *res) = 0;
-        virtual void addEq(Tensor *lhs, const Tensor *rhs) = 0;
+        virtual void addEq(
+            Tensor *lhs, const Tensor *rhs,
+            Tensor *l_shape,
+            Tensor *l_strides, Tensor *r_striedes
+        ) = 0;
         virtual void expandAdd(Tensor *lhs, const Tensor *rhs, Tensor *res) = 0;
         virtual void at(Tensor *lhs, const Tensor *rhs, Tensor *res) = 0;
         virtual void emb_at(Tensor *lhs, const Tensor *indices, const Tensor *rhs, Tensor *res) = 0;
-        virtual void mul(Tensor *lhs, const Tensor *rhs, Tensor *res) = 0;
+        virtual void mul(
+            Tensor *lhs, const Tensor *rhs, Tensor *res,
+            Tensor *l_shape, Tensor *l_strides,
+            Tensor *r_striedes, Tensor *res_striedes
+        ) = 0;
         virtual void sum(Tensor *lhs, Tensor *res, int dim) = 0;
         virtual void relu(Tensor *lhs, Tensor *res) = 0;
         virtual void reluPrime(Tensor *lhs, Tensor *res) = 0;
@@ -34,7 +42,10 @@ class BackendOps {
         virtual void softmax(Tensor *lhs, Tensor *res) = 0;
         virtual void softmax_bacward(Tensor *target_grad, const Tensor *softmax_res, Tensor *grad) = 0;
         virtual void div(Tensor *dst, Tensor *src, float value) = 0;
-        virtual void build_dropout_mask(Tensor *mask, float p) = 0;
+        virtual void build_dropout_mask(
+            Tensor *mask, float p,
+            Tensor *shape, Tensor *strides    
+        ) = 0;
         
         // Memory management
         virtual void *alloc(size_t size) = 0;

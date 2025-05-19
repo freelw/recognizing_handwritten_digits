@@ -47,11 +47,49 @@ std::string AddAction::to_string() const {
     return oss.str();
 }
 
+AddEqAction::AddEqAction(Tensor *_lhs, const Tensor *_rhs)
+    : Action(_lhs, _rhs, nullptr) {
+    assert(_lhs->get_dim() == _rhs->get_dim());
+    assert(_lhs->get_shape() == _rhs->get_shape());
+    auto dim = _lhs->get_dim();
+    lhs_shape = allocTensor(
+        {dim},
+        _lhs->get_name() + "_shape",
+        INT32
+    );
+    lhs_strides = allocTensor(
+        {dim},
+        _lhs->get_name() + "_strides",
+        INT32
+    );
+    rhs_strides = allocTensor(
+        {dim},
+        _rhs->get_name() + "_strides",
+        INT32
+    );
+    gCreateAction(
+        new AssignShapeAndStridesAction(
+            lhs_shape,
+            lhs_strides,
+            _lhs->get_shape(),
+            _lhs->get_strides()
+        )
+    );
+    gCreateAction(
+        new AssignShapeAndStridesAction(
+            nullptr,
+            rhs_strides,
+            {},
+            _rhs->get_strides()
+        )
+    );
+}
+
 void AddEqAction::execute() {
     assert(lhs != nullptr);
     assert(rhs != nullptr);
     assert(lhs->get_shape() == rhs->get_shape());
-    g_backend_ops->addEq(lhs, rhs);    
+    g_backend_ops->addEq(lhs, rhs, lhs_shape, lhs_strides, rhs_strides);    
 }
 
 std::string AddEqAction::to_string() const {
@@ -86,11 +124,70 @@ std::string AtAction::to_string() const {
     return oss.str();
 }
 
+MulAction::MulAction(Tensor *_lhs, const Tensor *_rhs, Tensor *_res)
+    : Action(_lhs, _rhs, _res) {
+    assert(_lhs->get_dim() == _rhs->get_dim());
+    assert(_lhs->get_shape() == _rhs->get_shape());
+    auto dim = _lhs->get_dim();
+
+    lhs_shape = allocTensor(
+        {dim},
+        _lhs->get_name() + "_shape",
+        INT32
+    );
+    lhs_strides = allocTensor(
+        {dim},
+        _lhs->get_name() + "_strides",
+        INT32
+    );
+    rhs_strides = allocTensor(
+        {dim},
+        _rhs->get_name() + "_strides",
+        INT32
+    );
+    res_strides = allocTensor(
+        {dim},
+        _res->get_name() + "_strides",
+        INT32
+    );
+
+    gCreateAction(
+        new AssignShapeAndStridesAction(
+            lhs_shape,
+            lhs_strides,
+            _lhs->get_shape(),
+            _lhs->get_strides()
+        )
+    );
+
+    gCreateAction(
+        new AssignShapeAndStridesAction(
+            nullptr,
+            rhs_strides,
+            {},
+            _rhs->get_strides()
+        )
+    );
+
+    gCreateAction(
+        new AssignShapeAndStridesAction(
+            nullptr,
+            res_strides,
+            {},
+            _res->get_strides()
+        )
+    );
+}
+
 void MulAction::execute() {
     assert(lhs != nullptr);
     assert(rhs != nullptr);
     assert(res != nullptr);
-    g_backend_ops->mul(lhs, rhs, res);
+    g_backend_ops->mul(
+        lhs, rhs, res,
+        lhs_shape, lhs_strides,
+        rhs_strides, res_strides
+    );
 }
 
 std::string MulAction::to_string() const {
@@ -232,7 +329,6 @@ std::string ZeroGradAction::to_string() const {
 
 void InitWeightAction::execute() {
     assert(lhs != nullptr);
-
     if (init_type == "gauss") {
         g_backend_ops->init_weight_gauss(lhs, mean, sigma);
     } else if (init_type == "uniform") {
@@ -255,7 +351,10 @@ void InitWeightAction::execute() {
 
 std::string InitWeightAction::to_string() const {
     std::ostringstream oss;
-    oss << "InitWeightAction: initializing " << lhs->get_meta_info() << " with type " << init_type << " sigma " << sigma;
+    oss << "InitWeightAction: initializing " << lhs->get_meta_info() 
+        << " with type " << init_type
+        << " sigma " << sigma
+        << " mean " << mean;
     return oss.str();
 }
 
@@ -274,50 +373,57 @@ bool BoundaryAction::is_backward_boundary() {
 AssignShapeAndStridesAction::AssignShapeAndStridesAction(
     Tensor *tensor_shape,
     Tensor *tensor_strides,
-    const std::vector<int> &_shape,
-    const std::vector<int> &_strides
-) : Action(tensor_shape, nullptr, tensor_strides),
-    shape(_shape),
-    strides(_strides) {
-    shape_data = static_cast<int32_t*>(::malloc(sizeof(int32_t) * shape.size()));
-    strides_data = static_cast<int32_t*>(::malloc(sizeof(int32_t) * strides.size()));
-    for (size_t i = 0; i < shape.size(); ++i) {
-        shape_data[i] = static_cast<int32_t>(shape[i]);
+    const std::vector<int> &shape,
+    const std::vector<int> &strides
+) : Action(tensor_shape, nullptr, tensor_strides) {
+    if (tensor_shape != nullptr) {    
+        shape_data = static_cast<int32_t*>(::malloc(sizeof(int32_t) * shape.size()));
+        for (size_t i = 0; i < shape.size(); ++i) {
+            shape_data[i] = static_cast<int32_t>(shape[i]);
+        }
     }
-    for (size_t i = 0; i < strides.size(); ++i) {
-        strides_data[i] = static_cast<int32_t>(strides[i]);
+    if (tensor_strides != nullptr) {
+        strides_data = static_cast<int32_t*>(::malloc(sizeof(int32_t) * strides.size()));
+        for (size_t i = 0; i < strides.size(); ++i) {
+            strides_data[i] = static_cast<int32_t>(strides[i]);
+        }
     }
 }
 
 AssignShapeAndStridesAction::~AssignShapeAndStridesAction() {
-    assert(shape_data != nullptr);
-    assert(strides_data != nullptr);
-    ::free(strides_data);
-    ::free(shape_data);
+    if (lhs != nullptr) {
+        assert(shape_data != nullptr);
+        ::free(shape_data);
+    }
+    if (res != nullptr) {
+        assert(strides_data != nullptr);
+        ::free(strides_data);
+    }
 }
 
 void AssignShapeAndStridesAction::execute() {
-    assert(lhs != nullptr);
-    assert(res != nullptr);
-    assert(shape_data != nullptr);
-    assert(strides_data != nullptr);
-
-    g_backend_ops->cp_to_device(
-        lhs,
-        reinterpret_cast<char*>(shape_data),
-        sizeof(int32_t) * shape.size()
-    );
-
-    g_backend_ops->cp_to_device(
-        res,
-        reinterpret_cast<char*>(strides_data),
-        sizeof(int32_t) * strides.size()
-    );
+    if (lhs != nullptr) {
+        assert(shape_data != nullptr);
+        g_backend_ops->cp_to_device(
+            lhs,
+            reinterpret_cast<char*>(shape_data),
+            lhs->size()
+        );
+    }
+    if (res != nullptr) {
+        assert(strides_data != nullptr);
+        g_backend_ops->cp_to_device(
+            res,
+            reinterpret_cast<char*>(strides_data),
+            res->size()
+        );
+    }
 }
 
 std::string AssignShapeAndStridesAction::to_string() const {
     std::ostringstream oss;
-    oss << "AssignShapeAndStridesAction: assigning shape " << lhs->get_meta_info() << " and strides " << res->get_meta_info();
+    oss << "AssignShapeAndStridesAction: assigning shape " << (lhs == nullptr ? "null" : lhs->get_meta_info())
+        << " and strides " << (res == nullptr ? "null" : res->get_meta_info());
     return oss.str();
 }
 
@@ -398,9 +504,32 @@ std::string DivAction::to_string() const {
     return oss.str();
 }
 
+DropoutMaskAction::DropoutMaskAction(Tensor *mask, float _p)
+    : Action(nullptr, nullptr, mask), p(_p) {
+    assert(mask != nullptr);
+    shape = allocTensor(
+        {mask->get_dim()},
+        mask->get_name() + "_shape",
+        INT32
+    );
+    strides = allocTensor(
+        {mask->get_dim()},
+        mask->get_name() + "_strides",
+        INT32
+    );
+    gCreateAction(
+        new AssignShapeAndStridesAction(
+            shape,
+            strides,
+            mask->get_shape(),
+            mask->get_strides()
+        )
+    );
+}
+
 void DropoutMaskAction::execute() {
     assert(res != nullptr);
-    g_backend_ops->build_dropout_mask(res, p);
+    g_backend_ops->build_dropout_mask(res, p, shape, strides);
 }
 
 std::string DropoutMaskAction::to_string() const {
@@ -425,7 +554,24 @@ void gCreateAction(Action *action) {
     g_actions.push_back(action);
 }
 
+bool validateBoundaryFound() {
+    bool boundary_found = false;
+    for (Action *action : g_actions) {
+        if (action->is_backward_boundary()) {
+            boundary_found = true;
+        }
+    }
+    return boundary_found;
+}
+
+bool validateAddEqActionsInBackward() {
+    // todo: all AddEqAction should be in backward(behind boundary)
+    return true;
+}
+
 void gDoActions() {
+    assert(validateBoundaryFound());
+    assert(validateAddEqActionsInBackward());
     g_training = true;
     for (Action *action : g_actions) {
         if (action->is_do_once() && action->executed_once()) {

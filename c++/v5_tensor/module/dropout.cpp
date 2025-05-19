@@ -4,7 +4,6 @@ extern bool g_training;
 graph::Node *Dropout::forward(graph::Node *x) {
     if (g_training && p > 0) {
         auto x_tensor = x->get_tensor();
-        assert(x_tensor->get_dim() == 1);
         auto shape = x_tensor->get_shape();
         graph::Node *res_node = nullptr;
         Tensor *mask = allocTensor(
