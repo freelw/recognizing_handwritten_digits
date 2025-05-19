@@ -5,6 +5,7 @@
 #include "optimizers/adam.h"
 #include "model/mlp.h"
 #include "module/attention.h"
+#include "module/mha.h"
 #include "common.h"
 #include <iomanip>
 #include <cmath>
@@ -424,7 +425,7 @@ void test_mul_1() {
         new MulAction(input, wtt, res_wti_tensor)
     );
     insert_boundary_action();
-    printAllActions();
+    // printAllActions();
     allocMemAndInitTensors();
     input->fill(0.1f);
     float wt_data[12] = {
@@ -3079,6 +3080,299 @@ void test_permute() {
     destruct_env();
 }
 
+void test_lazy_linear() {
+
+    construct_env();
+
+    Tensor *input = allocTensor({20, 30, 10}, "input");
+    Tensor *input1 = allocTensor({20 * 30, 10}, "input");
+    auto ni = graph::allocNode(input);
+    auto ni1 = graph::allocNode(input1);
+
+    LazyLinear l(20, "", 0, 0, ACTIVATION::NONE, false, true);
+
+    auto res = l.forward(ni);
+    auto res1 = l.forward(ni1);
+
+    auto res_buffer = static_cast<float*>(::malloc(res->get_tensor()->size()));
+    auto res1_buffer = static_cast<float*>(::malloc(res1->get_tensor()->size()));
+
+    insert_boundary_action();
+    allocMemAndInitTensors();
+    gDoForwardActions();
+
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(res_buffer),
+        res->get_tensor(),
+        res->get_tensor()->size()
+    );
+
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(res1_buffer),
+        res1->get_tensor(),
+        res1->get_tensor()->size()
+    );
+
+    bool succ = compare_ans1_ans2(
+        res_buffer,
+        res1_buffer,
+        res->get_tensor()->length()
+    );
+
+    if (!succ) {
+        std::cout << RED << "test_lazy_linear res failed" << RESET << std::endl;
+    } else {
+        std::cout << GREEN << "test_lazy_linear succ" << RESET << std::endl;
+    }
+    destruct_env();
+}
+
+void test_mha() {
+    construct_env();
+
+    Tensor *queries = allocTensor({2, 1, 2}, "queries");
+
+    float queries_buffer[2 * 1 * 2] = {
+        0.1, 0.1,
+        0.2, 0.2
+    };
+
+    Tensor *keys = allocTensor({2, 5, 2}, "keys");
+
+    float keys_buffer[2 * 5 * 2] = {
+        1.1, 1.1,
+        1.2, 1.2,
+        1.3, 1.3,
+        1.4, 1.4,
+        1.5, 1.5,
+        2.1, 2.1,
+        2.2, 2.2,
+        2.3, 2.3,
+        2.4, 2.4,
+        2.5, 2.5
+    };
+
+    Tensor *values = allocTensor({2, 5, 4}, "values");
+
+    float values_buffer[2 * 5 * 4] = {
+        3.1, 3.1, 3.1, 3.1,
+        3.2, 3.2, 3.2, 3.2,
+        3.3, 3.3, 3.3, 3.3,
+        3.4, 3.4, 3.4, 3.4,
+        3.5, 3.5, 3.5, 3.5,
+        4.1, 4.1, 4.1, 4.1,
+        4.2, 4.2, 4.2, 4.2,
+        4.3, 4.3, 4.3, 4.3,
+        4.4, 4.4, 4.4, 4.4,
+        4.5, 4.5, 4.5, 4.5
+    };
+
+    auto nq = graph::allocNode(queries);
+    auto nk = graph::allocNode(keys);
+    auto nv = graph::allocNode(values);
+
+    nq->require_grad();
+    nk->require_grad();
+    nv->require_grad();
+
+    Tensor *labels = allocTensor({2}, "labels", INT32);
+    int32_t labels_buffer[2] = {0, 0};
+    Tensor *valid_lens = allocTensor({2}, "valid_lens", INT32);
+    int32_t valid_lens_buffer[2] = {2, 4};
+
+    MHA mha(10, 2, 0.0f, false, true);
+    auto res = mha.forward(nq, nk, nv, valid_lens);
+    auto res_shape = res->get_tensor()->get_shape();
+    auto res_dim = res->get_tensor()->get_dim();
+    
+    auto ce_res = res->reshape({-1, res_shape[res_dim-1]})->CrossEntropy(labels);
+    insert_boundary_action();
+    ce_res->backward();
+    // printAllActions();
+    allocMemAndInitTensors();
+
+    std::vector<Parameter *> params = mha.get_parameters();
+    auto w_q_w_linear = params[0]->get_w();
+    auto w_k_w_linear = params[1]->get_w();
+    auto w_v_w_linear = params[2]->get_w();
+    auto w_o_w_linear = params[3]->get_w();
+
+    float *w_q_w_linear_buffer = static_cast<float*>(::malloc(w_q_w_linear->size()));
+    float *w_k_w_linear_buffer = static_cast<float*>(::malloc(w_k_w_linear->size()));
+    float *w_v_w_linear_buffer = static_cast<float*>(::malloc(w_v_w_linear->size()));
+    float *w_o_w_linear_buffer = static_cast<float*>(::malloc(w_o_w_linear->size()));
+
+    for (int i = 0; i < w_q_w_linear->length(); ++ i) {
+        w_q_w_linear_buffer[i] = 1.0f;
+    }
+    for (int i = 0; i < w_k_w_linear->length(); ++ i) {
+        w_k_w_linear_buffer[i] = 1.0f;
+    }
+    for (int i = 0; i < w_v_w_linear->length(); ++ i) {
+        w_v_w_linear_buffer[i] = 1.0f;
+    }
+    for (int i = 0; i < w_o_w_linear->length(); ++ i) {
+        w_o_w_linear_buffer[i] = 1.0f;
+    }
+
+    w_q_w_linear_buffer[0] = 0.1f;
+    w_k_w_linear_buffer[0] = 0.1f;
+    w_v_w_linear_buffer[0] = 0.1f;
+    w_o_w_linear_buffer[0] = 0.1f;
+
+    g_backend_ops->cp_to_device(
+        queries,
+        reinterpret_cast<char*>(queries_buffer),
+        queries->size()
+    );
+    g_backend_ops->cp_to_device(
+        keys,
+        reinterpret_cast<char*>(keys_buffer),
+        keys->size()
+    );
+    g_backend_ops->cp_to_device(
+        values,
+        reinterpret_cast<char*>(values_buffer),
+        values->size()
+    );
+    g_backend_ops->cp_to_device(
+        labels,
+        reinterpret_cast<char*>(labels_buffer),
+        labels->size()
+    );
+    g_backend_ops->cp_to_device(
+        valid_lens,
+        reinterpret_cast<char*>(valid_lens_buffer),
+        valid_lens->size()
+    );
+    g_backend_ops->cp_to_device(
+        w_q_w_linear,
+        reinterpret_cast<char*>(w_q_w_linear_buffer),
+        w_q_w_linear->size()
+    );
+    g_backend_ops->cp_to_device(
+        w_k_w_linear,
+        reinterpret_cast<char*>(w_k_w_linear_buffer),
+        w_k_w_linear->size()
+    );
+    g_backend_ops->cp_to_device(
+        w_v_w_linear,
+        reinterpret_cast<char*>(w_v_w_linear_buffer),
+        w_v_w_linear->size()
+    );
+    g_backend_ops->cp_to_device(
+        w_o_w_linear,
+        reinterpret_cast<char*>(w_o_w_linear_buffer),
+        w_o_w_linear->size()
+    );
+    ::free(w_q_w_linear_buffer);
+    ::free(w_k_w_linear_buffer);
+    ::free(w_v_w_linear_buffer);
+    ::free(w_o_w_linear_buffer);
+
+    disableOnceAction();
+    gDoActions();
+
+    float res_ans[20] = {
+        114.45257, 123.24643, 123.24643, 123.24643, 123.24643, 123.24643, 123.24643, 123.24643, 123.24643, 123.24643,
+        155.07243, 166.98326, 166.98326, 166.98326, 166.98326, 166.98326, 166.98326, 166.98326, 166.98326, 166.98326
+    };
+
+    assert(res->get_tensor()->length() == 20);
+    bool succ_res = compare_res_ans_1d(
+        res->get_tensor(),
+        res_ans,
+        "res"
+    );
+    if (!succ_res) {
+        std::cout << RED << "test_mha res failed" << RESET << std::endl;
+    }
+
+    float loss = 0;
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(&loss),
+        ce_res->get_tensor(),
+        sizeof(float)
+    );
+    loss /= res_shape[0];
+    bool succ_loss = fabs(loss - 12.549578) < 1e-5;
+    if (!succ_loss) {
+        std::cout << RED << "test_mha loss failed" << RESET << std::endl;
+    }
+
+    float nq_grad_ans[4] = {
+        0.012630426, 0.01417224,
+        0.061989211, 0.069556311
+    };
+
+    assert(nq->get_grad()->length() == 4);
+    bool succ_nq_grad = compare_res_ans_1d(
+        nq->get_grad(),
+        nq_grad_ans,
+        "nq_grad"
+    );
+
+    if (!succ_nq_grad) {
+        std::cout << RED << "test_mha nq_grad failed" << RESET << std::endl;
+    }
+
+    float nk_grad_ans[20] = {
+        -0.012629911, -0.014171663,
+        0.012629954, 0.014171709,
+        0, 0,
+        0, 0,
+        0, 0,
+        -0.033463478, -0.037548412,
+        -0.015951805, -0.017899064,
+        0.0083152084, 0.0093302568,
+        0.041100066, 0.046117205,
+        0,0
+    };
+
+    assert(nk->get_grad()->length() == 20);
+    bool succ_nk_grad = compare_res_ans_1d(
+        nk->get_grad(),
+        nk_grad_ans,
+        "nk_grad"
+    );
+
+    if (!succ_nk_grad) {
+        std::cout << RED << "test_mha nk_grad failed" << RESET << std::endl;
+    }
+
+    float nv_grad_ans[40] = {
+        0.021634489, 0.2163423, 0.2163423, 0.2163423,
+        0.023365362, 0.2336507, 0.2336507, 0.2336507,
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        0.0087997541, 0.087996542, 0.087996542, 0.087996542,
+        0.010264132, 0.10264011, 0.10264011, 0.10264011,
+        0.011972192, 0.11972046, 0.11972046, 0.11972046,
+        0.013964491, 0.13964315, 0.13964315, 0.13964315,
+        0, 0, 0, 0
+    };
+
+    bool succ_nv_grad = compare_res_ans_1d(
+        nv->get_grad(),
+        nv_grad_ans,
+        "nv_grad"
+    );
+
+    if (!succ_nv_grad) {
+        std::cout << RED << "test_mha nv_grad failed" << RESET << std::endl;
+    }
+
+    bool succ = succ_res && succ_loss && succ_nq_grad && succ_nk_grad && succ_nv_grad;
+
+    if (succ) {
+        std::cout << GREEN << "test_mha succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_mha failed" << RESET << std::endl;
+    }
+    destruct_env();   
+}
+
 void test_cpu() {
     test_at();
     test_add();
@@ -3115,6 +3409,8 @@ void test_cpu() {
     test_attention_bp_part();
     test_dropout();
     test_permute();
+    test_lazy_linear();
+    test_mha();
 }
 
 Tensor *test_add_with_cpu_base(int m, int n) {
@@ -4810,6 +5106,8 @@ void test_gpu() {
     test_dropout();
     test_permute();
     test_permute_with_cpu();
+    test_lazy_linear();
+    test_mha();
 }
 
 int main(int argc, char *argv[]) {

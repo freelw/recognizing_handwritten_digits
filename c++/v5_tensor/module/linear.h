@@ -13,7 +13,7 @@ enum ACTIVATION {
 class Linear {
     public:
         Linear(
-            int input_num, int output_num,
+            int _input_num, int _output_num,
             const std::string & prefix = "",
             float w_sigma = -0.1f,
             float b_sigma = -0.1f,
@@ -26,6 +26,8 @@ class Linear {
         std::vector<Parameter *> get_parameters();
     private:
         bool bias;
+        int input_num;
+        int output_num;
         graph::Node *w;
         graph::Node *b;
         Parameter *Pw;
@@ -35,7 +37,7 @@ class Linear {
 class LazyLinear {
     public:
         LazyLinear(
-            int _input_num, int _output_num,
+            int _output_num,
             const std::string & _prefix = "",
             float _w_sigma = -0.1f,
             float _b_sigma = -0.1f,
@@ -43,7 +45,6 @@ class LazyLinear {
             bool _bias = true,
             bool _const_weight = false
         ) : 
-            input_num(_input_num),
             output_num(_output_num),
             prefix(_prefix),
             w_sigma(_w_sigma),
@@ -58,7 +59,6 @@ class LazyLinear {
         std::vector<Parameter *> get_parameters();
     private:
         Linear *linear;
-        int input_num;
         int output_num;
         std::string prefix;
         float w_sigma;

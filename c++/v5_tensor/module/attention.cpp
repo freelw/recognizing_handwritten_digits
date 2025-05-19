@@ -21,6 +21,7 @@ graph::Node *DotProductAttention::forward(
     assert(query->get_tensor()->get_dim() == 3);
     assert(key->get_tensor()->get_dim() == 3);
     assert(value->get_tensor()->get_dim() == 3);
+    assert(valid_lens->get_dtype() == INT32);
     
     auto q_shape = query->get_tensor()->get_shape();
     auto k_shape = key->get_tensor()->get_shape();
@@ -43,10 +44,8 @@ graph::Node *DotProductAttention::forward(
 
     auto dropout_attention_weights = attention_weights;
     if (g_training) {
-        auto atw_shape = dropout_attention_weights->get_tensor()->get_shape();
         dropout_attention_weights = dropout
-            ->forward(dropout_attention_weights->reshape({-1}))
-            ->reshape(atw_shape);
+            ->forward(dropout_attention_weights);
     }
     return attention_weights->bmm(value);
 }
