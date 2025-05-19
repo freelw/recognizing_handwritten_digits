@@ -66,6 +66,9 @@ graph::Node *MHA::forward(
     graph::Node *values,
     Tensor *valid_lens
 ) {
+    assert(queries->get_tensor()->get_dim() == 3);
+    assert(keys->get_tensor()->get_dim() == 3);
+    assert(values->get_tensor()->get_dim() == 3);
     queries = transpose_qkv(w_q->forward(queries));
     keys = transpose_qkv(w_k->forward(keys));
     values = transpose_qkv(w_v->forward(values));
@@ -102,14 +105,18 @@ std::vector<Parameter *> MHA::get_parameters() {
 graph::Node *MHA::transpose_qkv(
     graph::Node *X
 ) {
-    // X = X->reshap
-    assert(false);
-    return nullptr;
+    auto shape = X->get_tensor()->get_shape();
+    X = X->reshape({shape[0], shape[1], num_heads, -1});
+    X = X->permute({0, 2, 1, 3});
+    auto shape1 = X->get_tensor()->get_shape();
+    return X->reshape({-1, shape1[2], shape1[3]});
 }
 
 graph::Node *MHA::transpose_output(
     graph::Node *X
 ) {
-    assert(false);
-    return nullptr;
+    X = X->reshape({-1, num_heads, X->get_tensor()->get_shape()[1]});
+    X = X->permute({0, 2, 1, 3});
+    auto shape = X->get_tensor()->get_shape();
+    return X->reshape({shape[0], shape[1], -1});
 }
