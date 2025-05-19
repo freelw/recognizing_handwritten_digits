@@ -2884,10 +2884,10 @@ void test_dropout() {
     auto ni = graph::allocNode(input);
     ni->require_grad();
     auto res = dropout.forward(ni)->reshape(input_shape);
+    res->backward();
     insert_boundary_action();
     allocMemAndInitTensors();
     input->fill(1.0f);
-    res->backward();
     res->get_grad()->fill(1.0f);
     // printAllActions();
     gDoActions();
@@ -3080,13 +3080,12 @@ void test_permute() {
 }
 
 void test_cpu() {
-    test_mul_1();
-    return ;
     test_at();
     test_add();
     test_add_eq();
     test_expand_add();
     test_mul();
+    test_mul_1();
     test_sum();
     test_cross_entropy();
     test_cross_entropy_backward();
@@ -4644,8 +4643,6 @@ void test_attention_bp_with_cpu() {
 }
 
 void test_gpu() {
-    test_mul_1();
-    return ;
     test_at();
     test_at_1();
     test_gpu_at_with_cpu();
@@ -4657,6 +4654,7 @@ void test_gpu() {
     test_expand_add();
     test_gpu_expand_add_with_cpu();
     test_mul();
+    test_mul_1();
     test_gpu_mul_with_cpu();
     test_sum();
     test_gpu_sum_with_cpu();
