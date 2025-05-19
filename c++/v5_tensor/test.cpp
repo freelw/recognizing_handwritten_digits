@@ -424,7 +424,7 @@ void test_mul_1() {
         new MulAction(input, wtt, res_wti_tensor)
     );
     insert_boundary_action();
-    printAllActions();
+    // printAllActions();
     allocMemAndInitTensors();
     input->fill(0.1f);
     float wt_data[12] = {

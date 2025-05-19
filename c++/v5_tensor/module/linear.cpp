@@ -80,6 +80,9 @@ LazyLinear::~LazyLinear() {
 
 graph::Node *LazyLinear::forward(graph::Node *input) {
     if (linear == nullptr) {
+        auto shape = input->get_tensor()->get_shape();
+        auto dim = input->get_tensor()->get_dim();
+        auto input_num = shape[dim-1];
         linear = new Linear(
             input_num, output_num,
             prefix, w_sigma, b_sigma,
