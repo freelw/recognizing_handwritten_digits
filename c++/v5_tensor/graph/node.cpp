@@ -38,6 +38,20 @@ namespace graph {
         return res_node;
     }
 
+    Node *Node::permute(const std::vector<int> &dims) {
+        Tensor *l_tensor = this->get_tensor();
+        Tensor *res_tensor = l_tensor->permute(dims);
+        Node *res_node = nullptr;
+        if (is_require_grad()) {
+            res_node = allocNode(res_tensor, this->get_grad()->permute(dims));
+            res_node->require_grad();
+            res_node->edges.push_back(EmptyEdge::create(this));
+        } else {
+            res_node = allocNode(res_tensor);
+        }
+        return res_node;
+    }
+
     Node *Node::reshape(const std::vector<int> &shape) {
         Tensor *l_tensor = this->get_tensor();
         Tensor *res_tensor = l_tensor->reshape(shape);
