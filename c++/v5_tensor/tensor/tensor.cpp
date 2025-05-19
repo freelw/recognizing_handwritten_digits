@@ -147,7 +147,7 @@ Tensor *Tensor::permute(const std::vector<int> &dims) {
     return permute_view;
 }
 
-Tensor *Tensor::reshape(const std::vector<int> &shape) {
+Tensor *Tensor::reshape(const std::vector<int> &shape) const {
     std::vector<int> calc_req_shape = shape;
 
     int unknown_dim_cnt = 0;
@@ -393,7 +393,7 @@ Tensor *allocTensor(const std::vector<int> &shape, TensorDType dtype) {
 }
 
 Tensor *allocTensorView(
-    Tensor *parent, const std::vector<int> &shape,
+    const Tensor *parent, const std::vector<int> &shape,
     const std::vector<int> &strides, const std::string &name,
     int offset
 ) {

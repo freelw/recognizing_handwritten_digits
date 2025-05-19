@@ -37,10 +37,11 @@ class AddAction : public Action {
         std::string to_string() const override;
 };
 
+// AddEqAction 永远不会出现在forward中
 class AddEqAction : public Action {
     public:
         AddEqAction(Tensor *_lhs, const Tensor *_rhs)
-            : Action(_lhs, _rhs, nullptr) {}
+            : Action(_lhs->reshape({-1}), _rhs->reshape({-1}), nullptr) {}
         void execute() override;
         std::string to_string() const override;
 };

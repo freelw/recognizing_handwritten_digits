@@ -57,7 +57,7 @@ class Tensor {
         virtual std::string get_name() const { return name; }
         Tensor *transpose(int a = 0, int b = 1);
         Tensor *permute(const std::vector<int> &dims);
-        Tensor *reshape(const std::vector<int> &shape);
+        Tensor *reshape(const std::vector<int> &shape) const;
         Tensor *fill(float value);
         Tensor *repeat_interleave(int n);
         Tensor *sequence_mask(Tensor *mask, float value);
@@ -88,7 +88,7 @@ extern std::vector<Tensor*> g_grad_tensors;
 Tensor *allocTensor(const std::vector<int> &shape, const std::string &name, TensorDType _dtype = FLOAT32);
 Tensor *allocTensor(const std::vector<int> &shape, TensorDType _dtype = FLOAT32);
 Tensor *allocTensorView(
-    Tensor *parent, const std::vector<int> &shape,
+    const Tensor *parent, const std::vector<int> &shape,
     const std::vector<int> &strides, const std::string &name,
     int offset = 0);
 Tensor *allocGradTensor(const std::vector<int> &shape, const std::string &name);

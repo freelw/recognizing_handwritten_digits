@@ -427,7 +427,24 @@ void gCreateAction(Action *action) {
     g_actions.push_back(action);
 }
 
+bool validateBoundaryFound() {
+    bool boundary_found = false;
+    for (Action *action : g_actions) {
+        if (action->is_backward_boundary()) {
+            boundary_found = true;
+        }
+    }
+    return boundary_found;
+}
+
+bool validateAddEqActionsInBackward() {
+    // todo: all AddEqAction should be in backward(behind boundary)
+    return true;
+}
+
 void gDoActions() {
+    assert(validateBoundaryFound());
+    assert(validateAddEqActionsInBackward());
     g_training = true;
     for (Action *action : g_actions) {
         if (action->is_do_once() && action->executed_once()) {

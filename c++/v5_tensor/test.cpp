@@ -228,6 +228,7 @@ void test_at() {
     graph::Node *nwt = graph::allocNode(wt);
     auto res_wi = ni->at(nw);
     auto res_wti = ni->at(nwt->transpose());
+    insert_boundary_action();
     // printAllTensors();
     // printAllActions();
     allocMemAndInitTensors();
@@ -259,6 +260,7 @@ void test_at_1() {
     graph::Node *nwt = graph::allocNode(wt);
     auto res_wi = ni->at(nw);
     auto res_wti = ni->at(nwt->transpose());
+    insert_boundary_action();
     allocMemAndInitTensors();
     input->fill(1.0f);
     init_w_wt(w, wt);
@@ -287,6 +289,7 @@ void test_add() {
     gCreateAction(
         new AddAction(input, wt->transpose(), res_wti_tensor)
     );
+    insert_boundary_action();
     // printAllTensors();
     // printAllActions();
     allocMemAndInitTensors();
@@ -323,6 +326,7 @@ void test_add_eq() {
     Tensor *input1 = allocTensor({3, 4}, "input1");
     Tensor *w = allocTensor({3, 4}, "w");
     Tensor *wt = allocTensor({4, 3}, "wt");
+    insert_boundary_action();
     gCreateAction(
         new AddEqAction(input, w)
     );
@@ -358,6 +362,7 @@ void test_expand_add() {
     gCreateAction(
         new ExpandAddAction(wt->transpose(), bias, res_wti_tensor)
     );
+    insert_boundary_action();
     // printAllTensors();
     // printAllActions();
     allocMemAndInitTensors();
@@ -384,6 +389,7 @@ void test_mul() {
     gCreateAction(
         new MulAction(input, wt->transpose(), res_wti_tensor)
     );
+    insert_boundary_action();
     // printAllTensors();
     // printAllActions();
     allocMemAndInitTensors();
@@ -410,6 +416,7 @@ void test_sum() {
     gCreateAction(
         new SumAction(wt->transpose(), res_wti_tensor, 0)
     );
+    insert_boundary_action();
     // printAllTensors();
     // printAllActions();
     allocMemAndInitTensors();
@@ -453,6 +460,7 @@ void test_cross_entropy() {
     gCreateAction(
         new CrossEntropyAction(wt->transpose(), labels, maxs_wti, sums_wti, res_wti_tensor)
     );
+    insert_boundary_action();
     // printAllTensors();
     // printAllActions();
     allocMemAndInitTensors();
@@ -486,12 +494,14 @@ void test_cross_entropy_backward() {
     gCreateAction(
         new CrossEntropyAction(wt->transpose(), labels, maxs_wti, sums_wti, res_wti_tensor)
     );
+    insert_boundary_action();
     gCreateAction(
         new CrossEntropyBackwardAction(w, labels, maxs_wi, sums_wi, grad_wi)
     );
     gCreateAction(
         new CrossEntropyBackwardAction(wt->transpose(), labels, maxs_wti, sums_wti, grad_wti)
     );
+    
     // printAllTensors();
     // printAllActions();
     allocMemAndInitTensors();
@@ -535,7 +545,7 @@ void test_bp() {
         ->expand_add(nb1);
     auto nres = foward_res1
         ->CrossEntropy(labels);
-
+    insert_boundary_action();
     zero_grad();
     nres->backward();
     // printAllTensors();
@@ -833,7 +843,7 @@ void test_adam() {
         ->expand_add(nb1);
     auto nres = foward_res1
         ->CrossEntropy(labels);
-
+    insert_boundary_action();
     zero_grad();
     nres->backward();
     // Tensor *norm_before_clip = calc_norm(params);
@@ -1383,7 +1393,7 @@ void test_reshape() {
     auto l_t = l->transpose();
     auto l_t_reshape = l_t->reshape({3, 4});
     auto l_r = l->reshape({4, 3});
-
+    insert_boundary_action();
     allocMemAndInitTensors();
     // printAllActions();
     gDoActions();
@@ -1445,7 +1455,7 @@ void test_reshape_1() {
     auto l_t_m_1 = l_t->reshape({-1});
     auto l_t_d3 = l_t->reshape({2, -1, 3});
     auto l_t_d3_1 = l_t->reshape({-1, 3, 2});
-
+    insert_boundary_action();
     allocMemAndInitTensors();
     // printAllActions();
     gDoActions();
@@ -1500,6 +1510,7 @@ void test_reshape_with_cpu_base(
     auto l_t = l->transpose();
     auto l_t_reshape = l_t->reshape({m, n});
     auto l_r = l->reshape({m, n});
+    insert_boundary_action();
     allocMemAndInitTensors();
     gDoActions();
 
@@ -1663,7 +1674,7 @@ void test_reshape_bp() {
         ->expand_add(nb1);
     auto nres = foward_res1
         ->CrossEntropy(labels);
-
+    insert_boundary_action();
     zero_grad();
     nres->backward();
     // printAllActions();
@@ -1841,7 +1852,7 @@ void test_reshape_bp_1() {
         ->expand_add(nb1);
     auto nres = foward_res1
         ->CrossEntropy(labels);
-
+    insert_boundary_action();
     zero_grad();
     nres->backward();
     // printAllActions();
@@ -2000,6 +2011,7 @@ void test_contiguous() {
     } else {
         std::cout << RED << "test_contiguous failed" << RESET << std::endl;
     }
+    insert_boundary_action();
     allocMemAndInitTensors();
     gDoActions();
     destruct_env();
@@ -2011,6 +2023,7 @@ void test_repeat_interleave() {
     auto node = graph::allocNode(input);
     node->init_weight_for_dbg();
     auto res = input->repeat_interleave(2);
+    insert_boundary_action();
     // printAllActions();
     allocMemAndInitTensors();
     gDoActions();
@@ -2038,6 +2051,7 @@ void test_mask() {
     auto nm = graph::allocNode(mask);
     nm->init_weight_for_dbg();
     auto res = input->reshape({-1, k})->sequence_mask(mask->repeat_interleave(n), 0.1f);
+    insert_boundary_action();
     allocMemAndInitTensors();
     gDoActions();
     float ans[60] = {
@@ -2075,6 +2089,7 @@ void test_mask_1() {
     auto nm = graph::allocNode(mask);
     nm->init_weight_for_dbg();
     auto res = input->reshape({-1, k})->sequence_mask(mask, 0.1f);
+    insert_boundary_action();
     allocMemAndInitTensors();
     gDoActions();
     float ans[156] = {
@@ -2106,6 +2121,7 @@ void test_softmax() {
     auto ni = graph::allocNode(input);
     ni->init_weight_for_dbg(10000.0f);
     auto res = input->softmax();
+    insert_boundary_action();
     allocMemAndInitTensors();
     gDoActions();
     float ans[12] = {
@@ -2134,8 +2150,8 @@ void test_masked_softmax() {
     ni->init_weight_for_dbg(10000.0f);
     Tensor *valid_lens = allocTensor({2}, "mask", INT32);
     auto res = ni->masked_softmax(valid_lens);
+    insert_boundary_action();
     allocMemAndInitTensors();
-    
     int valid_lens_buffer[2] = {2, 3};
     g_backend_ops->cp_to_device(
         valid_lens,
@@ -2165,8 +2181,8 @@ void test_masked_softmax_1() {
     ni->init_weight_for_dbg(10000.0f);
     Tensor *valid_lens = allocTensor({2, 2}, "mask", INT32);
     auto res = ni->masked_softmax(valid_lens);
+    insert_boundary_action();
     allocMemAndInitTensors();
-    
     int valid_lens_buffer[4] = {1, 3, 2, 4};
     g_backend_ops->cp_to_device(
         valid_lens,
@@ -2174,7 +2190,6 @@ void test_masked_softmax_1() {
         4 * sizeof(int32_t)
     );
     gDoActions();
-
     float ans[16] = {
         1, 0, 0, 0,
         0.30061, 0.332225, 0.367165, 0,
@@ -2829,7 +2844,7 @@ void test_dropout() {
     input->fill(1.0f);
     res->backward();
     res->get_grad()->fill(1.0f);
-    // printAllActions();
+    printAllActions();
     gDoActions();
     float *res_buffer = static_cast<float*>(::malloc(res->get_tensor()->size()));
     g_backend_ops->cp_from_device(
@@ -2879,10 +2894,29 @@ void test_dropout() {
 void test_permute() {
     construct_env();
     Tensor *input = allocTensor({2, 3, 4, 5}, "input");
+    Tensor *w = allocTensor({5, 4}, "w");
     auto ni = graph::allocNode(input);
+    auto nw = graph::allocNode(w);
+    nw->init_weight_for_dbg(10000.0f);
     ni->require_grad();
-    auto res = ni->permute({2, 0, 1, 3})->reshape({-1, 5});
+    auto p_res = ni->permute({2, 0, 1, 3});
+    auto r_res = p_res->reshape({-1, 5});
+    auto w_res = r_res->at(nw);
+    w_res->backward();
+    printAllActions();
     allocMemAndInitTensors();
+    float grad_buffer[96] = {0};
+    assert(w_res->get_grad()->length() == 96);
+    for (int i = 0; i < w_res->get_grad()->length(); ++ i) {
+       grad_buffer[i] = 1.0f;
+    }
+
+    g_backend_ops->cp_to_device(
+        w_res->get_grad(),
+        reinterpret_cast<char*>(grad_buffer),
+        96 * sizeof(float)
+    );
+
     float input_buffer[120] = {
         0.1, 0.2, 0.3, 0.4, 0.5,
         0.6, 0.7, 0.8, 0.9, 1.0,
@@ -2943,12 +2977,54 @@ void test_permute() {
     );
 
     gDoActions();
-    bool succ = compare_res_ans_1d(
-        res->get_tensor(),
+    bool succ_permute = compare_res_ans_1d(
+        r_res->get_tensor(),
         input_p_buffer,
         "res"
     );
 
+    if (!succ_permute) {
+        std::cout << RED << "test_permute res failed" << RESET << std::endl;
+    }
+
+    float w_res_ans[96] = {
+        1.6000,  1.7500,  1.9000,  2.0500,
+        9.6000, 10.7500, 11.9000, 13.0500,
+        17.6000, 19.7500, 21.9000, 24.0500,
+        25.2000, 28.3000, 31.4000, 34.5000,
+        33.2000, 37.3000, 41.4000, 45.5000,
+        41.2000, 46.3000, 51.4000, 56.5000,
+        3.6000,  4.0000,  4.4000,  4.8000,
+        11.6000, 13.0000, 14.4000, 15.8000,
+        19.6000, 22.0000, 24.4000, 26.8000,
+        27.2000, 30.5500, 33.9000, 37.2500,
+        35.2000, 39.5500, 43.9000, 48.2500,
+        43.2000, 48.5500, 53.9000, 59.2500,
+        5.6000,  6.2500,  6.9000,  7.5500,
+        13.6000, 15.2500, 16.9000, 18.5500,
+        21.2000, 23.8000, 26.4000, 29.0000,
+        29.2000, 32.8000, 36.4000, 40.0000,
+        37.2000, 41.8000, 46.4000, 51.0000,
+        45.2000, 50.8000, 56.4000, 62.0000,
+        7.6000,  8.5000,  9.4000, 10.3000,
+        15.6000, 17.5000, 19.4000, 21.3000,
+        23.2000, 26.0500, 28.9000, 31.7500,
+        31.2000, 35.0500, 38.9000, 42.7500,
+        39.2000, 44.0500, 48.9000, 53.7500,
+        47.2000, 53.0500, 58.9000, 64.7500
+    };
+
+    bool succ_w = compare_res_ans_1d(
+        w_res->get_tensor(),
+        w_res_ans,
+        "w_res"
+    );
+
+    if (!succ_w) {
+        std::cout << RED << "test_permute w_res failed" << RESET << std::endl;
+    }
+
+    bool succ = succ_permute && succ_w;
     if (!succ) {
         std::cout << RED << "test_permute res failed" << RESET << std::endl;
     } else {
@@ -3001,6 +3077,7 @@ Tensor *test_add_with_cpu_base(int m, int n) {
     gCreateAction(
         new AddAction(input, w, res_wi_tensor)
     );
+    insert_boundary_action();
     allocMemAndInitTensors();
     input->fill(0.1f);
     std::vector<int> w_strides = w->get_strides();
@@ -3030,6 +3107,7 @@ Tensor *test_at_with_cpu_base(int m, int n, int p) {
     gCreateAction(
         new AtAction(input, w, res_wi_tensor)
     );
+    insert_boundary_action();
     allocMemAndInitTensors();
     input->fill(0.1f);
     std::vector<int> w_strides = w->get_strides();
@@ -3155,6 +3233,7 @@ Tensor *test_add_eq_1d_with_cpu_base(int m) {
     gCreateAction(
         new AddEqAction(input, w)
     );
+    insert_boundary_action();
     allocMemAndInitTensors();
     input->fill(0.1f);
     std::vector<int> w_strides = w->get_strides();
@@ -3181,6 +3260,7 @@ Tensor *test_add_eq_2d_with_cpu_base(int m, int n) {
     gCreateAction(
         new AddEqAction(input, w)
     );
+    insert_boundary_action();
     allocMemAndInitTensors();
     input->fill(0.1f);
     std::vector<int> w_strides = w->get_strides();
@@ -3303,6 +3383,7 @@ Tensor *test_expand_add_with_cpu_base(int m, int n) {
     gCreateAction(
         new ExpandAddAction(input, w, res_wi_tensor)
     );
+    insert_boundary_action();
     allocMemAndInitTensors();
     input->fill(0.1f);
     std::vector<int> w_strides = w->get_strides();
@@ -3375,6 +3456,7 @@ Tensor *test_mul_with_cpu_base(int m, int n) {
     gCreateAction(
         new MulAction(input, w, res_wi_tensor)
     );
+    insert_boundary_action();
     allocMemAndInitTensors();
     input->fill(0.1f);
     std::vector<int> w_strides = w->get_strides();
@@ -3450,6 +3532,7 @@ Tensor *test_gpu_sum_with_cpu_base(int m, int n) {
     gCreateAction(
         new SumAction(input, res_wi_tensor, 0)
     );
+    insert_boundary_action();
     allocMemAndInitTensors();
     input->fill(0.1f);
     gDoActions();
@@ -3512,6 +3595,7 @@ Tensor *test_cross_entropy_with_cpu_base(int m, int n) {
     gCreateAction(
         new CrossEntropyAction(input, labels, sums, maxs, res_wi_tensor)
     );
+    insert_boundary_action();
     allocMemAndInitTensors();
     input->fill(0.1f);
     gDoActions();
@@ -3575,6 +3659,7 @@ Tensor *test_cross_entropy_backward_with_cpu_base(int m, int n) {
     gCreateAction(
         new CrossEntropyAction(w, labels, maxs_wi, sums_wi, res_wi_tensor)
     );
+    insert_boundary_action();
     gCreateAction(
         new CrossEntropyBackwardAction(w, labels, maxs_wi, sums_wi, grad_wi)
     );
@@ -3720,6 +3805,7 @@ Tensor *test_repeat_interleave_with_cpu_base(int m, int n) {
     auto node = graph::allocNode(input);
     node->init_weight_for_dbg();
     auto res = input->repeat_interleave(n);
+    insert_boundary_action();
     // printAllActions();
     allocMemAndInitTensors();
     gDoActions();
@@ -3774,6 +3860,7 @@ Tensor *test_mask_with_cpu_base(int m, int n, int k) {
     auto nm = graph::allocNode(mask);
     nm->init_weight_for_dbg();
     auto res = input->reshape({-1, k})->sequence_mask(mask->repeat_interleave(n), 0.1f);
+    insert_boundary_action();
     allocMemAndInitTensors();
     gDoActions();
     return res;
@@ -3827,6 +3914,7 @@ Tensor *test_mask_with_cpu_base_1(int m, int n, int k) {
     auto nm = graph::allocNode(mask);
     nm->init_weight_for_dbg();
     auto res = input->reshape({-1, k})->sequence_mask(mask, 0.1f);
+    insert_boundary_action();
     allocMemAndInitTensors();
     gDoActions();
     return res;
@@ -3874,19 +3962,18 @@ void test_mask_with_cpu_1() {
 
 Tensor *test_softmax_with_cpu_base(int m, int n, int k) {
     Tensor *input = allocTensor({m, n, k}, "input");
-    
     auto ni = graph::allocNode(input);
     ni->init_weight_for_dbg(10000.0f);
     auto res = input->softmax();
-    allocMemAndInitTensors();
+    insert_boundary_action();
     // printAllActions();
+    allocMemAndInitTensors();
     gDoActions();
     std::vector<Tensor *> res_vec;
     return res;
 }
 
 void test_softmax_with_cpu() {
-
     use_gpu(false);
     construct_env();
     int m = 100;
@@ -3943,6 +4030,7 @@ Tensor *test_masked_softmax_with_cpu_base(int m, int n, int k) {
     auto nm = graph::allocNode(valid_lens);
     nm->init_weight_for_dbg();
     auto res = ni->masked_softmax(valid_lens);
+    insert_boundary_action();
     allocMemAndInitTensors();
     // printAllActions();
     gDoActions();
@@ -4004,6 +4092,7 @@ Tensor *test_masked_softmax_bp_with_cpu_base(
     auto nl = graph::allocNode(labels);
     nl->init_weight_for_dbg();
     auto res = ni->masked_softmax(valid_lens)->reshape({-1, k})->CrossEntropy(labels);
+    insert_boundary_action();
     res->backward();
     // printAllActions();
     allocMemAndInitTensors();
@@ -4070,6 +4159,7 @@ std::vector<Tensor *> test_bmm_bp_with_cpu_base(
     nl->init_weight_for_dbg();
     auto res = ni->bmm(nw)->softmax();
     auto res_ce = res->reshape({-1, k})->CrossEntropy(labels);
+    insert_boundary_action();
     res_ce->backward();
     allocMemAndInitTensors();
     gDoActions();
@@ -4199,6 +4289,7 @@ std::vector<Tensor *> test_div_bp_with_cpu_base(
 
     auto res = ni->at(nw)->div(10.0f)->reshape({1, i_shape[0], w_shape[1]})->softmax()->reshape({i_shape[0], w_shape[1]});
     auto ce_res = res->CrossEntropy(labels);
+    insert_boundary_action();
     ce_res->backward();
 
     allocMemAndInitTensors();
