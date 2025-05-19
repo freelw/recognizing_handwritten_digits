@@ -17,8 +17,8 @@ class MLP {
         std::vector<Parameter*> get_parameters();
         graph::Node *forward(graph::Node *input);
     private:
-        Linear *l1;
-        Linear *l2;
+        LazyLinear *l1;
+        LazyLinear *l2;
         Dropout *dropout;
 };
 

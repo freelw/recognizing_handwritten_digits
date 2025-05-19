@@ -83,3 +83,8 @@ graph::Node *LazyLinear::forward(graph::Node *input) {
     }
     return linear->forward(input);
 }
+
+std::vector<Parameter *> LazyLinear::get_parameters() {
+    assert(linear != nullptr);
+    return linear->get_parameters();
+}

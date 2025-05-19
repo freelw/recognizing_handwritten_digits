@@ -8,8 +8,8 @@ MLP::MLP(
     bool const_weight
 ) {
     auto sigma = 0.02f;
-    l1 = new Linear(_input, _outputs[0], "l1", sigma, RELU, true, const_weight);
-    l2 = new Linear(_outputs[0], _outputs[1], "l2", sigma, NONE, true, const_weight);
+    l1 = new LazyLinear(_input, _outputs[0], "l1", sigma, RELU, true, const_weight);
+    l2 = new LazyLinear(_outputs[0], _outputs[1], "l2", sigma, NONE, true, const_weight);
     dropout = new Dropout(dropout_p);
 }
 
