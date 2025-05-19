@@ -13,7 +13,7 @@ enum ACTIVATION {
 class Linear {
     public:
         Linear(
-            int input_num, int output_num,
+            int _input_num, int _output_num,
             const std::string & prefix = "",
             float w_sigma = -0.1f,
             float b_sigma = -0.1f,
@@ -26,6 +26,8 @@ class Linear {
         std::vector<Parameter *> get_parameters();
     private:
         bool bias;
+        int input_num;
+        int output_num;
         graph::Node *w;
         graph::Node *b;
         Parameter *Pw;

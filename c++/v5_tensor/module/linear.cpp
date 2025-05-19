@@ -2,14 +2,14 @@
 #include <cmath>
 
 Linear::Linear(
-    int input_num, int output_num,
+    int _input_num, int _output_num,
     const std::string & prefix,
     float w_sigma,
     float b_sigma,
     ACTIVATION act,
     bool _bias,
     bool const_weight
-): bias(_bias) {
+): input_num(_input_num), output_num(_output_num), bias(_bias){
     auto w_tensor = allocTensor({input_num, output_num}, prefix + "_w_linear");
     w = graph::allocNode(w_tensor);
     w->require_grad();
@@ -24,11 +24,11 @@ Linear::Linear(
         if (w_sigma <  0) {
             switch (act) {
                 case RELU:
-                    w_sigma = std::sqrt(2.0f/input_num);
+                    w_sigma = std::sqrt(2.0f / input_num);
                     break;
                 case SIGMOID:
                 case NONE:
-                    w_sigma = std::sqrt(2.0f/(input_num + output_num));
+                    w_sigma = std::sqrt(2.0f / (input_num + output_num));
                     break;
                 case TANH:
                     w_sigma = std::sqrt(2.0 / (input_num + output_num)) * 4;
@@ -53,10 +53,21 @@ Linear::Linear(
 }
 
 graph::Node *Linear::forward(graph::Node *input) {
+    auto dim = input->get_tensor()->get_dim();
+    assert(dim >= 2);
+    if (dim > 2) {
+        input = input->reshape({-1, input_num});
+    }
     auto res = input->at(w);
     if (bias) {
         assert(b != nullptr);
         res = res->expand_add(b);
+    }
+    if (dim > 2) {
+        auto shape = input->get_tensor()->get_shape();
+        shape.pop_back();
+        shape.push_back(output_num);
+        res = res->reshape(shape);
     }
     return res;
 }
