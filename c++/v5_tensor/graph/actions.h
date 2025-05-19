@@ -269,12 +269,13 @@ class DivAction : public Action {
 
 class DropoutMaskAction : public Action {
     public:
-        DropoutMaskAction(Tensor *mask, float _p)
-            : Action(nullptr, nullptr, mask), p(_p) {}
+        DropoutMaskAction(Tensor *mask, float _p);
         void execute() override;
         std::string to_string() const override;
     private:
         float p;
+        Tensor *shape;
+        Tensor *strides;
 };
 
 std::vector<Action *> getOnceActions();

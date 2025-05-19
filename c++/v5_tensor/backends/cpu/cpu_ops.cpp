@@ -300,7 +300,10 @@ void CPUOps::div(Tensor *dst, Tensor *src, float value) {
     }
 }
 
-void CPUOps::build_dropout_mask(Tensor *mask, float p) {
+void CPUOps::build_dropout_mask(
+    Tensor *mask, float p,
+    Tensor */*shape*/, Tensor */*strides*/
+) {
     assert(mask != nullptr);
     // assert(mask->get_dim() == 1);
     auto length = mask->length();

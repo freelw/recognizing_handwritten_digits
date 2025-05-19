@@ -722,9 +722,12 @@ void CUDAOps::div(Tensor *dst, Tensor *src, float value) {
     );
 }
 
-void CUDAOps::build_dropout_mask(Tensor *mask, float p) {
+void CUDAOps::build_dropout_mask(
+    Tensor *mask, float p,
+    Tensor *shape, Tensor *strides
+) {
     assert(mask != nullptr);
-    assert(mask->get_dim() == 1);
+    // assert(mask->get_dim() == 1);
     CURAND_CHECK(curandGenerateUniform(
         gen,
         reinterpret_cast<float*>(mask->get_data()),
@@ -736,7 +739,10 @@ void CUDAOps::build_dropout_mask(Tensor *mask, float p) {
     dim3 blockDim(TILE_WIDTH);
     build_dropout_mask_kernel<<<gridDim, blockDim>>>(
         (float *)mask->get_data(),
+        (int32_t *)shape->get_data(),
+        (int32_t *)strides->get_data(),
         mask->length(),
+        mask->get_dim(),
         p
     );
 }

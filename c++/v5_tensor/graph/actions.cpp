@@ -504,9 +504,32 @@ std::string DivAction::to_string() const {
     return oss.str();
 }
 
+DropoutMaskAction::DropoutMaskAction(Tensor *mask, float _p)
+    : Action(nullptr, nullptr, mask), p(_p) {
+    assert(mask != nullptr);
+    shape = allocTensor(
+        {mask->get_dim()},
+        mask->get_name() + "_shape",
+        INT32
+    );
+    strides = allocTensor(
+        {mask->get_dim()},
+        mask->get_name() + "_strides",
+        INT32
+    );
+    gCreateAction(
+        new AssignShapeAndStridesAction(
+            shape,
+            strides,
+            mask->get_shape(),
+            mask->get_strides()
+        )
+    );
+}
+
 void DropoutMaskAction::execute() {
     assert(res != nullptr);
-    g_backend_ops->build_dropout_mask(res, p);
+    g_backend_ops->build_dropout_mask(res, p, shape, strides);
 }
 
 std::string DropoutMaskAction::to_string() const {

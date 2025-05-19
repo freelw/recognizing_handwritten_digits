@@ -145,7 +145,10 @@ __global__ void tensor_div(
 );
 
 __global__ void build_dropout_mask_kernel(
-    float *mask, int length, float p
+    float *mask,
+    int32_t *shape,
+    int32_t *strides,
+    int length, int dim, float p
 );
 
 #endif // GCC_ASAN

@@ -456,13 +456,25 @@ __global__ void tensor_div(
 }
 
 __global__ void build_dropout_mask_kernel(
-    float *mask, int length, float p
+    float *mask,
+    int32_t *shape,
+    int32_t *strides,
+    int length, int dim, float p
 ) {
     int index = blockIdx.x * blockDim.x + threadIdx.x;
     if (index >= length) {
         return;
     } else {
-        mask[index] = mask[index] < p ? 0.0f : 1.0f;
+        int tmp_length = length;
+        int tmp_index = index;
+        int offset = 0;
+        for (int j = 0; j < dim; ++j) {
+            tmp_length /= shape[j];
+            int cur_dim_index = tmp_index / tmp_length;
+            offset += cur_dim_index * strides[j];
+            tmp_index %= tmp_length;
+        }
+        mask[offset] = mask[offset] < p ? 0.0f : 1.0f;
     }
 }
 
