@@ -38,8 +38,12 @@ Linear::Linear(int input_num, int output_num, ACTIVATION act, bool _bias)
 }
 
 graph::Node *Linear::forward(graph::Node *input) {
-    assert(false);
-    return nullptr;
+    auto res = input->at(w);
+    if (bias) {
+        assert(b != nullptr);
+        res = res->expand_add(b);
+    }
+    return res;
 }
 
 std::vector<Parameter *> Linear::get_parameters() {
