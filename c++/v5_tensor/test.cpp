@@ -3277,7 +3277,22 @@ void test_mha() {
 
     disableOnceAction();
     gDoActions();
-    std::cout << "res : " << std::endl << *res->get_tensor() << std::endl;
+
+    float res_ans[20] = {
+        114.45257, 123.24643, 123.24643, 123.24643, 123.24643, 123.24643, 123.24643, 123.24643, 123.24643, 123.24643,
+        155.07243, 166.98326, 166.98326, 166.98326, 166.98326, 166.98326, 166.98326, 166.98326, 166.98326, 166.98326
+    };
+
+    assert(res->get_tensor()->length() == 20);
+    bool succ_res = compare_res_ans_1d(
+        res->get_tensor(),
+        res_ans,
+        "res"
+    );
+
+    if (!succ_res) {
+        std::cout << RED << "test_mha res failed" << RESET << std::endl;
+    }
     destruct_env();
 }
 
