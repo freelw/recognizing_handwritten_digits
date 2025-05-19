@@ -1208,13 +1208,11 @@ float calc_std(Tensor *tensor) {
 
 void test_mlp() {
     construct_env();
-
     MLP mlp(
         784,
         {30, 10},
         0.0f
     );
-
     Tensor *input = allocTensor({1, 784}, "input");
     Tensor *labels = allocTensor({1}, "labels", INT32);
     auto n_input = graph::allocNode(input);
@@ -1227,9 +1225,8 @@ void test_mlp() {
     );
     res->backward();
     adam.clip_grad(1.0f);
-    // adam.step();
+    // adam.step(); // 这里不应该step 否则会改变参数的值
     // printAllTensors();
-    printAllActions();
     allocMemAndInitTensors();
     for (int i = 0; i < 500; ++ i) {
         gDoActions();
@@ -1256,14 +1253,6 @@ void test_mlp() {
     bool w1_succ = fabs(w1_mean - mean_ans) < eps && fabs(w1_std - std_ans) < eps;
     bool w2_succ = fabs(w2_mean - mean_ans) < eps && fabs(w2_std - std_ans) < eps;
 
-    std::cout << "w1_tensor name : " << w1_tensor->get_name() << std::endl;
-    std::cout << "w2_tensor name : " << w2_tensor->get_name() << std::endl;
-
-    std::cout << "w1_mean : " << w1_mean << std::endl;
-    std::cout << "w1_std : " << w1_std << std::endl;
-    std::cout << "w2_mean : " << w2_mean << std::endl;
-    std::cout << "w2_std : " << w2_std << std::endl;
-
     if (w1_succ && w2_succ) {
         std::cout << GREEN << "test_mlp init weight succ" << RESET << std::endl;
     } else {
@@ -1282,7 +1271,6 @@ void test_mlp() {
     } else {
         std::cout << RED << "test_mlp once action failed" << RESET << std::endl;
     }
-
     destruct_env();
 }
 
@@ -3571,10 +3559,7 @@ void test_mlp_with_cpu_base(
         {n, k},
         true
     );
-    Adam adam(
-        mlp.get_parameters(),
-        0.001f
-    );
+    
     Tensor *input = allocTensor({batch_size, m}, "input");
     Tensor *labels = allocTensor({batch_size}, "labels", INT32);
     gCreateAction(
@@ -3591,6 +3576,10 @@ void test_mlp_with_cpu_base(
     zero_grad();
     insert_boundary_action();
     res->backward();
+    Adam adam(
+        mlp.get_parameters(),
+        0.001f
+    );
     adam.clip_grad(1.0f);
     adam.step();
     allocMemAndInitTensors();
@@ -4434,8 +4423,6 @@ void test_attention_bp_with_cpu() {
 }
 
 void test_gpu() {
-    test_mlp();
-    return;
     test_at();
     test_at_1();
     test_gpu_at_with_cpu();

@@ -4,7 +4,8 @@
 Linear::Linear(
     int input_num, int output_num,
     const std::string & prefix,
-    float sigma,
+    float w_sigma,
+    float b_sigma,
     ACTIVATION act,
     bool _bias,
     bool const_weight
@@ -20,30 +21,30 @@ Linear::Linear(
         w->init_weight_for_dbg();
         return;
     } else {
-        if (sigma <  0) {
+        if (w_sigma <  0) {
             switch (act) {
                 case RELU:
-                    sigma = std::sqrt(2.0f/input_num);
+                    w_sigma = std::sqrt(2.0f/input_num);
                     break;
                 case SIGMOID:
                 case NONE:
-                    sigma = std::sqrt(2.0f/(input_num + output_num));
+                    w_sigma = std::sqrt(2.0f/(input_num + output_num));
                     break;
                 case TANH:
-                    sigma = std::sqrt(2.0 / (input_num + output_num)) * 4;
+                    w_sigma = std::sqrt(2.0 / (input_num + output_num)) * 4;
                     break;
                 default:
                     assert(false);
             }
         }
-        w->init_weight_gauss(sigma, mean);
+        w->init_weight_gauss(w_sigma, mean);
     }
     if (bias) {
         auto b_tensor = allocTensor({output_num}, "_b_linear");
         b = graph::allocNode(b_tensor);
         b->require_grad();
-        if (!const_weight) {
-            b->init_weight_gauss(0.01f, 0.01f); // this is very important, break the symmetry
+        if (!const_weight && b_sigma >= 0) {
+            b->init_weight_gauss(b_sigma, b_sigma); // this is very important, break the symmetry
         }
         Pb = allocParameter(b);
     } else {
@@ -79,7 +80,11 @@ LazyLinear::~LazyLinear() {
 
 graph::Node *LazyLinear::forward(graph::Node *input) {
     if (linear == nullptr) {
-        linear = new Linear(input_num, output_num, prefix, sigma, act, bias, const_weight);
+        linear = new Linear(
+            input_num, output_num,
+            prefix, w_sigma, b_sigma,
+            act, bias, const_weight
+        );
     }
     return linear->forward(input);
 }

@@ -232,10 +232,7 @@ std::string ZeroGradAction::to_string() const {
 
 void InitWeightAction::execute() {
     assert(lhs != nullptr);
-
-    std::cout << "init_type : " << init_type << " mean: " << mean << " sigma: " << sigma << std::endl;
     if (init_type == "gauss") {
-        
         g_backend_ops->init_weight_gauss(lhs, mean, sigma);
     } else if (init_type == "uniform") {
         g_backend_ops->init_weight_uniform(lhs, sigma);

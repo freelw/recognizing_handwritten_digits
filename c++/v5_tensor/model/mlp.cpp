@@ -7,9 +7,10 @@ MLP::MLP(
     float dropout_p,
     bool const_weight
 ) {
-    auto sigma = 0.02f;
-    l1 = new LazyLinear(_input, _outputs[0], "l1", sigma, RELU, true, const_weight);
-    l2 = new LazyLinear(_outputs[0], _outputs[1], "l2", sigma, NONE, true, const_weight);
+    auto w_sigma = 0.02f;
+    auto b_sigma = -0.01f; // set bias 0
+    l1 = new LazyLinear(_input, _outputs[0], "l1", w_sigma, b_sigma, RELU, true, const_weight);
+    l2 = new LazyLinear(_outputs[0], _outputs[1], "l2", w_sigma, b_sigma, NONE, true, const_weight);
     dropout = new Dropout(dropout_p);
 }
 
