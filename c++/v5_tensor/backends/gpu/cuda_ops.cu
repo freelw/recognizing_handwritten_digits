@@ -76,8 +76,8 @@ void CUDAOps::add(Tensor *lhs, const Tensor *rhs, Tensor *res) {
 
 void CUDAOps::addEq(
     Tensor *lhs, const Tensor *rhs,
-    Tensor *l_shape, Tensor *l_strides,
-    Tensor */*r_shape*/, Tensor *r_striedes
+    Tensor *l_shape,
+    Tensor *l_strides, Tensor *r_striedes
 ) {
     
     assert(lhs != nullptr);
@@ -263,7 +263,12 @@ void CUDAOps::emb_at(Tensor *lhs, const Tensor *indices, const Tensor *rhs, Tens
     assert(false);
 }
 
-void CUDAOps::mul(Tensor *lhs, const Tensor *rhs, Tensor *res) {
+void CUDAOps::mul(
+    Tensor *lhs, const Tensor *rhs, Tensor *res,
+    Tensor *l_shape, Tensor *l_strides,
+    Tensor */*r_shape*/, Tensor *r_striedes,
+    Tensor */*res_shape*/, Tensor *res_striedes
+) {
     assert(lhs != nullptr);
     assert(rhs != nullptr);
     assert(res != nullptr);

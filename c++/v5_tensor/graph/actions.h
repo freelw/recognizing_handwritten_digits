@@ -46,7 +46,6 @@ class AddEqAction : public Action {
     private:
         Tensor *lhs_shape;
         Tensor *lhs_strides;
-        Tensor *rhs_shape;
         Tensor *rhs_strides;
 };
 
@@ -193,15 +192,13 @@ class AssignShapeAndStridesAction : public Action {
         AssignShapeAndStridesAction(
             Tensor *tensor_shape,
             Tensor *tensor_strides,
-            const std::vector<int> &_shape,
-            const std::vector<int> &_strides
+            const std::vector<int> &shape,
+            const std::vector<int> &strides
         );
         virtual ~AssignShapeAndStridesAction();
         void execute() override;
         std::string to_string() const override;
     private:
-        std::vector<int> shape;
-        std::vector<int> strides;
         int32_t *shape_data;
         int32_t *strides_data;
 };

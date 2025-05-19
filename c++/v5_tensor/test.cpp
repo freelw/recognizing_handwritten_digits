@@ -2844,7 +2844,7 @@ void test_dropout() {
     auto input_shape = input->get_shape();
     auto ni = graph::allocNode(input);
     ni->require_grad();
-    auto res = dropout.forward(ni->reshape({-1}))->reshape(input_shape);
+    auto res = dropout.forward(ni)->reshape(input_shape);
     insert_boundary_action();
     allocMemAndInitTensors();
     input->fill(1.0f);

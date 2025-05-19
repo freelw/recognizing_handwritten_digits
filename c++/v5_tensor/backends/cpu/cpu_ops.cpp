@@ -37,8 +37,8 @@ void CPUOps::add(Tensor *lhs, const Tensor *rhs, Tensor *res) {
 
 void CPUOps::addEq(
     Tensor *lhs, const Tensor *rhs,
-    Tensor */*l_shape*/, Tensor */*l_strides*/,
-    Tensor */*r_shape*/, Tensor */*r_striedes*/
+    Tensor */*l_shape*/,
+    Tensor */*l_strides*/, Tensor */*r_striedes*/
 ) {
     assert(lhs != nullptr);
     assert(rhs != nullptr);
@@ -52,10 +52,9 @@ void CPUOps::addEq(
         int tot_length = lhs->length();
         for (int j = 0; j < lhs->get_dim(); ++j) {
             tot_length /= lhs->get_shape()[j];
-            int l = tmp_index / tot_length;
-            int r = tmp_index / tot_length;
-            index_l += l * lhs->get_strides()[j];
-            index_r += r * rhs->get_strides()[j];
+            int cur_dim_index = tmp_index / tot_length;
+            index_l += cur_dim_index * lhs->get_strides()[j];
+            index_r += cur_dim_index * rhs->get_strides()[j];
             tmp_index %= tot_length;
         }
         static_cast<float*>(lhs->get_data())[index_l] += 
@@ -127,38 +126,43 @@ void CPUOps::emb_at(Tensor *lhs, const Tensor *indices, const Tensor *rhs, Tenso
     assert(false);
 }
 
-void CPUOps::mul(Tensor *lhs, const Tensor *rhs, Tensor *res) {
+void CPUOps::mul(
+    Tensor *lhs, const Tensor *rhs, Tensor *res,
+    Tensor */*l_shape*/, Tensor */*l_strides*/,
+    Tensor */*r_shape*/, Tensor */*r_striedes*/,
+    Tensor */*res_shape*/, Tensor */*res_striedes*/
+) {
     assert(lhs != nullptr);
     assert(rhs != nullptr);
     assert(res != nullptr);
-    assert(lhs->get_dim() == 2 || lhs->get_dim() == 1);
 
     auto lshape = lhs->get_shape();
     auto rshape = rhs->get_shape();
     auto res_shape = res->get_shape();
 
-    assert(lshape == rshape);
-    assert(res_shape == lshape);
-
     auto lstrides = lhs->get_strides();
     auto rstrides = rhs->get_strides();
     auto res_strides = res->get_strides();
 
-    if (lhs->get_dim() == 1) {
-        for (int i = 0; i < lshape[0]; ++i) {
-            static_cast<float*>(res->get_data())[i] = 
-                static_cast<float*>(lhs->get_data())[i * lstrides[0]] * 
-                static_cast<float*>(rhs->get_data())[i * rstrides[0]];
+     for (int i = 0; i < lhs->length(); ++i) {
+        int index_l = 0;
+        int index_r = 0;
+        int index_res = 0;
+        int tmp_index = i;
+        int tot_length = lhs->length();
+        for (int j = 0; j < lhs->get_dim(); ++j) {
+            tot_length /= lhs->get_shape()[j];
+            int cur_dim_index = tmp_index / tot_length;
+            index_l += cur_dim_index * lstrides[j];
+            index_r += cur_dim_index * rstrides[j];
+            index_res += cur_dim_index * res_strides[j];
+            tmp_index %= tot_length;
         }
-    } else if (lhs->get_dim() == 2) {
-        for (int i = 0; i < lshape[0]; ++i) {
-            for (int j = 0; j < lshape[1]; ++j) {
-                static_cast<float*>(res->get_data())[i * res_strides[0] + j * res_strides[1]] = 
-                    static_cast<float*>(lhs->get_data())[i * lstrides[0] + j * lstrides[1]] * 
-                    static_cast<float*>(rhs->get_data())[i * rstrides[0] + j * rstrides[1]];
-            }
-        }
+        static_cast<float*>(res->get_data())[index_res] = 
+            static_cast<float*>(lhs->get_data())[index_l] * 
+            static_cast<float*>(rhs->get_data())[index_r];
     }
+
 }
 
 void CPUOps::sum(Tensor *lhs, Tensor *res, int dim) {
@@ -298,10 +302,19 @@ void CPUOps::div(Tensor *dst, Tensor *src, float value) {
 
 void CPUOps::build_dropout_mask(Tensor *mask, float p) {
     assert(mask != nullptr);
-    assert(mask->get_dim() == 1);
+    // assert(mask->get_dim() == 1);
     auto length = mask->length();
     for (int i = 0; i < length; ++i) {
-        static_cast<float*>(mask->get_data())[i] = dis(gen) < p ? 0 : 1;
+        int index = 0;
+        int tmp_index = i;
+        int tot_length = length;
+        for (int j = 0; j < mask->get_dim(); ++j) {
+            tot_length /= mask->get_shape()[j];
+            int l = tmp_index / tot_length;
+            index += l * mask->get_strides()[j];
+            tmp_index %= tot_length;
+        }
+        static_cast<float*>(mask->get_data())[i] = dis(gen) < p ? 0.0f : 1.0f;
     }
 }
 

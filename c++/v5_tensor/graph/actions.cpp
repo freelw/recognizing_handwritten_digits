@@ -62,11 +62,6 @@ AddEqAction::AddEqAction(Tensor *_lhs, const Tensor *_rhs)
         _lhs->get_name() + "_strides",
         INT32
     );
-    rhs_shape = allocTensor(
-        {dim},
-        _rhs->get_name() + "_shape",
-        INT32
-    );
     rhs_strides = allocTensor(
         {dim},
         _rhs->get_name() + "_strides",
@@ -82,9 +77,9 @@ AddEqAction::AddEqAction(Tensor *_lhs, const Tensor *_rhs)
     );
     gCreateAction(
         new AssignShapeAndStridesAction(
-            rhs_shape,
+            nullptr,
             rhs_strides,
-            _rhs->get_shape(),
+            {},
             _rhs->get_strides()
         )
     );
@@ -94,7 +89,7 @@ void AddEqAction::execute() {
     assert(lhs != nullptr);
     assert(rhs != nullptr);
     assert(lhs->get_shape() == rhs->get_shape());
-    g_backend_ops->addEq(lhs, rhs, lhs_shape, lhs_strides, rhs_shape, rhs_strides);    
+    g_backend_ops->addEq(lhs, rhs, lhs_shape, lhs_strides, rhs_strides);    
 }
 
 std::string AddEqAction::to_string() const {
@@ -133,7 +128,12 @@ void MulAction::execute() {
     assert(lhs != nullptr);
     assert(rhs != nullptr);
     assert(res != nullptr);
-    g_backend_ops->mul(lhs, rhs, res);
+    g_backend_ops->mul(
+        lhs, rhs, res,
+        nullptr, nullptr,
+        nullptr, nullptr,
+        nullptr, nullptr // fixme
+    );
 }
 
 std::string MulAction::to_string() const {
@@ -319,45 +319,51 @@ bool BoundaryAction::is_backward_boundary() {
 AssignShapeAndStridesAction::AssignShapeAndStridesAction(
     Tensor *tensor_shape,
     Tensor *tensor_strides,
-    const std::vector<int> &_shape,
-    const std::vector<int> &_strides
-) : Action(tensor_shape, nullptr, tensor_strides),
-    shape(_shape),
-    strides(_strides) {
-    shape_data = static_cast<int32_t*>(::malloc(sizeof(int32_t) * shape.size()));
-    strides_data = static_cast<int32_t*>(::malloc(sizeof(int32_t) * strides.size()));
-    for (size_t i = 0; i < shape.size(); ++i) {
-        shape_data[i] = static_cast<int32_t>(shape[i]);
+    const std::vector<int> &shape,
+    const std::vector<int> &strides
+) : Action(tensor_shape, nullptr, tensor_strides) {
+    if (tensor_shape != nullptr) {    
+        shape_data = static_cast<int32_t*>(::malloc(sizeof(int32_t) * shape.size()));
+        for (size_t i = 0; i < shape.size(); ++i) {
+            shape_data[i] = static_cast<int32_t>(shape[i]);
+        }
     }
-    for (size_t i = 0; i < strides.size(); ++i) {
-        strides_data[i] = static_cast<int32_t>(strides[i]);
+    if (tensor_strides != nullptr) {
+        strides_data = static_cast<int32_t*>(::malloc(sizeof(int32_t) * strides.size()));
+        for (size_t i = 0; i < strides.size(); ++i) {
+            strides_data[i] = static_cast<int32_t>(strides[i]);
+        }
     }
 }
 
 AssignShapeAndStridesAction::~AssignShapeAndStridesAction() {
-    assert(shape_data != nullptr);
-    assert(strides_data != nullptr);
-    ::free(strides_data);
-    ::free(shape_data);
+    if (lhs != nullptr) {
+        assert(shape_data != nullptr);
+        ::free(shape_data);
+    }
+    if (res != nullptr) {
+        assert(strides_data != nullptr);
+        ::free(strides_data);
+    }
 }
 
 void AssignShapeAndStridesAction::execute() {
-    assert(lhs != nullptr);
-    assert(res != nullptr);
-    assert(shape_data != nullptr);
-    assert(strides_data != nullptr);
-
-    g_backend_ops->cp_to_device(
-        lhs,
-        reinterpret_cast<char*>(shape_data),
-        sizeof(int32_t) * shape.size()
-    );
-
-    g_backend_ops->cp_to_device(
-        res,
-        reinterpret_cast<char*>(strides_data),
-        sizeof(int32_t) * strides.size()
-    );
+    if (lhs != nullptr) {
+        assert(shape_data != nullptr);
+        g_backend_ops->cp_to_device(
+            lhs,
+            reinterpret_cast<char*>(shape_data),
+            lhs->size()
+        );
+    }
+    if (res != nullptr) {
+        assert(strides_data != nullptr);
+        g_backend_ops->cp_to_device(
+            res,
+            reinterpret_cast<char*>(strides_data),
+            res->size()
+        );
+    }
 }
 
 std::string AssignShapeAndStridesAction::to_string() const {
