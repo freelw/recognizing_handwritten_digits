@@ -4642,6 +4642,116 @@ void test_attention_bp_with_cpu() {
     ::free(nv_grad_cpu_buffer);
 }
 
+std::vector<Tensor *> test_permute_with_cpu_base(
+    int m, int n, int k, int p, int q
+) {
+    Tensor *input = allocTensor({m, n, k, p}, "input");
+    Tensor *w = allocTensor({p, q}, "w");
+    auto ni = graph::allocNode(input);
+    ni->require_grad();
+    ni->init_weight_for_dbg();
+    auto nw = graph::allocNode(w);
+    auto res = ni->permute({2, 0, 1, 3})->reshape({-1, p})->at(nw);
+    res->backward();
+    insert_boundary_action();
+    allocMemAndInitTensors();
+    float *grad_buffer = static_cast<float*>(::malloc(m * n * k * q * sizeof(float)));
+    assert(res->get_grad()->length() == m * n * k * q);
+    for (int i = 0; i < res->get_grad()->length(); ++ i) {
+       grad_buffer[i] = 1.0f;
+    }
+    g_backend_ops->cp_to_device(
+        res->get_grad(),
+        reinterpret_cast<char*>(grad_buffer),
+        res->get_grad()->size()
+    );
+    ::free(grad_buffer);
+    gDoActions();
+    std::vector<Tensor *> res_vec;
+    res_vec.push_back(res->get_tensor());
+    res_vec.push_back(ni->get_grad());
+    return res_vec;
+}
+
+void test_permute_with_cpu() {
+    use_gpu(false);
+    construct_env();
+    int m = 10;
+    int n = 50;
+    int k = 30;
+    int p = 10;
+    int q = 20;
+
+    auto res_cpu_vec = test_permute_with_cpu_base(m, n, k, p, q);
+    auto res_cpu = res_cpu_vec[0];
+    auto ni_grad_cpu = res_cpu_vec[1];
+    auto res_cpu_size = res_cpu->size();
+    auto res_cpu_length = res_cpu->length();
+    float *res_cpu_buffer = static_cast<float*>(::malloc(res_cpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(res_cpu_buffer),
+        res_cpu,
+        res_cpu_size
+    );
+    auto ni_grad_cpu_size = ni_grad_cpu->size();
+    auto ni_grad_cpu_length = ni_grad_cpu->length();
+    float *ni_grad_cpu_buffer = static_cast<float*>(::malloc(ni_grad_cpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(ni_grad_cpu_buffer),
+        ni_grad_cpu,
+        ni_grad_cpu_size
+    );
+    destruct_env();
+
+    use_gpu(true);
+    construct_env();
+    auto res_gpu_vec = test_permute_with_cpu_base(m, n, k, p, q);
+    auto res_gpu = res_gpu_vec[0];
+    auto ni_grad_gpu = res_gpu_vec[1];
+    auto res_gpu_size = res_gpu->size();
+    auto res_gpu_length = res_gpu->length();
+    float *res_gpu_buffer = static_cast<float*>(::malloc(res_gpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(res_gpu_buffer),
+        res_gpu,
+        res_gpu_size
+    );
+    auto ni_grad_gpu_size = ni_grad_gpu->size();
+    auto ni_grad_gpu_length = ni_grad_gpu->length();
+    float *ni_grad_gpu_buffer = static_cast<float*>(::malloc(ni_grad_gpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(ni_grad_gpu_buffer),
+        ni_grad_gpu,
+        ni_grad_gpu_size
+    );
+    destruct_env();
+    assert(res_cpu_size == res_gpu_size);
+    assert(res_cpu_length == res_gpu_length);
+    assert(ni_grad_cpu_size == ni_grad_gpu_size);
+    assert(ni_grad_cpu_length == ni_grad_gpu_length);
+
+    bool succ_res = compare_ans1_ans2(res_cpu_buffer, res_gpu_buffer, res_gpu_length);
+    if (!succ_res) {
+        std::cerr << RED << "res mismatch" << RESET << std::endl;
+    }
+    bool succ_ni_grad = compare_ans1_ans2(ni_grad_cpu_buffer, ni_grad_gpu_buffer, ni_grad_gpu_length);
+
+    if (!succ_ni_grad) {
+        std::cerr << RED << "ni_grad mismatch" << RESET << std::endl;
+    }
+
+    bool succ = succ_res && succ_ni_grad;
+    if (succ) {
+        std::cout << GREEN << "test_permute_with_cpu succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_permute_with_cpu failed" << RESET << std::endl;
+    }
+    ::free(res_gpu_buffer);
+    ::free(res_cpu_buffer);
+    ::free(ni_grad_gpu_buffer);
+    ::free(ni_grad_cpu_buffer);
+}
+
 void test_gpu() {
     test_at();
     test_at_1();
@@ -4699,6 +4809,7 @@ void test_gpu() {
     test_attention_bp_with_cpu();
     test_dropout();
     test_permute();
+    test_permute_with_cpu();
 }
 
 int main(int argc, char *argv[]) {
