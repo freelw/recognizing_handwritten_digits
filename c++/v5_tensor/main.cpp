@@ -54,22 +54,20 @@ void train(int epochs, float lr, int batch_size) {
     loader.load();
     std::cout << "data loaded." << std::endl;
 
-    MLP m(INPUT_LAYER_SIZE, {30, 10}, 0.1f);
+    MLP m(INPUT_LAYER_SIZE, {30, 10}, -0.01f);
     Tensor *inputs = allocTensor({batch_size, 784}, "inputs");
     Tensor *labels = allocTensor({batch_size}, "labels", INT32);
     auto n_inputs = graph::allocNode(inputs);
-    Adam optimizer(m.get_parameters(), lr);
-
     auto forward_res = m.forward(n_inputs);
     auto loss = forward_res->CrossEntropy(labels);
     assert(loss->get_tensor()->size() == sizeof(float));
     insert_boundary_action();
     zero_grad();
     loss->backward();
+    Adam optimizer(m.get_parameters(), lr);
     optimizer.clip_grad(1.0f);
     optimizer.step();
     printAllActions();
-
     allocMemAndInitTensors();
     float *inputs_tmp_buffer = static_cast<float*>(::malloc(inputs->size()));
     int32_t *labels_tmp_buffer = static_cast<int32_t*>(::malloc(labels->size()));

@@ -245,6 +245,8 @@ void InitWeightAction::execute() {
         // g_backend_ops->kaiming(lhs);
     } else if (init_type == "dbg") {
         g_backend_ops->init_weight_for_dbg(lhs, sigma);
+    } else if (init_type == "fill") {
+        g_backend_ops->fill(lhs, sigma);
     } else {
         std::cerr << "Error: Unknown initialization type: " << init_type << std::endl;
         abort();
@@ -253,7 +255,7 @@ void InitWeightAction::execute() {
 
 std::string InitWeightAction::to_string() const {
     std::ostringstream oss;
-    oss << "InitWeightAction: initializing " << lhs->get_meta_info() << " with type " << init_type;
+    oss << "InitWeightAction: initializing " << lhs->get_meta_info() << " with type " << init_type << " sigma " << sigma;
     return oss.str();
 }
 
