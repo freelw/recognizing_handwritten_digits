@@ -36,42 +36,26 @@ void CPUOps::add(Tensor *lhs, const Tensor *rhs, Tensor *res) {
 }
 
 void CPUOps::addEq(Tensor *lhs, const Tensor *rhs) {
-    
     assert(lhs != nullptr);
     assert(rhs != nullptr);
-    
     auto lshape = lhs->get_shape();
     auto rshape = rhs->get_shape();
-    
     assert(lshape == rshape);
-
-    auto lstrides = lhs->get_strides();
-    auto rstrides = rhs->get_strides();
-
-    int dim = lhs->get_dim();
-
-    assert(dim <= 3);
-    if (dim == 1) {
-        for (int i = 0; i < lshape[0]; ++i) {
-            static_cast<float*>(lhs->get_data())[i * lstrides[0]] += 
-                static_cast<float*>(rhs->get_data())[i * rstrides[0]];
+    for (int i = 0; i < lhs->length(); ++i) {
+        int index_l = 0;
+        int index_r = 0;
+        int tmp_index = i;
+        int tot_length = lhs->length();
+        for (int j = 0; j < lhs->get_dim(); ++j) {
+            tot_length /= lhs->get_shape()[j];
+            int l = tmp_index / tot_length;
+            int r = tmp_index / tot_length;
+            index_l += l * lhs->get_strides()[j];
+            index_r += r * rhs->get_strides()[j];
+            tmp_index %= tot_length;
         }
-    } else if (dim == 2) {
-        for (int i = 0; i < lshape[0]; ++i) {
-            for (int j = 0; j < lshape[1]; ++j) {
-                static_cast<float*>(lhs->get_data())[i * lstrides[0] + j * lstrides[1]] += 
-                    static_cast<float*>(rhs->get_data())[i * rstrides[0] + j * rstrides[1]];
-            }
-        }
-    } else if (dim == 3) {
-        for (int i = 0; i < lshape[0]; ++i) {
-            for (int j = 0; j < lshape[1]; ++j) {
-                for (int k = 0; k < lshape[2]; ++k) {
-                    static_cast<float*>(lhs->get_data())[i * lstrides[0] + j * lstrides[1] + k * lstrides[2]] += 
-                        static_cast<float*>(rhs->get_data())[i * rstrides[0] + j * rstrides[1] + k * rstrides[2]];
-                }
-            }
-        }
+        static_cast<float*>(lhs->get_data())[index_l] += 
+            static_cast<float*>(rhs->get_data())[index_r];
     }
 }
 

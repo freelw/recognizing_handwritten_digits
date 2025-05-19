@@ -45,6 +45,14 @@ __global__ void tensor_add_eq_3d(
     int stride_N0, int stride_N1, int stride_N2
 );
 
+__global__ void tensor_add_eq_kernel(
+    float *Md, float *Nd,
+    int32_t *shape,
+    int32_t *strides_M,
+    int32_t *strides_N,
+    int32_t dim
+);
+
 __global__ void expand_add(
     float *Md, float *Nd, float *Pd,
     int M, int N,
