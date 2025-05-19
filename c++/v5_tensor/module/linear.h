@@ -12,7 +12,14 @@ enum ACTIVATION {
 
 class Linear {
     public:
-        Linear(int input_num, int output_num, ACTIVATION act = ACTIVATION::NONE, bool _bias = true);
+        Linear(
+            int input_num, int output_num,
+            const std::string & prefix = "",
+            float sigma = -0.1f,
+            ACTIVATION act = ACTIVATION::NONE,
+            bool _bias = true,
+            bool const_weight = false
+        );
         ~Linear() = default;
         graph::Node *forward(graph::Node *input);
         std::vector<Parameter *> get_parameters();
