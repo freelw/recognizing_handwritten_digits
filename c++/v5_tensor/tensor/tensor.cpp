@@ -19,13 +19,15 @@ std::string TensorDtype_to_string(TensorDType dtype) {
 }
 
 Tensor::Tensor(const std::vector<int> &_shape, const std::string &_name, TensorDType _dtype)
-    : shape(_shape), name(_name), dtype(_dtype), own_storage(true), offset(0) {
+    : shape(_shape), name(_name), dtype(_dtype), own_storage(true), offset(0), id(0) {
     strides.resize(shape.size());
     strides[shape.size() - 1] = 1;
     for (int i = shape.size() - 2; i >= 0; --i) {
         strides[i] = strides[i + 1] * shape[i + 1];
     }
     storage = new TensorStorage(size());
+    assert(id == 0);
+    id = gen_id();
 }
 
 Tensor::Tensor(const std::vector<int> &_shape, TensorDType _dtype)
@@ -43,11 +45,13 @@ Tensor::Tensor(
     : shape(_shape), strides(_strides),
     name(_name), dtype(_dtype),
     own_storage(false), storage(_storage),
-    offset(_offset) {
+    offset(_offset), id(0) {
     assert(shape.size() == strides.size());
     assert(_storage != nullptr);
     assert(_offset >= 0);
     assert(_offset < _storage->size);
+    assert(id == 0);
+    id = gen_id();
 }
 
 Tensor::Tensor(
@@ -296,7 +300,7 @@ Tensor *Tensor::softmax() {
 
 std::string Tensor::get_meta_info() const {
     std::ostringstream output;
-    output << "Tensor";
+    output << "Tensor[" << get_id() << "]";
     if (get_dtype() != FLOAT32) {
         std::string dtype_str = TensorDtype_to_string(get_dtype());
         output << "(" << dtype_str << ")";
@@ -436,6 +440,7 @@ void freeAllTensors() {
         delete tensor;
     }
     g_tensors.clear();
+    g_tensor_id = 0;
 }
 
 void freeAllTensorViews() {
@@ -501,3 +506,5 @@ void releaseTensorMem() {
     tensors_data_capacity = 0;
     grad_tensors_data_capacity = 0;
 }
+
+int g_tensor_id = 0;

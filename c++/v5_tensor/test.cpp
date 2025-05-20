@@ -1505,9 +1505,9 @@ void test_reshape_1() {
     // printAllActions();
     gDoActions();
 
-    std::string l_t_m_1_meta_ans = "Tensor(input_transpose_reshape_deep_copy)(12)";
-    std::string l_t_d3_meta_ans = "Tensor(input_transpose_reshape_deep_copy)(2, 2, 3)";
-    std::string l_t_d3_1_meta_ans = "Tensor(input_transpose_reshape_deep_copy)(2, 3, 2)";
+    std::string l_t_m_1_meta_ans = "Tensor[7](input_transpose_reshape_deep_copy)(12)";
+    std::string l_t_d3_meta_ans = "Tensor[10](input_transpose_reshape_deep_copy)(2, 2, 3)";
+    std::string l_t_d3_1_meta_ans = "Tensor[13](input_transpose_reshape_deep_copy)(2, 3, 2)";
 
     bool meta_succ = l_t_m_1->get_meta_info() == l_t_m_1_meta_ans &&
         l_t_d3->get_meta_info() == l_t_d3_meta_ans &&

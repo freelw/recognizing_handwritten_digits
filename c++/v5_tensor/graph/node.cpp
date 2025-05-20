@@ -277,9 +277,6 @@ namespace graph {
                 r_split_2d_node,
                 res_split_2d_node
             );
-            if (res_split_2d_node->is_require_grad()) {
-                res_node->edges.push_back(EmptyEdge::create(res_split_2d_node));
-            }
         }
         return res_node;
     }
@@ -316,9 +313,9 @@ namespace graph {
                     offset
                 );
                 node = allocNode(new_tensor, new_grad);
-                if (opposite) { // 考虑split的操作数是结果，梯度需要从整个结果传递给子结果
+                if (opposite) { // 考虑split的左操作数是结果，梯度需要从整个结果传递给子结果
                     this->edges.push_back(EmptyEdge::create(node));
-                } else { // 考虑split的操作数是输入，梯度需要从子结果传递给整个结果
+                } else { // 考虑split的左操作数是输入，梯度需要从子结果传递给整个结果
                     node->edges.push_back(EmptyEdge::create(this));
                 }
             } else {
