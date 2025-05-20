@@ -3379,8 +3379,10 @@ void test_embedding() {
     Tensor *indices = allocTensor({3}, "indices", INT32);
     Embedding emb(10, 5, true);
     auto res = emb.forward(indices);
+    auto res_grad = res->get_grad();
     insert_boundary_action();
-    printAllActions();
+    res->backward();
+    // printAllActions();
     allocMemAndInitTensors();
     int32_t indices_buffer[3] = {5, 2, 0};
     g_backend_ops->cp_to_device(
@@ -3388,15 +3390,67 @@ void test_embedding() {
         reinterpret_cast<char*>(indices_buffer),
         indices->size()
     );
+    auto res_grad_buffer = static_cast<float*>(::malloc(res_grad->size()));
+    for (int i = 0; i < res_grad->length(); ++ i) {
+        res_grad_buffer[i] = 1.0f * i;
+    }
+    g_backend_ops->cp_to_device(
+        res_grad,
+        reinterpret_cast<char*>(res_grad_buffer),
+        res_grad->size()
+    );
+    ::free(res_grad_buffer);
     gDoActions();
-    std::cout << "embedding weights: " << std::endl << *emb.get_weight() << std::endl;
-    std::cout << "res : " << std::endl << *res->get_tensor() << std::endl;
+    float res_ans[15] = {
+        2.5, 2.6, 2.7, 2.8, 2.9,
+        1, 1.1, 1.2, 1.3, 1.4,
+        0, 0.1, 0.2, 0.3, 0.4
+    };
+    bool succ_res = compare_res_ans_1d(
+        res->get_tensor(),
+        res_ans,
+        "res"
+    );
+
+    if (!succ_res) {
+        std::cout << RED << "test_embedding res failed" << RESET << std::endl;
+    }
+
+    float grad_ans[50] = {
+        10, 11, 12, 13, 14,
+        0, 0, 0, 0, 0,
+        5, 6, 7, 8, 9,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 1, 2, 3, 4,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0
+    };
+
+    bool succ_grad = compare_res_ans_1d(
+        emb.get_grad(),
+        grad_ans,
+        "grad"
+    );
+
+    if (!succ_grad) {
+        std::cout << RED << "test_embedding grad failed" << RESET << std::endl;
+    }
+
+    bool succ = succ_res && succ_grad;
+
+    if (succ) {
+        std::cout << GREEN << "test_embedding succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_embedding failed" << RESET << std::endl;
+    }
+
     destruct_env();
 }
 
 void test_cpu() {
-    test_embedding();
-    return ;
     test_at();
     test_add();
     test_add_eq();
@@ -5073,6 +5127,8 @@ void test_permute_with_cpu() {
 }
 
 void test_gpu() {
+    test_embedding();
+    return ;
     test_at();
     test_at_1();
     test_gpu_at_with_cpu();
@@ -5132,6 +5188,7 @@ void test_gpu() {
     test_permute_with_cpu();
     test_lazy_linear();
     test_mha();
+    test_embedding();
 }
 
 int main(int argc, char *argv[]) {

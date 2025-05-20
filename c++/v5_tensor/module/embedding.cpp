@@ -18,6 +18,7 @@ graph::Node *Embedding::forward(Tensor *indices) {
     assert(indices->get_dim() == 1);
     Tensor *res = allocTensor({indices->get_shape()[0], hidden_num}, "embedding_out");
     auto res_node = graph::allocNode(res);
+    res_node->require_grad();
     gCreateAction(
         new EmbeddingAction(
             w->get_tensor(),

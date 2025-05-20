@@ -155,7 +155,35 @@ void CPUOps::embedding(Tensor *lhs, const Tensor *indices, const Tensor *res) {
 }
 
 void CPUOps::embeddingBackward(Tensor *lhs, const Tensor *indices, Tensor *res) {
-    assert(false);
+    assert(lhs != nullptr);
+    assert(indices != nullptr);
+    assert(res != nullptr);
+
+    assert(lhs->is_contiguous());
+    assert(res->is_contiguous());
+    assert(indices->is_contiguous());
+    assert(!lhs->is_view());
+    assert(!res->is_view());
+    assert(!indices->is_view());
+    assert(lhs->get_dim() == 2);
+    assert(res->get_dim() == 2);
+    assert(indices->get_dim() == 1);
+
+    auto lshape = lhs->get_shape();
+    auto rshape = res->get_shape();
+    auto length = indices->length();
+
+    assert(rshape[1] == lshape[1]);
+    assert(lshape[0] == length);
+
+    for (int i = 0; i < length; ++i) {
+        int index = static_cast<int32_t*>(indices->get_data())[i];
+        assert(index >= 0 && index < rshape[0]);
+        for (int j = 0; j < lshape[1]; ++j) {
+            static_cast<float*>(res->get_data())[index * res->get_strides()[0] + j * res->get_strides()[1]] += 
+                static_cast<float*>(lhs->get_data())[i * lhs->get_strides()[0] + j * lhs->get_strides()[1]];
+        }
+    }
 }
 
 void CPUOps::mul(

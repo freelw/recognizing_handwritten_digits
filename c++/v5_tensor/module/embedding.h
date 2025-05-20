@@ -13,6 +13,9 @@ class Embedding {
         Tensor *get_weight() {
             return w->get_tensor();
         }
+        Tensor *get_grad() {
+            return w->get_grad();
+        }
     private:
         int vocab_size;
         int hidden_num;
