@@ -194,7 +194,7 @@ void CUDAOps::at(Tensor *lhs, const Tensor *rhs, Tensor *res) {
     );
 }
 
-void CUDAOps::emb_at(Tensor *lhs, const Tensor *indices, const Tensor *rhs, Tensor *res) {
+void CUDAOps::embedding(Tensor *lhs, const Tensor *indices, const Tensor *res) {
     assert(false);
 }
 

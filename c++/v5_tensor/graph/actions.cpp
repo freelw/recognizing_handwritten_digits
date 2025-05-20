@@ -538,6 +538,19 @@ std::string DropoutMaskAction::to_string() const {
     return oss.str();
 }
 
+void EmbeddingAction::execute() {
+    assert(lhs != nullptr);
+    assert(rhs != nullptr);
+    assert(res != nullptr);
+    g_backend_ops->embedding(lhs, rhs, res);
+}
+
+std::string EmbeddingAction::to_string() const {
+    std::ostringstream oss;
+    oss << "EmbeddingAction: embedding " << lhs->get_meta_info() << " with indices " << rhs->get_meta_info() << " to " << res->get_meta_info();
+    return oss.str();
+}
+
 std::vector<Action*> g_actions;
 
 std::vector<Action *> getOnceActions() {
