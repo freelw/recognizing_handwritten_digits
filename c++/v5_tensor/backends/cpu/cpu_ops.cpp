@@ -381,7 +381,7 @@ void CPUOps::build_dropout_mask(
     }
 }
 
-void CPUOps::pos_encoding(Tensor *res, int max_len, int num_hidden) {
+void CPUOps::pos_encoding(Tensor *res) {
     assert(false);
 }
 

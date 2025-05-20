@@ -844,7 +844,7 @@ void CUDAOps::build_dropout_mask(
     );
 }
 
-void CUDAOps::pos_encoding(Tensor *res, int max_len, int num_hidden) {
+void CUDAOps::pos_encoding(Tensor *res) {
     assert(false);
 }
 

@@ -8,9 +8,7 @@ PosEncoding::PosEncoding(int _max_len, int _num_hidden)
     pos_enc = allocTensor({max_len, num_hidden}, "pos_enc");
     gCreateAction(
         new PosEncodingAction(
-            pos_enc,
-            max_len,
-            num_hidden
+            pos_enc
         )
     );
 }
