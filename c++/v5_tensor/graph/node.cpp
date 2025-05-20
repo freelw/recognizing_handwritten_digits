@@ -437,14 +437,23 @@ namespace graph {
     }
 
     void CrossEntropyEdge::backward(Tensor *) {
-        // fixme 这里需要加上addeq
+        Tensor *tmp = allocTensor(
+            node->get_grad()->get_shape(),
+            "cross_entropy_tmp"
+        );
         gCreateAction(
             new CrossEntropyBackwardAction(
                 node->get_tensor(),
                 labels,
                 maxs,
                 sums,
-                node->get_grad()
+                tmp
+            )
+        );
+        gCreateAction(
+            new AddEqAction(
+                node->get_grad(),
+                tmp
             )
         );
     }
