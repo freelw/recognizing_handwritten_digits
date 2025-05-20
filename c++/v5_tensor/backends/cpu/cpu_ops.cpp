@@ -63,7 +63,6 @@ void CPUOps::addEq(
 }
 
 void CPUOps::expandAdd(Tensor *lhs, const Tensor *rhs, Tensor *res) {
-
     assert(lhs != nullptr);
     assert(rhs != nullptr);
     assert(res != nullptr);
@@ -82,6 +81,30 @@ void CPUOps::expandAdd(Tensor *lhs, const Tensor *rhs, Tensor *res) {
         for (int j = 0; j < shape[1]; ++j) {
             static_cast<float*>(res->get_data())[i * res_strides[0] + j * res_strides[1]] = 
                 static_cast<float*>(lhs->get_data())[i * lstrides[0] + j * lstrides[1]] + 
+                static_cast<float*>(rhs->get_data())[j];
+        }
+    }
+}
+
+void CPUOps::expandMul(Tensor *lhs, const Tensor *rhs, Tensor *res) {
+    assert(lhs != nullptr);
+    assert(rhs != nullptr);
+    assert(res != nullptr);
+
+    int size = lhs->size();
+    auto shape = lhs->get_shape();
+    assert(shape.size() == 2);
+    assert(rhs->get_shape().size() == 1);   
+    assert(rhs->get_shape()[0] == shape[1]);
+    assert(shape == res->get_shape());
+
+    auto lstrides = lhs->get_strides();
+    auto res_strides = res->get_strides();
+
+    for (int i = 0; i < shape[0]; ++i) {
+        for (int j = 0; j < shape[1]; ++j) {
+            static_cast<float*>(res->get_data())[i * res_strides[0] + j * res_strides[1]] = 
+                static_cast<float*>(lhs->get_data())[i * lstrides[0] + j * lstrides[1]] *
                 static_cast<float*>(rhs->get_data())[j];
         }
     }

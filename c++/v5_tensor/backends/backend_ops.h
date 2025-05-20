@@ -14,6 +14,7 @@ class BackendOps {
             Tensor *l_strides, Tensor *r_striedes
         ) = 0;
         virtual void expandAdd(Tensor *lhs, const Tensor *rhs, Tensor *res) = 0;
+        virtual void expandMul(Tensor *lhs, const Tensor *rhs, Tensor *res) = 0;
         virtual void at(Tensor *lhs, const Tensor *rhs, Tensor *res) = 0;
         virtual void embedding(Tensor *lhs, const Tensor *indices, const Tensor *res) = 0;
         virtual void embeddingBackward(Tensor *lhs, const Tensor *indices, Tensor *res) = 0;

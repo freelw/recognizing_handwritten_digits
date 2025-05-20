@@ -116,6 +116,23 @@ __global__ void expand_add(
     }
 }
 
+__global__ void expand_mul(
+    float *Md, float *Nd, float *Pd,
+    int M, int N,
+    int stride_M0, int stride_M1,
+    int stride_P0, int stride_P1
+) {
+    int row = blockIdx.y * blockDim.y + threadIdx.y;
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
+    if (row >= M || col >= N) {
+        return;
+    } else {
+        int index_M = row * stride_M0 + col * stride_M1;
+        int index_P = row * stride_P0 + col * stride_P1;
+        Pd[index_P] = Md[index_M] * Nd[col];
+    }
+}
+
 __global__ void tensor_mul_kernel(
     float *dst, float *src1, float *src2,
     int32_t *shape,
