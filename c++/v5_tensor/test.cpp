@@ -6,6 +6,7 @@
 #include "model/mlp.h"
 #include "module/attention.h"
 #include "module/mha.h"
+#include "module/embedding.h"
 #include "common.h"
 #include <iomanip>
 #include <cmath>
@@ -3083,7 +3084,6 @@ void test_permute() {
 void test_lazy_linear() {
 
     construct_env();
-
     Tensor *input = allocTensor({20, 30, 10}, "input");
     Tensor *input1 = allocTensor({20 * 30, 10}, "input");
     auto ni = graph::allocNode(input);
@@ -3125,6 +3125,9 @@ void test_lazy_linear() {
         std::cout << GREEN << "test_lazy_linear succ" << RESET << std::endl;
     }
     destruct_env();
+
+    ::free(res_buffer);
+    ::free(res1_buffer);
 }
 
 void test_mha() {
@@ -3373,6 +3376,82 @@ void test_mha() {
     destruct_env();   
 }
 
+void test_embedding() {
+    construct_env();
+    Tensor *indices = allocTensor({3}, "indices", INT32);
+    Embedding emb(10, 5, true);
+    auto res = emb.forward(indices);
+    auto res_grad = res->get_grad();
+    insert_boundary_action();
+    res->backward();
+    // printAllActions();
+    allocMemAndInitTensors();
+    int32_t indices_buffer[3] = {5, 2, 0};
+    g_backend_ops->cp_to_device(
+        indices,
+        reinterpret_cast<char*>(indices_buffer),
+        indices->size()
+    );
+    auto res_grad_buffer = static_cast<float*>(::malloc(res_grad->size()));
+    for (int i = 0; i < res_grad->length(); ++ i) {
+        res_grad_buffer[i] = 1.0f * i;
+    }
+    g_backend_ops->cp_to_device(
+        res_grad,
+        reinterpret_cast<char*>(res_grad_buffer),
+        res_grad->size()
+    );
+    ::free(res_grad_buffer);
+    gDoActions();
+
+    float res_ans[15] = {
+        2.5, 2.6, 2.7, 2.8, 2.9,
+        1, 1.1, 1.2, 1.3, 1.4,
+        0, 0.1, 0.2, 0.3, 0.4
+    };
+    bool succ_res = compare_res_ans_1d(
+        res->get_tensor(),
+        res_ans,
+        "res"
+    );
+
+    if (!succ_res) {
+        std::cout << RED << "test_embedding res failed" << RESET << std::endl;
+    }
+
+    float grad_ans[50] = {
+        10, 11, 12, 13, 14,
+        0, 0, 0, 0, 0,
+        5, 6, 7, 8, 9,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 1, 2, 3, 4,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0
+    };
+
+    bool succ_grad = compare_res_ans_1d(
+        emb.get_grad(),
+        grad_ans,
+        "grad"
+    );
+
+    if (!succ_grad) {
+        std::cout << RED << "test_embedding grad failed" << RESET << std::endl;
+    }
+
+    bool succ = succ_res && succ_grad;
+
+    if (succ) {
+        std::cout << GREEN << "test_embedding succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_embedding failed" << RESET << std::endl;
+    }
+    destruct_env();
+}
+
 void test_cpu() {
     test_at();
     test_add();
@@ -3411,6 +3490,7 @@ void test_cpu() {
     test_permute();
     test_lazy_linear();
     test_mha();
+    test_embedding();
 }
 
 Tensor *test_add_with_cpu_base(int m, int n) {
@@ -5048,6 +5128,124 @@ void test_permute_with_cpu() {
     ::free(ni_grad_cpu_buffer);
 }
 
+std::vector<Tensor *> test_embedding_with_cpu_base(int m, int n) {
+    Embedding emb(m, n, true);
+    Tensor *indices = allocTensor({m/2}, "indices", INT32);
+    auto res = emb.forward(indices);
+    insert_boundary_action();
+    res->backward();
+    allocMemAndInitTensors();
+    int32_t *indices_buffer = static_cast<int32_t*>(::malloc(m/2 * sizeof(int32_t)));
+    for (int i = 0; i < m/2; ++ i) {
+        indices_buffer[i] = i*2;
+    }
+    g_backend_ops->cp_to_device(
+        indices,
+        reinterpret_cast<char*>(indices_buffer),
+        indices->size()
+    );
+    ::free(indices_buffer);
+    auto grad_length = res->get_grad()->length();
+    assert(grad_length == m/2 * n);
+
+    float *grad_buffer = static_cast<float*>(::malloc(grad_length * sizeof(float)));
+    for (int i = 0; i < grad_length; ++ i) {
+        grad_buffer[i] = 1.0f * i;
+    }
+    g_backend_ops->cp_to_device(
+        res->get_grad(),
+        reinterpret_cast<char*>(grad_buffer),
+        res->get_grad()->size()
+    );
+    ::free(grad_buffer);
+
+    gDoActions();
+    std::vector<Tensor *> res_vec;
+    res_vec.push_back(res->get_tensor());
+    res_vec.push_back(emb.get_grad());
+    return res_vec;
+}
+
+void test_embedding_with_cpu() {
+    int m = 100;
+    int n = 50;
+
+    use_gpu(false);
+    construct_env();
+    auto res_cpu_vec = test_embedding_with_cpu_base(m, n);
+    auto res_cpu = res_cpu_vec[0];
+    auto emb_grad_cpu = res_cpu_vec[1];
+    auto res_cpu_size = res_cpu->size();
+    auto res_cpu_length = res_cpu->length();
+    float *res_cpu_buffer = static_cast<float*>(::malloc(res_cpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(res_cpu_buffer),
+        res_cpu,
+        res_cpu_size
+    );
+    auto emb_grad_cpu_size = emb_grad_cpu->size();
+    auto emb_grad_cpu_length = emb_grad_cpu->length();
+    float *emb_grad_cpu_buffer = static_cast<float*>(::malloc(emb_grad_cpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(emb_grad_cpu_buffer),
+        emb_grad_cpu,
+        emb_grad_cpu_size
+    );
+    destruct_env();
+
+    use_gpu(true);
+    construct_env();
+    auto res_gpu_vec = test_embedding_with_cpu_base(m, n);
+    auto res_gpu = res_gpu_vec[0];
+    auto emb_grad_gpu = res_gpu_vec[1];
+    
+    auto res_gpu_size = res_gpu->size();
+    auto res_gpu_length = res_gpu->length();
+    float *res_gpu_buffer = static_cast<float*>(::malloc(res_gpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(res_gpu_buffer),
+        res_gpu,
+        res_gpu_size
+    );
+    
+    auto emb_grad_gpu_size = emb_grad_gpu->size();
+    auto emb_grad_gpu_length = emb_grad_gpu->length();
+    float *emb_grad_gpu_buffer = static_cast<float*>(::malloc(emb_grad_gpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(emb_grad_gpu_buffer),
+        emb_grad_gpu,
+        emb_grad_gpu_size
+    );
+    destruct_env();
+    
+    assert(res_cpu_size == res_gpu_size);
+    assert(res_cpu_length == res_gpu_length);
+    assert(emb_grad_cpu_size == emb_grad_gpu_size);
+    assert(emb_grad_cpu_length == emb_grad_gpu_length);
+    bool succ_res = compare_ans1_ans2(res_cpu_buffer, res_gpu_buffer, res_gpu_length);
+    if (!succ_res) {
+        std::cerr << RED << "res mismatch" << RESET << std::endl;
+    }
+
+    bool succ_grad = compare_ans1_ans2(emb_grad_cpu_buffer, emb_grad_gpu_buffer, emb_grad_gpu_length);
+
+    if (!succ_grad) {
+        std::cerr << RED << "emb_grad mismatch" << RESET << std::endl;
+    }
+
+    bool succ = succ_res && succ_grad;
+    if (succ) {
+        std::cout << GREEN << "test_embedding_with_cpu succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_embedding_with_cpu failed" << RESET << std::endl;
+    }
+
+    ::free(res_gpu_buffer);
+    ::free(res_cpu_buffer);
+    ::free(emb_grad_gpu_buffer);
+    ::free(emb_grad_cpu_buffer);
+}
+
 void test_gpu() {
     test_at();
     test_at_1();
@@ -5108,6 +5306,8 @@ void test_gpu() {
     test_permute_with_cpu();
     test_lazy_linear();
     test_mha();
+    test_embedding();
+    test_embedding_with_cpu();
 }
 
 int main(int argc, char *argv[]) {

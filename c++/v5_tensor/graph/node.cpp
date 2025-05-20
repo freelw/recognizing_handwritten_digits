@@ -410,6 +410,16 @@ namespace graph {
         );
     }
 
+    void EmbeddingEdge::backward(Tensor *grad) {
+        gCreateAction(
+            new EmbeddingBackwardAction(
+                grad,
+                indices,
+                node->get_grad()
+            )
+        );
+    }
+
     std::vector<Edge *> edges;
     std::vector<Node *> nodes;
 
