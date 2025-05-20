@@ -3447,7 +3447,6 @@ void test_embedding() {
     } else {
         std::cout << RED << "test_embedding failed" << RESET << std::endl;
     }
-
     destruct_env();
 }
 
@@ -5215,16 +5214,12 @@ void test_embedding_with_cpu() {
         emb_grad_gpu,
         emb_grad_gpu_size
     );
-    
     destruct_env();
     
     assert(res_cpu_size == res_gpu_size);
     assert(res_cpu_length == res_gpu_length);
-    
     assert(emb_grad_cpu_size == emb_grad_gpu_size);
     assert(emb_grad_cpu_length == emb_grad_gpu_length);
-
-    
     bool succ_res = compare_ans1_ans2(res_cpu_buffer, res_gpu_buffer, res_gpu_length);
     if (!succ_res) {
         std::cerr << RED << "res mismatch" << RESET << std::endl;
