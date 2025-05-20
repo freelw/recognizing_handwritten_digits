@@ -6,6 +6,7 @@
 #include "actions.h"
 
 class Dropout;
+class Embedding;
 
 namespace graph {
     class Edge;
@@ -81,6 +82,7 @@ namespace graph {
             int ref_cnt;
             bool b_require_grad;
         friend class ::Dropout;
+        friend class ::Embedding;
     };
 
     enum OpType {
@@ -107,6 +109,7 @@ namespace graph {
         Transpose,
         Empty,
         Reshape,
+        Embedding,
     };
 
     class Edge {
@@ -397,6 +400,21 @@ namespace graph {
             }
         private:
             Tensor *mask;
+    };
+
+    class EmbeddingEdge: public Edge {
+        public:
+            static Edge* create(Node *_node, Tensor *_indices) {
+                Edge *edge = new EmbeddingEdge(_node, _indices);
+                gAddEdge(edge);
+                return edge;
+            }
+            EmbeddingEdge(Node *_node, Tensor *_indices)
+                : Edge(Embedding, _node), indices(_indices) {}
+            virtual ~EmbeddingEdge() {}
+            void backward(Tensor *grad) override;
+        private:
+            Tensor *indices;
     };
 
     Node *allocNode(Tensor *t);

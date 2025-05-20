@@ -11,7 +11,9 @@ Embedding::Embedding(int _vocab_size, int _hidden_num)
 graph::Node *Embedding::forward(Tensor *indices) {
     assert(indices->get_dim() == 1);
     Tensor *res = allocTensor({indices->get_shape()[0], hidden_num}, "embedding_out");
-
     auto res_node = graph::allocNode(res);
+    res_node->edges.push_back(
+        new graph::EmbeddingEdge(w, indices)
+    );
     return res_node;
 }

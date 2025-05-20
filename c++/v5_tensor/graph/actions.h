@@ -286,6 +286,14 @@ class EmbeddingAction : public Action {
         std::string to_string() const override;
 };
 
+class EmbeddingBackwardAction : public Action {
+    public:
+        EmbeddingBackwardAction(Tensor *_lhs, const Tensor *indices, Tensor *_res)
+            : Action(_lhs, indices, _res) {}
+        void execute() override;
+        std::string to_string() const override;
+};
+
 std::vector<Action *> getOnceActions();
 void gCreateAction(Action *action);
 void gDoActions();

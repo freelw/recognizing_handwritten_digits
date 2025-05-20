@@ -551,6 +551,19 @@ std::string EmbeddingAction::to_string() const {
     return oss.str();
 }
 
+void EmbeddingBackwardAction::execute() {
+    assert(lhs != nullptr);
+    assert(rhs != nullptr);
+    assert(res != nullptr);
+    g_backend_ops->embeddingBackward(lhs, rhs, res);
+}
+
+std::string EmbeddingBackwardAction::to_string() const {
+    std::ostringstream oss;
+    oss << "EmbeddingBackwardAction: embedding backward " << lhs->get_meta_info() << " with indices " << rhs->get_meta_info() << " to " << res->get_meta_info();
+    return oss.str();
+}
+
 std::vector<Action*> g_actions;
 
 std::vector<Action *> getOnceActions() {

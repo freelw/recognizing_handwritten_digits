@@ -198,6 +198,10 @@ void CUDAOps::embedding(Tensor *lhs, const Tensor *indices, const Tensor *res) {
     assert(false);
 }
 
+void CUDAOps::embeddingBackward(Tensor *lhs, const Tensor *indices, Tensor *res) {
+    assert(false);
+}
+
 void CUDAOps::mul(
     Tensor *lhs, const Tensor *rhs, Tensor *res,
     Tensor *l_shape, Tensor *l_strides,
