@@ -3401,6 +3401,7 @@ void test_embedding() {
     );
     ::free(res_grad_buffer);
     gDoActions();
+
     float res_ans[15] = {
         2.5, 2.6, 2.7, 2.8, 2.9,
         1, 1.1, 1.2, 1.3, 1.4,
@@ -5127,8 +5128,6 @@ void test_permute_with_cpu() {
 }
 
 void test_gpu() {
-    test_embedding();
-    return ;
     test_at();
     test_at_1();
     test_gpu_at_with_cpu();

@@ -514,7 +514,7 @@ __global__ void tensor_embedding_backward_kernel(
     } else {
         int index_src = row * src_stride0 + col * src_strid1;
         int index_dst = indices[row] * dst_stride0 + col * dst_stride1;
-        dst[index_src] += src[index_dst];
+        dst[index_dst] += src[index_src];
     }
 }
 
