@@ -4,7 +4,9 @@
 namespace graph {
 
     void Node::backward() {
+        assert(backward_times == 0);
         assert(ref_cnt == 0);
+        backward_times ++;
         if (!is_require_grad()) {
             return;
         }

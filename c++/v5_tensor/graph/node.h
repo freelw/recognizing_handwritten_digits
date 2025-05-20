@@ -17,14 +17,16 @@ namespace graph {
                 : t(_t),
                 ref_cnt(0),
                 b_require_grad(false),
-                grad(nullptr) {
+                grad(nullptr),
+                backward_times(0) {
                 
             }
             Node(Tensor *_t, Tensor *_grad)
                 : t(_t),
                 ref_cnt(0),
                 b_require_grad(true),
-                grad(_grad) {
+                grad(_grad),
+                backward_times(0) {
                 
             }
             void inc_ref() {
@@ -83,6 +85,7 @@ namespace graph {
             std::vector<Edge *> edges;
             int ref_cnt;
             bool b_require_grad;
+            int backward_times;
         friend class ::Dropout;
         friend class ::Embedding;
     };

@@ -3647,7 +3647,7 @@ void test_at_bp_ledge_add_eq() {
         "res"
     );
     if (!succ_res) {
-        std::cout << RED << "test_at_bp_add_eq res failed" << RESET << std::endl;
+        std::cout << RED << "test_at_bp_ledge_add_eq res failed" << RESET << std::endl;
     }
 
     float input_grad_ans[6] = {
@@ -3660,7 +3660,7 @@ void test_at_bp_ledge_add_eq() {
         "input_grad"
     );
     if (!succ_input_grad) {
-        std::cout << RED << "test_at_bp_add_eq input_grad failed" << RESET << std::endl;
+        std::cout << RED << "test_at_bp_ledge_add_eq input_grad failed" << RESET << std::endl;
     }
 
     float w1_grad_ans[12] = {
@@ -3674,7 +3674,7 @@ void test_at_bp_ledge_add_eq() {
         "w1_grad"
     );
     if (!succ_w1_grad) {
-        std::cout << RED << "test_at_bp_add_eq w1_grad failed" << RESET << std::endl;
+        std::cout << RED << "test_at_bp_ledge_add_eq w1_grad failed" << RESET << std::endl;
     }
 
     float w2_grad_ans[12] = {
@@ -3688,14 +3688,14 @@ void test_at_bp_ledge_add_eq() {
         "w2_grad"
     );
     if (!succ_w2_grad) {
-        std::cout << RED << "test_at_bp_add_eq w2_grad failed" << RESET << std::endl;
+        std::cout << RED << "test_at_bp_ledge_add_eq w2_grad failed" << RESET << std::endl;
     }
 
     bool succ = succ_res && succ_input_grad && succ_w1_grad && succ_w2_grad;
     if (succ) {
-        std::cout << GREEN << "test_at_bp_add_eq succ" << RESET << std::endl;
+        std::cout << GREEN << "test_at_bp_ledge_add_eq succ" << RESET << std::endl;
     } else {
-        std::cout << RED << "test_at_bp_add_eq failed" << RESET << std::endl;
+        std::cout << RED << "test_at_bp_ledge_add_eq failed" << RESET << std::endl;
     }
 
     destruct_env();
