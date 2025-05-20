@@ -310,12 +310,22 @@ namespace graph {
                 Tensor *l_tensor = lhs->get_tensor();
                 Tensor *r_tensor = node->get_tensor();
                 Tensor *l_transpose_view = l_tensor->transpose();
-                // fixme 这里需要加上addeq
+                
+                Tensor *tmp = allocTensor(
+                    node->get_grad()->get_shape(),
+                    "matmul_r_tmp"
+                );
                 gCreateAction(
                     new AtAction(
                         l_transpose_view,
                         grad,
-                        node->get_grad()
+                        tmp
+                    )
+                );
+                gCreateAction(
+                    new AddEqAction(
+                        node->get_grad(),
+                        tmp
                     )
                 );
             }
