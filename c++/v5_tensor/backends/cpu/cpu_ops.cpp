@@ -123,7 +123,35 @@ void CPUOps::at(Tensor *lhs, const Tensor *rhs, Tensor *res) {
 }
 
 void CPUOps::embedding(Tensor *lhs, const Tensor *indices, const Tensor *res) {
-    assert(false);
+    assert(lhs != nullptr);
+    assert(indices != nullptr);
+    assert(res != nullptr);
+
+    assert(lhs->is_contiguous());
+    assert(res->is_contiguous());
+    assert(indices->is_contiguous());
+    assert(!lhs->is_view());
+    assert(!res->is_view());
+    assert(!indices->is_view());
+    assert(lhs->get_dim() == 2);
+    assert(res->get_dim() == 2);
+    assert(indices->get_dim() == 1);
+
+    auto lshape = lhs->get_shape();
+    auto rshape = res->get_shape();
+    auto length = indices->length();
+
+    assert(rshape[0] == length);
+    assert(rshape[1] == lshape[1]);
+
+    for (int i = 0; i < length; ++i) {
+        int index = static_cast<int32_t*>(indices->get_data())[i];
+        assert(index >= 0 && index < lshape[0]);
+        for (int j = 0; j < lshape[1]; ++j) {
+            static_cast<float*>(res->get_data())[i * res->get_strides()[0] + j * res->get_strides()[1]] = 
+                static_cast<float*>(lhs->get_data())[index * lhs->get_strides()[0] + j * lhs->get_strides()[1]];
+        }
+    }
 }
 
 void CPUOps::embeddingBackward(Tensor *lhs, const Tensor *indices, Tensor *res) {
@@ -394,7 +422,13 @@ void CPUOps::init_weight_gauss(Tensor *tensor, float mean, float sigma) {
 }
 
 void CPUOps::init_weight_uniform(Tensor *tensor, float sigma) {
-    
+    unsigned seed1 = std::chrono::system_clock::now().time_since_epoch().count();
+    std::default_random_engine generator_w(seed1);
+    std::uniform_real_distribution<float> distribution_w(-sigma, sigma);
+    float *data = static_cast<float*>(tensor->get_data());
+    for (int i = 0; i < tensor->length(); ++i) {
+        data[i] = distribution_w(generator_w);
+    }
 }
 
 void CPUOps::init_weight_for_dbg(Tensor *tensor, float scale) {

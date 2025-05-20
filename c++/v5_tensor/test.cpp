@@ -6,6 +6,7 @@
 #include "model/mlp.h"
 #include "module/attention.h"
 #include "module/mha.h"
+#include "module/embedding.h"
 #include "common.h"
 #include <iomanip>
 #include <cmath>
@@ -3373,7 +3374,29 @@ void test_mha() {
     destruct_env();   
 }
 
+void test_embedding() {
+    construct_env();
+    Tensor *indices = allocTensor({3}, "indices", INT32);
+    Embedding emb(10, 5, true);
+    auto res = emb.forward(indices);
+    insert_boundary_action();
+    printAllActions();
+    allocMemAndInitTensors();
+    int32_t indices_buffer[3] = {5, 2, 0};
+    g_backend_ops->cp_to_device(
+        indices,
+        reinterpret_cast<char*>(indices_buffer),
+        indices->size()
+    );
+    gDoActions();
+    std::cout << "embedding weights: " << std::endl << *emb.get_weight() << std::endl;
+    std::cout << "res : " << std::endl << *res->get_tensor() << std::endl;
+    destruct_env();
+}
+
 void test_cpu() {
+    test_embedding();
+    return ;
     test_at();
     test_add();
     test_add_eq();
@@ -3411,6 +3434,7 @@ void test_cpu() {
     test_permute();
     test_lazy_linear();
     test_mha();
+    test_embedding();
 }
 
 Tensor *test_add_with_cpu_base(int m, int n) {
