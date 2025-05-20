@@ -3656,7 +3656,6 @@ void test_at_bp_ledge_add_eq() {
 
     auto res = ni->at(nw1)->add(ni->at(nw2));
 
-    std::cout << "ni ref : " << ni->get_ref() << std::endl;
     insert_boundary_action();
     res->backward();
     // printAllActions();
