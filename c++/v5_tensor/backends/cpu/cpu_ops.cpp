@@ -263,10 +263,11 @@ void CPUOps::sum(Tensor *lhs, Tensor *res, int dim) {
 
     for (int i = 0; i < shape[1]; ++i) {
         static_cast<float*>(res->get_data())[i] = 0;
+        float tmp = 0;
         for (int j = 0; j < shape[0]; ++j) {
-            static_cast<float*>(res->get_data())[i] += 
-                static_cast<float*>(lhs->get_data())[j * lstrides[0] + i * lstrides[1]];
+             tmp += static_cast<float*>(lhs->get_data())[j * lstrides[0] + i * lstrides[1]];
         }
+        static_cast<float*>(res->get_data())[i] = tmp;
     }
 }
 
@@ -690,8 +691,9 @@ void CPUOps::softmax_bacward(Tensor *target_grad, const Tensor *softmax_res, Ten
     for (int i = 0; i < t_shape[0]; ++i) {
         for (int j = 0; j < t_shape[1]; ++j) {
             for (int target = 0; target < t_shape[2]; ++target) {
+                auto tg_target_pos = i * t_strides[0] + j * t_strides[1] + target * t_strides[2];
+                float tmp = 0;
                 for (int k = 0; k < t_shape[2]; ++k) {
-                    auto tg_target_pos = i * t_strides[0] + j * t_strides[1] + target * t_strides[2];
                     // auto tg_k_pos = i * t_strides[0] + j * t_strides[1] + k * t_strides[2];
                     auto sm_target_pos = i * s_strides[0] + j * s_strides[1] + target * s_strides[2];
                     auto sm_k_pos = i * s_strides[0] + j * s_strides[1] + k * s_strides[2];
@@ -701,13 +703,12 @@ void CPUOps::softmax_bacward(Tensor *target_grad, const Tensor *softmax_res, Ten
                     auto softmax_res_target = softmax_res_data[sm_target_pos];
                     auto grad_k = grad_data[g_k_pos];
                     if (target == k) {
-                        target_grad_data[tg_target_pos] += 
-                            softmax_res_k * (1 - softmax_res_k) * grad_k;
+                        tmp += softmax_res_k * (1 - softmax_res_k) * grad_k;
                     } else {
-                        target_grad_data[tg_target_pos] += 
-                            -softmax_res_target * softmax_res_k * grad_k;
+                        tmp += -softmax_res_target * softmax_res_k * grad_k;
                     }
                 }
+                target_grad_data[tg_target_pos] = tmp;
             }
         }
     }

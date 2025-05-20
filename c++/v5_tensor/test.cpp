@@ -1505,9 +1505,9 @@ void test_reshape_1() {
     // printAllActions();
     gDoActions();
 
-    std::string l_t_m_1_meta_ans = "Tensor(input_transpose_reshape_deep_copy)(12)";
-    std::string l_t_d3_meta_ans = "Tensor(input_transpose_reshape_deep_copy)(2, 2, 3)";
-    std::string l_t_d3_1_meta_ans = "Tensor(input_transpose_reshape_deep_copy)(2, 3, 2)";
+    std::string l_t_m_1_meta_ans = "Tensor[7](input_transpose_reshape_deep_copy)(12)";
+    std::string l_t_d3_meta_ans = "Tensor[10](input_transpose_reshape_deep_copy)(2, 2, 3)";
+    std::string l_t_d3_1_meta_ans = "Tensor[13](input_transpose_reshape_deep_copy)(2, 3, 2)";
 
     bool meta_succ = l_t_m_1->get_meta_info() == l_t_m_1_meta_ans &&
         l_t_d3->get_meta_info() == l_t_d3_meta_ans &&
@@ -2939,6 +2939,51 @@ void test_dropout() {
     destruct_env();
 }
 
+void test_dropout_1() {
+    construct_env();
+    Dropout dropout(1.0001f);
+    Tensor *input = allocTensor({1, 10}, "input");
+    Tensor *input_1 = allocTensor({1, 10}, "input_1");
+    auto ni = graph::allocNode(input);
+    ni->require_grad();
+    ni->init_weight_fill(1.0f);
+    auto res = dropout.forward(ni)->add(ni);
+    insert_boundary_action();
+    res->backward();
+    // printAllActions();
+    allocMemAndInitTensors();
+    float *res_grad_buffer = static_cast<float*>(::malloc(res->get_grad()->size()));
+    auto res_grad_length = res->get_grad()->length();
+    for (int i = 0; i < res_grad_length; ++ i) {
+        res_grad_buffer[i] = 1.0f;
+    }
+    g_backend_ops->cp_to_device(
+        res->get_grad(),
+        reinterpret_cast<char*>(res_grad_buffer),
+        res->get_grad()->size()
+    );
+    ::free(res_grad_buffer);
+
+    gDoActions();
+    float ni_grad_ans[10] = {
+        1.0, 1.0, 1.0, 1.0, 1.0,
+        1.0, 1.0, 1.0, 1.0, 1.0
+    };
+
+    bool succ = compare_res_ans_1d(
+        ni->get_grad(),
+        ni_grad_ans,
+        "ni_grad"
+    );
+
+    if (succ) {
+        std::cout << GREEN << "test_dropout_1 succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_dropout_1 failed" << RESET << std::endl;
+    }
+    destruct_env();
+}
+
 void test_permute() {
     construct_env();
     Tensor *input = allocTensor({2, 3, 4, 5}, "input");
@@ -3590,6 +3635,278 @@ void test_expand_mul() {
     destruct_env();
 }
 
+void test_at_bp_ledge_add_eq() {
+    // bug : https://github.com/freelw/recognizing_handwritten_digits/issues/35
+    construct_env();
+    Tensor *input = allocTensor({2, 3}, "input");
+    Tensor *w1 = allocTensor({3, 4}, "w1");
+    Tensor *w2 = allocTensor({3, 4}, "w2");
+
+    auto ni = graph::allocNode(input);
+    auto nw1 = graph::allocNode(w1);
+    auto nw2 = graph::allocNode(w2);
+
+    ni->require_grad();
+    nw1->require_grad();
+    nw2->require_grad();
+
+    ni->init_weight_for_dbg(10000.0f);
+    nw1->init_weight_for_dbg(10000.0f);
+    nw2->init_weight_for_dbg(10000.0f);
+
+    auto res = ni->at(nw1)->add(ni->at(nw2));
+
+    insert_boundary_action();
+    res->backward();
+    // printAllActions();
+    allocMemAndInitTensors();
+
+    float *res_grad_buffer = static_cast<float*>(::malloc(res->get_grad()->size()));
+    for (int i = 0; i < res->get_grad()->length(); ++ i) {
+        res_grad_buffer[i] = 1.0f * i;
+    }
+    g_backend_ops->cp_to_device(
+        res->get_grad(),
+        reinterpret_cast<char*>(res_grad_buffer),
+        res->get_grad()->size()
+    );
+    ::free(res_grad_buffer);
+    gDoActions();
+
+    // std::cout << "input : " << std::endl << *input << std::endl;
+    // std::cout << "w1 : " << std::endl << *w1 << std::endl;
+    // std::cout << "w2 : " << std::endl << *w2 << std::endl;
+    // std::cout << "res : " << std::endl << *res->get_tensor() << std::endl;
+    // std::cout << "res grad : " << std::endl << *res->get_grad() << std::endl;
+    // std::cout << "w1 grad : " << std::endl << *nw1->get_grad() << std::endl;
+    // std::cout << "w2 grad : " << std::endl << *nw2->get_grad() << std::endl;
+    // std::cout << "input grad : " << std::endl << *ni->get_grad() << std::endl;
+
+    float res_ans[8] = {
+        0.4000, 0.4600, 0.5200, 0.5800,
+        1.1200, 1.3600, 1.6000, 1.8400
+    };
+    bool succ_res = compare_res_ans_1d(
+        res->get_tensor(),
+        res_ans,
+        "res"
+    );
+    if (!succ_res) {
+        std::cout << RED << "test_at_bp_ledge_add_eq res failed" << RESET << std::endl;
+    }
+
+    float input_grad_ans[6] = {
+        2.8000,  7.6000, 12.4000,
+        7.6000, 25.2000, 42.8000
+    };
+    bool succ_input_grad = compare_res_ans_1d(
+        ni->get_grad(),
+        input_grad_ans,
+        "input_grad"
+    );
+    if (!succ_input_grad) {
+        std::cout << RED << "test_at_bp_ledge_add_eq input_grad failed" << RESET << std::endl;
+    }
+
+    float w1_grad_ans[12] = {
+        1.2000, 1.5000, 1.8000, 2.1000,
+        1.6000, 2.1000, 2.6000, 3.1000,
+        2.0000, 2.7000, 3.4000, 4.1000
+    };
+    bool succ_w1_grad = compare_res_ans_1d(
+        nw1->get_grad(),
+        w1_grad_ans,
+        "w1_grad"
+    );
+    if (!succ_w1_grad) {
+        std::cout << RED << "test_at_bp_ledge_add_eq w1_grad failed" << RESET << std::endl;
+    }
+
+    float w2_grad_ans[12] = {
+        1.2000, 1.5000, 1.8000, 2.1000,
+        1.6000, 2.1000, 2.6000, 3.1000,
+        2.0000, 2.7000, 3.4000, 4.1000
+    };
+    bool succ_w2_grad = compare_res_ans_1d(
+        nw2->get_grad(),
+        w2_grad_ans,
+        "w2_grad"
+    );
+    if (!succ_w2_grad) {
+        std::cout << RED << "test_at_bp_ledge_add_eq w2_grad failed" << RESET << std::endl;
+    }
+
+    bool succ = succ_res && succ_input_grad && succ_w1_grad && succ_w2_grad;
+    if (succ) {
+        std::cout << GREEN << "test_at_bp_ledge_add_eq succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_at_bp_ledge_add_eq failed" << RESET << std::endl;
+    }
+
+    destruct_env();
+}
+
+void test_at_bp_redge_add_eq() {
+    // bug : https://github.com/freelw/recognizing_handwritten_digits/issues/35
+    construct_env();
+
+    Tensor *input = allocTensor({3, 4}, "input");
+    Tensor *w1 = allocTensor({2, 3}, "w1");
+    Tensor *w2 = allocTensor({2, 3}, "w2");
+
+    auto ni = graph::allocNode(input);
+    auto nw1 = graph::allocNode(w1);
+    auto nw2 = graph::allocNode(w2);
+
+    ni->require_grad();
+    nw1->require_grad();
+    nw2->require_grad();
+
+    ni->init_weight_for_dbg(10000.0f);
+    nw1->init_weight_for_dbg(10000.0f);
+    nw2->init_weight_for_dbg(10000.0f);
+
+    auto res = nw1->at(ni)->add(nw2->at(ni));
+    insert_boundary_action();
+    res->backward();
+    // printAllActions();
+    allocMemAndInitTensors();
+    float *res_grad_buffer = static_cast<float*>(::malloc(res->get_grad()->size()));
+    for (int i = 0; i < res->get_grad()->length(); ++ i) {
+        res_grad_buffer[i] = 1.0f * i;
+    }
+    g_backend_ops->cp_to_device(
+        res->get_grad(),
+        reinterpret_cast<char*>(res_grad_buffer),
+        res->get_grad()->size()
+    );
+    ::free(res_grad_buffer);
+    gDoActions();
+    // std::cout << "input : " << std::endl << *input << std::endl;
+    // std::cout << "w1 : " << std::endl << *w1 << std::endl;
+    // std::cout << "w2 : " << std::endl << *w2 << std::endl;
+    // std::cout << "res : " << std::endl << *res->get_tensor() << std::endl;
+    // std::cout << "res grad : " << std::endl << *res->get_grad() << std::endl;
+    // std::cout << "w1 grad : " << std::endl << *nw1->get_grad() << std::endl;
+    // std::cout << "w2 grad : " << std::endl << *nw2->get_grad() << std::endl;
+    // std::cout << "input grad : " << std::endl << *ni->get_grad() << std::endl;
+
+    float res_ans[8] = {
+        0.4, 0.46, 0.52, 0.58,
+        1.12, 1.36, 1.6, 1.84
+    };
+
+    bool succ_res = compare_res_ans_1d(
+        res->get_tensor(),
+        res_ans,
+        "res"
+    );
+
+    if (!succ_res) {
+        std::cout << RED << "test_at_bp_redge_add_eq res failed" << RESET << std::endl;
+    }
+
+    float input_grad_ans[12] = {
+        2.4000, 3.0000, 3.6000, 4.2000,
+        3.2000, 4.2000, 5.2000, 6.2000,
+        4.0000, 5.4000, 6.8000, 8.2000
+    };
+
+    bool succ_input_grad = compare_res_ans_1d(
+        ni->get_grad(),
+        input_grad_ans,
+        "input_grad"
+    );
+
+    if (!succ_input_grad) {
+        std::cout << RED << "test_at_bp_redge_add_eq input_grad failed" << RESET << std::endl;
+    }
+
+    float w1_grad_ans[6] = {
+        1.4, 3.8, 6.2,
+        3.8, 12.6, 21.4
+    };
+
+    bool succ_w1_grad = compare_res_ans_1d(
+        nw1->get_grad(),
+        w1_grad_ans,
+        "w1_grad"
+    );
+
+    if (!succ_w1_grad) {
+        std::cout << RED << "test_at_bp_redge_add_eq w1_grad failed" << RESET << std::endl;
+    }
+
+    float w2_grad_ans[6] = {
+        1.4, 3.8, 6.2,
+        3.8, 12.6, 21.4
+    };
+
+    bool succ_w2_grad = compare_res_ans_1d(
+        nw2->get_grad(),
+        w2_grad_ans,
+        "w2_grad"
+    );
+
+    if (!succ_w2_grad) {
+        std::cout << RED << "test_at_bp_redge_add_eq w2_grad failed" << RESET << std::endl;
+    }
+
+    bool succ = succ_res && succ_input_grad && succ_w1_grad && succ_w2_grad;
+    if (succ) {
+        std::cout << GREEN << "test_at_bp_redge_add_eq succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_at_bp_redge_add_eq failed" << RESET << std::endl;
+    }
+    destruct_env();
+}
+
+void test_softmax_1() {
+    construct_env();
+    Tensor *input = allocTensor({1, 2, 3}, "input");
+    auto ni = graph::allocNode(input);
+    ni->require_grad();
+    ni->init_weight_fill(1.0f);
+    auto res = ni->reshape({2, 3})->add(ni->softmax()->reshape({2, 3}));
+    insert_boundary_action();
+    res->backward();
+    // printAllActions();
+    allocMemAndInitTensors();
+    
+    float *res_grad_buffer = static_cast<float*>(::malloc(res->get_grad()->size()));
+    for (int i = 0; i < res->get_grad()->length(); ++ i) {
+        res_grad_buffer[i] = 1.0f * i;
+    }
+    g_backend_ops->cp_to_device(
+        res->get_grad(),
+        reinterpret_cast<char*>(res_grad_buffer),
+        res->get_grad()->size()
+    );
+
+    gDoActions();
+    // std::cout << "res : " << std::endl << *res->get_tensor() << std::endl;
+    // std::cout << "res grad : " << std::endl << *res->get_grad() << std::endl;
+    // std::cout << "input : " << std::endl << *input << std::endl;
+    // std::cout << "input grad : " << std::endl << *ni->get_grad() << std::endl;
+    float input_grad_ans[6] = {
+      -0.333333, 1, 2.33333,
+        2.66667, 4, 5.33333
+    };
+
+    bool succ = compare_res_ans_1d(
+        ni->get_grad(),
+        input_grad_ans,
+        "input_grad"
+    );
+
+    if (succ) {
+        std::cout << GREEN << "test_softmax_1 succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_softmax_1 failed" << RESET << std::endl;
+    }
+    destruct_env();
+}
+
 void test_cpu() {
     test_at();
     test_add();
@@ -3631,6 +3948,10 @@ void test_cpu() {
     test_embedding();
     test_pe();
     test_expand_mul();
+    test_at_bp_ledge_add_eq();
+    test_at_bp_redge_add_eq();
+    test_dropout_1();
+    test_softmax_1();
 }
 
 Tensor *test_add_with_cpu_base(int m, int n) {
@@ -5450,6 +5771,10 @@ void test_gpu() {
     test_embedding_with_cpu();
     test_pe();
     test_expand_mul();
+    test_at_bp_ledge_add_eq();
+    test_at_bp_redge_add_eq();
+    test_dropout_1();
+    test_softmax_1();
 }
 
 int main(int argc, char *argv[]) {

@@ -28,6 +28,8 @@ struct TensorStorage {
     int size;
 };
 
+extern int g_tensor_id;
+
 class Tensor {
     public:
         Tensor(const std::vector<int> &_shape, const std::string &_name, TensorDType _dtype);
@@ -68,8 +70,12 @@ class Tensor {
             return this->get_storage() == other->get_storage();
         }
         friend std::ostream &operator<<(std::ostream &output, const Tensor &s);
+        int get_id() const { return id; }
     protected:
         int cell_size() const;
+        int gen_id() {
+            return ++g_tensor_id;
+        }
     protected:
         std::vector<int> shape;
         std::vector<int> strides;
@@ -79,6 +85,7 @@ class Tensor {
         const bool own_storage;
         TensorStorage *storage;
         int offset;
+        int id;
 };
 
 extern std::vector<Tensor*> g_tensors;

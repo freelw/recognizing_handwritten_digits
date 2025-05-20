@@ -4,7 +4,11 @@
 namespace graph {
 
     void Node::backward() {
+        if (backward_times > 0) {
+            return;
+        }
         assert(ref_cnt == 0);
+        backward_times ++;
         if (!is_require_grad()) {
             return;
         }
@@ -116,7 +120,7 @@ namespace graph {
         }
     }
     Node *Node::add(Node *rhs) {
-        Tensor *res_tensor = allocTensor(t->get_shape(), "add");
+        Tensor *res_tensor = allocTensor(t->get_shape(), "add_res");
         Tensor *r_tensor = rhs->get_tensor();
         gCreateAction(
             new AddAction(
@@ -277,9 +281,6 @@ namespace graph {
                 r_split_2d_node,
                 res_split_2d_node
             );
-            if (res_split_2d_node->is_require_grad()) {
-                res_node->edges.push_back(EmptyEdge::create(res_split_2d_node));
-            }
         }
         return res_node;
     }
@@ -316,9 +317,9 @@ namespace graph {
                     offset
                 );
                 node = allocNode(new_tensor, new_grad);
-                if (opposite) { // 考虑split的操作数是结果，梯度需要从整个结果传递给子结果
+                if (opposite) { // 考虑split的左操作数是结果，梯度需要从整个结果传递给子结果
                     this->edges.push_back(EmptyEdge::create(node));
-                } else { // 考虑split的操作数是输入，梯度需要从子结果传递给整个结果
+                } else { // 考虑split的左操作数是输入，梯度需要从子结果传递给整个结果
                     node->edges.push_back(EmptyEdge::create(this));
                 }
             } else {
@@ -436,28 +437,52 @@ namespace graph {
     }
 
     void CrossEntropyEdge::backward(Tensor *) {
+        Tensor *tmp = allocTensor(
+            node->get_grad()->get_shape(),
+            "cross_entropy_tmp"
+        );
         gCreateAction(
             new CrossEntropyBackwardAction(
                 node->get_tensor(),
                 labels,
                 maxs,
                 sums,
-                node->get_grad()
+                tmp
+            )
+        );
+        gCreateAction(
+            new AddEqAction(
+                node->get_grad(),
+                tmp
             )
         );
     }
 
     void SoftmaxEdge::backward(Tensor *grad) {
+        
+        Tensor *tmp = allocTensor(
+            node->get_grad()->get_shape(),
+            "softmax_tmp"
+        );
+        
         gCreateAction(
             new SoftmaxBackwardAction(
-                node->get_grad(),
+                tmp,
+                // node->get_grad(),
                 softmax_res,
                 grad
+            )
+        );
+        gCreateAction(
+            new AddEqAction(
+                node->get_grad(),
+                tmp
             )
         );
     }
 
     void EmbeddingEdge::backward(Tensor *grad) {
+        // 这里不用使用addeq，因为不允许embeding原始tensor做其他操作
         gCreateAction(
             new EmbeddingBackwardAction(
                 grad,
