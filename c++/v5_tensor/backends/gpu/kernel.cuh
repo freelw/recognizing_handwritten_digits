@@ -151,6 +151,26 @@ __global__ void build_dropout_mask_kernel(
     int length, int dim, float p
 );
 
+__global__ void tensor_embedding_kernel(
+    float *dst,
+    int32_t *indices,
+    float *src,
+    int src_shape0, int src_shape1,
+    int length,
+    int src_stride0, int src_strid1,
+    int dst_stride0, int dst_stride1
+);
+
+__global__ void tensor_embedding_backward_kernel(
+    float *dst,
+    int32_t *indices,
+    float *src,
+    int src_shape0, int src_shape1,
+    int length,
+    int src_stride0, int src_strid1,
+    int dst_stride0, int dst_stride1
+);
+
 #endif // GCC_ASAN
 
 #endif // V5_TENSOR_BACKENDS_GPU_KERNEL_CUH

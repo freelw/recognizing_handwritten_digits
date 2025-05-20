@@ -195,11 +195,95 @@ void CUDAOps::at(Tensor *lhs, const Tensor *rhs, Tensor *res) {
 }
 
 void CUDAOps::embedding(Tensor *lhs, const Tensor *indices, const Tensor *res) {
-    assert(false);
+    assert(lhs != nullptr);
+    assert(indices != nullptr);
+    assert(res != nullptr);
+
+    assert(lhs->is_contiguous());
+    assert(res->is_contiguous());
+    assert(indices->is_contiguous());
+    assert(!lhs->is_view());
+    assert(!res->is_view());
+    assert(!indices->is_view());
+    assert(lhs->get_dim() == 2);
+    assert(res->get_dim() == 2);
+    assert(indices->get_dim() == 1);
+
+    auto lshape = lhs->get_shape();
+    auto rshape = res->get_shape();
+    auto length = indices->length();
+
+    assert(rshape[0] == length);
+    assert(rshape[1] == lshape[1]);
+
+    auto lstrides = lhs->get_strides();
+    auto rstrides = res->get_strides();
+
+    dim3 gridDim(
+        (lshape[1] + TILE_WIDTH - 1) / TILE_WIDTH,
+        (length + TILE_WIDTH - 1) / TILE_WIDTH
+    );
+
+    dim3 blockDim(TILE_WIDTH, TILE_WIDTH);
+
+    tensor_embedding_kernel<<<gridDim, blockDim>>>(
+        (float *)res->get_data(),
+        (int32_t *)indices->get_data(),
+        (float *)lhs->get_data(),
+        lshape[0],
+        lshape[1],
+        length,
+        lstrides[0],
+        lstrides[1],
+        rstrides[0],
+        rstrides[1]
+    );
 }
 
 void CUDAOps::embeddingBackward(Tensor *lhs, const Tensor *indices, Tensor *res) {
-    assert(false);
+    assert(lhs != nullptr);
+    assert(indices != nullptr);
+    assert(res != nullptr);
+
+    assert(lhs->is_contiguous());
+    assert(res->is_contiguous());
+    assert(indices->is_contiguous());
+    assert(!lhs->is_view());
+    assert(!res->is_view());
+    assert(!indices->is_view());
+    assert(lhs->get_dim() == 2);
+    assert(res->get_dim() == 2);
+    assert(indices->get_dim() == 1);
+
+    auto lshape = lhs->get_shape();
+    auto rshape = res->get_shape();
+    auto length = indices->length();
+
+    assert(rshape[1] == lshape[1]);
+    assert(lshape[0] == length);
+
+    auto lstrides = lhs->get_strides(); // small grad
+    auto rstrides = res->get_strides(); // emb big grad
+
+    dim3 gridDim(
+        (lshape[1] + TILE_WIDTH - 1) / TILE_WIDTH,
+        (length + TILE_WIDTH - 1) / TILE_WIDTH
+    );
+
+    dim3 blockDim(TILE_WIDTH, TILE_WIDTH);
+
+    tensor_embedding_backward_kernel<<<gridDim, blockDim>>>(
+        (float *)res->get_data(),
+        (int32_t *)indices->get_data(),
+        (float *)lhs->get_data(),
+        lshape[0],
+        lshape[1],
+        length,
+        lstrides[0],
+        lstrides[1],
+        rstrides[0],
+        rstrides[1]
+    );
 }
 
 void CUDAOps::mul(
@@ -484,7 +568,16 @@ void CUDAOps::init_weight_gauss(Tensor *tensor, float mean, float sigma) {
 }
 
 void CUDAOps::init_weight_uniform(Tensor *tensor, float sigma) {
-    assert(false); // Not implemented yet
+    unsigned seed1 = std::chrono::system_clock::now().time_since_epoch().count();
+    std::default_random_engine generator_w(seed1);
+    std::uniform_real_distribution<float> distribution_w(-sigma, sigma);
+    auto size = tensor->size();
+    float *data = static_cast<float*>(::malloc(size));
+    for (int i = 0; i < tensor->length(); ++i) {
+        data[i] = distribution_w(generator_w);
+    }
+    this->cp_to_device(tensor, (char *)data, size);
+    ::free(data);
 }
 
 void CUDAOps::init_weight_for_dbg(Tensor *tensor, float scale) {
