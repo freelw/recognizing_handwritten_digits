@@ -5127,6 +5127,128 @@ void test_permute_with_cpu() {
     ::free(ni_grad_cpu_buffer);
 }
 
+std::vector<Tensor *> test_embedding_with_cpu_base(int m, int n) {
+    Embedding emb(m, n, true);
+    Tensor *indices = allocTensor({m/2}, "indices", INT32);
+    auto res = emb.forward(indices);
+    insert_boundary_action();
+    res->backward();
+    allocMemAndInitTensors();
+    int32_t *indices_buffer = static_cast<int32_t*>(::malloc(m/2 * sizeof(int32_t)));
+    for (int i = 0; i < m/2; ++ i) {
+        indices_buffer[i] = i*2;
+    }
+    g_backend_ops->cp_to_device(
+        indices,
+        reinterpret_cast<char*>(indices_buffer),
+        indices->size()
+    );
+    ::free(indices_buffer);
+    auto grad_length = res->get_grad()->length();
+    assert(grad_length == m/2 * n);
+
+    float *grad_buffer = static_cast<float*>(::malloc(grad_length * sizeof(float)));
+    for (int i = 0; i < grad_length; ++ i) {
+        grad_buffer[i] = 1.0f * i;
+    }
+    g_backend_ops->cp_to_device(
+        res->get_grad(),
+        reinterpret_cast<char*>(grad_buffer),
+        res->get_grad()->size()
+    );
+    ::free(grad_buffer);
+
+    gDoActions();
+    std::vector<Tensor *> res_vec;
+    res_vec.push_back(res->get_tensor());
+    res_vec.push_back(emb.get_grad());
+    return res_vec;
+}
+
+void test_embedding_with_cpu() {
+    int m = 100;
+    int n = 50;
+
+    use_gpu(false);
+    construct_env();
+    auto res_cpu_vec = test_embedding_with_cpu_base(m, n);
+    auto res_cpu = res_cpu_vec[0];
+    auto emb_grad_cpu = res_cpu_vec[1];
+    auto res_cpu_size = res_cpu->size();
+    auto res_cpu_length = res_cpu->length();
+    float *res_cpu_buffer = static_cast<float*>(::malloc(res_cpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(res_cpu_buffer),
+        res_cpu,
+        res_cpu_size
+    );
+    auto emb_grad_cpu_size = emb_grad_cpu->size();
+    auto emb_grad_cpu_length = emb_grad_cpu->length();
+    float *emb_grad_cpu_buffer = static_cast<float*>(::malloc(emb_grad_cpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(emb_grad_cpu_buffer),
+        emb_grad_cpu,
+        emb_grad_cpu_size
+    );
+    destruct_env();
+
+    use_gpu(true);
+    construct_env();
+    auto res_gpu_vec = test_embedding_with_cpu_base(m, n);
+    auto res_gpu = res_gpu_vec[0];
+    auto emb_grad_gpu = res_gpu_vec[1];
+    
+    auto res_gpu_size = res_gpu->size();
+    auto res_gpu_length = res_gpu->length();
+    float *res_gpu_buffer = static_cast<float*>(::malloc(res_gpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(res_gpu_buffer),
+        res_gpu,
+        res_gpu_size
+    );
+    
+    auto emb_grad_gpu_size = emb_grad_gpu->size();
+    auto emb_grad_gpu_length = emb_grad_gpu->length();
+    float *emb_grad_gpu_buffer = static_cast<float*>(::malloc(emb_grad_gpu_size));
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(emb_grad_gpu_buffer),
+        emb_grad_gpu,
+        emb_grad_gpu_size
+    );
+    
+    destruct_env();
+    
+    assert(res_cpu_size == res_gpu_size);
+    assert(res_cpu_length == res_gpu_length);
+    
+    assert(emb_grad_cpu_size == emb_grad_gpu_size);
+    assert(emb_grad_cpu_length == emb_grad_gpu_length);
+
+    
+    bool succ_res = compare_ans1_ans2(res_cpu_buffer, res_gpu_buffer, res_gpu_length);
+    if (!succ_res) {
+        std::cerr << RED << "res mismatch" << RESET << std::endl;
+    }
+
+    bool succ_grad = compare_ans1_ans2(emb_grad_cpu_buffer, emb_grad_gpu_buffer, emb_grad_gpu_length);
+
+    if (!succ_grad) {
+        std::cerr << RED << "emb_grad mismatch" << RESET << std::endl;
+    }
+
+    bool succ = succ_res && succ_grad;
+    if (succ) {
+        std::cout << GREEN << "test_embedding_with_cpu succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_embedding_with_cpu failed" << RESET << std::endl;
+    }
+
+    ::free(res_gpu_buffer);
+    ::free(res_cpu_buffer);
+    ::free(emb_grad_gpu_buffer);
+    ::free(emb_grad_cpu_buffer);
+}
+
 void test_gpu() {
     test_at();
     test_at_1();
@@ -5188,6 +5310,7 @@ void test_gpu() {
     test_lazy_linear();
     test_mha();
     test_embedding();
+    test_embedding_with_cpu();
 }
 
 int main(int argc, char *argv[]) {
