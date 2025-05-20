@@ -566,7 +566,7 @@ std::string EmbeddingBackwardAction::to_string() const {
 
 void PosEncodingAction::execute() {
     assert(res != nullptr);
-    g_backend_ops->pos_encoding(lhs);
+    g_backend_ops->pos_encoding(res);
 }
 
 std::string PosEncodingAction::to_string() const {

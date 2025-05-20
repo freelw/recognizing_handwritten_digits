@@ -845,7 +845,24 @@ void CUDAOps::build_dropout_mask(
 }
 
 void CUDAOps::pos_encoding(Tensor *res) {
-    assert(false);
+    assert(res != nullptr);
+    auto shape = res->get_shape();
+    auto max_len = shape[0];
+    auto num_hidden = shape[1];
+    float *data = static_cast<float*>(::malloc(res->size()));
+    for (int pos = 0; pos < max_len; ++pos) {
+        for (int i = 0; i < num_hidden; ++i) {
+            if (i % 2 == 0) {
+                data[pos * res->get_strides()[0] + i * res->get_strides()[1]] = 
+                    std::sin(pos * 1. / std::pow(10000, (1.0f * i / num_hidden)));
+            } else {
+                data[pos * res->get_strides()[0] + i * res->get_strides()[1]] = 
+                    std::cos(pos * 1. / std::pow(10000, (1.0f * (i & ~1) / num_hidden)));
+            }
+        }
+    }
+    this->cp_to_device(res, (char *)data, res->size());
+    ::free(data);
 }
 
 void* CUDAOps::alloc(size_t size) {

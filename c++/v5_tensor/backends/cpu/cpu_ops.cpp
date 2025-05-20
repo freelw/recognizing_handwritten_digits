@@ -382,7 +382,21 @@ void CPUOps::build_dropout_mask(
 }
 
 void CPUOps::pos_encoding(Tensor *res) {
-    assert(false);
+    assert(res != nullptr);
+    auto shape = res->get_shape();
+    auto max_len = shape[0];
+    auto num_hidden = shape[1];
+    for (int pos = 0; pos < max_len; ++pos) {
+        for (int i = 0; i < num_hidden; ++i) {
+            if (i % 2 == 0) {
+                static_cast<float*>(res->get_data())[pos * res->get_strides()[0] + i * res->get_strides()[1]] = 
+                    std::sin(pos * 1. / std::pow(10000, (1.0f * i / num_hidden)));
+            } else {
+                static_cast<float*>(res->get_data())[pos * res->get_strides()[0] + i * res->get_strides()[1]] = 
+                    std::cos(pos * 1. / std::pow(10000, (1.0f * (i & ~1) / num_hidden)));
+            }
+        }
+    }
 }
 
 void CPUOps::calcAllGradNorm(const std::vector<Tensor*> &grads, Tensor *norm) {
