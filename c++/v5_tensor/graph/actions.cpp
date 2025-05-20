@@ -111,6 +111,19 @@ std::string ExpandAddAction::to_string() const {
     return oss.str();
 }
 
+void ExpandMulAction::execute() {
+    assert(lhs != nullptr);
+    assert(rhs != nullptr);
+    assert(res != nullptr);
+    g_backend_ops->expandMul(lhs, rhs, res);
+}
+
+std::string ExpandMulAction::to_string() const {
+    std::ostringstream oss;
+    oss << "ExpandMulAction: " << lhs->get_meta_info() << " * " << rhs->get_meta_info() << " -> " << res->get_meta_info();
+    return oss.str();
+}
+
 void AtAction::execute() {
     assert(lhs != nullptr);
     assert(rhs != nullptr);

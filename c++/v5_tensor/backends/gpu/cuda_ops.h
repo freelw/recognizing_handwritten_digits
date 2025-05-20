@@ -18,6 +18,7 @@ class CUDAOps : public BackendOps {
             Tensor *l_strides, Tensor *r_striedes
         ) override;
         void expandAdd(Tensor *lhs, const Tensor *rhs, Tensor *res) override;
+        void expandMul(Tensor *lhs, const Tensor *rhs, Tensor *res) override;
         void at(Tensor *lhs, const Tensor *rhs, Tensor *res) override;
         void embedding(Tensor *lhs, const Tensor *indices, const Tensor *res) override;
         void embeddingBackward(Tensor *lhs, const Tensor *indices, Tensor *res) override;

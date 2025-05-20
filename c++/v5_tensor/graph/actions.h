@@ -57,6 +57,14 @@ class ExpandAddAction : public Action {
         std::string to_string() const override;
 };
 
+class ExpandMulAction : public Action {
+    public:
+        ExpandMulAction(Tensor *_lhs, const Tensor *_rhs, Tensor *_res)
+            : Action(_lhs, _rhs, _res) {}
+        void execute() override;
+        std::string to_string() const override;
+};
+
 class AtAction : public Action {
     public:
         AtAction(Tensor *_lhs, const Tensor *_rhs, Tensor *_res)

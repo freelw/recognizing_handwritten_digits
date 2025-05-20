@@ -139,6 +139,10 @@ void CUDAOps::expandAdd(Tensor *lhs, const Tensor *rhs, Tensor *res) {
     );
 }
 
+void CUDAOps::expandMul(Tensor *lhs, const Tensor *rhs, Tensor *res) {
+    assert(false);
+}
+
 void CUDAOps::at(Tensor *lhs, const Tensor *rhs, Tensor *res) {
     auto lshape = lhs->get_shape();
     auto rshape = rhs->get_shape();

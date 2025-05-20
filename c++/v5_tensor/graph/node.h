@@ -65,6 +65,7 @@ namespace graph {
             Node *masked_softmax(Tensor *valid_len);
             Node *add(Node *rhs);
             Node *expand_add(Node *rhs);
+            Node *expand_mul(Node *rhs);
             Node *at(Node *rhs);
             Node *bmm(Node *rhs);
             void split_3d(std::vector<Node *> &res_nodes, bool opposite = false);
@@ -111,6 +112,8 @@ namespace graph {
         Empty,
         Reshape,
         Embedding,
+        ExpandMulL,
+        ExpandMulR
     };
 
     class Edge {
@@ -175,6 +178,63 @@ namespace graph {
                     )
                 );
             }
+    };
+
+    class ExpandMulEdgeL : public Edge {
+        public:
+            static Edge* create(Node *_node, Node *_rhs) {
+                assert(_rhs->get_tensor()->get_dim() == 1);
+                assert(_node->get_tensor()->get_dim() == 2);
+                Edge *edge = new ExpandMulEdgeL(_node, _rhs);
+                graph::gAddEdge(edge);
+                return edge;
+            }
+            ExpandMulEdgeL(Node *_node, Node *_rhs)
+                : Edge(ExpandMulL, _node), rhs(_rhs) {}
+            virtual ~ExpandMulEdgeL() {}
+            void backward(Tensor *grad) override {
+                gCreateAction(
+                    new ExpandMulAction(grad, rhs->get_tensor(), node->get_grad())
+                );
+            }
+        private:
+            Node *rhs;
+    };
+
+    class ExpandMulEdgeR : public Edge {
+        public:
+            static Edge* create(Node *_node, Node *_rhs) {
+                assert(_node->get_tensor()->get_dim() == 1);
+                assert(_rhs->get_tensor()->get_dim() == 2);
+                Edge *edge = new ExpandMulEdgeR(_node, _rhs);
+                graph::gAddEdge(edge);
+                return edge;
+            }
+            ExpandMulEdgeR(Node *_node, Node *_rhs)
+                : Edge(ExpandMulR, _node), rhs(_rhs) {}
+            virtual ~ExpandMulEdgeR() {}
+            void backward(Tensor *grad) override {
+                Tensor *tmp = allocTensor(
+                    grad->get_shape(),
+                    "expand_mul_r_tmp"
+                );
+                gCreateAction(
+                    new MulAction(
+                        rhs->get_tensor(),
+                        grad,
+                        tmp
+                    )
+                );
+                gCreateAction(
+                    new SumAction(
+                        tmp,
+                        node->get_grad(),
+                        0
+                    )
+                );
+            }
+        private:
+            Node *rhs;
     };
 
     class MatMulLEdge : public Edge {

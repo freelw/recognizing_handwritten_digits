@@ -2,8 +2,8 @@
 
 LayerNorm::LayerNorm(int dim) {
 
-    Tensor *t_gamma = allocTensor({1, dim}, "layernorm_gamma");
-    Tensor *t_beta = allocTensor({1, dim}, "layernorm_beta");
+    Tensor *t_gamma = allocTensor({dim}, "layernorm_gamma");
+    Tensor *t_beta = allocTensor({dim}, "layernorm_beta");
 
     gamma = graph::allocNode(t_gamma);
     beta = graph::allocNode(t_beta);

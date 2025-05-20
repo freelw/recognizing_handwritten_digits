@@ -141,6 +141,7 @@ namespace graph {
     Node *Node::expand_add(Node *rhs) {
         Tensor *res_tensor = allocTensor(t->get_shape(), "expand_add");
         Tensor *r_tensor = rhs->get_tensor();
+        assert(r_tensor->get_dim() == 1);
         gCreateAction(
             new ExpandAddAction(
                 this->get_tensor(),
@@ -156,6 +157,30 @@ namespace graph {
             }
             if (rhs->is_require_grad()) {
                 res_node->edges.push_back(ExpandAddEdge::create(rhs));
+            }
+        }
+        return res_node;
+    }
+
+    Node *Node::expand_mul(Node *rhs) {
+        Tensor *res_tensor = allocTensor(t->get_shape(), "expand_mul");
+        Tensor *r_tensor = rhs->get_tensor();
+        assert(r_tensor->get_dim() == 1);
+        gCreateAction(
+            new ExpandMulAction(
+                this->get_tensor(),
+                rhs->get_tensor(),
+                res_tensor
+            )
+        );
+        Node *res_node = allocNode(res_tensor);
+        if (is_require_grad() || rhs->is_require_grad()) {
+            res_node->require_grad();
+            if (is_require_grad()) {
+                res_node->edges.push_back(ExpandMulEdgeL::create(this, rhs));
+            }
+            if (rhs->is_require_grad()) {
+                res_node->edges.push_back(ExpandMulEdgeR::create(rhs, this));
             }
         }
         return res_node;

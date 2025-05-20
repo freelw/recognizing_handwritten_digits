@@ -87,6 +87,10 @@ void CPUOps::expandAdd(Tensor *lhs, const Tensor *rhs, Tensor *res) {
     }
 }
 
+void CPUOps::expandMul(Tensor *lhs, const Tensor *rhs, Tensor *res) {
+    assert(false);
+}
+
 void CPUOps::at(Tensor *lhs, const Tensor *rhs, Tensor *res) {
     assert(lhs != nullptr);
     assert(rhs != nullptr);
