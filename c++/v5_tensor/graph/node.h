@@ -271,12 +271,21 @@ namespace graph {
                 Tensor *r_tensor = rhs->get_tensor();
                 Tensor *l_tensor = node->get_tensor();
                 Tensor *r_transpose_view = r_tensor->transpose();
-
+                Tensor *tmp = allocTensor(
+                    node->get_grad()->get_shape(),
+                    "matmul_l_tmp"
+                );
                 gCreateAction(
                     new AtAction(
                         grad,
                         r_transpose_view,
-                        node->get_grad()
+                        tmp
+                    )
+                );
+                gCreateAction(
+                    new AddEqAction(
+                        node->get_grad(),
+                        tmp
                     )
                 );
             }
@@ -298,7 +307,7 @@ namespace graph {
                 Tensor *l_tensor = lhs->get_tensor();
                 Tensor *r_tensor = node->get_tensor();
                 Tensor *l_transpose_view = l_tensor->transpose();
-
+                // fixme 这里需要加上addeq
                 gCreateAction(
                     new AtAction(
                         l_transpose_view,
@@ -471,6 +480,7 @@ namespace graph {
                 : Edge(Empty, _node), mask(_mask) {}
             virtual ~DropoutEdge() {}
             void backward(Tensor *grad) override {
+                // fixme 这里需要加上addeq
                 gCreateAction(
                     new MulAction(
                         grad,

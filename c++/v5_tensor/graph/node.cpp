@@ -436,6 +436,7 @@ namespace graph {
     }
 
     void CrossEntropyEdge::backward(Tensor *) {
+        // fixme 这里需要加上addeq
         gCreateAction(
             new CrossEntropyBackwardAction(
                 node->get_tensor(),
@@ -448,6 +449,7 @@ namespace graph {
     }
 
     void SoftmaxEdge::backward(Tensor *grad) {
+        //fixme 这里需要加上addeq
         gCreateAction(
             new SoftmaxBackwardAction(
                 node->get_grad(),
@@ -458,6 +460,7 @@ namespace graph {
     }
 
     void EmbeddingEdge::backward(Tensor *grad) {
+        // 这里不用使用addeq，因为不允许embeding原始tensor做其他操作
         gCreateAction(
             new EmbeddingBackwardAction(
                 grad,
