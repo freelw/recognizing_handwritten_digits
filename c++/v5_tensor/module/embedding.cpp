@@ -27,7 +27,7 @@ graph::Node *Embedding::forward(Tensor *indices) {
         )
     );
     res_node->edges.push_back(
-        new graph::EmbeddingEdge(w, indices)
+        graph::EmbeddingEdge::create(w, indices)
     );
     return res_node;
 }

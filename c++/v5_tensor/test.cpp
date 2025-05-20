@@ -3084,7 +3084,6 @@ void test_permute() {
 void test_lazy_linear() {
 
     construct_env();
-
     Tensor *input = allocTensor({20, 30, 10}, "input");
     Tensor *input1 = allocTensor({20 * 30, 10}, "input");
     auto ni = graph::allocNode(input);
@@ -3126,6 +3125,9 @@ void test_lazy_linear() {
         std::cout << GREEN << "test_lazy_linear succ" << RESET << std::endl;
     }
     destruct_env();
+
+    ::free(res_buffer);
+    ::free(res1_buffer);
 }
 
 void test_mha() {
