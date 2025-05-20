@@ -4,7 +4,9 @@
 namespace graph {
 
     void Node::backward() {
-        assert(backward_times == 0);
+        if (backward_times > 0) {
+            return;
+        }
         assert(ref_cnt == 0);
         backward_times ++;
         if (!is_require_grad()) {
@@ -118,7 +120,7 @@ namespace graph {
         }
     }
     Node *Node::add(Node *rhs) {
-        Tensor *res_tensor = allocTensor(t->get_shape(), "add");
+        Tensor *res_tensor = allocTensor(t->get_shape(), "add_res");
         Tensor *r_tensor = rhs->get_tensor();
         gCreateAction(
             new AddAction(

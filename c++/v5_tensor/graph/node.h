@@ -493,12 +493,21 @@ namespace graph {
                 : Edge(Empty, _node), mask(_mask) {}
             virtual ~DropoutEdge() {}
             void backward(Tensor *grad) override {
-                // fixme 这里需要加上addeq
+                Tensor *tmp = allocTensor(
+                    node->get_grad()->get_shape(),
+                    "dropout_tmp"
+                );
                 gCreateAction(
                     new MulAction(
                         grad,
                         mask,
-                        node->get_grad()
+                        tmp
+                    )
+                );
+                gCreateAction(
+                    new AddEqAction(
+                        node->get_grad(),
+                        tmp
                     )
                 );
             }

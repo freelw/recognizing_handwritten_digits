@@ -2939,6 +2939,51 @@ void test_dropout() {
     destruct_env();
 }
 
+void test_dropout_1() {
+    construct_env();
+    Dropout dropout(1.0001f);
+    Tensor *input = allocTensor({1, 10}, "input");
+    Tensor *input_1 = allocTensor({1, 10}, "input_1");
+    auto ni = graph::allocNode(input);
+    ni->require_grad();
+    ni->init_weight_fill(1.0f);
+    auto res = dropout.forward(ni)->add(ni);
+    insert_boundary_action();
+    res->backward();
+    // printAllActions();
+    allocMemAndInitTensors();
+    float *res_grad_buffer = static_cast<float*>(::malloc(res->get_grad()->size()));
+    auto res_grad_length = res->get_grad()->length();
+    for (int i = 0; i < res_grad_length; ++ i) {
+        res_grad_buffer[i] = 1.0f;
+    }
+    g_backend_ops->cp_to_device(
+        res->get_grad(),
+        reinterpret_cast<char*>(res_grad_buffer),
+        res->get_grad()->size()
+    );
+    ::free(res_grad_buffer);
+
+    gDoActions();
+    float ni_grad_ans[10] = {
+        1.0, 1.0, 1.0, 1.0, 1.0,
+        1.0, 1.0, 1.0, 1.0, 1.0
+    };
+
+    bool succ = compare_res_ans_1d(
+        ni->get_grad(),
+        ni_grad_ans,
+        "ni_grad"
+    );
+
+    if (succ) {
+        std::cout << GREEN << "test_dropout_1 succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_dropout_1 failed" << RESET << std::endl;
+    }
+    destruct_env();
+}
+
 void test_permute() {
     construct_env();
     Tensor *input = allocTensor({2, 3, 4, 5}, "input");
@@ -3611,6 +3656,7 @@ void test_at_bp_ledge_add_eq() {
 
     auto res = ni->at(nw1)->add(ni->at(nw2));
 
+    std::cout << "ni ref : " << ni->get_ref() << std::endl;
     insert_boundary_action();
     res->backward();
     // printAllActions();
@@ -3859,6 +3905,7 @@ void test_cpu() {
     test_expand_mul();
     test_at_bp_ledge_add_eq();
     test_at_bp_redge_add_eq();
+    test_dropout_1();
 }
 
 Tensor *test_add_with_cpu_base(int m, int n) {
@@ -5680,6 +5727,7 @@ void test_gpu() {
     test_expand_mul();
     test_at_bp_ledge_add_eq();
     test_at_bp_redge_add_eq();
+    test_dropout_1();
 }
 
 int main(int argc, char *argv[]) {
