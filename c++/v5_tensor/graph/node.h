@@ -193,8 +193,18 @@ namespace graph {
                 : Edge(ExpandMulL, _node), rhs(_rhs) {}
             virtual ~ExpandMulEdgeL() {}
             void backward(Tensor *grad) override {
+                Tensor *tmp = allocTensor(
+                    grad->get_shape(),
+                    "expand_mul_l_add_tmp"
+                );
                 gCreateAction(
-                    new ExpandMulAction(grad, rhs->get_tensor(), node->get_grad())
+                    new ExpandMulAction(grad, rhs->get_tensor(), tmp)
+                );
+                gCreateAction(
+                    new AddEqAction(
+                        node->get_grad(),
+                        tmp
+                    )
                 );
             }
         private:
@@ -225,11 +235,21 @@ namespace graph {
                         tmp
                     )
                 );
+                Tensor *sum_tmp = allocTensor(
+                    node->get_tensor()->get_shape(),
+                    "expand_mul_r_sum_tmp"
+                );
                 gCreateAction(
                     new SumAction(
                         tmp,
-                        node->get_grad(),
+                        sum_tmp,
                         0
+                    )
+                );
+                gCreateAction(
+                    new AddEqAction(
+                        node->get_grad(),
+                        sum_tmp
                     )
                 );
             }

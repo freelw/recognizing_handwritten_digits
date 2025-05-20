@@ -3483,6 +3483,113 @@ void test_pe() {
     destruct_env();
 }
 
+void test_expand_mul() {
+    construct_env();
+
+    Tensor *gamma = allocTensor({5}, "gamma");
+    Tensor *input1 = allocTensor({2, 5}, "input1");
+    Tensor *input2 = allocTensor({2, 5}, "input2");
+
+    auto ni1 = graph::allocNode(input1);
+    auto ni2 = graph::allocNode(input2);
+    auto ng = graph::allocNode(gamma);
+
+    ni1->require_grad();
+    ni2->require_grad();
+    ng->require_grad();
+
+    ni1->init_weight_for_dbg(10000.0f);
+    ni2->init_weight_for_dbg(100000.0f);
+    ng->init_weight_for_dbg(1000.0f);
+
+    auto res = ni1->expand_mul(ng)->add(ni2->expand_mul(ng));
+
+    insert_boundary_action();
+    res->backward();
+    // printAllActions();
+    allocMemAndInitTensors();
+    auto res_grad = res->get_grad();
+    float *res_grad_buffer = static_cast<float*>(::malloc(res_grad->size()));
+    for (int i = 0; i < res_grad->length(); ++ i) {
+        res_grad_buffer[i] = 1.0f * i;
+    }
+    g_backend_ops->cp_to_device(
+        res_grad,
+        reinterpret_cast<char*>(res_grad_buffer),
+        res_grad->size()
+    );
+    ::free(res_grad_buffer);
+    gDoActions();
+
+    // std::cout << "res grad: " << std::endl << *res_grad << std::endl;
+    // std::cout << "gamma : " << std::endl << *ng->get_tensor() << std::endl;
+    // std::cout << "input1 : " << std::endl << *ni1->get_tensor() << std::endl;
+    // std::cout << "input2 : " << std::endl << *ni2->get_tensor() << std::endl;
+    // std::cout << "res : " << std::endl << *res->get_tensor() << std::endl;
+
+    // std::cout << "gamma grad : " << std::endl << *ng->get_grad() << std::endl;
+    // std::cout << "input1 grad : " << std::endl << *ni1->get_grad() << std::endl;
+    // std::cout << "input2 grad : " << std::endl << *ni2->get_grad() << std::endl;
+
+    float res_ans[10] = {
+        0, 0.011, 0.044, 0.099, 0.176,
+        0, 0.066, 0.154, 0.264, 0.396
+    };
+    bool succ_res = compare_res_ans_1d(
+        res->get_tensor(),
+        res_ans,
+        "res"
+    );
+    if (!succ_res) {
+        std::cout << RED << "test_expand_mul res failed" << RESET << std::endl;
+    }
+
+    float gamma_grad_ans[5] = {
+        27.5, 40.7, 58.3, 80.3, 106.7
+    };
+    bool succ_gamma_grad = compare_res_ans_1d(
+        ng->get_grad(),
+        gamma_grad_ans,
+        "gamma_grad"
+    );
+    if (!succ_gamma_grad) {
+        std::cout << RED << "test_expand_mul gamma_grad failed" << RESET << std::endl;
+    }
+
+    float input1_grad_ans[10] = {
+        0, 0.01, 0.04, 0.09, 0.16,
+        0, 0.06, 0.14, 0.24, 0.36
+    };
+    bool succ_input1_grad = compare_res_ans_1d(
+        ni1->get_grad(),
+        input1_grad_ans,
+        "input1_grad"
+    );
+    if (!succ_input1_grad) {
+        std::cout << RED << "test_expand_mul input1_grad failed" << RESET << std::endl;
+    }
+
+    float input2_grad_ans[10] = {
+        0, 0.01, 0.04, 0.09, 0.16,
+        0, 0.06, 0.14, 0.24, 0.36
+    };
+    bool succ_input2_grad = compare_res_ans_1d(
+        ni2->get_grad(),
+        input2_grad_ans,
+        "input2_grad"
+    );
+    if (!succ_input2_grad) {
+        std::cout << RED << "test_expand_mul input2_grad failed" << RESET << std::endl;
+    }
+    bool succ = succ_res && succ_gamma_grad && succ_input1_grad && succ_input2_grad;
+    if (succ) {
+        std::cout << GREEN << "test_expand_mul succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_expand_mul failed" << RESET << std::endl;
+    }
+    destruct_env();
+}
+
 void test_cpu() {
     test_at();
     test_add();
@@ -3523,6 +3630,7 @@ void test_cpu() {
     test_mha();
     test_embedding();
     test_pe();
+    test_expand_mul();
 }
 
 Tensor *test_add_with_cpu_base(int m, int n) {
@@ -5341,6 +5449,7 @@ void test_gpu() {
     test_embedding();
     test_embedding_with_cpu();
     test_pe();
+    test_expand_mul();
 }
 
 int main(int argc, char *argv[]) {
