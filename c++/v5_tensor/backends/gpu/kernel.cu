@@ -441,8 +441,9 @@ __global__ void softmax_backward_kernel(
         return;
     } else {
         for (int target = 0; target < shape2; ++target) {
+            int tg_target_pos = row * t_stride0 + col * t_stride1 + target * t_stride2;
+            float tmp = 0;
             for (int k = 0; k < shape2; ++k) {
-                int tg_target_pos = row * t_stride0 + col * t_stride1 + target * t_stride2;
                 // int tg_k_pos = row * t_stride0 + col * t_stride1 + k * t_stride2;
                 int sm_target_pos = row * s_stride0 + col * s_stride1 + target * s_stride2;
                 int sm_k_pos = row * s_stride0 + col * s_stride1 + k * s_stride2;
@@ -452,10 +453,9 @@ __global__ void softmax_backward_kernel(
                 float softmax_res_target = softmax_res[sm_target_pos];
                 float softmax_res_k = softmax_res[sm_k_pos];
                 float grad_k = grad[g_k_pos];
-
-                target_grad[tg_target_pos] +=
-                    (target == k ? softmax_res_k * (1 - softmax_res_k) : -softmax_res_target * softmax_res_k) * grad_k;
+                tmp += (target == k ? softmax_res_k * (1 - softmax_res_k) : -softmax_res_target * softmax_res_k) * grad_k;
             }
+            target_grad[tg_target_pos] = tmp;
         }
     }
 }

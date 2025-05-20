@@ -450,12 +450,24 @@ namespace graph {
     }
 
     void SoftmaxEdge::backward(Tensor *grad) {
-        //fixme 这里需要加上addeq
+        
+        Tensor *tmp = allocTensor(
+            node->get_grad()->get_shape(),
+            "softmax_tmp"
+        );
+        
         gCreateAction(
             new SoftmaxBackwardAction(
-                node->get_grad(),
+                tmp,
+                // node->get_grad(),
                 softmax_res,
                 grad
+            )
+        );
+        gCreateAction(
+            new AddEqAction(
+                node->get_grad(),
+                tmp
             )
         );
     }

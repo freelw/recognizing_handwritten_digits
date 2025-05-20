@@ -3862,6 +3862,52 @@ void test_at_bp_redge_add_eq() {
     destruct_env();
 }
 
+void test_softmax_1() {
+    construct_env();
+    Tensor *input = allocTensor({1, 2, 3}, "input");
+    auto ni = graph::allocNode(input);
+    ni->require_grad();
+    ni->init_weight_fill(1.0f);
+    auto res = ni->reshape({2, 3})->add(ni->softmax()->reshape({2, 3}));
+    insert_boundary_action();
+    res->backward();
+    // printAllActions();
+    allocMemAndInitTensors();
+    
+    float *res_grad_buffer = static_cast<float*>(::malloc(res->get_grad()->size()));
+    for (int i = 0; i < res->get_grad()->length(); ++ i) {
+        res_grad_buffer[i] = 1.0f * i;
+    }
+    g_backend_ops->cp_to_device(
+        res->get_grad(),
+        reinterpret_cast<char*>(res_grad_buffer),
+        res->get_grad()->size()
+    );
+
+    gDoActions();
+    // std::cout << "res : " << std::endl << *res->get_tensor() << std::endl;
+    // std::cout << "res grad : " << std::endl << *res->get_grad() << std::endl;
+    // std::cout << "input : " << std::endl << *input << std::endl;
+    // std::cout << "input grad : " << std::endl << *ni->get_grad() << std::endl;
+    float input_grad_ans[6] = {
+      -0.333333, 1, 2.33333,
+        2.66667, 4, 5.33333
+    };
+
+    bool succ = compare_res_ans_1d(
+        ni->get_grad(),
+        input_grad_ans,
+        "input_grad"
+    );
+
+    if (succ) {
+        std::cout << GREEN << "test_softmax_1 succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_softmax_1 failed" << RESET << std::endl;
+    }
+    destruct_env();
+}
+
 void test_cpu() {
     test_at();
     test_add();
@@ -3906,6 +3952,7 @@ void test_cpu() {
     test_at_bp_ledge_add_eq();
     test_at_bp_redge_add_eq();
     test_dropout_1();
+    test_softmax_1();
 }
 
 Tensor *test_add_with_cpu_base(int m, int n) {
@@ -5728,6 +5775,7 @@ void test_gpu() {
     test_at_bp_ledge_add_eq();
     test_at_bp_redge_add_eq();
     test_dropout_1();
+    test_softmax_1();
 }
 
 int main(int argc, char *argv[]) {
