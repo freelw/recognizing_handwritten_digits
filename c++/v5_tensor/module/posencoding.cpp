@@ -1,9 +1,7 @@
 #include "posencoding.h"
-
 #include "graph/actions.h"
 
-
-PosEncoding::PosEncoding(int _max_len, int _num_hidden) 
+PosEncoding::PosEncoding(int _max_len, int _num_hidden, float p)
     :max_len(_max_len), num_hidden(_num_hidden) {
     pos_enc = allocTensor({max_len, num_hidden}, "pos_enc");
     gCreateAction(
@@ -11,6 +9,12 @@ PosEncoding::PosEncoding(int _max_len, int _num_hidden)
             pos_enc
         )
     );
+    dropout = new Dropout(p);
+}
+
+PosEncoding::~PosEncoding() {
+    assert(dropout != nullptr);
+    delete dropout;
 }
 
 graph::Node *PosEncoding::forward(graph::Node *input) {
@@ -26,5 +30,5 @@ graph::Node *PosEncoding::forward(graph::Node *input) {
         0
     );
     auto npe = graph::allocNode(pe);
-    return input->add(npe);
+    return dropout->forward(input->add(npe));
 }
