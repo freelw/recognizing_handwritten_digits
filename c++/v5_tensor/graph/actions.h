@@ -294,6 +294,20 @@ class EmbeddingBackwardAction : public Action {
         std::string to_string() const override;
 };
 
+class PosEncodingAction : public Action {
+    public:
+        PosEncodingAction(Tensor *res, int _max_len, int _num_hidden)
+            : Action(nullptr, nullptr, res), max_len(_max_len), num_hidden(_num_hidden) {}
+        void execute() override;
+        std::string to_string() const override;
+        bool is_do_once() const override {
+            return true;
+        }
+    private:
+        int max_len;
+        int num_hidden;
+};
+
 std::vector<Action *> getOnceActions();
 void gCreateAction(Action *action);
 void gDoActions();

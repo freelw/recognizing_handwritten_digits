@@ -51,6 +51,7 @@ class CUDAOps : public BackendOps {
             Tensor *mask, float p,
             Tensor *shape, Tensor *strides    
         ) override;
+        void pos_encoding(Tensor *res, int max_len, int num_hidden) override;
 
         // Memory management
         void* alloc(size_t size) override;

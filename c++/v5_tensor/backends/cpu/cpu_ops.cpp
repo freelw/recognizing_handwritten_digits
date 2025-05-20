@@ -381,6 +381,10 @@ void CPUOps::build_dropout_mask(
     }
 }
 
+void CPUOps::pos_encoding(Tensor *res, int max_len, int num_hidden) {
+    assert(false);
+}
+
 void CPUOps::calcAllGradNorm(const std::vector<Tensor*> &grads, Tensor *norm) {
     float tmp = 0;
     for (auto grad : grads) {

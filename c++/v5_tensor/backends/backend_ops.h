@@ -47,7 +47,7 @@ class BackendOps {
             Tensor *mask, float p,
             Tensor *shape, Tensor *strides    
         ) = 0;
-        
+        virtual void pos_encoding(Tensor *res, int max_len, int num_hidden) = 0;
         // Memory management
         virtual void *alloc(size_t size) = 0;
         virtual void memset(void *ptr, int value, size_t size) = 0;

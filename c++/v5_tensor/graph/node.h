@@ -63,6 +63,7 @@ namespace graph {
             Node *sequence_mask(Tensor *mask, float value);
             Node *softmax();
             Node *masked_softmax(Tensor *valid_len);
+            Node *add(Node *rhs);
             Node *expand_add(Node *rhs);
             Node *at(Node *rhs);
             Node *bmm(Node *rhs);

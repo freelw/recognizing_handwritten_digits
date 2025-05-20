@@ -844,6 +844,10 @@ void CUDAOps::build_dropout_mask(
     );
 }
 
+void CUDAOps::pos_encoding(Tensor *res, int max_len, int num_hidden) {
+    assert(false);
+}
+
 void* CUDAOps::alloc(size_t size) {
     void *ret = nullptr;
     cudaMalloc((void **)&ret, size);

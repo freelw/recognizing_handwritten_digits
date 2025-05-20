@@ -564,6 +564,17 @@ std::string EmbeddingBackwardAction::to_string() const {
     return oss.str();
 }
 
+void PosEncodingAction::execute() {
+    assert(res != nullptr);
+    g_backend_ops->pos_encoding(lhs, max_len, num_hidden);
+}
+
+std::string PosEncodingAction::to_string() const {
+    std::ostringstream oss;
+    oss << "PosEncodingAction: position encoding " << res->get_meta_info() << " with max_len " << max_len << " and num_hidden " << num_hidden;
+    return oss.str();
+}
+
 std::vector<Action*> g_actions;
 
 std::vector<Action *> getOnceActions() {

@@ -115,6 +115,28 @@ namespace graph {
                 ->softmax();
         }
     }
+    Node *Node::add(Node *rhs) {
+        Tensor *res_tensor = allocTensor(t->get_shape(), "add");
+        Tensor *r_tensor = rhs->get_tensor();
+        gCreateAction(
+            new AddAction(
+                this->get_tensor(),
+                rhs->get_tensor(),
+                res_tensor
+            )
+        );
+        Node *res_node = allocNode(res_tensor);
+        if (is_require_grad() || rhs->is_require_grad()) {
+            res_node->require_grad();
+            if (is_require_grad()) {
+                res_node->edges.push_back(AddEdge::create(this));
+            }
+            if (rhs->is_require_grad()) {
+                res_node->edges.push_back(AddEdge::create(rhs));
+            }
+        }
+        return res_node;
+    }
 
     Node *Node::expand_add(Node *rhs) {
         Tensor *res_tensor = allocTensor(t->get_shape(), "expand_add");
