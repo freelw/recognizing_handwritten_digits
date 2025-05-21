@@ -329,6 +329,16 @@ class VarAction : public Action {
         std::string to_string() const override;
 };
 
+class NormAction : public Action {
+    public:
+        NormAction(Tensor *_src, Tensor *avg, Tensor *var, Tensor *_res)
+            : Action(avg, var, _res), src(_src) {}
+        void execute() override;
+        std::string to_string() const override;
+    private:
+        Tensor *src;
+};
+
 std::vector<Action *> getOnceActions();
 void gCreateAction(Action *action);
 void gDoActions();

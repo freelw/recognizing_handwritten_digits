@@ -601,6 +601,20 @@ std::string AvgAction::to_string() const {
     return oss.str();
 }
 
+void NormAction::execute() {
+    assert(lhs != nullptr);
+    assert(rhs != nullptr);
+    assert(res != nullptr);
+    assert(src != nullptr);
+    g_backend_ops->norm(src, lhs, rhs, res);
+}
+
+std::string NormAction::to_string() const {
+    std::ostringstream oss;
+    oss << "NormAction: normalizing " << src->get_meta_info() << " with mean " << lhs->get_meta_info() << " and variance " << rhs->get_meta_info() << " to " << res->get_meta_info();
+    return oss.str();
+}
+
 void VarAction::execute() {
     assert(lhs != nullptr);
     assert(rhs != nullptr);

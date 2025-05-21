@@ -908,6 +908,10 @@ void CUDAOps::var(Tensor *lhs, const Tensor *_avg, Tensor *res) {
     assert(false);
 }
 
+void CUDAOps::norm(const Tensor *src, const Tensor *avg, const Tensor *var, Tensor *res) {
+    assert(false);
+}
+
 void* CUDAOps::alloc(size_t size) {
     void *ret = nullptr;
     cudaMalloc((void **)&ret, size);

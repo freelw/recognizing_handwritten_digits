@@ -424,10 +424,46 @@ void CPUOps::pos_encoding(Tensor *res) {
 }
 
 void CPUOps::avg(Tensor *lhs, Tensor *res) {
-    assert(false);
+    assert(lhs != nullptr);
+    assert(res != nullptr);
+    assert(lhs->get_dim() == 2);
+    assert(res->get_dim() == 1);
+    assert(lhs->get_shape()[0] == res->get_shape()[0]);
+
+    auto shape = lhs->get_shape();
+    for (int i = 0; i < shape[0]; ++i) {
+        float sum = 0;
+        for (int j = 0; j < shape[1]; ++j) {
+            sum += static_cast<float*>(lhs->get_data())[i * lhs->get_strides()[0] + j * lhs->get_strides()[1]];
+        }
+        static_cast<float*>(res->get_data())[i] = sum / shape[1];
+    }
 }
 
 void CPUOps::var(Tensor *lhs, const Tensor *_avg, Tensor *res) {
+    assert(lhs != nullptr);
+    assert(_avg != nullptr);
+    assert(res != nullptr);
+    assert(lhs->get_dim() == 2);
+    assert(_avg->get_dim() == 1);
+    assert(res->get_dim() == 1);
+    assert(lhs->get_shape()[0] == res->get_shape()[0]);
+    assert(lhs->get_shape()[0] == _avg->get_shape()[0]);
+
+    auto shape = lhs->get_shape();
+    float *avg = static_cast<float*>(_avg->get_data());
+    for (int i = 0; i < shape[0]; ++i) {
+        float sum = 0;
+        for (int j = 0; j < shape[1]; ++j) {
+            float v = static_cast<float*>(lhs->get_data())[i * lhs->get_strides()[0] + j * lhs->get_strides()[1]];
+            float diff = v - avg[i];
+            sum += std::pow(diff, 2);
+        }
+        static_cast<float*>(res->get_data())[i] = sum / shape[1];
+    }
+}
+
+void CPUOps::norm(const Tensor *src, const Tensor *avg, const Tensor *var, Tensor *res) {
     assert(false);
 }
 
