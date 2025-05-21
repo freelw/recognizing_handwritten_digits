@@ -73,6 +73,7 @@ namespace graph {
             void split_3d(std::vector<Node *> &res_nodes, bool opposite = false);
             Node *relu();
             Node *norm();
+            Node *avg_1d();
             Node *CrossEntropy(Tensor *labels);
             Node *div(float value);
             void init_weight_gauss(float sigma, float mean);
@@ -117,7 +118,9 @@ namespace graph {
         Reshape,
         Embedding,
         ExpandMulL,
-        ExpandMulR
+        ExpandMulR,
+        Avg1d,
+        Dropout
     };
 
     class Edge {
@@ -491,7 +494,7 @@ namespace graph {
                 return edge;
             }
             DropoutEdge(Node *_node, Tensor *_mask)
-                : Edge(Empty, _node), mask(_mask) {}
+                : Edge(Dropout, _node), mask(_mask) {}
             virtual ~DropoutEdge() {}
             void backward(Tensor *grad) override {
                 Tensor *tmp = allocTensor(
@@ -549,6 +552,41 @@ namespace graph {
         private:
             Tensor *norm_res;
             Tensor *var_res;
+    };
+
+    class Avg1dEdge: public Edge {
+        public:
+            static Edge* create(Node *_node) {
+                Edge *edge = new Avg1dEdge(_node);
+                gAddEdge(edge);
+                return edge;
+            }
+            Avg1dEdge(Node *_node)
+                : Edge(Avg1d, _node) {}
+            virtual ~Avg1dEdge() {}
+            void backward(Tensor *grad) override {
+                assert(grad->get_dim() == 1);
+                auto shape = grad->get_shape();
+                assert(shape[0] == 1);
+                Tensor *tmp = allocTensor(
+                    node->get_grad()->get_shape(),
+                    "avg_1d_tmp"
+                );
+                gCreateAction(
+                    new InitWeightAction(
+                        tmp,
+                        "fill",
+                        1.0f / node->get_grad()->get_shape()[0],
+                        0
+                    )
+                );
+                gCreateAction(
+                    new AddEqAction(
+                        node->get_grad(),
+                        tmp
+                    )
+                );
+            }
     };
 
     Node *allocNode(Tensor *t);

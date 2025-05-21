@@ -494,8 +494,8 @@ void test_cross_entropy() {
     Tensor *labels = allocTensor({3}, "input", INT32);
     Tensor *w = allocTensor({3, 4}, "w");
     Tensor *wt = allocTensor({4, 3}, "wt");
-    Tensor *res_wi_tensor = allocTensor({1}, "res_wi");
-    Tensor *res_wti_tensor = allocTensor({1}, "res_wti");
+    Tensor *res_wi_tensor = allocTensor({3}, "res_wi");
+    Tensor *res_wti_tensor = allocTensor({3}, "res_wti");
     Tensor *maxs_wi = allocTensor({3}, "maxs_wi");
     Tensor *sums_wi = allocTensor({3}, "sums_wi");
     Tensor *maxs_wti = allocTensor({3}, "maxs_wti");
@@ -526,8 +526,8 @@ void test_cross_entropy_backward() {
     Tensor *labels = allocTensor({3}, "input", INT32);
     Tensor *w = allocTensor({3, 4}, "w");
     Tensor *wt = allocTensor({4, 3}, "wt");
-    Tensor *res_wi_tensor = allocTensor({1}, "res_wi");
-    Tensor *res_wti_tensor = allocTensor({1}, "res_wti");
+    Tensor *res_wi_tensor = allocTensor({3}, "res_wi");
+    Tensor *res_wti_tensor = allocTensor({3}, "res_wti");
     Tensor *maxs_wi = allocTensor({3}, "maxs_wi");
     Tensor *sums_wi = allocTensor({3}, "sums_wi");
     Tensor *maxs_wti = allocTensor({3}, "maxs_wti");
@@ -3235,10 +3235,10 @@ void test_mha() {
     auto res_shape = res->get_tensor()->get_shape();
     auto res_dim = res->get_tensor()->get_dim();
     
-    auto ce_res = res->reshape({-1, res_shape[res_dim-1]})->CrossEntropy(labels);
+    auto ce_res = res->reshape({-1, res_shape[res_dim-1]})->CrossEntropy(labels)->avg_1d();
     insert_boundary_action();
     ce_res->backward();
-    // printAllActions();
+    printAllActions();
     allocMemAndInitTensors();
 
     std::vector<Parameter *> params = mha.get_parameters();
@@ -4099,7 +4099,39 @@ void test_var() {
     destruct_env();
 }
 
+void test_ce_avg_1d() {
+    construct_env();
+    Tensor *input = allocTensor({2, 11}, "input");
+    auto ni = graph::allocNode(input);
+    ni->require_grad();
+    ni->init_weight_for_dbg(1000.0f);
+    
+    Tensor *labels = allocTensor({2}, "labels", INT32);
+    auto ce_res = ni->CrossEntropy(labels)->avg_1d();
+    
+    insert_boundary_action();
+    ce_res->backward();
+    // printAllActions();
+    allocMemAndInitTensors();
+    
+    int32_t labels_buffer[2] = {2, 3};
+    g_backend_ops->cp_to_device(
+        labels,
+        reinterpret_cast<char*>(labels_buffer),
+        labels->size()
+    );
+    gDoActions();
+
+    std::cout << std::setprecision(8) << "ni : " << std::endl << *ni->get_tensor() << std::endl;
+    std::cout << std::setprecision(8) << "ni grad : " << std::endl << *ni->get_grad() << std::endl;
+
+    destruct_env();
+}
+
 void test_cpu() {
+    // test_mha();
+    test_ce_avg_1d();
+    return ;
     test_at();
     test_add();
     test_add_eq();
@@ -4670,7 +4702,7 @@ void test_gpu_sum_with_cpu() {
 Tensor *test_cross_entropy_with_cpu_base(int m, int n) {
     Tensor *input = allocTensor({m, n}, "input");
     Tensor *labels = allocTensor({m}, "labels", INT32);
-    Tensor *res_wi_tensor = allocTensor({1}, "res_wi");
+    Tensor *res_wi_tensor = allocTensor({m}, "res_wi");
     Tensor *sums = allocTensor({m}, "sums");
     Tensor *maxs = allocTensor({m}, "maxs");
     gCreateAction(
@@ -4733,7 +4765,7 @@ void test_gpu_cross_entropy_with_cpu() {
 Tensor *test_cross_entropy_backward_with_cpu_base(int m, int n) {
     Tensor *labels = allocTensor({m}, "input", INT32);
     Tensor *w = allocTensor({m, n}, "w");
-    Tensor *res_wi_tensor = allocTensor({1}, "res_wi");
+    Tensor *res_wi_tensor = allocTensor({m}, "res_wi");
     Tensor *maxs_wi = allocTensor({m}, "maxs_wi");
     Tensor *sums_wi = allocTensor({m}, "sums_wi");
     Tensor *grad_wi = allocTensor({m, n}, "grad_wi");

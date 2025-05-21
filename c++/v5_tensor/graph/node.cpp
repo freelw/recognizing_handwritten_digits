@@ -391,6 +391,27 @@ namespace graph {
         return res_node;
     }
 
+    Node *Node::avg_1d() {
+        Tensor *l_tensor = this->get_tensor();
+        assert(l_tensor->get_dim() == 1);
+        auto shape = l_tensor->get_shape();
+        l_tensor = l_tensor->reshape({1, shape[0]});
+        Tensor *res_tensor = allocTensor({1}, "avg_res");
+        gCreateAction(
+            new AvgAction(
+                l_tensor,
+                res_tensor
+            )
+        );
+        auto res_node = allocNode(res_tensor);
+        if (is_require_grad()) {
+            res_node->require_grad();
+            std::cout << "this meta : " << this->get_tensor()->get_meta_info() << std::endl;
+            res_node->edges.push_back(Avg1dEdge::create(this));
+        }
+        return res_node;
+    }
+
     Node *Node::CrossEntropy(Tensor *labels) {
         assert(labels->get_dim() == 1);
         assert(
@@ -399,7 +420,7 @@ namespace graph {
         assert(labels->get_shape()[0] == this->get_tensor()->get_shape()[0]);
         Tensor *tensor_maxs = allocTensor(labels->get_shape(), "maxs");
         Tensor *tensor_sums = allocTensor(labels->get_shape(), "sums");
-        Tensor *ce_res = allocTensor({1}, "cross_entropy");
+        Tensor *ce_res = allocTensor({labels->get_shape()}, "cross_entropy");
 
         gCreateAction(
             new CrossEntropyAction(
@@ -480,7 +501,7 @@ namespace graph {
         );
     }
 
-    void CrossEntropyEdge::backward(Tensor *) {
+    void CrossEntropyEdge::backward(Tensor *grad) {
         Tensor *tmp = allocTensor(
             node->get_grad()->get_shape(),
             "cross_entropy_tmp"
@@ -494,10 +515,25 @@ namespace graph {
                 tmp
             )
         );
+        
+        Tensor *tmp2 = allocTensor(
+            node->get_grad()->get_shape(),
+            "cross_entropy_tmp2"
+        );
+        std::cout << "grad meta : " << grad->get_meta_info() << std::endl;
+        std::cout << "tmp meta : " << tmp->get_meta_info() << std::endl;
+        std::cout << "tmp2 meta : " << tmp2->get_meta_info() << std::endl;
+        gCreateAction(
+            new ExpandMulAction(
+                tmp->transpose(),
+                grad,
+                tmp2->transpose()
+            )
+        );
         gCreateAction(
             new AddEqAction(
                 node->get_grad(),
-                tmp
+                tmp2
             )
         );
     }
