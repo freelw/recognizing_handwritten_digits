@@ -546,7 +546,7 @@ namespace graph {
                 grad,
                 norm_res,
                 avg_tensor,
-                norm_tensor,
+                var_tensor,
                 tmp
             )
         );

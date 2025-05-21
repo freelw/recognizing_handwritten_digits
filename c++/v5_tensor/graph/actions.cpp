@@ -620,7 +620,7 @@ void NormBackwardAction::execute() {
     assert(rhs != nullptr); // norm res
     assert(res != nullptr); // tgt grad
     assert(avg_tensor != nullptr); // avg tensor
-    assert(var_tensor != nullptr); // norm tensor
+    assert(var_tensor != nullptr); // var tensor
     const Tensor *src_grad = lhs;
     const Tensor *norm_res = rhs;
     Tensor *tgt_grad = res;

@@ -535,8 +535,8 @@ namespace graph {
         public:
             static Edge* create(
                 Node *_node, Tensor *_norm_res,
-                Tensor *_avg_tensor, Tensor * _norm_tensor) {
-                Edge *edge = new NormEdge(_node, _norm_res, _avg_tensor, _norm_tensor);
+                Tensor *_avg_tensor, Tensor * _var_tensor) {
+                Edge *edge = new NormEdge(_node, _norm_res, _avg_tensor, _var_tensor);
                 gAddEdge(edge);
                 return edge;
             }
@@ -544,14 +544,14 @@ namespace graph {
                 Node *_node,
                 Tensor *_norm_res,
                 Tensor *_avg_tensor,
-                Tensor *_norm_tensor
-            ) : Edge(Norm, _node), norm_res(_norm_res), avg_tensor(_avg_tensor), norm_tensor(_norm_tensor) {}
+                Tensor *_var_tensor
+            ) : Edge(Norm, _node), norm_res(_norm_res), avg_tensor(_avg_tensor), var_tensor(_var_tensor) {}
             virtual ~NormEdge() {}
             void backward(Tensor *grad) override;
         private:
             Tensor *norm_res;
             Tensor *avg_tensor;
-            Tensor *norm_tensor;
+            Tensor *var_tensor;
     };
 
     Node *allocNode(Tensor *t);
