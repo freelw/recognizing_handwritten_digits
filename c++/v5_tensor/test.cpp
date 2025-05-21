@@ -4016,6 +4016,47 @@ void test_layernorm() {
     destruct_env();
 }
 
+void test_avg() {
+    construct_env();
+
+    Tensor *input = allocTensor({2, 11}, "input");
+
+    auto ni = graph::allocNode(input);
+    ni->require_grad();
+    ni->init_weight_for_dbg(100000.0f);
+
+    Tensor *res = allocTensor({2}, "res");
+
+    gCreateAction(
+        new AvgAction(input, res)
+    );
+
+    insert_boundary_action();
+    allocMemAndInitTensors();
+    gDoActions();
+
+    // std::cout << "input : " << std::endl << *input << std::endl;
+    // std::cout << "res : " << std::endl << *res << std::endl;
+
+    float res_ans[2] = {
+       5, 16
+    };
+
+    bool succ = compare_res_ans_1d(
+        res,
+        res_ans,
+        "res"
+    );
+
+    if (succ) {
+        std::cout << GREEN << "test_avg succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_avg failed" << RESET << std::endl;
+    }
+
+    destruct_env();
+}
+
 void test_cpu() {
     test_at();
     test_add();
@@ -4061,6 +4102,7 @@ void test_cpu() {
     test_at_bp_redge_add_eq();
     test_dropout_1();
     test_softmax_1();
+    test_avg();
     test_layernorm();
 }
 
@@ -5820,8 +5862,6 @@ void test_embedding_with_cpu() {
 }
 
 void test_gpu() {
-    // test_layernorm();
-    // return ;
     test_at();
     test_at_1();
     test_gpu_at_with_cpu();
@@ -5889,6 +5929,7 @@ void test_gpu() {
     test_at_bp_redge_add_eq();
     test_dropout_1();
     test_softmax_1();
+    test_avg();
     // test_layernorm();
 }
 

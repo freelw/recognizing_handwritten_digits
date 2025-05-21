@@ -923,6 +923,19 @@ void CUDAOps::avg(Tensor *lhs, Tensor *res) {
         lhs->get_strides()[1],
         res->get_strides()[0]
     );
+
+    auto length = res->length();
+    dim3 gridDim_div(
+        (length + TILE_WIDTH - 1) / TILE_WIDTH
+    );
+    dim3 blockDim_div(TILE_WIDTH);
+
+    tensor_div<<<gridDim_div, blockDim_div>>>(
+        (float *)res->get_data(),
+        (float *)res->get_data(),
+        length,
+        shape[1]
+    );
 }
 
 void CUDAOps::var(Tensor *lhs, const Tensor *_avg, Tensor *res) {
