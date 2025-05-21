@@ -900,6 +900,14 @@ void CUDAOps::pos_encoding(Tensor *res) {
     ::free(data);
 }
 
+void CUDAOps::avg(Tensor *lhs, Tensor *res) {
+    assert(false);
+}
+
+void CUDAOps::var(Tensor *lhs, const Tensor *_avg, Tensor *res) {
+    assert(false);
+}
+
 void* CUDAOps::alloc(size_t size) {
     void *ret = nullptr;
     cudaMalloc((void **)&ret, size);

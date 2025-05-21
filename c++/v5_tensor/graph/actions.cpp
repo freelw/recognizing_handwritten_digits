@@ -589,6 +589,31 @@ std::string PosEncodingAction::to_string() const {
     return oss.str();
 }
 
+void AvgAction::execute() {
+    assert(lhs != nullptr);
+    assert(res != nullptr);
+    g_backend_ops->avg(lhs, res);
+}
+
+std::string AvgAction::to_string() const {
+    std::ostringstream oss;
+    oss << "AvgAction: averaging " << lhs->get_meta_info() << " to " << res->get_meta_info();
+    return oss.str();
+}
+
+void VarAction::execute() {
+    assert(lhs != nullptr);
+    assert(rhs != nullptr);
+    assert(res != nullptr);
+    g_backend_ops->var(lhs, rhs, res);
+}
+
+std::string VarAction::to_string() const {
+    std::ostringstream oss;
+    oss << "VarAction: variance " << lhs->get_meta_info() << " with mean " << rhs->get_meta_info() << " to " << res->get_meta_info();
+    return oss.str();
+}
+
 std::vector<Action*> g_actions;
 
 std::vector<Action *> getOnceActions() {

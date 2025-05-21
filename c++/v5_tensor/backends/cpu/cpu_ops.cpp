@@ -423,6 +423,14 @@ void CPUOps::pos_encoding(Tensor *res) {
     }
 }
 
+void CPUOps::avg(Tensor *lhs, Tensor *res) {
+    assert(false);
+}
+
+void CPUOps::var(Tensor *lhs, const Tensor *_avg, Tensor *res) {
+    assert(false);
+}
+
 void CPUOps::calcAllGradNorm(const std::vector<Tensor*> &grads, Tensor *norm) {
     float tmp = 0;
     for (auto grad : grads) {

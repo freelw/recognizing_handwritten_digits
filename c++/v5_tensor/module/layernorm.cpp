@@ -12,7 +12,12 @@ LayerNorm::LayerNorm(int dim) {
 }
 
 graph::Node* LayerNorm::forward(graph::Node *x) {
-    return x->norm()->expand_mul(gamma)->expand_add(beta);
+    assert(x->get_tensor()->get_dim() >= 2);
+    auto origin_shape = x->get_tensor()->get_shape();
+    auto dim = x->get_tensor()->get_dim();
+    x = x->reshape({-1, origin_shape[dim - 1]});
+    x = x->norm()->expand_mul(gamma)->expand_add(beta);
+    return x->reshape(origin_shape);
 }
 
 std::vector<Parameter*> LayerNorm::parameters() {

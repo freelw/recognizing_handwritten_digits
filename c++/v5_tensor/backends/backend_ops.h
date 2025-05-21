@@ -49,6 +49,8 @@ class BackendOps {
             Tensor *shape, Tensor *strides    
         ) = 0;
         virtual void pos_encoding(Tensor *res) = 0;
+        virtual void avg(Tensor *lhs, Tensor *res) = 0;
+        virtual void var(Tensor *lhs, const Tensor *_avg, Tensor *res) = 0;
         // Memory management
         virtual void *alloc(size_t size) = 0;
         virtual void memset(void *ptr, int value, size_t size) = 0;

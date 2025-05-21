@@ -313,6 +313,22 @@ class PosEncodingAction : public Action {
         }
 };
 
+class AvgAction : public Action {
+    public:
+        AvgAction(Tensor *_lhs, Tensor *_res)
+            : Action(_lhs, nullptr, _res) {}
+        void execute() override;
+        std::string to_string() const override;
+};
+
+class VarAction : public Action {
+    public:
+        VarAction(Tensor *_lhs, Tensor *avg, Tensor *_res)
+            : Action(_lhs, avg, _res) {}
+        void execute() override;
+        std::string to_string() const override;
+};
+
 std::vector<Action *> getOnceActions();
 void gCreateAction(Action *action);
 void gDoActions();
