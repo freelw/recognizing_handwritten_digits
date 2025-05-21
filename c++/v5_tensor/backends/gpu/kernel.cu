@@ -624,7 +624,26 @@ __global__ void tensor_var_2d_dim1(
             atomicAdd(&sum[row * sum_stride0], partial_sums[0]);
         }
     }
+}
 
+__global__ void tensor_norm_kernel(
+    float *src, float *avg, float * var, float *dst,
+    int src_shape0, int src_shape1,
+    int src_stride0, int src_stride1,
+    int dst_stride0, int dst_stride1
+) {
+    int row = blockIdx.y * blockDim.y + threadIdx.y;
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
+    const float eps = 1e-5f;
+    if (row >= src_shape0 || col >= src_shape1) {
+        return;
+    } else {
+        float _avg = avg[row];
+        float _var = var[row];
+        float _src = src[row * src_stride0 + col * src_stride1];
+        dst[row * dst_stride0 + col * dst_stride1] =
+            (_src - _avg) / sqrtf(_var + eps);
+    }
 }
 
 #endif // GCC_ASAN
