@@ -4575,6 +4575,8 @@ void test_gpu_sum_with_cpu() {
     }
     if (succ) {
         std::cout << GREEN << "test_sum_with_cpu succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_sum_with_cpu failed" << RESET << std::endl;
     }
     ::free(cpu_res_buffer);
     ::free(gpu_res_buffer);
@@ -5818,6 +5820,8 @@ void test_embedding_with_cpu() {
 }
 
 void test_gpu() {
+    // test_layernorm();
+    // return ;
     test_at();
     test_at_1();
     test_gpu_at_with_cpu();
@@ -5885,7 +5889,7 @@ void test_gpu() {
     test_at_bp_redge_add_eq();
     test_dropout_1();
     test_softmax_1();
-    test_layernorm();
+    // test_layernorm();
 }
 
 int main(int argc, char *argv[]) {

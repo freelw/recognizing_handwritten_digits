@@ -535,4 +535,62 @@ __global__ void tensor_embedding_backward_kernel(
     }
 }
 
+__global__ void tensor_sum_2d_dim0_v1(
+    float *src, float *sum,
+    int src_shape0, int src_shape1,
+    int src_stride0, int src_stride1,
+    int sum_stride0
+) {
+    extern __shared__ float partial_sums[];
+    int row = blockIdx.y * blockDim.y + threadIdx.y;
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
+    int tid = threadIdx.y * blockDim.x + threadIdx.x;
+    partial_sums[tid] = 0.0f;
+    if (row >= src_shape0 || col >= src_shape1) {
+        return;
+    } else {
+        partial_sums[tid] = src[row * src_stride0 + col * src_stride1];
+        __syncthreads();
+        for (int s = blockDim.y / 2; s > 0; s >>= 1) {
+            if (tid < s) {
+                partial_sums[tid] += partial_sums[tid + s];
+            }
+            __syncthreads();
+        }
+
+        if (tid == 0) {
+            atomicAdd(&sum[col * sum_stride0], partial_sums[0]);
+        }
+    }
+}
+
+__global__ void tensor_sum_2d_dim1(
+    float *src, float *sum,
+    int src_shape0, int src_shape1,
+    int src_stride0, int src_stride1,
+    int sum_stride0
+) {
+    extern __shared__ float partial_sums[];
+    int row = blockIdx.y * blockDim.y + threadIdx.y;
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
+    int tid = threadIdx.y * blockDim.y + threadIdx.x;
+    partial_sums[tid] = 0.0f;
+    if (row >= src_shape0 || col >= src_shape1) {
+        return;
+    } else {
+        partial_sums[tid] = src[row * src_stride0 + col * src_stride1];
+        __syncthreads();
+        for (int s = blockDim.x / 2; s > 0; s >>= 1) {
+            if (tid < s) {
+                partial_sums[tid] += partial_sums[tid + s];
+            }
+            __syncthreads();
+        }
+
+        if (tid == 0) {
+            atomicAdd(&sum[row * sum_stride0], partial_sums[0]);
+        }
+    }
+}
+
 #endif // GCC_ASAN

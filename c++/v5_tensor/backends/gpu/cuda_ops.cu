@@ -367,18 +367,19 @@ void CUDAOps::sum(Tensor *lhs, Tensor *res, int dim) {
     assert(res->get_dim() == 1);
 
     dim3 gridDim(
-        (shape[1] + TILE_WIDTH - 1) / TILE_WIDTH
+        shape[1],
+        (shape[0] + TILE_WIDTH - 1) / TILE_WIDTH
     );
+    dim3 blockDim(1, TILE_WIDTH);
 
-    dim3 blockDim(TILE_WIDTH);
-
-    tensor_sum_2d_dim0<<<gridDim, blockDim>>>(
+    tensor_sum_2d_dim0_v1<<<gridDim, blockDim, TILE_WIDTH*sizeof(float)>>>(
         (float *)lhs->get_data(),
         (float *)res->get_data(),
         shape[0],
         shape[1],
-        lstrides[0],
-        lstrides[1]
+        lhs->get_strides()[0],
+        lhs->get_strides()[1],
+        res->get_strides()[0]
     );
 }
 
@@ -902,7 +903,26 @@ void CUDAOps::pos_encoding(Tensor *res) {
 }
 
 void CUDAOps::avg(Tensor *lhs, Tensor *res) {
-    assert(false);
+    assert(lhs->get_dim() == 2);
+    assert(res->get_dim() == 1);
+    auto shape = lhs->get_shape();
+    assert(shape[0] == res->get_shape()[0]);
+
+    dim3 gridDim(
+        (shape[1] + TILE_WIDTH - 1) / TILE_WIDTH,
+        shape[0]
+    );
+    dim3 blockDim(TILE_WIDTH);
+
+    tensor_sum_2d_dim1<<<gridDim, blockDim, TILE_WIDTH*sizeof(float)>>>(
+        (float *)lhs->get_data(),
+        (float *)res->get_data(),
+        shape[0],
+        shape[1],
+        lhs->get_strides()[0],
+        lhs->get_strides()[1],
+        res->get_strides()[0]
+    );
 }
 
 void CUDAOps::var(Tensor *lhs, const Tensor *_avg, Tensor *res) {
