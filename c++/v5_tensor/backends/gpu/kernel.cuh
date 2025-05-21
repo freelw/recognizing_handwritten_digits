@@ -206,6 +206,14 @@ __global__ void tensor_norm_kernel(
     int dst_stride0, int dst_stride1
 );
 
+__global__ void tensor_norm_backward_kernel(
+    float *src, float *norm, float * var, float *tgt,
+    int src_shape0, int src_shape1,
+    int src_stride0, int src_stride1,
+    int norm_stride0, int norm_stride1,
+    int tgt_stride0, int tgt_stride1
+);
+
 #endif // GCC_ASAN
 
 #endif // V5_TENSOR_BACKENDS_GPU_KERNEL_CUH

@@ -1013,7 +1013,42 @@ void CUDAOps::norm(const Tensor *src, const Tensor *avg, const Tensor *var, Tens
 void CUDAOps::normBackward(
     const Tensor *src_grad, const Tensor *norm_res, const Tensor *var_res, Tensor *tgt_grad
 )  {
-    // assert(false);
+    assert(src_grad != nullptr);
+    assert(norm_res != nullptr);
+    assert(tgt_grad != nullptr);
+    assert(src_grad->get_dim() == 2);
+    assert(norm_res->get_dim() == 2);
+    assert(tgt_grad->get_dim() == 2);
+    assert(src_grad->get_shape() == tgt_grad->get_shape());
+    assert(src_grad->get_shape() == norm_res->get_shape());
+    assert(var_res->get_dim() == 1);
+    auto shape = src_grad->get_shape();
+    assert(shape[0] == var_res->get_shape()[0]);
+    auto norm_res_strides = norm_res->get_strides();
+    auto src_grad_strides = src_grad->get_strides();
+    auto tgt_grad_strides = tgt_grad->get_strides();
+
+    dim3 gridDim(
+        (shape[1] + TILE_WIDTH - 1) / TILE_WIDTH,
+        (shape[0] + TILE_WIDTH - 1) / TILE_WIDTH
+    );
+
+    dim3 blockDim(TILE_WIDTH, TILE_WIDTH);
+
+    tensor_norm_backward_kernel<<<gridDim, blockDim>>>(
+        (float *)src_grad->get_data(),
+        (float *)norm_res->get_data(),
+        (float *)var_res->get_data(),
+        (float *)tgt_grad->get_data(),
+        shape[0],
+        shape[1],
+        src_grad_strides[0],
+        src_grad_strides[1],
+        norm_res_strides[0],
+        norm_res_strides[1],
+        tgt_grad_strides[0],
+        tgt_grad_strides[1]
+    );
 }
 
 void* CUDAOps::alloc(size_t size) {

@@ -646,4 +646,33 @@ __global__ void tensor_norm_kernel(
     }
 }
 
+__global__ void tensor_norm_backward_kernel(
+    float *src, float *norm, float * var, float *tgt,
+    int src_shape0, int src_shape1,
+    int src_stride0, int src_stride1,
+    int norm_stride0, int norm_stride1,
+    int tgt_stride0, int tgt_stride1
+) {
+    int row = blockIdx.y * blockDim.y + threadIdx.y;
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    const float eps = 1e-5f;
+    if (row >= src_shape0 || i >= src_shape1) {
+        return;
+    } else {
+        float tmp = 0;
+        float var_value = var[row];
+        for (int j= 0; j < src_shape1; ++ j) {
+            int eq = i == j;
+            auto sigma = sqrtf(var_value + eps);
+            auto x_hat_i = norm[row * norm_stride0 + i * norm_stride1];
+            auto x_hat_j = norm[row * norm_stride0 + j * norm_stride1];
+            auto part1 = eq * src_shape1 - 1 - x_hat_i * x_hat_j;
+            auto part2 = src_shape1 * sigma;
+            auto g = part1 / part2;
+            tmp += g * src[row * src_stride0 + j * src_stride1];
+        }
+        tgt[row * tgt_stride0 + i * tgt_stride1] = tmp;
+    }
+}
+
 #endif // GCC_ASAN
