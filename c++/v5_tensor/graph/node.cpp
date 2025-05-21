@@ -347,6 +347,11 @@ namespace graph {
         return res_node;
     }
 
+    Node *Node::norm() {
+        assert(false);
+        return nullptr;
+    }
+
     Node *Node::CrossEntropy(Tensor *labels) {
         assert(labels->get_dim() == 1);
         assert(

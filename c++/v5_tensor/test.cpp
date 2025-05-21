@@ -3882,6 +3882,7 @@ void test_softmax_1() {
         reinterpret_cast<char*>(res_grad_buffer),
         res->get_grad()->size()
     );
+    ::free(res_grad_buffer);
 
     gDoActions();
     // std::cout << "res : " << std::endl << *res->get_tensor() << std::endl;

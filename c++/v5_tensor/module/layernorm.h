@@ -7,8 +7,8 @@
 class LayerNorm {
     public:
         LayerNorm(int dim);
-        ~LayerNorm();
-        graph::Node* forward(graph::Node* x);
+        ~LayerNorm() = default;
+        graph::Node* forward(graph::Node *x);
         std::vector<Parameter*> parameters();
     private:
         graph::Node *gamma;
