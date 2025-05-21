@@ -912,6 +912,14 @@ void CUDAOps::norm(const Tensor *src, const Tensor *avg, const Tensor *var, Tens
     assert(false);
 }
 
+void CUDAOps::normBackward(
+    const Tensor *src_grad, const Tensor *norm_res,
+    const Tensor *avg_tensor, const Tensor *var_tensor,
+    Tensor *tgt_grad
+)  {
+    assert(false);
+}
+
 void* CUDAOps::alloc(size_t size) {
     void *ret = nullptr;
     cudaMalloc((void **)&ret, size);

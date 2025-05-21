@@ -384,12 +384,10 @@ namespace graph {
         );
 
         auto res_node = allocNode(norm_res);
-
         if (is_require_grad()) {
             res_node->require_grad();
             res_node->edges.push_back(NormEdge::create(this, norm_res, avg_tensor, var_tensor));
         }
-
         return res_node;
     }
 
@@ -534,6 +532,28 @@ namespace graph {
                 grad,
                 indices,
                 node->get_grad()
+            )
+        );
+    }
+
+    void NormEdge::backward(Tensor *grad) {
+        Tensor *tmp = allocTensor(
+            node->get_grad()->get_shape(),
+            "norm_tmp"
+        );
+        gCreateAction(
+            new NormBackwardAction(
+                grad,
+                norm_res,
+                avg_tensor,
+                norm_tensor,
+                tmp
+            )
+        );
+        gCreateAction(
+            new AddEqAction(
+                node->get_grad(),
+                tmp
             )
         );
     }

@@ -487,6 +487,14 @@ void CPUOps::norm(const Tensor *src, const Tensor *avg, const Tensor *var, Tenso
     }
 }
 
+void CPUOps::normBackward(
+    const Tensor *src_grad, const Tensor *norm_res,
+    const Tensor *avg_tensor, const Tensor *var_tensor,
+    Tensor *tgt_grad
+)  {
+    assert(false);
+}
+
 void CPUOps::calcAllGradNorm(const std::vector<Tensor*> &grads, Tensor *norm) {
     float tmp = 0;
     for (auto grad : grads) {

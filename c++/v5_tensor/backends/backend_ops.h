@@ -52,6 +52,11 @@ class BackendOps {
         virtual void avg(Tensor *lhs, Tensor *res) = 0;
         virtual void var(Tensor *lhs, const Tensor *_avg, Tensor *res) = 0;
         virtual void norm(const Tensor *src, const Tensor *avg, const Tensor *var, Tensor *res) = 0;
+        virtual void normBackward(
+            const Tensor *src_grad, const Tensor *norm_res,
+            const Tensor *avg_tensor, const Tensor *var_tensor,
+            Tensor *tgt_grad
+        ) = 0;
         // Memory management
         virtual void *alloc(size_t size) = 0;
         virtual void memset(void *ptr, int value, size_t size) = 0;

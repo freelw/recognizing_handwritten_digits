@@ -547,9 +547,7 @@ namespace graph {
                 Tensor *_norm_tensor
             ) : Edge(Norm, _node), norm_res(_norm_res), avg_tensor(_avg_tensor), norm_tensor(_norm_tensor) {}
             virtual ~NormEdge() {}
-            void backward(Tensor *grad) override {
-                assert(false);
-            }
+            void backward(Tensor *grad) override;
         private:
             Tensor *norm_res;
             Tensor *avg_tensor;
