@@ -3913,23 +3913,47 @@ void test_layernorm() {
     construct_env();
 
     Tensor *input = allocTensor({2, 6}, "input");
+    Tensor *labels = allocTensor({2}, "labels", INT32);
     LayerNorm layer_norm(6, true);
+    std::vector<Parameter*> params = layer_norm.get_parameters();
+    auto Pgamma = params[0];
+    auto Pbeta = params[1];
     auto ni = graph::allocNode(input);
     ni->require_grad();
-    ni->init_weight_for_dbg(10000.0f);
+    ni->init_weight_for_dbg(100000.0f);
     auto res = layer_norm.forward(ni);
+    auto ce_res = res->CrossEntropy(labels);
 
     insert_boundary_action();
-    res->backward();
+    ce_res->backward();
     // printAllActions();
     allocMemAndInitTensors();
+    int32_t labels_buffer[2] = {2, 3};
+    g_backend_ops->cp_to_device(
+        labels,
+        reinterpret_cast<char*>(labels_buffer),
+        labels->size()
+    );
     gDoActions();
 
-    std::cout << std::setprecision(8) <<"res : " << std::endl << *res->get_tensor() << std::endl;
+    // std::cout << std::setprecision(8) <<"res : " << std::endl << *res->get_tensor() << std::endl;
+    float loss = 0;
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(&loss),
+        ce_res->get_tensor(),
+        sizeof(float)
+    );
+    loss /= 2;
+    // std::cout << std::setprecision(8) << "loss : " << loss << std::endl;
+    // std::cout << std::setprecision(8) << "ni : " << std::endl << *ni->get_tensor() << std::endl;
+    // std::cout << std::setprecision(8) << "ni grad : " << std::endl << *ni->get_grad() << std::endl;
+
+    // std::cout << std::setprecision(8) << "Pgamma grad : " << std::endl << *Pgamma->get_grad() << std::endl;
+    // std::cout << std::setprecision(8) << "Pbeta grad : " << std::endl << *Pbeta->get_grad() << std::endl;
 
     float res_ans[12] = {
-        -1.4635992, -0.87815958, -0.29271984, 0.2927199, 0.87815958, 1.4635992,
-        -1.4635988, -0.8781594, -0.29271957, 0.2927199, 0.87815976, 1.4635996
+        -1.4638476, -0.87830859, -0.29276952, 0.29276952, 0.87830859, 1.4638476,
+        -1.4638476, -0.87830859, -0.29276952, 0.29276952, 0.87830859, 1.4638476
     };
 
     bool succ_res = compare_res_ans_1d(
@@ -3942,7 +3966,48 @@ void test_layernorm() {
         std::cout << RED << "test_layernorm res failed" << RESET << std::endl;
     }
 
-    bool succ = succ_res;
+    float ni_grad_ans[12] = {
+       0.087792404, 0.061235826, -0.25355548, 0.025336597, 0.02608601, 0.05310465,
+        0.045968324, 0.036141384, 0.030849233, -0.2590681, 0.051180452, 0.094928727
+    };
+
+    bool succ_ni_grad = compare_res_ans_1d(
+        ni->get_grad(),
+        ni_grad_ans,
+        "ni_grad"
+    );
+
+    if (!succ_ni_grad) {
+        std::cout << RED << "test_layernorm ni_grad failed" << RESET << std::endl;
+    }
+
+    float gamma_grad_ans[6] = {
+        -0.035788797, -0.038565125, 0.12329764, -0.10492124, 0.22340037, 0.6686964
+    };
+
+    bool succ_gamma_grad = compare_res_ans_1d(
+        Pgamma->get_grad(),
+        gamma_grad_ans,
+        "gamma_grad"
+    );
+    if (!succ_gamma_grad) {
+        std::cout << RED << "test_layernorm gamma_grad failed" << RESET << std::endl;
+    }
+
+    float beta_grad_ans[6] = {
+        0.024448445, 0.043908402, -0.42114234, -0.35837483, 0.25435293, 0.45680737
+    };
+
+    bool succ_beta_grad = compare_res_ans_1d(
+        Pbeta->get_grad(),
+        beta_grad_ans,
+        "beta_grad"
+    );
+    if (!succ_beta_grad) {
+        std::cout << RED << "test_layernorm beta_grad failed" << RESET << std::endl;
+    }
+
+    bool succ = succ_res && succ_ni_grad && succ_gamma_grad && succ_beta_grad;
     if (succ) {
         std::cout << GREEN << "test_layernorm succ" << RESET << std::endl;
     } else {
@@ -3952,8 +4017,6 @@ void test_layernorm() {
 }
 
 void test_cpu() {
-    test_layernorm();
-    return ;
     test_at();
     test_add();
     test_add_eq();

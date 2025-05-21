@@ -9,7 +9,7 @@ class LayerNorm {
         LayerNorm(int len, bool const_weight = false);
         ~LayerNorm() = default;
         graph::Node* forward(graph::Node *x);
-        std::vector<Parameter*> parameters();
+        std::vector<Parameter*> get_parameters();
     private:
         graph::Node *gamma;
         graph::Node *beta;

@@ -27,7 +27,7 @@ graph::Node* LayerNorm::forward(graph::Node *x) {
     return x->reshape(origin_shape);
 }
 
-std::vector<Parameter*> LayerNorm::parameters() {
+std::vector<Parameter*> LayerNorm::get_parameters() {
     std::vector<Parameter*> params;
     params.push_back(Pgamma);
     params.push_back(Pbeta);
