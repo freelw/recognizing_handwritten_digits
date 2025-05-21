@@ -8,6 +8,7 @@
 #include "module/mha.h"
 #include "module/embedding.h"
 #include "module/posencoding.h"
+#include "module/layernorm.h"
 #include "common.h"
 #include <iomanip>
 #include <cmath>
@@ -3882,6 +3883,7 @@ void test_softmax_1() {
         reinterpret_cast<char*>(res_grad_buffer),
         res->get_grad()->size()
     );
+    ::free(res_grad_buffer);
 
     gDoActions();
     // std::cout << "res : " << std::endl << *res->get_tensor() << std::endl;
@@ -3903,6 +3905,196 @@ void test_softmax_1() {
         std::cout << GREEN << "test_softmax_1 succ" << RESET << std::endl;
     } else {
         std::cout << RED << "test_softmax_1 failed" << RESET << std::endl;
+    }
+    destruct_env();
+}
+
+void test_layernorm() {
+    construct_env();
+
+    Tensor *input = allocTensor({2, 6}, "input");
+    Tensor *labels = allocTensor({2}, "labels", INT32);
+    LayerNorm layer_norm(6, true);
+    std::vector<Parameter*> params = layer_norm.get_parameters();
+    auto Pgamma = params[0];
+    auto Pbeta = params[1];
+    auto ni = graph::allocNode(input);
+    ni->require_grad();
+    ni->init_weight_for_dbg(100000.0f);
+    auto res = layer_norm.forward(ni);
+    auto ce_res = res->CrossEntropy(labels);
+
+    insert_boundary_action();
+    ce_res->backward();
+    // printAllActions();
+    allocMemAndInitTensors();
+    int32_t labels_buffer[2] = {2, 3};
+    g_backend_ops->cp_to_device(
+        labels,
+        reinterpret_cast<char*>(labels_buffer),
+        labels->size()
+    );
+    gDoActions();
+
+    // std::cout << std::setprecision(8) <<"res : " << std::endl << *res->get_tensor() << std::endl;
+    float loss = 0;
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(&loss),
+        ce_res->get_tensor(),
+        sizeof(float)
+    );
+    loss /= 2;
+    // std::cout << std::setprecision(8) << "loss : " << loss << std::endl;
+    // std::cout << std::setprecision(8) << "ni : " << std::endl << *ni->get_tensor() << std::endl;
+    // std::cout << std::setprecision(8) << "ni grad : " << std::endl << *ni->get_grad() << std::endl;
+
+    // std::cout << std::setprecision(8) << "Pgamma grad : " << std::endl << *Pgamma->get_grad() << std::endl;
+    // std::cout << std::setprecision(8) << "Pbeta grad : " << std::endl << *Pbeta->get_grad() << std::endl;
+
+    float res_ans[12] = {
+        -1.4638476, -0.87830859, -0.29276952, 0.29276952, 0.87830859, 1.4638476,
+        -1.4638476, -0.87830859, -0.29276952, 0.29276952, 0.87830859, 1.4638476
+    };
+
+    bool succ_res = compare_res_ans_1d(
+        res->get_tensor(),
+        res_ans,
+        "res"
+    );
+
+    if (!succ_res) {
+        std::cout << RED << "test_layernorm res failed" << RESET << std::endl;
+    }
+
+    float ni_grad_ans[12] = {
+       0.087792404, 0.061235826, -0.25355548, 0.025336597, 0.02608601, 0.05310465,
+        0.045968324, 0.036141384, 0.030849233, -0.2590681, 0.051180452, 0.094928727
+    };
+
+    bool succ_ni_grad = compare_res_ans_1d(
+        ni->get_grad(),
+        ni_grad_ans,
+        "ni_grad"
+    );
+
+    if (!succ_ni_grad) {
+        std::cout << RED << "test_layernorm ni_grad failed" << RESET << std::endl;
+    }
+
+    float gamma_grad_ans[6] = {
+        -0.035788797, -0.038565125, 0.12329764, -0.10492124, 0.22340037, 0.6686964
+    };
+
+    bool succ_gamma_grad = compare_res_ans_1d(
+        Pgamma->get_grad(),
+        gamma_grad_ans,
+        "gamma_grad"
+    );
+    if (!succ_gamma_grad) {
+        std::cout << RED << "test_layernorm gamma_grad failed" << RESET << std::endl;
+    }
+
+    float beta_grad_ans[6] = {
+        0.024448445, 0.043908402, -0.42114234, -0.35837483, 0.25435293, 0.45680737
+    };
+
+    bool succ_beta_grad = compare_res_ans_1d(
+        Pbeta->get_grad(),
+        beta_grad_ans,
+        "beta_grad"
+    );
+    if (!succ_beta_grad) {
+        std::cout << RED << "test_layernorm beta_grad failed" << RESET << std::endl;
+    }
+
+    bool succ = succ_res && succ_ni_grad && succ_gamma_grad && succ_beta_grad;
+    if (succ) {
+        std::cout << GREEN << "test_layernorm succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_layernorm failed" << RESET << std::endl;
+    }
+    destruct_env();
+}
+
+void test_avg() {
+    construct_env();
+
+    Tensor *input = allocTensor({2, 11}, "input");
+
+    auto ni = graph::allocNode(input);
+    ni->require_grad();
+    ni->init_weight_for_dbg(100000.0f);
+
+    Tensor *res = allocTensor({2}, "res");
+
+    gCreateAction(
+        new AvgAction(input, res)
+    );
+
+    insert_boundary_action();
+    allocMemAndInitTensors();
+    gDoActions();
+
+    // std::cout << "input : " << std::endl << *input << std::endl;
+    // std::cout << "res : " << std::endl << *res << std::endl;
+
+    float res_ans[2] = {
+       5, 16
+    };
+
+    bool succ = compare_res_ans_1d(
+        res,
+        res_ans,
+        "res"
+    );
+
+    if (succ) {
+        std::cout << GREEN << "test_avg succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_avg failed" << RESET << std::endl;
+    }
+
+    destruct_env();
+}
+
+void test_var() {
+    construct_env();
+    Tensor *input = allocTensor({2, 11}, "input");
+    auto ni = graph::allocNode(input);
+    ni->require_grad();
+    ni->init_weight_for_dbg(100000.0f);
+    
+    Tensor *res_avg = allocTensor({2}, "res_avg");
+    Tensor *res_var = allocTensor({2}, "res_var");
+
+    gCreateAction(
+        new AvgAction(input, res_avg)
+    );
+
+    gCreateAction(
+        new VarAction(input, res_avg, res_var)
+    );
+
+    insert_boundary_action();
+    allocMemAndInitTensors();
+    gDoActions();
+
+    // std::cout << "input : " << std::endl << *input << std::endl;
+    // std::cout << "res_avg : " << std::endl << *res_avg << std::endl;
+    // std::cout << "res_var : " << std::endl << *res_var << std::endl;
+
+    float var_ans[2] = {10, 10};
+
+    bool succ = compare_res_ans_1d(
+        res_var,
+        var_ans,
+        "res_var"
+    );
+
+    if (succ) {
+        std::cout << GREEN << "test_var succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_var failed" << RESET << std::endl;
     }
     destruct_env();
 }
@@ -3952,6 +4144,9 @@ void test_cpu() {
     test_at_bp_redge_add_eq();
     test_dropout_1();
     test_softmax_1();
+    test_avg();
+    test_var();
+    test_layernorm();
 }
 
 Tensor *test_add_with_cpu_base(int m, int n) {
@@ -4465,6 +4660,8 @@ void test_gpu_sum_with_cpu() {
     }
     if (succ) {
         std::cout << GREEN << "test_sum_with_cpu succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_sum_with_cpu failed" << RESET << std::endl;
     }
     ::free(cpu_res_buffer);
     ::free(gpu_res_buffer);
@@ -5775,6 +5972,9 @@ void test_gpu() {
     test_at_bp_redge_add_eq();
     test_dropout_1();
     test_softmax_1();
+    test_avg();
+    test_var();
+    test_layernorm();
 }
 
 int main(int argc, char *argv[]) {

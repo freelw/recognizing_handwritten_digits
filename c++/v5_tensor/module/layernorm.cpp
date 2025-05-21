@@ -1,30 +1,33 @@
 #include "layernorm.h"
 
-LayerNorm::LayerNorm(int dim) {
-
-    Tensor *t_gamma = allocTensor({dim}, "layernorm_gamma");
-    Tensor *t_beta = allocTensor({dim}, "layernorm_beta");
-
+LayerNorm::LayerNorm(int len, bool const_weight) {
+    Tensor *t_gamma = allocTensor({len}, "layernorm_gamma");
+    Tensor *t_beta = allocTensor({len}, "layernorm_beta");
     gamma = graph::allocNode(t_gamma);
     beta = graph::allocNode(t_beta);
-
     gamma->require_grad();
     beta->require_grad();
-
+    if (const_weight) {
+        gamma->init_weight_fill(1.0);
+        beta->init_weight_fill(0.0);
+    } else {
+        gamma->init_weight_gauss(0.01, 1);
+        beta->init_weight_gauss(0.01, 0);   
+    }
     Pgamma = allocParameter(gamma);
     Pbeta = allocParameter(beta);
 }
 
-LayerNorm::~LayerNorm() {
-
+graph::Node* LayerNorm::forward(graph::Node *x) {
+    assert(x->get_tensor()->get_dim() >= 2);
+    auto origin_shape = x->get_tensor()->get_shape();
+    auto dim = x->get_tensor()->get_dim();
+    x = x->reshape({-1, origin_shape[dim - 1]});
+    x = x->norm()->expand_mul(gamma)->expand_add(beta);
+    return x->reshape(origin_shape);
 }
 
-graph::Node* LayerNorm::forward(graph::Node* x) {
-    assert(false);
-    return nullptr;
-}
-
-std::vector<Parameter*> LayerNorm::parameters() {
+std::vector<Parameter*> LayerNorm::get_parameters() {
     std::vector<Parameter*> params;
     params.push_back(Pgamma);
     params.push_back(Pbeta);

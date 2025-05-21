@@ -51,6 +51,12 @@ class CPUOps : public BackendOps {
             Tensor *shape, Tensor *strides    
         ) override;
         void pos_encoding(Tensor *res) override;
+        void avg(Tensor *lhs, Tensor *res) override;
+        void var(Tensor *lhs, const Tensor *_avg, Tensor *res) override;
+        void norm(const Tensor *src, const Tensor *avg, const Tensor *var, Tensor *res) override;
+        void normBackward(
+            const Tensor *src_grad, const Tensor *norm_res, const Tensor *var_res, Tensor *tgt_grad
+        ) override;
 
         // Memory management
         void* alloc(size_t size) override;

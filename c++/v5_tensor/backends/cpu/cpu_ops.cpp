@@ -423,6 +423,112 @@ void CPUOps::pos_encoding(Tensor *res) {
     }
 }
 
+void CPUOps::avg(Tensor *lhs, Tensor *res) {
+    assert(lhs != nullptr);
+    assert(res != nullptr);
+    assert(lhs->get_dim() == 2);
+    assert(res->get_dim() == 1);
+    assert(lhs->get_shape()[0] == res->get_shape()[0]);
+
+    auto shape = lhs->get_shape();
+    for (int i = 0; i < shape[0]; ++i) {
+        float sum = 0;
+        for (int j = 0; j < shape[1]; ++j) {
+            sum += static_cast<float*>(lhs->get_data())[i * lhs->get_strides()[0] + j * lhs->get_strides()[1]];
+        }
+        static_cast<float*>(res->get_data())[i] = sum / shape[1];
+    }
+}
+
+void CPUOps::var(Tensor *lhs, const Tensor *_avg, Tensor *res) {
+    assert(lhs != nullptr);
+    assert(_avg != nullptr);
+    assert(res != nullptr);
+    assert(lhs->get_dim() == 2);
+    assert(_avg->get_dim() == 1);
+    assert(res->get_dim() == 1);
+    assert(lhs->get_shape()[0] == res->get_shape()[0]);
+    assert(lhs->get_shape()[0] == _avg->get_shape()[0]);
+
+    auto shape = lhs->get_shape();
+    float *avg = static_cast<float*>(_avg->get_data());
+    for (int i = 0; i < shape[0]; ++i) {
+        float sum = 0;
+        for (int j = 0; j < shape[1]; ++j) {
+            float v = static_cast<float*>(lhs->get_data())[i * lhs->get_strides()[0] + j * lhs->get_strides()[1]];
+            float diff = v - avg[i];
+            sum += std::pow(diff, 2);
+        }
+        static_cast<float*>(res->get_data())[i] = sum / shape[1];
+    }
+}
+
+void CPUOps::norm(const Tensor *src, const Tensor *avg, const Tensor *var, Tensor *res) {
+    assert(src->get_dim() == 2);
+    assert(avg->get_dim() == 1);
+    assert(var->get_dim() == 1);
+    assert(res->get_dim() == 2);
+    assert(src->get_shape() == res->get_shape());
+    const float eps = 1e-5;
+    auto shape = src->get_shape();
+    assert(shape[0] == avg->get_shape()[0]);
+    assert(shape[0] == var->get_shape()[0]);
+    auto src_strides = src->get_strides();
+    auto res_strides = res->get_strides();
+
+    for (int i = 0; i < shape[0]; ++i) {
+        float avg_value = static_cast<float*>(avg->get_data())[i];
+        float var_value = static_cast<float*>(var->get_data())[i];
+        for (int j = 0; j < shape[1]; ++j) {
+            float v = static_cast<float*>(src->get_data())[i * src_strides[0] + j * src_strides[1]];
+            static_cast<float*>(res->get_data())[i * res_strides[0] + j * res_strides[1]] =
+                (v - avg_value) / std::sqrt(var_value + eps);
+        }
+    }
+}
+
+void CPUOps::normBackward(
+    const Tensor *src_grad, const Tensor *norm_res, const Tensor *var_res, Tensor *tgt_grad
+)  {
+    assert(src_grad != nullptr);
+    assert(norm_res != nullptr);
+    assert(tgt_grad != nullptr);
+    assert(src_grad->get_dim() == 2);
+    assert(norm_res->get_dim() == 2);
+    assert(tgt_grad->get_dim() == 2);
+    assert(src_grad->get_shape() == tgt_grad->get_shape());
+    assert(src_grad->get_shape() == norm_res->get_shape());
+    assert(var_res->get_dim() == 1);
+
+    auto shape = src_grad->get_shape();
+    assert(shape[0] == var_res->get_shape()[0]);
+    const float eps = 1e-5;
+    auto norm_res_strides = norm_res->get_strides();
+    auto src_grad_strides = src_grad->get_strides();
+    auto tgt_grad_strides = tgt_grad->get_strides();
+    float *norm_res_data = static_cast<float*>(norm_res->get_data());
+    float *src_grad_data = static_cast<float*>(src_grad->get_data());
+    float *tgt_grad_data = static_cast<float*>(tgt_grad->get_data());
+
+    for (int k = 0; k < shape[0]; ++k) {
+        float var_value = static_cast<float*>(var_res->get_data())[k];
+        for (int i = 0; i < shape[1]; ++i) {
+            float tmp = 0;
+            for (int j = 0; j < shape[1]; ++j) {
+                int eq = i == j;
+                auto sigma = std::sqrt(var_value + eps);
+                auto x_hat_i = norm_res_data[k * norm_res_strides[0] + i * norm_res_strides[1]];
+                auto x_hat_j = norm_res_data[k * norm_res_strides[0] + j * norm_res_strides[1]];
+                auto part1 = eq * shape[1] - 1 - x_hat_i * x_hat_j;
+                auto part2 = shape[1] * sigma;
+                auto g = part1 / part2;
+                tmp += g * src_grad_data[k * src_grad_strides[0] + j * src_grad_strides[1]];
+            }
+            tgt_grad_data[k * tgt_grad_strides[0] + i * tgt_grad_strides[1]] = tmp;
+        }
+    }
+}
+
 void CPUOps::calcAllGradNorm(const std::vector<Tensor*> &grads, Tensor *norm) {
     float tmp = 0;
     for (auto grad : grads) {

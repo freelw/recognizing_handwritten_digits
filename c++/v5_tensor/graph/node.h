@@ -72,6 +72,7 @@ namespace graph {
             Node *bmm(Node *rhs);
             void split_3d(std::vector<Node *> &res_nodes, bool opposite = false);
             Node *relu();
+            Node *norm();
             Node *CrossEntropy(Tensor *labels);
             Node *div(float value);
             void init_weight_gauss(float sigma, float mean);
@@ -528,6 +529,26 @@ namespace graph {
             void backward(Tensor *grad) override;
         private:
             Tensor *indices;
+    };
+
+    class NormEdge: public Edge {
+        public:
+            static Edge* create(
+                Node *_node, Tensor *_norm_res, Tensor *_var_res) {
+                Edge *edge = new NormEdge(_node, _norm_res, _var_res);
+                gAddEdge(edge);
+                return edge;
+            }
+            NormEdge(
+                Node *_node,
+                Tensor *_norm_res,
+                Tensor *_var_res
+            ) : Edge(Norm, _node), norm_res(_norm_res), var_res(_var_res) {}
+            virtual ~NormEdge() {}
+            void backward(Tensor *grad) override;
+        private:
+            Tensor *norm_res;
+            Tensor *var_res;
     };
 
     Node *allocNode(Tensor *t);

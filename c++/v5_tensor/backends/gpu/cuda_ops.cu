@@ -367,18 +367,19 @@ void CUDAOps::sum(Tensor *lhs, Tensor *res, int dim) {
     assert(res->get_dim() == 1);
 
     dim3 gridDim(
-        (shape[1] + TILE_WIDTH - 1) / TILE_WIDTH
+        shape[1],
+        (shape[0] + TILE_WIDTH - 1) / TILE_WIDTH
     );
+    dim3 blockDim(1, TILE_WIDTH);
 
-    dim3 blockDim(TILE_WIDTH);
-
-    tensor_sum_2d_dim0<<<gridDim, blockDim>>>(
+    tensor_sum_2d_dim0_v1<<<gridDim, blockDim, TILE_WIDTH*sizeof(float)>>>(
         (float *)lhs->get_data(),
         (float *)res->get_data(),
         shape[0],
         shape[1],
-        lstrides[0],
-        lstrides[1]
+        lhs->get_strides()[0],
+        lhs->get_strides()[1],
+        res->get_strides()[0]
     );
 }
 
@@ -841,6 +842,8 @@ void CUDAOps::softmax_bacward(Tensor *target_grad, const Tensor *softmax_res, Te
 
 void CUDAOps::div(Tensor *dst, Tensor *src, float value) {
     assert(dst->length() == src->length());
+    assert(dst->get_shape() == src->get_shape());
+    assert(dst->get_strides() == src->get_strides());
     auto length = dst->length();
     dim3 gridDim(
         (length + TILE_WIDTH - 1) / TILE_WIDTH
@@ -859,7 +862,6 @@ void CUDAOps::build_dropout_mask(
     Tensor *shape, Tensor *strides
 ) {
     assert(mask != nullptr);
-    // assert(mask->get_dim() == 1);
     CURAND_CHECK(curandGenerateUniform(
         gen,
         reinterpret_cast<float*>(mask->get_data()),
@@ -898,6 +900,155 @@ void CUDAOps::pos_encoding(Tensor *res) {
     }
     this->cp_to_device(res, (char *)data, res->size());
     ::free(data);
+}
+
+void CUDAOps::avg(Tensor *lhs, Tensor *res) {
+    assert(lhs->get_dim() == 2);
+    assert(res->get_dim() == 1);
+    auto shape = lhs->get_shape();
+    assert(shape[0] == res->get_shape()[0]);
+
+    dim3 gridDim(
+        (shape[1] + TILE_WIDTH - 1) / TILE_WIDTH,
+        shape[0]
+    );
+    dim3 blockDim(TILE_WIDTH);
+
+    tensor_sum_2d_dim1<<<gridDim, blockDim, TILE_WIDTH*sizeof(float)>>>(
+        (float *)lhs->get_data(),
+        (float *)res->get_data(),
+        shape[0],
+        shape[1],
+        lhs->get_strides()[0],
+        lhs->get_strides()[1],
+        res->get_strides()[0]
+    );
+
+    auto length = res->length();
+    dim3 gridDim_div(
+        (length + TILE_WIDTH - 1) / TILE_WIDTH
+    );
+    dim3 blockDim_div(TILE_WIDTH);
+
+    tensor_div<<<gridDim_div, blockDim_div>>>(
+        (float *)res->get_data(),
+        (float *)res->get_data(),
+        length,
+        shape[1]
+    );
+}
+
+void CUDAOps::var(Tensor *lhs, const Tensor *_avg, Tensor *res) {
+    assert(lhs->get_dim() == 2);
+    assert(res->get_dim() == 1);
+    assert(_avg->get_dim() == 1);
+    auto shape = lhs->get_shape();
+    assert(shape[0] == res->get_shape()[0]);
+    assert(shape[0] == _avg->get_shape()[0]);
+
+    dim3 gridDim(
+        (shape[1] + TILE_WIDTH - 1) / TILE_WIDTH,
+        shape[0]
+    );
+    dim3 blockDim(TILE_WIDTH);
+
+    tensor_var_2d_dim1<<<gridDim, blockDim, TILE_WIDTH*sizeof(float)>>>(
+        (float *)lhs->get_data(),
+        (float *)_avg->get_data(),
+        (float *)res->get_data(),
+        shape[0],
+        shape[1],
+        lhs->get_strides()[0],
+        lhs->get_strides()[1],
+        res->get_strides()[0]
+    );
+
+    auto length = res->length();
+    dim3 gridDim_div(
+        (length + TILE_WIDTH - 1) / TILE_WIDTH
+    );
+    dim3 blockDim_div(TILE_WIDTH);
+
+    tensor_div<<<gridDim_div, blockDim_div>>>(
+        (float *)res->get_data(),
+        (float *)res->get_data(),
+        length,
+        shape[1]
+    );
+}
+
+void CUDAOps::norm(const Tensor *src, const Tensor *avg, const Tensor *var, Tensor *res) {
+    assert(src->get_dim() == 2);
+    assert(avg->get_dim() == 1);
+    assert(var->get_dim() == 1);
+    assert(res->get_dim() == 2);
+    assert(src->get_shape() == res->get_shape());
+    auto shape = src->get_shape();
+    assert(shape[0] == avg->get_shape()[0]);
+    assert(shape[0] == var->get_shape()[0]);
+    auto src_strides = src->get_strides();
+    auto res_strides = res->get_strides();
+
+    dim3 gridDim(
+        (shape[1] + TILE_WIDTH - 1) / TILE_WIDTH,
+        (shape[0] + TILE_WIDTH - 1) / TILE_WIDTH
+    );
+
+    dim3 blockDim(TILE_WIDTH, TILE_WIDTH);
+
+    tensor_norm_kernel<<<gridDim, blockDim>>>(
+        (float *)src->get_data(),
+        (float *)avg->get_data(),
+        (float *)var->get_data(),
+        (float *)res->get_data(),
+        shape[0],
+        shape[1],
+        src_strides[0],
+        src_strides[1],
+        res_strides[0],
+        res_strides[1]
+    );
+}
+
+void CUDAOps::normBackward(
+    const Tensor *src_grad, const Tensor *norm_res, const Tensor *var_res, Tensor *tgt_grad
+)  {
+    assert(src_grad != nullptr);
+    assert(norm_res != nullptr);
+    assert(tgt_grad != nullptr);
+    assert(src_grad->get_dim() == 2);
+    assert(norm_res->get_dim() == 2);
+    assert(tgt_grad->get_dim() == 2);
+    assert(src_grad->get_shape() == tgt_grad->get_shape());
+    assert(src_grad->get_shape() == norm_res->get_shape());
+    assert(var_res->get_dim() == 1);
+    auto shape = src_grad->get_shape();
+    assert(shape[0] == var_res->get_shape()[0]);
+    auto norm_res_strides = norm_res->get_strides();
+    auto src_grad_strides = src_grad->get_strides();
+    auto tgt_grad_strides = tgt_grad->get_strides();
+
+    dim3 gridDim(
+        (shape[1] + TILE_WIDTH - 1) / TILE_WIDTH,
+        (shape[0] + TILE_WIDTH - 1) / TILE_WIDTH
+    );
+
+    dim3 blockDim(TILE_WIDTH, TILE_WIDTH);
+
+    tensor_norm_backward_kernel<<<gridDim, blockDim>>>(
+        (float *)src_grad->get_data(),
+        (float *)norm_res->get_data(),
+        (float *)var_res->get_data(),
+        (float *)tgt_grad->get_data(),
+        shape[0],
+        shape[1],
+        src_grad_strides[0],
+        src_grad_strides[1],
+        norm_res_strides[0],
+        norm_res_strides[1],
+        tgt_grad_strides[0],
+        tgt_grad_strides[1]
+    );
 }
 
 void* CUDAOps::alloc(size_t size) {

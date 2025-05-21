@@ -6,10 +6,10 @@
 #include "optimizers/parameter.h"
 class LayerNorm {
     public:
-        LayerNorm(int dim);
-        ~LayerNorm();
-        graph::Node* forward(graph::Node* x);
-        std::vector<Parameter*> parameters();
+        LayerNorm(int len, bool const_weight = false);
+        ~LayerNorm() = default;
+        graph::Node* forward(graph::Node *x);
+        std::vector<Parameter*> get_parameters();
     private:
         graph::Node *gamma;
         graph::Node *beta;

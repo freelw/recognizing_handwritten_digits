@@ -535,4 +535,144 @@ __global__ void tensor_embedding_backward_kernel(
     }
 }
 
+__global__ void tensor_sum_2d_dim0_v1(
+    float *src, float *sum,
+    int src_shape0, int src_shape1,
+    int src_stride0, int src_stride1,
+    int sum_stride0
+) {
+    extern __shared__ float partial_sums[];
+    int row = blockIdx.y * blockDim.y + threadIdx.y;
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
+    int tid = threadIdx.y * blockDim.x + threadIdx.x;
+    partial_sums[tid] = 0.0f;
+    if (row >= src_shape0 || col >= src_shape1) {
+        return;
+    } else {
+        partial_sums[tid] = src[row * src_stride0 + col * src_stride1];
+        __syncthreads();
+        for (int s = blockDim.y / 2; s > 0; s >>= 1) {
+            if (tid < s) {
+                partial_sums[tid] += partial_sums[tid + s];
+            }
+            __syncthreads();
+        }
+
+        if (tid == 0) {
+            atomicAdd(&sum[col * sum_stride0], partial_sums[0]);
+        }
+    }
+}
+
+__global__ void tensor_sum_2d_dim1(
+    float *src, float *sum,
+    int src_shape0, int src_shape1,
+    int src_stride0, int src_stride1,
+    int sum_stride0
+) {
+    extern __shared__ float partial_sums[];
+    int row = blockIdx.y * blockDim.y + threadIdx.y;
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
+    int tid = threadIdx.y * blockDim.y + threadIdx.x;
+    partial_sums[tid] = 0.0f;
+    if (row >= src_shape0 || col >= src_shape1) {
+        return;
+    } else {
+        partial_sums[tid] = src[row * src_stride0 + col * src_stride1];
+        __syncthreads();
+        for (int s = blockDim.x / 2; s > 0; s >>= 1) {
+            if (tid < s) {
+                partial_sums[tid] += partial_sums[tid + s];
+            }
+            __syncthreads();
+        }
+
+        if (tid == 0) {
+            atomicAdd(&sum[row * sum_stride0], partial_sums[0]);
+        }
+    }
+}
+
+__global__ void tensor_var_2d_dim1(
+    float *src, float *avg, float *sum,
+    int src_shape0, int src_shape1,
+    int src_stride0, int src_stride1,
+    int sum_stride0
+) {
+
+    extern __shared__ float partial_sums[];
+    int row = blockIdx.y * blockDim.y + threadIdx.y;
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
+    int tid = threadIdx.y * blockDim.y + threadIdx.x;
+    partial_sums[tid] = 0.0f;
+    if (row >= src_shape0 || col >= src_shape1) {
+        return;
+    } else {
+        float _avg = avg[row * sum_stride0];
+        float _src = src[row * src_stride0 + col * src_stride1];
+        float diff = _src - _avg;
+        partial_sums[tid] = powf(diff, 2);
+        __syncthreads();
+        for (int s = blockDim.x / 2; s > 0; s >>= 1) {
+            if (tid < s) {
+                partial_sums[tid] += partial_sums[tid + s];
+            }
+            __syncthreads();
+        }
+
+        if (tid == 0) {
+            atomicAdd(&sum[row * sum_stride0], partial_sums[0]);
+        }
+    }
+}
+
+__global__ void tensor_norm_kernel(
+    float *src, float *avg, float * var, float *dst,
+    int src_shape0, int src_shape1,
+    int src_stride0, int src_stride1,
+    int dst_stride0, int dst_stride1
+) {
+    int row = blockIdx.y * blockDim.y + threadIdx.y;
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
+    const float eps = 1e-5f;
+    if (row >= src_shape0 || col >= src_shape1) {
+        return;
+    } else {
+        float _avg = avg[row];
+        float _var = var[row];
+        float _src = src[row * src_stride0 + col * src_stride1];
+        dst[row * dst_stride0 + col * dst_stride1] =
+            (_src - _avg) / sqrtf(_var + eps);
+    }
+}
+
+__global__ void tensor_norm_backward_kernel(
+    float *src, float *norm, float * var, float *tgt,
+    int src_shape0, int src_shape1,
+    int src_stride0, int src_stride1,
+    int norm_stride0, int norm_stride1,
+    int tgt_stride0, int tgt_stride1
+) {
+    int row = blockIdx.y * blockDim.y + threadIdx.y;
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    const float eps = 1e-5f;
+    if (row >= src_shape0 || i >= src_shape1) {
+        return;
+    } else {
+        float tmp = 0;
+        float var_value = var[row];
+        for (int j= 0; j < src_shape1; ++ j) {
+            int eq = i == j;
+            auto sigma = sqrtf(var_value + eps);
+            auto x_hat_i = norm[row * norm_stride0 + i * norm_stride1];
+            auto x_hat_j = norm[row * norm_stride0 + j * norm_stride1];
+            auto part1 = eq * src_shape1 - 1 - x_hat_i * x_hat_j;
+            auto part2 = src_shape1 * sigma;
+            auto g = part1 / part2;
+            tmp += g * src[row * src_stride0 + j * src_stride1];
+        }
+        tgt[row * tgt_stride0 + i * tgt_stride1] = tmp;
+    }
+}
+
 #endif // GCC_ASAN

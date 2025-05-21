@@ -347,6 +347,50 @@ namespace graph {
         return res_node;
     }
 
+    Node *Node::norm() {
+        assert(this->get_tensor()->get_dim() == 2);
+        auto shape = this->get_tensor()->get_shape();
+
+        Tensor *avg_tensor = allocTensor({shape[0]}, "avg");
+        Tensor *var_tensor = allocTensor({shape[0]}, "var");
+
+        gCreateAction(
+            new AvgAction(
+                this->get_tensor(),
+                avg_tensor
+            )
+        );
+
+        gCreateAction(
+            new VarAction(
+                this->get_tensor(),
+                avg_tensor,
+                var_tensor
+            )
+        );
+
+        Tensor *norm_res = allocTensor(
+            this->get_tensor()->get_shape(),
+            "norm_res"
+        );
+
+        gCreateAction(
+            new NormAction(
+                this->get_tensor(),
+                avg_tensor,
+                var_tensor,
+                norm_res
+            )
+        );
+
+        auto res_node = allocNode(norm_res);
+        if (is_require_grad()) {
+            res_node->require_grad();
+            res_node->edges.push_back(NormEdge::create(this, norm_res, var_tensor));
+        }
+        return res_node;
+    }
+
     Node *Node::CrossEntropy(Tensor *labels) {
         assert(labels->get_dim() == 1);
         assert(
@@ -488,6 +532,27 @@ namespace graph {
                 grad,
                 indices,
                 node->get_grad()
+            )
+        );
+    }
+
+    void NormEdge::backward(Tensor *grad) {
+        Tensor *tmp = allocTensor(
+            node->get_grad()->get_shape(),
+            "norm_tmp"
+        );
+        gCreateAction(
+            new NormBackwardAction(
+                grad,
+                norm_res,
+                var_res,
+                tmp
+            )
+        );
+        gCreateAction(
+            new AddEqAction(
+                node->get_grad(),
+                tmp
             )
         );
     }

@@ -178,6 +178,42 @@ __global__ void tensor_embedding_backward_kernel(
     int dst_stride0, int dst_stride1
 );
 
+__global__ void tensor_sum_2d_dim0_v1(
+    float *src, float *sum,
+    int src_shape0, int src_shape1,
+    int src_stride0, int src_stride1,
+    int sum_stride0
+);
+
+__global__ void tensor_sum_2d_dim1(
+    float *src, float *sum,
+    int src_shape0, int src_shape1,
+    int src_stride0, int src_stride1,
+    int sum_stride0
+);
+
+__global__ void tensor_var_2d_dim1(
+    float *src, float *avg, float *sum,
+    int src_shape0, int src_shape1,
+    int src_stride0, int src_stride1,
+    int sum_stride0
+);
+
+__global__ void tensor_norm_kernel(
+    float *src, float *avg, float * var, float *dst,
+    int src_shape0, int src_shape1,
+    int src_stride0, int src_stride1,
+    int dst_stride0, int dst_stride1
+);
+
+__global__ void tensor_norm_backward_kernel(
+    float *src, float *norm, float * var, float *tgt,
+    int src_shape0, int src_shape1,
+    int src_stride0, int src_stride1,
+    int norm_stride0, int norm_stride1,
+    int tgt_stride0, int tgt_stride1
+);
+
 #endif // GCC_ASAN
 
 #endif // V5_TENSOR_BACKENDS_GPU_KERNEL_CUH
