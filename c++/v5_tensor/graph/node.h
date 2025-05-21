@@ -531,6 +531,31 @@ namespace graph {
             Tensor *indices;
     };
 
+    class NormEdge: public Edge {
+        public:
+            static Edge* create(
+                Node *_node, Tensor *_norm_res,
+                Tensor *_avg_tensor, Tensor * _norm_tensor) {
+                Edge *edge = new NormEdge(_node, _norm_res, _avg_tensor, _norm_tensor);
+                gAddEdge(edge);
+                return edge;
+            }
+            NormEdge(
+                Node *_node,
+                Tensor *_norm_res,
+                Tensor *_avg_tensor,
+                Tensor *_norm_tensor
+            ) : Edge(Norm, _node), norm_res(_norm_res), avg_tensor(_avg_tensor), norm_tensor(_norm_tensor) {}
+            virtual ~NormEdge() {}
+            void backward(Tensor *grad) override {
+                assert(false);
+            }
+        private:
+            Tensor *norm_res;
+            Tensor *avg_tensor;
+            Tensor *norm_tensor;
+    };
+
     Node *allocNode(Tensor *t);
     Node *allocNode(Tensor *t, Tensor *grad);
     void validateAllNodes();

@@ -385,7 +385,10 @@ namespace graph {
 
         auto res_node = allocNode(norm_res);
 
-        //todo : add an edge
+        if (is_require_grad()) {
+            res_node->require_grad();
+            res_node->edges.push_back(NormEdge::create(this, norm_res, avg_tensor, var_tensor));
+        }
 
         return res_node;
     }
