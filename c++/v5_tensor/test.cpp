@@ -4057,6 +4057,48 @@ void test_avg() {
     destruct_env();
 }
 
+void test_var() {
+    construct_env();
+    Tensor *input = allocTensor({2, 11}, "input");
+    auto ni = graph::allocNode(input);
+    ni->require_grad();
+    ni->init_weight_for_dbg(100000.0f);
+    
+    Tensor *res_avg = allocTensor({2}, "res_avg");
+    Tensor *res_var = allocTensor({2}, "res_var");
+
+    gCreateAction(
+        new AvgAction(input, res_avg)
+    );
+
+    gCreateAction(
+        new VarAction(input, res_avg, res_var)
+    );
+
+    insert_boundary_action();
+    allocMemAndInitTensors();
+    gDoActions();
+
+    // std::cout << "input : " << std::endl << *input << std::endl;
+    // std::cout << "res_avg : " << std::endl << *res_avg << std::endl;
+    // std::cout << "res_var : " << std::endl << *res_var << std::endl;
+
+    float var_ans[2] = {10, 10};
+
+    bool succ = compare_res_ans_1d(
+        res_var,
+        var_ans,
+        "res_var"
+    );
+
+    if (succ) {
+        std::cout << GREEN << "test_var succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_var failed" << RESET << std::endl;
+    }
+    destruct_env();
+}
+
 void test_cpu() {
     test_at();
     test_add();
@@ -4103,6 +4145,7 @@ void test_cpu() {
     test_dropout_1();
     test_softmax_1();
     test_avg();
+    test_var();
     test_layernorm();
 }
 
@@ -5930,6 +5973,7 @@ void test_gpu() {
     test_dropout_1();
     test_softmax_1();
     test_avg();
+    test_var();
     // test_layernorm();
 }
 
