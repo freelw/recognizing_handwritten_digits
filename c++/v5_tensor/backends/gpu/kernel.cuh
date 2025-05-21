@@ -192,6 +192,13 @@ __global__ void tensor_sum_2d_dim1(
     int sum_stride0
 );
 
+__global__ void tensor_var_2d_dim1(
+    float *src, float *avg, float *sum,
+    int src_shape0, int src_shape1,
+    int src_stride0, int src_stride1,
+    int sum_stride0
+);
+
 #endif // GCC_ASAN
 
 #endif // V5_TENSOR_BACKENDS_GPU_KERNEL_CUH

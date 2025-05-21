@@ -939,7 +939,42 @@ void CUDAOps::avg(Tensor *lhs, Tensor *res) {
 }
 
 void CUDAOps::var(Tensor *lhs, const Tensor *_avg, Tensor *res) {
-    assert(false);
+    assert(lhs->get_dim() == 2);
+    assert(res->get_dim() == 1);
+    assert(_avg->get_dim() == 1);
+    auto shape = lhs->get_shape();
+    assert(shape[0] == res->get_shape()[0]);
+    assert(shape[0] == _avg->get_shape()[0]);
+
+    dim3 gridDim(
+        (shape[1] + TILE_WIDTH - 1) / TILE_WIDTH,
+        shape[0]
+    );
+    dim3 blockDim(TILE_WIDTH);
+
+    tensor_var_2d_dim1<<<gridDim, blockDim, TILE_WIDTH*sizeof(float)>>>(
+        (float *)lhs->get_data(),
+        (float *)_avg->get_data(),
+        (float *)res->get_data(),
+        shape[0],
+        shape[1],
+        lhs->get_strides()[0],
+        lhs->get_strides()[1],
+        res->get_strides()[0]
+    );
+
+    auto length = res->length();
+    dim3 gridDim_div(
+        (length + TILE_WIDTH - 1) / TILE_WIDTH
+    );
+    dim3 blockDim_div(TILE_WIDTH);
+
+    tensor_div<<<gridDim_div, blockDim_div>>>(
+        (float *)res->get_data(),
+        (float *)res->get_data(),
+        length,
+        shape[1]
+    );
 }
 
 void CUDAOps::norm(const Tensor *src, const Tensor *avg, const Tensor *var, Tensor *res) {

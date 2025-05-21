@@ -593,4 +593,38 @@ __global__ void tensor_sum_2d_dim1(
     }
 }
 
+__global__ void tensor_var_2d_dim1(
+    float *src, float *avg, float *sum,
+    int src_shape0, int src_shape1,
+    int src_stride0, int src_stride1,
+    int sum_stride0
+) {
+
+    extern __shared__ float partial_sums[];
+    int row = blockIdx.y * blockDim.y + threadIdx.y;
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
+    int tid = threadIdx.y * blockDim.y + threadIdx.x;
+    partial_sums[tid] = 0.0f;
+    if (row >= src_shape0 || col >= src_shape1) {
+        return;
+    } else {
+        float _avg = avg[row * sum_stride0];
+        float _src = src[row * src_stride0 + col * src_stride1];
+        float diff = _src - _avg;
+        partial_sums[tid] = powf(diff, 2);
+        __syncthreads();
+        for (int s = blockDim.x / 2; s > 0; s >>= 1) {
+            if (tid < s) {
+                partial_sums[tid] += partial_sums[tid + s];
+            }
+            __syncthreads();
+        }
+
+        if (tid == 0) {
+            atomicAdd(&sum[row * sum_stride0], partial_sums[0]);
+        }
+    }
+
+}
+
 #endif // GCC_ASAN
