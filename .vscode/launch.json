@@ -391,7 +391,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "/home/cs/project/recognizing_handwritten_digits/c++/v5_tensor/test",
-            "args": ["-t", "1"],
+            "args": ["-t", "0"],
             "cwd": "/home/cs/project/recognizing_handwritten_digits/c++/v5_tensor/",
             "stopAtEntry": false,
             "environment": []

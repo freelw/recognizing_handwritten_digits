@@ -6,7 +6,7 @@
 #include "optimizers/parameter.h"
 class LayerNorm {
     public:
-        LayerNorm(int dim);
+        LayerNorm(int len, bool const_weight = false);
         ~LayerNorm() = default;
         graph::Node* forward(graph::Node *x);
         std::vector<Parameter*> parameters();

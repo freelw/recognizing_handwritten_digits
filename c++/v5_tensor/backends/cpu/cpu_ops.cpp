@@ -464,7 +464,27 @@ void CPUOps::var(Tensor *lhs, const Tensor *_avg, Tensor *res) {
 }
 
 void CPUOps::norm(const Tensor *src, const Tensor *avg, const Tensor *var, Tensor *res) {
-    assert(false);
+    assert(src->get_dim() == 2);
+    assert(avg->get_dim() == 1);
+    assert(var->get_dim() == 1);
+    assert(res->get_dim() == 2);
+    assert(src->get_shape() == res->get_shape());
+    const float eps = 1e-5;
+    auto shape = src->get_shape();
+    assert(shape[0] == avg->get_shape()[0]);
+    assert(shape[0] == var->get_shape()[0]);
+    auto src_strides = src->get_strides();
+    auto res_strides = res->get_strides();
+
+    for (int i = 0; i < shape[0]; ++i) {
+        float avg_value = static_cast<float*>(avg->get_data())[i];
+        float var_value = static_cast<float*>(var->get_data())[i];
+        for (int j = 0; j < shape[1]; ++j) {
+            float v = static_cast<float*>(src->get_data())[i * src_strides[0] + j * src_strides[1]];
+            static_cast<float*>(res->get_data())[i * res_strides[0] + j * res_strides[1]] =
+                (v - avg_value) / std::sqrt(var_value + eps);
+        }
+    }
 }
 
 void CPUOps::calcAllGradNorm(const std::vector<Tensor*> &grads, Tensor *norm) {

@@ -1,12 +1,19 @@
 #include "layernorm.h"
 
-LayerNorm::LayerNorm(int dim) {
-    Tensor *t_gamma = allocTensor({dim}, "layernorm_gamma");
-    Tensor *t_beta = allocTensor({dim}, "layernorm_beta");
+LayerNorm::LayerNorm(int len, bool const_weight) {
+    Tensor *t_gamma = allocTensor({len}, "layernorm_gamma");
+    Tensor *t_beta = allocTensor({len}, "layernorm_beta");
     gamma = graph::allocNode(t_gamma);
     beta = graph::allocNode(t_beta);
     gamma->require_grad();
     beta->require_grad();
+    if (const_weight) {
+        gamma->init_weight_fill(1.0);
+        beta->init_weight_fill(0.0);
+    } else {
+        gamma->init_weight_gauss(0.01, 1);
+        beta->init_weight_gauss(0.01, 0);   
+    }
     Pgamma = allocParameter(gamma);
     Pbeta = allocParameter(beta);
 }

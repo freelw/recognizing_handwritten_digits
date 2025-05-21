@@ -8,6 +8,7 @@
 #include "module/mha.h"
 #include "module/embedding.h"
 #include "module/posencoding.h"
+#include "module/layernorm.h"
 #include "common.h"
 #include <iomanip>
 #include <cmath>
@@ -3908,7 +3909,51 @@ void test_softmax_1() {
     destruct_env();
 }
 
+void test_layernorm() {
+    construct_env();
+
+    Tensor *input = allocTensor({2, 6}, "input");
+    LayerNorm layer_norm(6, true);
+    auto ni = graph::allocNode(input);
+    ni->require_grad();
+    ni->init_weight_for_dbg(10000.0f);
+    auto res = layer_norm.forward(ni);
+
+    insert_boundary_action();
+    res->backward();
+    // printAllActions();
+    allocMemAndInitTensors();
+    gDoActions();
+
+    std::cout << std::setprecision(8) <<"res : " << std::endl << *res->get_tensor() << std::endl;
+
+    float res_ans[12] = {
+        -1.4635992, -0.87815958, -0.29271984, 0.2927199, 0.87815958, 1.4635992,
+        -1.4635988, -0.8781594, -0.29271957, 0.2927199, 0.87815976, 1.4635996
+    };
+
+    bool succ_res = compare_res_ans_1d(
+        res->get_tensor(),
+        res_ans,
+        "res"
+    );
+
+    if (!succ_res) {
+        std::cout << RED << "test_layernorm res failed" << RESET << std::endl;
+    }
+
+    bool succ = succ_res;
+    if (succ) {
+        std::cout << GREEN << "test_layernorm succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_layernorm failed" << RESET << std::endl;
+    }
+    destruct_env();
+}
+
 void test_cpu() {
+    test_layernorm();
+    return ;
     test_at();
     test_add();
     test_add_eq();
@@ -3953,6 +3998,7 @@ void test_cpu() {
     test_at_bp_redge_add_eq();
     test_dropout_1();
     test_softmax_1();
+    test_layernorm();
 }
 
 Tensor *test_add_with_cpu_base(int m, int n) {
@@ -5776,6 +5822,7 @@ void test_gpu() {
     test_at_bp_redge_add_eq();
     test_dropout_1();
     test_softmax_1();
+    test_layernorm();
 }
 
 int main(int argc, char *argv[]) {
