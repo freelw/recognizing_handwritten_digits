@@ -841,6 +841,8 @@ void CUDAOps::softmax_bacward(Tensor *target_grad, const Tensor *softmax_res, Te
 
 void CUDAOps::div(Tensor *dst, Tensor *src, float value) {
     assert(dst->length() == src->length());
+    assert(dst->get_shape() == src->get_shape());
+    assert(dst->get_strides() == src->get_strides());
     auto length = dst->length();
     dim3 gridDim(
         (length + TILE_WIDTH - 1) / TILE_WIDTH
@@ -859,7 +861,6 @@ void CUDAOps::build_dropout_mask(
     Tensor *shape, Tensor *strides
 ) {
     assert(mask != nullptr);
-    // assert(mask->get_dim() == 1);
     CURAND_CHECK(curandGenerateUniform(
         gen,
         reinterpret_cast<float*>(mask->get_data()),
@@ -913,9 +914,7 @@ void CUDAOps::norm(const Tensor *src, const Tensor *avg, const Tensor *var, Tens
 }
 
 void CUDAOps::normBackward(
-    const Tensor *src_grad, const Tensor *norm_res,
-    const Tensor *avg_tensor, const Tensor *var_tensor,
-    Tensor *tgt_grad
+    const Tensor *src_grad, const Tensor *norm_res, const Tensor *var_res, Tensor *tgt_grad
 )  {
     assert(false);
 }

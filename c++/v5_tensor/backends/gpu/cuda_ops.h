@@ -57,9 +57,7 @@ class CUDAOps : public BackendOps {
         void var(Tensor *lhs, const Tensor *_avg, Tensor *res) override;
         void norm(const Tensor *src, const Tensor *avg, const Tensor *var, Tensor *res) override;
         void normBackward(
-            const Tensor *src_grad, const Tensor *norm_res,
-            const Tensor *avg_tensor, const Tensor *var_tensor,
-            Tensor *tgt_grad
+            const Tensor *src_grad, const Tensor *norm_res, const Tensor *var_res, Tensor *tgt_grad
         ) override;
 
         // Memory management

@@ -488,11 +488,45 @@ void CPUOps::norm(const Tensor *src, const Tensor *avg, const Tensor *var, Tenso
 }
 
 void CPUOps::normBackward(
-    const Tensor *src_grad, const Tensor *norm_res,
-    const Tensor *avg_tensor, const Tensor *var_tensor,
-    Tensor *tgt_grad
+    const Tensor *src_grad, const Tensor *norm_res, const Tensor *var_res, Tensor *tgt_grad
 )  {
-    assert(false);
+    assert(src_grad != nullptr);
+    assert(norm_res != nullptr);
+    assert(tgt_grad != nullptr);
+    assert(src_grad->get_dim() == 2);
+    assert(norm_res->get_dim() == 2);
+    assert(tgt_grad->get_dim() == 2);
+    assert(src_grad->get_shape() == tgt_grad->get_shape());
+    assert(src_grad->get_shape() == norm_res->get_shape());
+    assert(var_res->get_dim() == 1);
+
+    auto shape = src_grad->get_shape();
+    assert(shape[0] == var_res->get_shape()[0]);
+    const float eps = 1e-5;
+    auto norm_res_strides = norm_res->get_strides();
+    auto src_grad_strides = src_grad->get_strides();
+    auto tgt_grad_strides = tgt_grad->get_strides();
+    float *norm_res_data = static_cast<float*>(norm_res->get_data());
+    float *src_grad_data = static_cast<float*>(src_grad->get_data());
+    float *tgt_grad_data = static_cast<float*>(tgt_grad->get_data());
+
+    for (int k = 0; k < shape[0]; ++k) {
+        float var_value = static_cast<float*>(var_res->get_data())[k];
+        for (int i = 0; i < shape[1]; ++i) {
+            float tmp = 0;
+            for (int j = 0; j < shape[1]; ++j) {
+                int eq = i == j;
+                auto sigma = std::sqrt(var_value + eps);
+                auto x_hat_i = norm_res_data[k * norm_res_strides[0] + i * norm_res_strides[1]];
+                auto x_hat_j = norm_res_data[k * norm_res_strides[0] + j * norm_res_strides[1]];
+                auto part1 = eq * shape[1] - 1 - x_hat_i * x_hat_j;
+                auto part2 = shape[1] * sigma;
+                auto g = part1 / part2;
+                tmp += g * src_grad_data[k * src_grad_strides[0] + j * src_grad_strides[1]];
+            }
+            tgt_grad_data[k * tgt_grad_strides[0] + i * tgt_grad_strides[1]] = tmp;
+        }
+    }
 }
 
 void CPUOps::calcAllGradNorm(const std::vector<Tensor*> &grads, Tensor *norm) {

@@ -341,12 +341,11 @@ class NormAction : public Action {
 
 class NormBackwardAction : public Action {
     public:
-        NormBackwardAction(Tensor *_grad, Tensor *norm_res, Tensor *_avg_tensor, Tensor *_var_tensor, Tensor *_res)
-            : Action(_grad, norm_res, _res), avg_tensor(_avg_tensor), var_tensor(_var_tensor) {}
+        NormBackwardAction(Tensor *_grad, Tensor *norm_res, Tensor *_var_tensor, Tensor *_res)
+            : Action(_grad, norm_res, _res), var_tensor(_var_tensor) {}
         void execute() override;
         std::string to_string() const override;
     private:
-        Tensor *avg_tensor;
         Tensor *var_tensor;
 };
 

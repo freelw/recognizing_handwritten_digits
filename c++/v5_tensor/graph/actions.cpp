@@ -619,20 +619,17 @@ void NormBackwardAction::execute() {
     assert(lhs != nullptr); // src grad
     assert(rhs != nullptr); // norm res
     assert(res != nullptr); // tgt grad
-    assert(avg_tensor != nullptr); // avg tensor
-    assert(var_tensor != nullptr); // var tensor
+    assert(var_tensor != nullptr);
     const Tensor *src_grad = lhs;
     const Tensor *norm_res = rhs;
     Tensor *tgt_grad = res;
-    g_backend_ops->normBackward(src_grad, norm_res, avg_tensor, var_tensor, tgt_grad);
+    g_backend_ops->normBackward(src_grad, norm_res, var_tensor, tgt_grad);
 }
 
 std::string NormBackwardAction::to_string() const {
     std::ostringstream oss;
     oss << "NormBackwardAction: normalizing backward " << lhs->get_meta_info()
-        << " with norm res " << rhs->get_meta_info() << " to " << res->get_meta_info()
-        << " with avg tensor " << avg_tensor->get_meta_info()
-        << " and var tensor " << var_tensor->get_meta_info();
+        << " with norm res " << rhs->get_meta_info() << " to " << res->get_meta_info();
     return oss.str();
 }
 

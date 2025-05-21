@@ -534,24 +534,21 @@ namespace graph {
     class NormEdge: public Edge {
         public:
             static Edge* create(
-                Node *_node, Tensor *_norm_res,
-                Tensor *_avg_tensor, Tensor * _var_tensor) {
-                Edge *edge = new NormEdge(_node, _norm_res, _avg_tensor, _var_tensor);
+                Node *_node, Tensor *_norm_res, Tensor *_var_res) {
+                Edge *edge = new NormEdge(_node, _norm_res, _var_res);
                 gAddEdge(edge);
                 return edge;
             }
             NormEdge(
                 Node *_node,
                 Tensor *_norm_res,
-                Tensor *_avg_tensor,
-                Tensor *_var_tensor
-            ) : Edge(Norm, _node), norm_res(_norm_res), avg_tensor(_avg_tensor), var_tensor(_var_tensor) {}
+                Tensor *_var_res
+            ) : Edge(Norm, _node), norm_res(_norm_res), var_res(_var_res) {}
             virtual ~NormEdge() {}
             void backward(Tensor *grad) override;
         private:
             Tensor *norm_res;
-            Tensor *avg_tensor;
-            Tensor *var_tensor;
+            Tensor *var_res;
     };
 
     Node *allocNode(Tensor *t);

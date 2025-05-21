@@ -386,7 +386,7 @@ namespace graph {
         auto res_node = allocNode(norm_res);
         if (is_require_grad()) {
             res_node->require_grad();
-            res_node->edges.push_back(NormEdge::create(this, norm_res, avg_tensor, var_tensor));
+            res_node->edges.push_back(NormEdge::create(this, norm_res, var_tensor));
         }
         return res_node;
     }
@@ -545,8 +545,7 @@ namespace graph {
             new NormBackwardAction(
                 grad,
                 norm_res,
-                avg_tensor,
-                var_tensor,
+                var_res,
                 tmp
             )
         );
