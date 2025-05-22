@@ -10,7 +10,7 @@ class TransformerDecoderBlock {
         TransformerDecoderBlock(int num_hiddens, int ffn_num_hiddens, int num_heads,
                                 float dropout, bool bias = false);
         ~TransformerDecoderBlock();
-        graph::Node *forward(graph::Node *x, graph::Node *state, Tensor *valid_lens = nullptr);
+        graph::Node *forward(graph::Node *x, graph::Node *enc_output, Tensor *enc_valid_lens, Tensor *dec_valid_lens = nullptr);
         std::vector<Parameter *> get_parameters();
     private:
         MHA *masked_attention;
