@@ -67,6 +67,7 @@ namespace graph {
             Node *masked_softmax(Tensor *valid_len);
             Node *add(Node *rhs);
             Node *mul(Node *rhs);
+            Node *mulsv(float v);
             Node *expand_add(Node *rhs);
             Node *expand_mul(Node *rhs);
             Node *at(Node *rhs);

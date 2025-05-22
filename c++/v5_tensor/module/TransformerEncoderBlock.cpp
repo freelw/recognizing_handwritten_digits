@@ -24,3 +24,18 @@ graph::Node *TransformerEncoderBlock::forward(
     auto z = ffn->forward(y);
     return addnorm2->forward(y, z);
 }
+
+std::vector<Parameter *> TransformerEncoderBlock::get_parameters() {
+    std::vector<Parameter *> params;
+    auto attention_params = attention->get_parameters();
+    auto addnorm1_params = addnorm1->get_parameters();
+    auto ffn_params = ffn->get_parameters();
+    auto addnorm2_params = addnorm2->get_parameters();
+
+    params.insert(params.end(), attention_params.begin(), attention_params.end());
+    params.insert(params.end(), addnorm1_params.begin(), addnorm1_params.end());
+    params.insert(params.end(), ffn_params.begin(), ffn_params.end());
+    params.insert(params.end(), addnorm2_params.begin(), addnorm2_params.end());
+
+    return params;
+}

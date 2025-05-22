@@ -6,8 +6,6 @@
 #include "module/AddNorm.h"
 
 class TransformerEncoderBlock {
-//num_hiddens, ffn_num_hiddens, num_heads, dropout,
-//                 use_bias=False
     public:
         TransformerEncoderBlock(int num_hiddens, int ffn_num_hiddens, int num_heads,
                                 float dropout, bool bias = false);
