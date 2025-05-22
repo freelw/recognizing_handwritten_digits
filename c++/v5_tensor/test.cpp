@@ -3514,7 +3514,7 @@ void test_embedding() {
 void test_pe() {
     construct_env();
     PosEncoding pe(1000, 20);
-    Tensor *input = allocTensor({2, 20}, "input");
+    Tensor *input = allocTensor({1, 2, 20}, "input");
     auto ni = graph::allocNode(input);
     ni->require_grad();
     ni->init_weight_fill(1.0f);
@@ -3537,6 +3537,41 @@ void test_pe() {
         std::cout << GREEN << "test_pe succ" << RESET << std::endl;
     } else {
         std::cout << RED << "test_pe failed" << RESET << std::endl;
+    }
+    destruct_env();
+}
+
+void test_pe_1() {
+
+    construct_env();
+    PosEncoding pe(1000, 20);
+    Tensor *input = allocTensor({3, 2, 20}, "input");
+    auto ni = graph::allocNode(input);
+    ni->require_grad();
+    ni->init_weight_fill(1.0f);
+    auto res = pe.forward(ni);
+    insert_boundary_action();
+    res->backward();
+    // printAllActions();
+    allocMemAndInitTensors();
+    gDoActions();
+    float res_ans[120] = {
+        1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2,
+        1.841471, 1.5403023, 1.3876742, 1.9217964, 1.1578267, 1.9874668, 1.0630538, 1.9980102, 1.0251162, 1.9996846, 1.0099999, 1.9999499, 1.0039811, 1.9999921, 1.0015849, 1.9999988, 1.000631, 1.9999998, 1.0002512, 2,
+        1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2,
+        1.841471, 1.5403023, 1.3876742, 1.9217964, 1.1578267, 1.9874668, 1.0630538, 1.9980102, 1.0251162, 1.9996846, 1.0099999, 1.9999499, 1.0039811, 1.9999921, 1.0015849, 1.9999988, 1.000631, 1.9999998, 1.0002512, 2,
+        1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2,
+        1.841471, 1.5403023, 1.3876742, 1.9217964, 1.1578267, 1.9874668, 1.0630538, 1.9980102, 1.0251162, 1.9996846, 1.0099999, 1.9999499, 1.0039811, 1.9999921, 1.0015849, 1.9999988, 1.000631, 1.9999998, 1.0002512, 2
+    };
+    bool succ = compare_res_ans_1d(
+        res->get_tensor(),
+        res_ans,
+        "res"
+    );
+    if (succ) {
+        std::cout << GREEN << "test_pe_1 succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_pe_1 failed" << RESET << std::endl;
     }
     destruct_env();
 }
@@ -4369,6 +4404,7 @@ void test_cpu() {
     test_mha();
     test_embedding();
     test_pe();
+    test_pe_1();
     test_expand_mul();
     test_at_bp_ledge_add_eq();
     test_at_bp_redge_add_eq();
@@ -6200,6 +6236,7 @@ void test_gpu() {
     test_embedding();
     test_embedding_with_cpu();
     test_pe();
+    test_pe_1();
     test_expand_mul();
     test_at_bp_ledge_add_eq();
     test_at_bp_redge_add_eq();

@@ -379,6 +379,18 @@ class DbgPrintAction : public Action {
         std::string msg;
 };
 
+class MemCpAction : public Action {
+    public:
+        MemCpAction(Tensor *_lhs, const Tensor *_rhs, int _offset_l, int _offset_r, int _size)
+            : Action(_lhs, _rhs, nullptr), offset_l(_offset_l), offset_r(_offset_r), size(_size) {}
+        void execute() override;
+        std::string to_string() const override;
+    private:
+        int offset_l;
+        int offset_r;
+        int size;
+};
+
 std::vector<Action *> getOnceActions();
 void gCreateAction(Action *action);
 void gDoActions();

@@ -672,6 +672,23 @@ std::string DbgPrintAction::to_string() const {
     return oss.str();
 }
 
+void MemCpAction::execute() {
+    assert(lhs != nullptr);
+    assert(rhs != nullptr);
+
+    g_backend_ops->cp_device_to_device(
+        static_cast<char*>(lhs->get_data()) + offset_l,
+        static_cast<char*>(rhs->get_data()) + offset_r,
+        size
+    );
+}
+
+std::string MemCpAction::to_string() const {
+    std::ostringstream oss;
+    oss << "MemCpAction: copying " << size << " bytes from " << rhs->get_meta_info() << " to " << lhs->get_meta_info() << " with offset " << offset_r << " to " << offset_l;
+    return oss.str();
+}
+
 void VarAction::execute() {
     assert(lhs != nullptr);
     assert(rhs != nullptr);
