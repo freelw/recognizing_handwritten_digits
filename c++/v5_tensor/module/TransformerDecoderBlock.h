@@ -14,11 +14,11 @@ class TransformerDecoderBlock {
         std::vector<Parameter *> get_parameters();
     private:
         MHA *masked_attention;
-        MHA *attention;
         AddNorm *addnorm1;
-        PositionWiseFFN *ffn;
+        MHA *attention; // encoder decoder attention
         AddNorm *addnorm2;
-
+        PositionWiseFFN *ffn;
+        AddNorm *addnorm3;
 };
 
 #endif

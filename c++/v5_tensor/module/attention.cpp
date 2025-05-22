@@ -21,7 +21,9 @@ graph::Node *DotProductAttention::forward(
     assert(query->get_tensor()->get_dim() == 3);
     assert(key->get_tensor()->get_dim() == 3);
     assert(value->get_tensor()->get_dim() == 3);
-    assert(valid_lens->get_dtype() == INT32);
+    if (valid_lens != nullptr) {
+        assert(valid_lens->get_dtype() == INT32);
+    }
     
     auto q_shape = query->get_tensor()->get_shape();
     auto k_shape = key->get_tensor()->get_shape();

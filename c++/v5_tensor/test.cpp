@@ -3435,6 +3435,35 @@ void test_mha() {
     destruct_env();   
 }
 
+void test_mha_validlens_nullptr() {
+    construct_env();
+    Tensor *queries = allocTensor({2, 1, 2}, "queries");
+    Tensor *keys = allocTensor({2, 5, 2}, "keys");
+    Tensor *values = allocTensor({2, 5, 4}, "values");
+
+    auto nq = graph::allocNode(queries);
+    auto nk = graph::allocNode(keys);
+    auto nv = graph::allocNode(values);
+
+    nq->require_grad();
+    nk->require_grad();
+    nv->require_grad();
+
+    Tensor *labels = allocTensor({2}, "labels", INT32);
+    MHA mha(10, 2, 0.0f, false, true);
+    auto res = mha.forward(nq, nk, nv, nullptr);
+    auto res_shape = res->get_tensor()->get_shape();
+    auto res_dim = res->get_tensor()->get_dim();
+    
+    auto ce_res = res->reshape({-1, res_shape[res_dim-1]})->CrossEntropy(labels)->avg_1d();
+    insert_boundary_action();
+    ce_res->backward();
+    // printAllActions();
+    allocMemAndInitTensors();
+    destruct_env();
+    std::cout << GREEN << "test_mha_validlens_nullptr succ" << RESET << std::endl;
+}
+
 void test_embedding() {
     construct_env();
     Tensor *indices = allocTensor({1, 3}, "indices", INT32);
@@ -4416,6 +4445,7 @@ void test_cpu() {
     test_ce_avg_1d();
     test_ce_mask();
     test_ce_mask_all_0();
+    test_mha_validlens_nullptr();
 }
 
 Tensor *test_add_with_cpu_base(int m, int n) {
@@ -6247,6 +6277,7 @@ void test_gpu() {
     test_layernorm();
     test_ce_mask();
     test_ce_mask_all_0();
+    test_mha_validlens_nullptr();
 }
 
 int main(int argc, char *argv[]) {
