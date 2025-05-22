@@ -175,19 +175,26 @@ class ZeroGradAction : public Action {
         std::string to_string() const override;
 };
 
-class InitWeightAction : public Action {
+class FillWeightAction : public Action {
     public:
-        InitWeightAction(Tensor *_lhs, const std::string &_init_type, float _sigma, float _mean)
+        FillWeightAction(Tensor *_lhs, const std::string &_init_type, float _sigma, float _mean)
             : Action(_lhs, nullptr, nullptr), init_type(_init_type), sigma(_sigma), mean(_mean) {}
         void execute() override;
+        std::string to_string() const override;
+    protected:
+        std::string init_type;
+        float sigma;
+        float mean;
+};
+
+class InitWeightAction : public FillWeightAction {
+    public:
+        InitWeightAction(Tensor *_lhs, const std::string &_init_type, float _sigma, float _mean)
+            : FillWeightAction(_lhs, _init_type, _sigma, _mean) {}
         bool is_do_once() const override {
             return true;
         }
         std::string to_string() const override;
-    private:
-        std::string init_type;
-        float sigma;
-        float mean;
 };
 
 class BoundaryAction : public Action {

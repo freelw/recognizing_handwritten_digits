@@ -522,6 +522,12 @@ namespace graph {
                 "cross_entropy_tmp "
             )
         );
+        gCreateAction(
+            new DbgPrintAction(
+                grad,
+                "grad  "
+            )
+        );
         
         Tensor *tmp2 = allocTensor(
             node->get_grad()->get_shape(),

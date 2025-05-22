@@ -3344,7 +3344,7 @@ void test_mha() {
         ce_res->get_tensor(),
         sizeof(float)
     );
-    loss /= res_shape[0];
+    // loss /= res_shape[0];
     bool succ_loss = fabs(loss - 12.549578) < 1e-5;
     if (!succ_loss) {
         std::cout << RED << "test_mha loss failed" << RESET << std::endl;
@@ -4133,8 +4133,8 @@ void test_ce_avg_1d() {
 }
 
 void test_cpu() {
-    // test_mha();
-    test_ce_avg_1d();
+    test_mha();
+    // test_ce_avg_1d();
     return ;
     test_at();
     test_add();

@@ -573,11 +573,17 @@ namespace graph {
                     "avg_1d_tmp"
                 );
                 gCreateAction(
-                    new InitWeightAction(
+                    new FillWeightAction(
                         tmp,
                         "fill",
                         1.0f / node->get_grad()->get_shape()[0],
                         0
+                    )
+                );
+                gCreateAction(
+                    new DbgPrintAction(
+                        tmp,
+                        "avg_1d_tmp"
                     )
                 );
                 gCreateAction(

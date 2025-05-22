@@ -340,7 +340,7 @@ std::string ZeroGradAction::to_string() const {
     return "ZeroGradAction: zeroing gradients";
 }
 
-void InitWeightAction::execute() {
+void FillWeightAction::execute() {
     assert(lhs != nullptr);
     if (init_type == "gauss") {
         g_backend_ops->init_weight_gauss(lhs, mean, sigma);
@@ -360,6 +360,15 @@ void InitWeightAction::execute() {
         std::cerr << "Error: Unknown initialization type: " << init_type << std::endl;
         abort();
     }
+}
+
+std::string FillWeightAction::to_string() const {
+    std::ostringstream oss;
+    oss << "FillWeightAction: initializing " << lhs->get_meta_info() 
+        << " with type " << init_type
+        << " sigma " << sigma
+        << " mean " << mean;
+    return oss.str();
 }
 
 std::string InitWeightAction::to_string() const {

@@ -365,10 +365,10 @@ void CPUOps::crossEntropyBackward(Tensor *lhs, const Tensor *labels, Tensor *max
         for (int i = 0; i < size; ++i) {
             if (i == target) {
                 res_data[j * res_strides[0] + i * res_strides[1]] = 
-                    (std::exp(data[j * lstrides[0] + i * lstrides[1]] - max) / sum - 1) / batch_size;
+                    (std::exp(data[j * lstrides[0] + i * lstrides[1]] - max) / sum - 1);
             } else {
                 res_data[j * res_strides[0] + i * res_strides[1]] = 
-                    (std::exp(data[j * lstrides[0] + i * lstrides[1]] - max) / sum) / batch_size;
+                    (std::exp(data[j * lstrides[0] + i * lstrides[1]] - max) / sum);
             }
         }
     }
