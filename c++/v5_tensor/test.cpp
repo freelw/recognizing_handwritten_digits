@@ -590,7 +590,7 @@ void test_bp() {
         ->at(nw1->transpose())
         ->expand_add(nb1);
     auto nres = foward_res1
-        ->CrossEntropy(labels);
+        ->CrossEntropy(labels)->avg_1d();
     insert_boundary_action();
     zero_grad();
     nres->backward();
@@ -830,6 +830,13 @@ void test_bp() {
         std::cout << GREEN << "test_cross_entropy nb1_grad succ" << RESET << std::endl;
     }
 
+    bool succ = nw_grad_succ && nb_grad_succ && nw1_grad_succ && nb1_grad_succ;
+    if (succ) {
+        std::cout << GREEN << "test_bp succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_bp failed" << RESET << std::endl;
+    }
+
     ::free(nw_grad_tmp_buffer);
     ::free(nb_grad_tmp_buffer);
     ::free(nw1_grad_tmp_buffer);
@@ -888,7 +895,7 @@ void test_adam() {
         ->at(nw1->transpose())
         ->expand_add(nb1);
     auto nres = foward_res1
-        ->CrossEntropy(labels);
+        ->CrossEntropy(labels)->avg_1d();
     insert_boundary_action();
     zero_grad();
     nres->backward();
@@ -1212,6 +1219,14 @@ void test_adam() {
     }
     if (bias1_succ) {
         std::cout << GREEN << "test_adam bias1 succ" << RESET << std::endl;
+    }
+
+    bool succ = nw_grad_succ && nb_grad_succ && nw1_grad_succ && nb1_grad_succ
+        && w_succ && bias_succ && w1_succ && bias1_succ;
+    if (succ) {
+        std::cout << GREEN << "test_adam succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_adam failed" << RESET << std::endl;
     }
 
     ::free(input_tmp_buffer);
@@ -4129,8 +4144,6 @@ void test_ce_avg_1d() {
 }
 
 void test_cpu() {
-    test_bp();
-    return ;
     test_at();
     test_add();
     test_add_eq();
