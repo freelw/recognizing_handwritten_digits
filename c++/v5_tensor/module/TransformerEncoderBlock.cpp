@@ -1,0 +1,26 @@
+#include "TransformerEncoderBlock.h"
+
+TransformerEncoderBlock::TransformerEncoderBlock(
+    int num_hiddens, int ffn_num_hiddens, int num_heads,
+    float dropout, bool bias) {
+
+    attention = new MHA(num_hiddens, num_hiddens, num_heads, dropout, bias);
+    addnorm1 = new AddNorm(num_hiddens, dropout);
+    ffn = new PositionWiseFFN(ffn_num_hiddens, num_hiddens);
+    addnorm2 = new AddNorm(num_hiddens, dropout);
+}
+
+TransformerEncoderBlock::~TransformerEncoderBlock() {
+    delete attention;
+    delete addnorm1;
+    delete ffn;
+    delete addnorm2;
+}
+
+graph::Node *TransformerEncoderBlock::forward(
+    graph::Node *x, Tensor *valid_lens) {
+    auto y = attention->forward(x, x, x, valid_lens);
+    y = addnorm1->forward(x, y);
+    auto z = ffn->forward(y);
+    return addnorm2->forward(y, z);
+}
