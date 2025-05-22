@@ -4135,11 +4135,40 @@ void test_ce_avg_1d() {
     );
     gDoActions();
 
-    std::cout << std::setprecision(8) << "ni : " << std::endl << *ni->get_tensor() << std::endl;
-    std::cout << std::setprecision(8) << "ni grad : " << std::endl << *ni->get_grad() << std::endl;
-    std::cout << "ce_res : " << std::endl << *ce_res->get_tensor() << std::endl;
-    std::cout << "avg_res : " << std::endl << *avg_res->get_tensor() << std::endl;
+    // std::cout << std::setprecision(8) << "ni : " << std::endl << *ni->get_tensor() << std::endl;
+    // std::cout << std::setprecision(8) << "ni grad : " << std::endl << *ni->get_grad() << std::endl;
+    // std::cout << "ce_res : " << std::endl << *ce_res->get_tensor() << std::endl;
+    // std::cout << "avg_res : " << std::endl << *avg_res->get_tensor() << std::endl;
 
+    float loss = 0;
+    g_backend_ops->cp_from_device(
+        (char *)&loss,
+        avg_res->get_tensor(),
+        avg_res->get_tensor()->size()
+    );
+
+    bool succ_loss = fabs(loss - 2.3978953) < 1e-5;
+    if (!succ_loss) {
+        std::cout << RED << "test_ce_avg_1d loss failed" << RESET << std::endl;
+    }
+    float ni_grad_ans[22] = {
+        0.045454547, 0.045454547, -0.45454544, 0.045454547, 0.045454547, 0.045454547, 0.045454547, 0.045454547, 0.045454547, 0.045454547, 0.045454547,
+        0.045454547, 0.045454547, 0.045454547, -0.45454544, 0.045454547, 0.045454547, 0.045454547, 0.045454547, 0.045454547, 0.045454547, 0.045454547
+    };
+    bool succ_ni_grad = compare_res_ans_1d(
+        ni->get_grad(),
+        ni_grad_ans,
+        "ni_grad"
+    );
+    if (!succ_ni_grad) {
+        std::cout << RED << "test_ce_avg_1d ni_grad failed" << RESET << std::endl;
+    }
+    bool succ = succ_loss && succ_ni_grad;
+    if (succ) {
+        std::cout << GREEN << "test_ce_avg_1d succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_ce_avg_1d failed" << RESET << std::endl;
+    }
     destruct_env();
 }
 
