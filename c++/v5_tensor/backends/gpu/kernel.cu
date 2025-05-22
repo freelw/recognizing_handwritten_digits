@@ -188,11 +188,7 @@ __global__ void cross_entropy(
     int M, int N,
     int stride0, int stride1
 ) {
-    extern __shared__ float partial_sums[];
     int row = blockIdx.x * blockDim.x + threadIdx.x;
-    int tid = threadIdx.x;
-    float tmp_loss = 0;
-    partial_sums[tid] = 0.0f;
     if (row >= M) {
         return;
     } else {
@@ -210,18 +206,7 @@ __global__ void cross_entropy(
         sums[row] = sum;
         int32_t label = labels[row];
         float zt = Md[row * stride0 + label * stride1];
-        tmp_loss = -zt + max + logf(sum);
-    }
-    partial_sums[tid] = tmp_loss;
-    __syncthreads();
-    for (int s = blockDim.x / 2; s > 0; s >>= 1) {
-        if (tid < s) {
-            partial_sums[tid] += partial_sums[tid + s];
-        }
-        __syncthreads();
-    }
-    if (tid == 0) {
-        atomicAdd(loss, partial_sums[0]);
+        loss[row] = -zt + max + logf(sum);
     }
 }
 
@@ -243,8 +228,8 @@ __global__ void cross_entropy_backward(
         for (int i = 0; i < N; ++i) {
             float val = Md[row * Md_stride0 + i * Md_stride1];
             grad[row * grad_stride0 + i * grad_stride1] = i == label ?
-                (expf(val - max) / sum - 1) / M :
-                expf(val - max) / sum / M ;
+                (expf(val - max) / sum - 1) :
+                expf(val - max) / sum;
         }
     }
 }
