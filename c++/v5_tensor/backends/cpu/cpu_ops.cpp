@@ -309,7 +309,7 @@ void CPUOps::crossEntropy(Tensor *lhs, const Tensor *labels, Tensor *maxs, Tenso
     assert(lhs->get_shape()[0] == maxs->get_shape()[0]);
     
     assert(lhs->get_shape()[0] == sums->get_shape()[0]);
-    assert(res->get_shape()[0] == 1);
+    assert(res->get_shape()[0] == sums->get_shape()[0]);
 
     int batch_size = lhs->get_shape()[0];
     int size = lhs->get_shape()[1];
@@ -338,9 +338,8 @@ void CPUOps::crossEntropy(Tensor *lhs, const Tensor *labels, Tensor *maxs, Tenso
         }
         static_cast<float*>(maxs->get_data())[j] = max;
         static_cast<float*>(sums->get_data())[j] = sum;
-        loss_value += -(zt - max - std::log(sum));
+        static_cast<float*>(res->get_data())[j] = -(zt - max - std::log(sum));
     }
-    static_cast<float*>(res->get_data())[0] = loss_value;
 }
 
 void CPUOps::crossEntropyBackward(Tensor *lhs, const Tensor *labels, Tensor *maxs, Tensor *sums, Tensor *res) {
@@ -366,10 +365,10 @@ void CPUOps::crossEntropyBackward(Tensor *lhs, const Tensor *labels, Tensor *max
         for (int i = 0; i < size; ++i) {
             if (i == target) {
                 res_data[j * res_strides[0] + i * res_strides[1]] = 
-                    (std::exp(data[j * lstrides[0] + i * lstrides[1]] - max) / sum - 1) / batch_size;
+                    (std::exp(data[j * lstrides[0] + i * lstrides[1]] - max) / sum - 1);
             } else {
                 res_data[j * res_strides[0] + i * res_strides[1]] = 
-                    (std::exp(data[j * lstrides[0] + i * lstrides[1]] - max) / sum) / batch_size;
+                    (std::exp(data[j * lstrides[0] + i * lstrides[1]] - max) / sum);
             }
         }
     }

@@ -340,7 +340,7 @@ std::string ZeroGradAction::to_string() const {
     return "ZeroGradAction: zeroing gradients";
 }
 
-void InitWeightAction::execute() {
+void FillWeightAction::execute() {
     assert(lhs != nullptr);
     if (init_type == "gauss") {
         g_backend_ops->init_weight_gauss(lhs, mean, sigma);
@@ -360,6 +360,15 @@ void InitWeightAction::execute() {
         std::cerr << "Error: Unknown initialization type: " << init_type << std::endl;
         abort();
     }
+}
+
+std::string FillWeightAction::to_string() const {
+    std::ostringstream oss;
+    oss << "FillWeightAction: initializing " << lhs->get_meta_info() 
+        << " with type " << init_type
+        << " sigma " << sigma
+        << " mean " << mean;
+    return oss.str();
 }
 
 std::string InitWeightAction::to_string() const {
@@ -517,6 +526,25 @@ std::string DivAction::to_string() const {
     return oss.str();
 }
 
+void LazyDivAction::execute() {
+    assert(lhs != nullptr);
+    assert(res != nullptr);
+    float fvalue = 0;
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(&fvalue),
+        value,
+        value->size()
+    );
+    fvalue += 1e-10;
+    g_backend_ops->div(res, lhs, fvalue);
+}
+
+std::string LazyDivAction::to_string() const {
+    std::ostringstream oss;
+    oss << "LazyDivAction: lazy dividing " << lhs->get_meta_info() << " by " << value->get_meta_info() << " to " << res->get_meta_info();
+    return oss.str();
+}
+
 DropoutMaskAction::DropoutMaskAction(Tensor *mask, float _p)
     : Action(nullptr, nullptr, mask), p(_p) {
     assert(mask != nullptr);
@@ -630,6 +658,17 @@ std::string NormBackwardAction::to_string() const {
     std::ostringstream oss;
     oss << "NormBackwardAction: normalizing backward " << lhs->get_meta_info()
         << " with norm res " << rhs->get_meta_info() << " to " << res->get_meta_info();
+    return oss.str();
+}
+
+void DbgPrintAction::execute() {
+    assert(lhs != nullptr);
+    std::cout << "[====== DEBUGGIN ======] " << msg << lhs->get_meta_info() << " : " << std::endl << *lhs << std::endl;
+}
+
+std::string DbgPrintAction::to_string() const {
+    std::ostringstream oss;
+    oss << "DbgPrintAction: printing " << lhs->get_meta_info() << " with message " << msg;
     return oss.str();
 }
 

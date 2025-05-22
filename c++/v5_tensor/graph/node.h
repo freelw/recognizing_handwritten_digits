@@ -66,6 +66,7 @@ namespace graph {
             Node *softmax();
             Node *masked_softmax(Tensor *valid_len);
             Node *add(Node *rhs);
+            Node *mul(Node *rhs);
             Node *expand_add(Node *rhs);
             Node *expand_mul(Node *rhs);
             Node *at(Node *rhs);
@@ -73,8 +74,10 @@ namespace graph {
             void split_3d(std::vector<Node *> &res_nodes, bool opposite = false);
             Node *relu();
             Node *norm();
+            Node *avg_1d(Tensor *mask = nullptr);
             Node *CrossEntropy(Tensor *labels);
             Node *div(float value);
+            Node *mask(Tensor *m);
             void init_weight_gauss(float sigma, float mean);
             void init_weight_uniform(float sigma);
             void init_weight_for_dbg(float scale = 1.0f);
@@ -117,7 +120,9 @@ namespace graph {
         Reshape,
         Embedding,
         ExpandMulL,
-        ExpandMulR
+        ExpandMulR,
+        Avg1d,
+        Dropout
     };
 
     class Edge {
@@ -152,6 +157,39 @@ namespace graph {
                     new AddEqAction(node->get_grad(), grad)
                 );
             }
+    };
+
+    class MulEdge : public Edge {
+        public:
+            static Edge* create(Node *_node, Node *_rhs) {
+                Edge *edge = new MulEdge(_node, _rhs);
+                graph::gAddEdge(edge);
+                return edge;
+            }
+            MulEdge(Node *_node, Node *_rhs)
+                : Edge(Mul, _node), rhs(_rhs) {}
+            virtual ~MulEdge() {}
+            void backward(Tensor *grad) override {
+                Tensor *tmp = allocTensor(
+                    node->get_grad()->get_shape(),
+                    "mul_tmp"
+                );
+                gCreateAction(
+                    new MulAction(
+                        grad,
+                        rhs->get_tensor(),
+                        tmp
+                    )
+                );
+                gCreateAction(
+                    new AddEqAction(
+                        node->get_grad(),
+                        tmp
+                    )
+                );
+            }
+        private:
+            Node *rhs;
     };
 
     class ExpandAddEdge : public Edge {
@@ -491,7 +529,7 @@ namespace graph {
                 return edge;
             }
             DropoutEdge(Node *_node, Tensor *_mask)
-                : Edge(Empty, _node), mask(_mask) {}
+                : Edge(Dropout, _node), mask(_mask) {}
             virtual ~DropoutEdge() {}
             void backward(Tensor *grad) override {
                 Tensor *tmp = allocTensor(
@@ -549,6 +587,58 @@ namespace graph {
         private:
             Tensor *norm_res;
             Tensor *var_res;
+    };
+
+    class Avg1dEdge: public Edge {
+        public:
+            static Edge* create(Node *_node, Tensor *_mask_sum_tensor) {
+                Edge *edge = new Avg1dEdge(_node, _mask_sum_tensor);
+                gAddEdge(edge);
+                return edge;
+            }
+            Avg1dEdge(Node *_node, Tensor *_mask_sum_tensor)
+                : Edge(Avg1d, _node), mask_sum_tensor(_mask_sum_tensor) {}
+            virtual ~Avg1dEdge() {}
+            void backward(Tensor *grad) override {
+                assert(grad->get_dim() == 1);
+                auto shape = grad->get_shape();
+                assert(shape[0] == 1);
+                Tensor *tmp = allocTensor(
+                    node->get_grad()->get_shape(),
+                    "avg_1d_tmp"
+                );
+                
+                gCreateAction(
+                    new FillWeightAction(
+                        tmp,
+                        "fill",
+                        1.0f,
+                        0
+                    )
+                );
+                gCreateAction(
+                    new LazyDivAction(
+                        tmp,
+                        tmp,
+                        mask_sum_tensor
+                    )
+                );
+                
+                // gCreateAction(
+                //     new DbgPrintAction(
+                //         tmp,
+                //         "avg_1d_tmp"
+                //     )
+                // );
+                gCreateAction(
+                    new AddEqAction(
+                        node->get_grad(),
+                        tmp
+                    )
+                );
+            }
+        private:
+            Tensor *mask_sum_tensor;
     };
 
     Node *allocNode(Tensor *t);

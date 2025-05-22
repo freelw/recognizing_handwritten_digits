@@ -494,8 +494,8 @@ void test_cross_entropy() {
     Tensor *labels = allocTensor({3}, "input", INT32);
     Tensor *w = allocTensor({3, 4}, "w");
     Tensor *wt = allocTensor({4, 3}, "wt");
-    Tensor *res_wi_tensor = allocTensor({1}, "res_wi");
-    Tensor *res_wti_tensor = allocTensor({1}, "res_wti");
+    Tensor *res_wi_tensor = allocTensor({3}, "res_wi");
+    Tensor *res_wti_tensor = allocTensor({3}, "res_wti");
     Tensor *maxs_wi = allocTensor({3}, "maxs_wi");
     Tensor *sums_wi = allocTensor({3}, "sums_wi");
     Tensor *maxs_wti = allocTensor({3}, "maxs_wti");
@@ -526,8 +526,8 @@ void test_cross_entropy_backward() {
     Tensor *labels = allocTensor({3}, "input", INT32);
     Tensor *w = allocTensor({3, 4}, "w");
     Tensor *wt = allocTensor({4, 3}, "wt");
-    Tensor *res_wi_tensor = allocTensor({1}, "res_wi");
-    Tensor *res_wti_tensor = allocTensor({1}, "res_wti");
+    Tensor *res_wi_tensor = allocTensor({3}, "res_wi");
+    Tensor *res_wti_tensor = allocTensor({3}, "res_wti");
     Tensor *maxs_wi = allocTensor({3}, "maxs_wi");
     Tensor *sums_wi = allocTensor({3}, "sums_wi");
     Tensor *maxs_wti = allocTensor({3}, "maxs_wti");
@@ -590,7 +590,7 @@ void test_bp() {
         ->at(nw1->transpose())
         ->expand_add(nb1);
     auto nres = foward_res1
-        ->CrossEntropy(labels);
+        ->CrossEntropy(labels)->avg_1d();
     insert_boundary_action();
     zero_grad();
     nres->backward();
@@ -830,6 +830,13 @@ void test_bp() {
         std::cout << GREEN << "test_cross_entropy nb1_grad succ" << RESET << std::endl;
     }
 
+    bool succ = nw_grad_succ && nb_grad_succ && nw1_grad_succ && nb1_grad_succ;
+    if (succ) {
+        std::cout << GREEN << "test_bp succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_bp failed" << RESET << std::endl;
+    }
+
     ::free(nw_grad_tmp_buffer);
     ::free(nb_grad_tmp_buffer);
     ::free(nw1_grad_tmp_buffer);
@@ -888,7 +895,7 @@ void test_adam() {
         ->at(nw1->transpose())
         ->expand_add(nb1);
     auto nres = foward_res1
-        ->CrossEntropy(labels);
+        ->CrossEntropy(labels)->avg_1d();
     insert_boundary_action();
     zero_grad();
     nres->backward();
@@ -1212,6 +1219,14 @@ void test_adam() {
     }
     if (bias1_succ) {
         std::cout << GREEN << "test_adam bias1 succ" << RESET << std::endl;
+    }
+
+    bool succ = nw_grad_succ && nb_grad_succ && nw1_grad_succ && nb1_grad_succ
+        && w_succ && bias_succ && w1_succ && bias1_succ;
+    if (succ) {
+        std::cout << GREEN << "test_adam succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_adam failed" << RESET << std::endl;
     }
 
     ::free(input_tmp_buffer);
@@ -1718,7 +1733,7 @@ void test_reshape_bp() {
         ->at(nw1->transpose())
         ->expand_add(nb1);
     auto nres = foward_res1
-        ->CrossEntropy(labels);
+        ->CrossEntropy(labels)->avg_1d();
     insert_boundary_action();
     zero_grad();
     nres->backward();
@@ -1817,9 +1832,8 @@ void test_reshape_bp() {
         nres->get_tensor(),
         sizeof(float)
     );
-    loss /= 10;
     if (fabs(loss - 1.19474f) > eps) {
-        std::cerr << RED << "Error: loss = " << loss << ", ans = 0.1" << RESET << std::endl;
+        std::cerr << RED << "Error: loss = " << loss << RESET << std::endl;
     } else {
         std::cout << GREEN << "test_reshape_bp loss succ" << RESET << std::endl;
     }
@@ -1896,7 +1910,7 @@ void test_reshape_bp_1() {
         ->at(nw1->transpose())
         ->expand_add(nb1);
     auto nres = foward_res1
-        ->CrossEntropy(labels);
+        ->CrossEntropy(labels)->avg_1d();
     insert_boundary_action();
     zero_grad();
     nres->backward();
@@ -1995,9 +2009,8 @@ void test_reshape_bp_1() {
         nres->get_tensor(),
         sizeof(float)
     );
-    loss /= 10;
     if (fabs(loss - 1.1947f) > eps) {
-        std::cerr << RED << "Error: loss = " << loss << ", ans = 0.1" << RESET << std::endl;
+        std::cerr << RED << "Error: loss = " << loss << RESET << std::endl;
     } else {
         std::cout << GREEN << "test_reshape_bp loss succ" << RESET << std::endl;
     }
@@ -2035,9 +2048,9 @@ void test_reshape_bp_1() {
         }
     }
     if (ni_grad_succ) {
-        std::cout << GREEN << "test_reshape_bp ni_grad succ" << RESET << std::endl;
+        std::cout << GREEN << "test_reshape_bp_1 ni_grad succ" << RESET << std::endl;
     } else {
-        std::cout << RED << "test_reshape_bp ni_grad failed" << RESET << std::endl;
+        std::cout << RED << "test_reshape_bp_1 ni_grad failed" << RESET << std::endl;
     }
 
     ::free(ni_grad_tmp_buffer);
@@ -2260,7 +2273,7 @@ void test_masked_softmax_bp() {
     ni->init_weight_for_dbg(10000.0f);
     Tensor *valid_lens = allocTensor({2, 2}, "mask", INT32);
     auto res_softmax = ni->masked_softmax(valid_lens);
-    auto res_ce = res_softmax->reshape({-1, 4})->CrossEntropy(labels);
+    auto res_ce = res_softmax->reshape({-1, 4})->CrossEntropy(labels)->avg_1d();
     insert_boundary_action();
     res_ce->backward();
     allocMemAndInitTensors();
@@ -2328,7 +2341,7 @@ void test_bmm_bp() {
     n_labels->init_weight_for_dbg();
 
     auto bmm_res = ni->bmm(nw);
-    auto ce_res = bmm_res->reshape({-1, 6})->CrossEntropy(labels);
+    auto ce_res = bmm_res->reshape({-1, 6})->CrossEntropy(labels)->avg_1d();
     insert_boundary_action();
     ce_res->backward();
 
@@ -2341,7 +2354,6 @@ void test_bmm_bp() {
         ce_res->get_tensor(),
         sizeof(float)
     );
-    loss /= 6;
 
     float loss_ans = 1.6919627f;
 
@@ -2441,7 +2453,7 @@ void test_bmm_bp_1() {
     n_labels->init_weight_for_dbg();
 
     auto bmm_res = ni->bmm(nw->transpose(1, 2));
-    auto ce_res = bmm_res->reshape({-1, 6})->CrossEntropy(labels);
+    auto ce_res = bmm_res->reshape({-1, 6})->CrossEntropy(labels)->avg_1d();
     insert_boundary_action();
     zero_grad();
     ce_res->backward();
@@ -2533,7 +2545,7 @@ void test_div_bp() {
     n_labels->init_weight_for_dbg();
 
     auto res = ni->at(nw)->div(10.0f);
-    auto ce_res = res->CrossEntropy(labels);
+    auto ce_res = res->CrossEntropy(labels)->avg_1d();
     ce_res->backward();
     insert_boundary_action();
 
@@ -2626,7 +2638,7 @@ void test_attention_bp_part() {
     auto softmax_res = bmm_res
         ->div(std::sqrt(static_cast<float>(d)))
         ->masked_softmax(valid_lens);
-    auto ce_res = softmax_res->reshape({-1, 10})->CrossEntropy(labels);
+    auto ce_res = softmax_res->reshape({-1, 10})->CrossEntropy(labels)->avg_1d();
     insert_boundary_action();
     zero_grad();
     ce_res->backward();
@@ -2752,7 +2764,7 @@ void test_attention_bp() {
     nv->init_weight_for_dbg(10000.0f);
     int32_t valid_lens_buffer[2] = {2, 6};
     auto softmax_res = attention.forward(nq, nk, nv, valid_lens)->softmax();
-    auto ce_res = softmax_res->reshape({-1, 4})->CrossEntropy(labels);
+    auto ce_res = softmax_res->reshape({-1, 4})->CrossEntropy(labels)->avg_1d();
     zero_grad();
     insert_boundary_action();
     ce_res->backward();
@@ -3235,7 +3247,7 @@ void test_mha() {
     auto res_shape = res->get_tensor()->get_shape();
     auto res_dim = res->get_tensor()->get_dim();
     
-    auto ce_res = res->reshape({-1, res_shape[res_dim-1]})->CrossEntropy(labels);
+    auto ce_res = res->reshape({-1, res_shape[res_dim-1]})->CrossEntropy(labels)->avg_1d();
     insert_boundary_action();
     ce_res->backward();
     // printAllActions();
@@ -3344,7 +3356,7 @@ void test_mha() {
         ce_res->get_tensor(),
         sizeof(float)
     );
-    loss /= res_shape[0];
+    // loss /= res_shape[0];
     bool succ_loss = fabs(loss - 12.549578) < 1e-5;
     if (!succ_loss) {
         std::cout << RED << "test_mha loss failed" << RESET << std::endl;
@@ -3922,7 +3934,7 @@ void test_layernorm() {
     ni->require_grad();
     ni->init_weight_for_dbg(100000.0f);
     auto res = layer_norm.forward(ni);
-    auto ce_res = res->CrossEntropy(labels);
+    auto ce_res = res->CrossEntropy(labels)->avg_1d();
 
     insert_boundary_action();
     ce_res->backward();
@@ -3943,7 +3955,6 @@ void test_layernorm() {
         ce_res->get_tensor(),
         sizeof(float)
     );
-    loss /= 2;
     // std::cout << std::setprecision(8) << "loss : " << loss << std::endl;
     // std::cout << std::setprecision(8) << "ni : " << std::endl << *ni->get_tensor() << std::endl;
     // std::cout << std::setprecision(8) << "ni grad : " << std::endl << *ni->get_grad() << std::endl;
@@ -4099,6 +4110,225 @@ void test_var() {
     destruct_env();
 }
 
+void test_ce_avg_1d() {
+    construct_env();
+    Tensor *input = allocTensor({2, 11}, "input");
+    auto ni = graph::allocNode(input);
+    ni->require_grad();
+    // ni->init_weight_for_dbg(1000.0f);
+    ni->init_weight_fill(1.0f);
+    
+    Tensor *labels = allocTensor({2}, "labels", INT32);
+    auto ce_res = ni->CrossEntropy(labels);
+    auto avg_res = ce_res->avg_1d();
+    
+    insert_boundary_action();
+    avg_res->backward();
+    // printAllActions();
+    allocMemAndInitTensors();
+    
+    int32_t labels_buffer[2] = {2, 3};
+    g_backend_ops->cp_to_device(
+        labels,
+        reinterpret_cast<char*>(labels_buffer),
+        labels->size()
+    );
+    gDoActions();
+
+    // std::cout << std::setprecision(8) << "ni : " << std::endl << *ni->get_tensor() << std::endl;
+    // std::cout << std::setprecision(8) << "ni grad : " << std::endl << *ni->get_grad() << std::endl;
+    // std::cout << "ce_res : " << std::endl << *ce_res->get_tensor() << std::endl;
+    // std::cout << "avg_res : " << std::endl << *avg_res->get_tensor() << std::endl;
+
+    float loss = 0;
+    g_backend_ops->cp_from_device(
+        (char *)&loss,
+        avg_res->get_tensor(),
+        avg_res->get_tensor()->size()
+    );
+
+    bool succ_loss = fabs(loss - 2.3978953) < 1e-5;
+    if (!succ_loss) {
+        std::cout << RED << "test_ce_avg_1d loss failed" << RESET << std::endl;
+    }
+    float ni_grad_ans[22] = {
+        0.045454547, 0.045454547, -0.45454544, 0.045454547, 0.045454547, 0.045454547, 0.045454547, 0.045454547, 0.045454547, 0.045454547, 0.045454547,
+        0.045454547, 0.045454547, 0.045454547, -0.45454544, 0.045454547, 0.045454547, 0.045454547, 0.045454547, 0.045454547, 0.045454547, 0.045454547
+    };
+    bool succ_ni_grad = compare_res_ans_1d(
+        ni->get_grad(),
+        ni_grad_ans,
+        "ni_grad"
+    );
+    if (!succ_ni_grad) {
+        std::cout << RED << "test_ce_avg_1d ni_grad failed" << RESET << std::endl;
+    }
+    bool succ = succ_loss && succ_ni_grad;
+    if (succ) {
+        std::cout << GREEN << "test_ce_avg_1d succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_ce_avg_1d failed" << RESET << std::endl;
+    }
+    destruct_env();
+}
+
+void test_ce_mask() {
+    construct_env();
+    Tensor *input = allocTensor({3, 3}, "input");
+    auto ni = graph::allocNode(input);
+    ni->require_grad();
+    
+    Tensor *labels = allocTensor({3}, "labels", INT32);
+    Tensor *mask = allocTensor({3}, "mask");
+    auto ce_res = ni->CrossEntropy(labels);
+    auto maks_res = ce_res->mask(mask);
+    auto avg_res = maks_res->avg_1d(mask);
+    insert_boundary_action();
+    avg_res->backward();
+    // printAllActions();
+    allocMemAndInitTensors();
+    int32_t labels_buffer[3] = {1, 2, 1};
+    float mask_buffer[3] = {1.0f, 0.0f, 1.0f};
+    float input_buffer[9] = {
+        10, 0.2, 0.3,
+        0.4, 0.5, 0.6,
+        0.1, 0.2, 0.3
+    };
+    g_backend_ops->cp_to_device(
+        input,
+        reinterpret_cast<char*>(input_buffer),
+        input->size()
+    );
+
+    g_backend_ops->cp_to_device(
+        mask,
+        reinterpret_cast<char*>(mask_buffer),
+        mask->size()
+    );
+    g_backend_ops->cp_to_device(
+        labels,
+        reinterpret_cast<char*>(labels_buffer),
+        labels->size()
+    );
+    gDoActions();
+
+    // std::cout << "ce_res : " << std::endl << *ce_res->get_tensor() << std::endl;
+    // std::cout << "mask_res : " << std::endl << *maks_res->get_tensor() << std::endl;
+    // std::cout << "avg_res : " << std::setprecision(8) << std::endl << *avg_res->get_tensor() << std::endl;
+    // std::cout << "input grad : " << std::setprecision(8) << std::endl << *ni->get_grad() << std::endl;
+
+    float loss = 0;
+    g_backend_ops->cp_from_device(
+        (char *)&loss,
+        avg_res->get_tensor(),
+        avg_res->get_tensor()->size()
+    );
+    bool succ_loss = fabs(loss - 5.4510298) < 1e-5;
+    if (!succ_loss) {
+        std::cout << RED << "test_ce_mask loss failed" << RESET << std::endl;
+    }
+
+    float input_grad_and[9] = {
+        0.49993914, -0.49996978, 3.0638024e-05,
+        0, 0, 0,
+        0.15030403, -0.33388585, 0.18358177
+    };
+
+    bool succ_input_grad = compare_res_ans_1d(
+        ni->get_grad(),
+        input_grad_and,
+        "ni_grad"
+    );
+    if (!succ_input_grad) {
+        std::cout << RED << "test_ce_mask ni_grad failed" << RESET << std::endl;
+    }
+
+    bool succ = succ_loss && succ_input_grad;
+    if (succ) {
+        std::cout << GREEN << "test_ce_mask succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_ce_mask failed" << RESET << std::endl;
+    }
+
+    destruct_env();
+}
+
+void test_ce_mask_all_0() {
+    construct_env();
+    Tensor *input = allocTensor({3, 3}, "input");
+    auto ni = graph::allocNode(input);
+    ni->require_grad();
+    
+    Tensor *labels = allocTensor({3}, "labels", INT32);
+    Tensor *mask = allocTensor({3}, "mask");
+    auto ce_res = ni->CrossEntropy(labels);
+    auto maks_res = ce_res->mask(mask);
+    auto avg_res = maks_res->avg_1d(mask);
+    insert_boundary_action();
+    avg_res->backward();
+    // printAllActions();
+    allocMemAndInitTensors();
+    int32_t labels_buffer[3] = {1, 2, 1};
+    float mask_buffer[3] = {0.0f, 0.0f, 0.0f};
+    float input_buffer[9] = {
+        10, 0.2, 0.3,
+        0.4, 0.5, 0.6,
+        0.1, 0.2, 0.3
+    };
+    g_backend_ops->cp_to_device(
+        input,
+        reinterpret_cast<char*>(input_buffer),
+        input->size()
+    );
+
+    g_backend_ops->cp_to_device(
+        mask,
+        reinterpret_cast<char*>(mask_buffer),
+        mask->size()
+    );
+    g_backend_ops->cp_to_device(
+        labels,
+        reinterpret_cast<char*>(labels_buffer),
+        labels->size()
+    );
+    gDoActions();
+
+    float loss = 0;
+    g_backend_ops->cp_from_device(
+        (char *)&loss,
+        avg_res->get_tensor(),
+        avg_res->get_tensor()->size()
+    );
+    bool succ_loss = fabs(loss - 0) < 1e-5;
+    if (!succ_loss) {
+        std::cout << RED << "test_ce_mask_all_0 loss failed" << RESET << std::endl;
+    }
+
+    float input_grad_and[9] = {
+        0, 0, 0,
+        0, 0, 0,
+        0, 0, 0
+    };
+
+    bool succ_input_grad = compare_res_ans_1d(
+        ni->get_grad(),
+        input_grad_and,
+        "ni_grad"
+    );
+    if (!succ_input_grad) {
+        std::cout << RED << "test_ce_mask_all_0 ni_grad failed" << RESET << std::endl;
+    }
+
+    bool succ = succ_loss && succ_input_grad;
+    if (succ) {
+        std::cout << GREEN << "test_ce_mask_all_0 succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_ce_mask_all_0 failed" << RESET << std::endl;
+    }
+
+    destruct_env();
+}
+
 void test_cpu() {
     test_at();
     test_add();
@@ -4147,6 +4377,9 @@ void test_cpu() {
     test_avg();
     test_var();
     test_layernorm();
+    test_ce_avg_1d();
+    test_ce_mask();
+    test_ce_mask_all_0();
 }
 
 Tensor *test_add_with_cpu_base(int m, int n) {
@@ -4670,7 +4903,7 @@ void test_gpu_sum_with_cpu() {
 Tensor *test_cross_entropy_with_cpu_base(int m, int n) {
     Tensor *input = allocTensor({m, n}, "input");
     Tensor *labels = allocTensor({m}, "labels", INT32);
-    Tensor *res_wi_tensor = allocTensor({1}, "res_wi");
+    Tensor *res_wi_tensor = allocTensor({m}, "res_wi");
     Tensor *sums = allocTensor({m}, "sums");
     Tensor *maxs = allocTensor({m}, "maxs");
     gCreateAction(
@@ -4733,7 +4966,7 @@ void test_gpu_cross_entropy_with_cpu() {
 Tensor *test_cross_entropy_backward_with_cpu_base(int m, int n) {
     Tensor *labels = allocTensor({m}, "input", INT32);
     Tensor *w = allocTensor({m, n}, "w");
-    Tensor *res_wi_tensor = allocTensor({1}, "res_wi");
+    Tensor *res_wi_tensor = allocTensor({m}, "res_wi");
     Tensor *maxs_wi = allocTensor({m}, "maxs_wi");
     Tensor *sums_wi = allocTensor({m}, "sums_wi");
     Tensor *grad_wi = allocTensor({m, n}, "grad_wi");
@@ -5975,6 +6208,8 @@ void test_gpu() {
     test_avg();
     test_var();
     test_layernorm();
+    test_ce_mask();
+    test_ce_mask_all_0();
 }
 
 int main(int argc, char *argv[]) {

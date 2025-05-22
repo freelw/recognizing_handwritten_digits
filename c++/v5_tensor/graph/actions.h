@@ -175,19 +175,26 @@ class ZeroGradAction : public Action {
         std::string to_string() const override;
 };
 
-class InitWeightAction : public Action {
+class FillWeightAction : public Action {
     public:
-        InitWeightAction(Tensor *_lhs, const std::string &_init_type, float _sigma, float _mean)
+        FillWeightAction(Tensor *_lhs, const std::string &_init_type, float _sigma, float _mean)
             : Action(_lhs, nullptr, nullptr), init_type(_init_type), sigma(_sigma), mean(_mean) {}
         void execute() override;
+        std::string to_string() const override;
+    protected:
+        std::string init_type;
+        float sigma;
+        float mean;
+};
+
+class InitWeightAction : public FillWeightAction {
+    public:
+        InitWeightAction(Tensor *_lhs, const std::string &_init_type, float _sigma, float _mean)
+            : FillWeightAction(_lhs, _init_type, _sigma, _mean) {}
         bool is_do_once() const override {
             return true;
         }
         std::string to_string() const override;
-    private:
-        std::string init_type;
-        float sigma;
-        float mean;
 };
 
 class BoundaryAction : public Action {
@@ -275,6 +282,19 @@ class DivAction : public Action {
         float value;
 };
 
+class LazyDivAction : public Action {
+    public:
+        LazyDivAction(Tensor *_lhs, Tensor *_res, Tensor *_value)
+            : Action(_lhs, nullptr, _res), value(_value) {
+            assert(value->get_dim() == 1);
+            assert(value->get_shape()[0] == 1);
+        }
+        void execute() override;
+        std::string to_string() const override;
+    private:
+        Tensor *value;
+};
+
 class DropoutMaskAction : public Action {
     public:
         DropoutMaskAction(Tensor *mask, float _p);
@@ -347,6 +367,16 @@ class NormBackwardAction : public Action {
         std::string to_string() const override;
     private:
         Tensor *var_tensor;
+};
+
+class DbgPrintAction : public Action {
+    public:
+        DbgPrintAction(Tensor *_lhs, const std::string &_msg)
+            : Action(_lhs, nullptr, nullptr), msg(_msg) {}
+        void execute() override;
+        std::string to_string() const override;
+    private:
+        std::string msg;
 };
 
 std::vector<Action *> getOnceActions();

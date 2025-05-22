@@ -442,7 +442,7 @@ void CUDAOps::crossEntropy(Tensor *lhs, const Tensor *labels, Tensor *maxs, Tens
     assert(lhs->get_shape()[0] == labels->get_shape()[0]);
     assert(lhs->get_shape()[0] == maxs->get_shape()[0]);
     assert(lhs->get_shape()[0] == sums->get_shape()[0]);
-    assert(res->get_shape()[0] == 1);
+    assert(res->get_shape()[0] == sums->get_shape()[0]);
 
     auto lstrides = lhs->get_strides();
 
@@ -456,12 +456,8 @@ void CUDAOps::crossEntropy(Tensor *lhs, const Tensor *labels, Tensor *maxs, Tens
 
     dim3 blockDim(TILE_WIDTH);
 
-    // std::cout << "lhs->get_shape()[0]" << lhs->get_shape()[0] << std::endl;
-    // std::cout << "lhs->get_shape()[1]" << lhs->get_shape()[1] << std::endl;
-    // std::cout << "lstrides[0]" << lstrides[0] << std::endl;
-    // std::cout << "lstrides[1]" << lstrides[1] << std::endl;
 
-    cross_entropy<<<gridDim, blockDim, TILE_WIDTH*sizeof(float)>>>(
+    cross_entropy<<<gridDim, blockDim>>>(
         (float *)lhs->get_data(),
         (int32_t *)labels->get_data(),
         (float *)maxs->get_data(),

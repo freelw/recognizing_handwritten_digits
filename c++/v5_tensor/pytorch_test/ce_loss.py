@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import cmath
+from torch.nn import functional as F
 
 def test1():
     # 3 layer neural network
@@ -48,7 +49,9 @@ def test1():
     print("forward result: ", res)
     print("result grad: ", res.grad)
     loss = loss_fn(res, y)
+    loss1 =F.cross_entropy(res,y)
     print("loss: ", loss)
+    print("loss1: ", loss1)
     loss.backward()
 
     #show the gradients
