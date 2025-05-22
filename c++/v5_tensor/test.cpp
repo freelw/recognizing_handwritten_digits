@@ -4223,7 +4223,7 @@ void test_ce_mask() {
         avg_res->get_tensor(),
         avg_res->get_tensor()->size()
     );
-    bool succ_loss = fabs(loss - 5.4510026) < 1e-5;
+    bool succ_loss = fabs(loss - 5.4510298) < 1e-5;
     if (!succ_loss) {
         std::cout << RED << "test_ce_mask loss failed" << RESET << std::endl;
     }

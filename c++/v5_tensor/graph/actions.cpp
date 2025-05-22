@@ -535,7 +535,7 @@ void LazyDivAction::execute() {
         value,
         value->size()
     );
-    fvalue += 1e-5;
+    fvalue += 1e-10;
     g_backend_ops->div(res, lhs, fvalue);
 }
 
