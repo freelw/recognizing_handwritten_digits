@@ -282,6 +282,19 @@ class DivAction : public Action {
         float value;
 };
 
+class LazyDivAction : public Action {
+    public:
+        LazyDivAction(Tensor *_lhs, Tensor *_res, Tensor *_value)
+            : Action(_lhs, nullptr, _res), value(_value) {
+            assert(value->get_dim() == 1);
+            assert(value->get_shape()[0] == 1);
+        }
+        void execute() override;
+        std::string to_string() const override;
+    private:
+        Tensor *value;
+};
+
 class DropoutMaskAction : public Action {
     public:
         DropoutMaskAction(Tensor *mask, float _p);

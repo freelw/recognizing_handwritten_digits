@@ -526,6 +526,25 @@ std::string DivAction::to_string() const {
     return oss.str();
 }
 
+void LazyDivAction::execute() {
+    assert(lhs != nullptr);
+    assert(res != nullptr);
+    float fvalue = 0;
+    g_backend_ops->cp_from_device(
+        reinterpret_cast<char*>(&fvalue),
+        value,
+        value->size()
+    );
+    fvalue += 1e-5;
+    g_backend_ops->div(res, lhs, fvalue);
+}
+
+std::string LazyDivAction::to_string() const {
+    std::ostringstream oss;
+    oss << "LazyDivAction: lazy dividing " << lhs->get_meta_info() << " by " << value->get_meta_info() << " to " << res->get_meta_info();
+    return oss.str();
+}
+
 DropoutMaskAction::DropoutMaskAction(Tensor *mask, float _p)
     : Action(nullptr, nullptr, mask), p(_p) {
     assert(mask != nullptr);

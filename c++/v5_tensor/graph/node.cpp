@@ -142,6 +142,29 @@ namespace graph {
         return res_node;
     }
 
+    Node *Node::mul(Node *rhs) {
+        Tensor *res_tensor = allocTensor(t->get_shape(), "mul_res");
+        Tensor *r_tensor = rhs->get_tensor();
+        gCreateAction(
+            new MulAction(
+                this->get_tensor(),
+                rhs->get_tensor(),
+                res_tensor
+            )
+        );
+        Node *res_node = allocNode(res_tensor);
+        if (is_require_grad() || rhs->is_require_grad()) {
+            res_node->require_grad();
+            if (is_require_grad()) {
+                res_node->edges.push_back(MulEdge::create(this, rhs));
+            }
+            if (rhs->is_require_grad()) {
+                res_node->edges.push_back(MulEdge::create(rhs, this));
+            }
+        }
+        return res_node;
+    }
+
     Node *Node::expand_add(Node *rhs) {
         Tensor *res_tensor = allocTensor(t->get_shape(), "expand_add");
         Tensor *r_tensor = rhs->get_tensor();
@@ -391,23 +414,77 @@ namespace graph {
         return res_node;
     }
 
-    Node *Node::avg_1d() {
+    Node *Node::avg_1d(Tensor *mask) {
         Tensor *l_tensor = this->get_tensor();
         assert(l_tensor->get_dim() == 1);
+        if (mask == nullptr) {
+            mask = allocTensor({l_tensor->get_shape()[0]}, "avg_1d_mask");
+            gCreateAction(
+                new FillWeightAction(
+                    mask,
+                    "fill",
+                    1.0f,
+                    0
+                )
+            );
+        }
+        assert(mask->get_dim() == 1);
+        mask = mask->reshape({-1, 1});
         auto shape = l_tensor->get_shape();
         l_tensor = l_tensor->reshape({1, shape[0]});
-        Tensor *res_tensor = allocTensor({1}, "avg_res");
+        Tensor *res_tensor = allocTensor({1}, "avg_1d_res");
+        Tensor *sum_tensor = allocTensor({1}, "avg_1d_sum");
+        Tensor *mask_sum_tensor = allocTensor({1}, "avg_1d_mask_sum");
         gCreateAction(
-            new AvgAction(
-                l_tensor,
-                res_tensor
+            new SumAction(
+                l_tensor->reshape({-1, 1}),
+                sum_tensor,
+                0
             )
         );
+        // gCreateAction(
+        //     new DbgPrintAction(
+        //         sum_tensor,
+        //         " "
+        //     )
+        // );
+        // gCreateAction(
+        //     new DbgPrintAction(
+        //         mask,
+        //         " "
+        //     )
+        // );
+        gCreateAction(
+            new SumAction(
+                mask,
+                mask_sum_tensor,
+                0
+            )
+        );
+        // gCreateAction(
+        //     new DbgPrintAction(
+        //         mask_sum_tensor,
+        //         " "
+        //     )
+        // );
+        gCreateAction(
+            new LazyDivAction(
+                sum_tensor,
+                res_tensor,
+                mask_sum_tensor
+            )
+        );
+        // gCreateAction(
+        //     new DbgPrintAction(
+        //         res_tensor,
+        //         " "
+        //     )
+        // );
         auto res_node = allocNode(res_tensor);
         if (is_require_grad()) {
             res_node->require_grad();
             // std::cout << "this meta : " << this->get_tensor()->get_meta_info() << std::endl;
-            res_node->edges.push_back(Avg1dEdge::create(this));
+            res_node->edges.push_back(Avg1dEdge::create(this, mask_sum_tensor));
         }
         return res_node;
     }
@@ -455,6 +532,13 @@ namespace graph {
             res_node->edges.push_back(DivEdge::create(this, value));
         }
         return res_node;
+    }
+
+    Node *Node::mask(Tensor *m) {
+        Tensor *l_tensor = this->get_tensor();
+        assert(l_tensor->get_shape() == m->get_shape());
+        auto nm = allocNode(m);
+        return this->mul(nm);
     }
 
     void Node::init_weight_gauss(float sigma, float mean) {

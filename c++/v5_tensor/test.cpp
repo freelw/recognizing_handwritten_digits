@@ -4172,6 +4172,87 @@ void test_ce_avg_1d() {
     destruct_env();
 }
 
+void test_ce_mask() {
+    construct_env();
+    Tensor *input = allocTensor({3, 3}, "input");
+    auto ni = graph::allocNode(input);
+    ni->require_grad();
+    
+    Tensor *labels = allocTensor({3}, "labels", INT32);
+    Tensor *mask = allocTensor({3}, "mask");
+    auto ce_res = ni->CrossEntropy(labels);
+    auto maks_res = ce_res->mask(mask);
+    auto avg_res = maks_res->avg_1d(mask);
+    insert_boundary_action();
+    avg_res->backward();
+    // printAllActions();
+    allocMemAndInitTensors();
+    int32_t labels_buffer[3] = {1, 2, 1};
+    float mask_buffer[3] = {1.0f, 0.0f, 1.0f};
+    float input_buffer[9] = {
+        10, 0.2, 0.3,
+        0.4, 0.5, 0.6,
+        0.1, 0.2, 0.3
+    };
+    g_backend_ops->cp_to_device(
+        input,
+        reinterpret_cast<char*>(input_buffer),
+        input->size()
+    );
+
+    g_backend_ops->cp_to_device(
+        mask,
+        reinterpret_cast<char*>(mask_buffer),
+        mask->size()
+    );
+    g_backend_ops->cp_to_device(
+        labels,
+        reinterpret_cast<char*>(labels_buffer),
+        labels->size()
+    );
+    gDoActions();
+
+    // std::cout << "ce_res : " << std::endl << *ce_res->get_tensor() << std::endl;
+    // std::cout << "mask_res : " << std::endl << *maks_res->get_tensor() << std::endl;
+    // std::cout << "avg_res : " << std::setprecision(8) << std::endl << *avg_res->get_tensor() << std::endl;
+    // std::cout << "input grad : " << std::setprecision(8) << std::endl << *ni->get_grad() << std::endl;
+
+    float loss = 0;
+    g_backend_ops->cp_from_device(
+        (char *)&loss,
+        avg_res->get_tensor(),
+        avg_res->get_tensor()->size()
+    );
+    bool succ_loss = fabs(loss - 5.4510026) < 1e-5;
+    if (!succ_loss) {
+        std::cout << RED << "test_ce_mask loss failed" << RESET << std::endl;
+    }
+
+    float input_grad_and[9] = {
+        0.49993914, -0.49996978, 3.0638024e-05,
+        0, 0, 0,
+        0.15030403, -0.33388585, 0.18358177
+    };
+
+    bool succ_input_grad = compare_res_ans_1d(
+        ni->get_grad(),
+        input_grad_and,
+        "ni_grad"
+    );
+    if (!succ_input_grad) {
+        std::cout << RED << "test_ce_mask ni_grad failed" << RESET << std::endl;
+    }
+
+    bool succ = succ_loss && succ_input_grad;
+    if (succ) {
+        std::cout << GREEN << "test_ce_mask succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_ce_mask failed" << RESET << std::endl;
+    }
+
+    destruct_env();
+}
+
 void test_cpu() {
     test_at();
     test_add();
@@ -4221,6 +4302,7 @@ void test_cpu() {
     test_var();
     test_layernorm();
     test_ce_avg_1d();
+    test_ce_mask();
 }
 
 Tensor *test_add_with_cpu_base(int m, int n) {
@@ -6049,6 +6131,7 @@ void test_gpu() {
     test_avg();
     test_var();
     test_layernorm();
+    test_ce_mask();
 }
 
 int main(int argc, char *argv[]) {

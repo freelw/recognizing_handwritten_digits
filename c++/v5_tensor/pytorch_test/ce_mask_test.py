@@ -18,7 +18,7 @@ def test2():
     
     res = torch.tensor([[10, 0.2, 0.3], [0.4, 0.5, 0.6], [0.1, 0.2, 0.3]], dtype=torch.float32)
     res.requires_grad_(True)
-    y = torch.tensor([1, 1, 2], dtype=torch.long)
+    y = torch.tensor([1, 2, 1], dtype=torch.long)
     mask = (y.reshape(-1) != 2).type(torch.float32)
     loss = F.cross_entropy(res, y, reduction="none")
     print("loss2: ", loss)
@@ -26,7 +26,8 @@ def test2():
     print ("loss * mask: ", loss * mask)
     loss_mask = (loss * mask).sum() / mask.sum()
     print("loss_mask: ", loss_mask)
-    loss_mask.backward()   
+    loss_mask.backward()
+    print("res grad : ", res.grad)
 
 if __name__ == "__main__":
     test1()
