@@ -59,7 +59,7 @@ void train(int epochs, float lr, int batch_size) {
     Tensor *labels = allocTensor({batch_size}, "labels", INT32);
     auto n_inputs = graph::allocNode(inputs);
     auto forward_res = m.forward(n_inputs);
-    auto loss = forward_res->CrossEntropy(labels);
+    auto loss = forward_res->CrossEntropy(labels)->avg_1d();
     assert(loss->get_tensor()->size() == sizeof(float));
     insert_boundary_action();
     zero_grad();
@@ -106,7 +106,7 @@ void train(int epochs, float lr, int batch_size) {
                 loss->get_tensor(),
                 loss->get_tensor()->size()
             );
-            loss_sum += loss_val / batch_size;
+            loss_sum += loss_val;
             loop_times++;
             print_progress(prefix, offset, TRAIN_IMAGES_NUM);
         }
