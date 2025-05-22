@@ -155,7 +155,6 @@ void CPUOps::embedding(Tensor *lhs, const Tensor *indices, const Tensor *res) {
     assert(indices->is_contiguous());
     assert(!lhs->is_view());
     assert(!res->is_view());
-    assert(!indices->is_view());
     assert(lhs->get_dim() == 2);
     assert(res->get_dim() == 2);
     assert(indices->get_dim() == 1);
@@ -187,7 +186,6 @@ void CPUOps::embeddingBackward(Tensor *lhs, const Tensor *indices, Tensor *res) 
     assert(indices->is_contiguous());
     assert(!lhs->is_view());
     assert(!res->is_view());
-    assert(!indices->is_view());
     assert(lhs->get_dim() == 2);
     assert(res->get_dim() == 2);
     assert(indices->get_dim() == 1);

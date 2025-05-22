@@ -22,7 +22,11 @@ TransformerEncoder::~TransformerEncoder() {
 
 graph::Node *TransformerEncoder::forward(Tensor *indices, Tensor *valid_lens) {
     assert(indices->get_dim() == 2); // shape : (batch_size, seq_len)
-    auto x = embedding->forward(indices->reshape({-1}))->mulsv(std::sqrt(num_hiddens));
+    auto indices_shape = indices->get_shape();
+    auto x = embedding->forward(indices)->mulsv(std::sqrt(num_hiddens));
+    auto x_shape = x->get_tensor()->get_shape();
+    assert(x_shape[0] == indices_shape[0]);
+    assert(x_shape[1] == indices_shape[1]);
     x = pos_encoding->forward(x);
     for (auto blk : blks) {
         x = blk->forward(x, valid_lens);

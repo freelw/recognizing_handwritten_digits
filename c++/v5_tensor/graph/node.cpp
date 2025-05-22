@@ -538,6 +538,7 @@ namespace graph {
 
     Node *Node::div(float value) {
         Tensor *l_tensor = this->get_tensor();
+        assert(l_tensor->is_contiguous()); // 只有在这个前提下，当前的后端实现才是正确的，没有考虑stride
         Tensor *res_tensor = allocTensor(l_tensor->get_shape(), "div_res");
         gCreateAction(
             new DivAction(

@@ -3437,7 +3437,7 @@ void test_mha() {
 
 void test_embedding() {
     construct_env();
-    Tensor *indices = allocTensor({3}, "indices", INT32);
+    Tensor *indices = allocTensor({1, 3}, "indices", INT32);
     Embedding emb(10, 5, true);
     auto res = emb.forward(indices);
     auto res_grad = res->get_grad();
@@ -6057,7 +6057,7 @@ void test_permute_with_cpu() {
 
 std::vector<Tensor *> test_embedding_with_cpu_base(int m, int n) {
     Embedding emb(m, n, true);
-    Tensor *indices = allocTensor({m/2}, "indices", INT32);
+    Tensor *indices = allocTensor({1, m/2}, "indices", INT32);
     auto res = emb.forward(indices);
     insert_boundary_action();
     res->backward();

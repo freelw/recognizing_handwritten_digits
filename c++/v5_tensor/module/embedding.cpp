@@ -15,7 +15,10 @@ Embedding::Embedding(int _vocab_size, int _hidden_num, bool const_weight)
 }
 
 graph::Node *Embedding::forward(Tensor *indices) {
-    assert(indices->get_dim() == 1);
+    assert(indices->get_dim() == 2);
+    assert(indices->is_contiguous());
+    auto origin_shape = indices->get_shape();
+    indices = indices->reshape({-1});
     Tensor *res = allocTensor({indices->get_shape()[0], hidden_num}, "embedding_out");
     auto res_node = graph::allocNode(res);
     res_node->require_grad();
@@ -29,5 +32,5 @@ graph::Node *Embedding::forward(Tensor *indices) {
     res_node->edges.push_back(
         graph::EmbeddingEdge::create(w, indices)
     );
-    return res_node;
+    return res_node->reshape({origin_shape[0], origin_shape[1], hidden_num});
 }
