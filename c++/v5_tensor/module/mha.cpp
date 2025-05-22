@@ -65,7 +65,7 @@ graph::Node *MHA::forward(
     graph::Node *values,
     Tensor *valid_lens
 ) {
-    assert(queries->get_tensor()->get_dim() == 3);
+    assert(queries->get_tensor()->get_dim() == 3); // shape : (batch_size, seq_len, num_hiddens)
     assert(keys->get_tensor()->get_dim() == 3);
     assert(values->get_tensor()->get_dim() == 3);
     queries = transpose_qkv(w_q->forward(queries));
