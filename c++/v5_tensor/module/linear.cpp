@@ -43,8 +43,12 @@ Linear::Linear(
         auto b_tensor = allocTensor({output_num}, "_b_linear");
         b = graph::allocNode(b_tensor);
         b->require_grad();
-        if (!const_weight && b_sigma >= 0) {
-            b->init_weight_gauss(b_sigma, b_sigma); // this is very important, break the symmetry
+        if (!const_weight) {
+            if (b_sigma >= 0) {
+                b->init_weight_gauss(b_sigma, b_sigma);
+            } else {
+                b->init_weight_gauss(0.01, 0.01); // this is very important, break the symmetry
+            }
         }
         Pb = allocParameter(b);
     } else {
