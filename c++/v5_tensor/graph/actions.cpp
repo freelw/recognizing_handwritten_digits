@@ -633,6 +633,17 @@ std::string NormBackwardAction::to_string() const {
     return oss.str();
 }
 
+void DbgPrintAction::execute() {
+    assert(lhs != nullptr);
+    std::cout << "[====== DEBUGGIN ======] " << msg << lhs->get_meta_info() << " : " << std::endl << *lhs << std::endl;
+}
+
+std::string DbgPrintAction::to_string() const {
+    std::ostringstream oss;
+    oss << "DbgPrintAction: printing " << lhs->get_meta_info() << " with message " << msg;
+    return oss.str();
+}
+
 void VarAction::execute() {
     assert(lhs != nullptr);
     assert(rhs != nullptr);

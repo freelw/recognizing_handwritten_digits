@@ -349,6 +349,16 @@ class NormBackwardAction : public Action {
         Tensor *var_tensor;
 };
 
+class DbgPrintAction : public Action {
+    public:
+        DbgPrintAction(Tensor *_lhs, const std::string &_msg)
+            : Action(_lhs, nullptr, nullptr), msg(_msg) {}
+        void execute() override;
+        std::string to_string() const override;
+    private:
+        std::string msg;
+};
+
 std::vector<Action *> getOnceActions();
 void gCreateAction(Action *action);
 void gDoActions();

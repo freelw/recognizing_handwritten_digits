@@ -4104,13 +4104,15 @@ void test_ce_avg_1d() {
     Tensor *input = allocTensor({2, 11}, "input");
     auto ni = graph::allocNode(input);
     ni->require_grad();
-    ni->init_weight_for_dbg(1000.0f);
+    // ni->init_weight_for_dbg(1000.0f);
+    ni->init_weight_fill(1.0f);
     
     Tensor *labels = allocTensor({2}, "labels", INT32);
-    auto ce_res = ni->CrossEntropy(labels)->avg_1d();
+    auto ce_res = ni->CrossEntropy(labels);
+    auto avg_res = ce_res->avg_1d();
     
     insert_boundary_action();
-    ce_res->backward();
+    avg_res->backward();
     // printAllActions();
     allocMemAndInitTensors();
     
@@ -4124,6 +4126,8 @@ void test_ce_avg_1d() {
 
     std::cout << std::setprecision(8) << "ni : " << std::endl << *ni->get_tensor() << std::endl;
     std::cout << std::setprecision(8) << "ni grad : " << std::endl << *ni->get_grad() << std::endl;
+    std::cout << "ce_res : " << std::endl << *ce_res->get_tensor() << std::endl;
+    std::cout << "avg_res : " << std::endl << *avg_res->get_tensor() << std::endl;
 
     destruct_env();
 }
