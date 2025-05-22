@@ -1718,7 +1718,7 @@ void test_reshape_bp() {
         ->at(nw1->transpose())
         ->expand_add(nb1);
     auto nres = foward_res1
-        ->CrossEntropy(labels);
+        ->CrossEntropy(labels)->avg_1d();
     insert_boundary_action();
     zero_grad();
     nres->backward();
@@ -1817,9 +1817,8 @@ void test_reshape_bp() {
         nres->get_tensor(),
         sizeof(float)
     );
-    loss /= 10;
     if (fabs(loss - 1.19474f) > eps) {
-        std::cerr << RED << "Error: loss = " << loss << ", ans = 0.1" << RESET << std::endl;
+        std::cerr << RED << "Error: loss = " << loss << RESET << std::endl;
     } else {
         std::cout << GREEN << "test_reshape_bp loss succ" << RESET << std::endl;
     }
@@ -1896,7 +1895,7 @@ void test_reshape_bp_1() {
         ->at(nw1->transpose())
         ->expand_add(nb1);
     auto nres = foward_res1
-        ->CrossEntropy(labels);
+        ->CrossEntropy(labels)->avg_1d();
     insert_boundary_action();
     zero_grad();
     nres->backward();
@@ -1995,9 +1994,8 @@ void test_reshape_bp_1() {
         nres->get_tensor(),
         sizeof(float)
     );
-    loss /= 10;
     if (fabs(loss - 1.1947f) > eps) {
-        std::cerr << RED << "Error: loss = " << loss << ", ans = 0.1" << RESET << std::endl;
+        std::cerr << RED << "Error: loss = " << loss << RESET << std::endl;
     } else {
         std::cout << GREEN << "test_reshape_bp loss succ" << RESET << std::endl;
     }
@@ -2035,9 +2033,9 @@ void test_reshape_bp_1() {
         }
     }
     if (ni_grad_succ) {
-        std::cout << GREEN << "test_reshape_bp ni_grad succ" << RESET << std::endl;
+        std::cout << GREEN << "test_reshape_bp_1 ni_grad succ" << RESET << std::endl;
     } else {
-        std::cout << RED << "test_reshape_bp ni_grad failed" << RESET << std::endl;
+        std::cout << RED << "test_reshape_bp_1 ni_grad failed" << RESET << std::endl;
     }
 
     ::free(ni_grad_tmp_buffer);
@@ -2260,7 +2258,7 @@ void test_masked_softmax_bp() {
     ni->init_weight_for_dbg(10000.0f);
     Tensor *valid_lens = allocTensor({2, 2}, "mask", INT32);
     auto res_softmax = ni->masked_softmax(valid_lens);
-    auto res_ce = res_softmax->reshape({-1, 4})->CrossEntropy(labels);
+    auto res_ce = res_softmax->reshape({-1, 4})->CrossEntropy(labels)->avg_1d();
     insert_boundary_action();
     res_ce->backward();
     allocMemAndInitTensors();
@@ -2328,7 +2326,7 @@ void test_bmm_bp() {
     n_labels->init_weight_for_dbg();
 
     auto bmm_res = ni->bmm(nw);
-    auto ce_res = bmm_res->reshape({-1, 6})->CrossEntropy(labels);
+    auto ce_res = bmm_res->reshape({-1, 6})->CrossEntropy(labels)->avg_1d();
     insert_boundary_action();
     ce_res->backward();
 
@@ -2341,7 +2339,6 @@ void test_bmm_bp() {
         ce_res->get_tensor(),
         sizeof(float)
     );
-    loss /= 6;
 
     float loss_ans = 1.6919627f;
 
@@ -2441,7 +2438,7 @@ void test_bmm_bp_1() {
     n_labels->init_weight_for_dbg();
 
     auto bmm_res = ni->bmm(nw->transpose(1, 2));
-    auto ce_res = bmm_res->reshape({-1, 6})->CrossEntropy(labels);
+    auto ce_res = bmm_res->reshape({-1, 6})->CrossEntropy(labels)->avg_1d();
     insert_boundary_action();
     zero_grad();
     ce_res->backward();
@@ -2533,7 +2530,7 @@ void test_div_bp() {
     n_labels->init_weight_for_dbg();
 
     auto res = ni->at(nw)->div(10.0f);
-    auto ce_res = res->CrossEntropy(labels);
+    auto ce_res = res->CrossEntropy(labels)->avg_1d();
     ce_res->backward();
     insert_boundary_action();
 
@@ -2626,7 +2623,7 @@ void test_attention_bp_part() {
     auto softmax_res = bmm_res
         ->div(std::sqrt(static_cast<float>(d)))
         ->masked_softmax(valid_lens);
-    auto ce_res = softmax_res->reshape({-1, 10})->CrossEntropy(labels);
+    auto ce_res = softmax_res->reshape({-1, 10})->CrossEntropy(labels)->avg_1d();
     insert_boundary_action();
     zero_grad();
     ce_res->backward();
@@ -2752,7 +2749,7 @@ void test_attention_bp() {
     nv->init_weight_for_dbg(10000.0f);
     int32_t valid_lens_buffer[2] = {2, 6};
     auto softmax_res = attention.forward(nq, nk, nv, valid_lens)->softmax();
-    auto ce_res = softmax_res->reshape({-1, 4})->CrossEntropy(labels);
+    auto ce_res = softmax_res->reshape({-1, 4})->CrossEntropy(labels)->avg_1d();
     zero_grad();
     insert_boundary_action();
     ce_res->backward();
@@ -3238,7 +3235,7 @@ void test_mha() {
     auto ce_res = res->reshape({-1, res_shape[res_dim-1]})->CrossEntropy(labels)->avg_1d();
     insert_boundary_action();
     ce_res->backward();
-    printAllActions();
+    // printAllActions();
     allocMemAndInitTensors();
 
     std::vector<Parameter *> params = mha.get_parameters();
@@ -3922,7 +3919,7 @@ void test_layernorm() {
     ni->require_grad();
     ni->init_weight_for_dbg(100000.0f);
     auto res = layer_norm.forward(ni);
-    auto ce_res = res->CrossEntropy(labels);
+    auto ce_res = res->CrossEntropy(labels)->avg_1d();
 
     insert_boundary_action();
     ce_res->backward();
@@ -3943,7 +3940,6 @@ void test_layernorm() {
         ce_res->get_tensor(),
         sizeof(float)
     );
-    loss /= 2;
     // std::cout << std::setprecision(8) << "loss : " << loss << std::endl;
     // std::cout << std::setprecision(8) << "ni : " << std::endl << *ni->get_tensor() << std::endl;
     // std::cout << std::setprecision(8) << "ni grad : " << std::endl << *ni->get_grad() << std::endl;
@@ -4133,8 +4129,7 @@ void test_ce_avg_1d() {
 }
 
 void test_cpu() {
-    test_mha();
-    // test_ce_avg_1d();
+    test_bp();
     return ;
     test_at();
     test_add();
@@ -4183,6 +4178,7 @@ void test_cpu() {
     test_avg();
     test_var();
     test_layernorm();
+    test_ce_avg_1d();
 }
 
 Tensor *test_add_with_cpu_base(int m, int n) {
