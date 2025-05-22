@@ -15,6 +15,7 @@ Embedding::Embedding(int _vocab_size, int _hidden_num, bool const_weight)
 }
 
 graph::Node *Embedding::forward(Tensor *indices) {
+    assert(indices->get_dtype() == INT32);
     assert(indices->get_dim() == 2);
     assert(indices->is_contiguous());
     auto origin_shape = indices->get_shape();
