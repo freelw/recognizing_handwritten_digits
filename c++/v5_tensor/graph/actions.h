@@ -391,6 +391,16 @@ class MemCpAction : public Action {
         int size;
 };
 
+class MulSVAction : public Action {
+    public:
+        MulSVAction(Tensor *_lhs, Tensor *_res, float _value)
+            : Action(_lhs, nullptr, _res), value(_value) {}
+        void execute() override;
+        std::string to_string() const override;
+    private:
+        float value;
+};
+
 std::vector<Action *> getOnceActions();
 void gCreateAction(Action *action);
 void gDoActions();

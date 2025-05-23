@@ -642,6 +642,23 @@ namespace graph {
             Tensor *mask_sum_tensor;
     };
 
+    class MulSVEdge: public Edge {
+        public:
+            static Edge* create(Node *_node, float value) {
+                Edge *edge = new MulSVEdge(_node, value);
+                gAddEdge(edge);
+                return edge;
+            }
+            MulSVEdge(Node *_node, float value)
+                : Edge(MulSV, _node), value(value) {}
+            virtual ~MulSVEdge() {}
+            void backward(Tensor *grad) override {
+                assert(false);
+            }
+        private:
+            float value;
+    };
+
     Node *allocNode(Tensor *t);
     Node *allocNode(Tensor *t, Tensor *grad);
     void validateAllNodes();

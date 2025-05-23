@@ -166,7 +166,20 @@ namespace graph {
     }
 
     Node *Node::mulsv(float v) {
-        assert(false);
+        Tensor *res_tensor = allocTensor(t->get_shape(), "mulsv_res");
+        gCreateAction(
+            new MulSVAction(
+                this->get_tensor(),
+                res_tensor,
+                v
+            )
+        );
+        Node *res_node = allocNode(res_tensor);
+        if (is_require_grad()) {
+            res_node->require_grad();
+            res_node->edges.push_back(MulSVEdge::create(this, v));
+        }
+        return res_node;
     }
 
     Node *Node::expand_add(Node *rhs) {

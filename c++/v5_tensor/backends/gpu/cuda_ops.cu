@@ -1045,6 +1045,10 @@ void CUDAOps::normBackward(
     );
 }
 
+void CUDAOps::mulSV(Tensor *lhs, Tensor *res, float value) {
+    assert(false);
+}
+
 void* CUDAOps::alloc(size_t size) {
     void *ret = nullptr;
     cudaMalloc((void **)&ret, size);

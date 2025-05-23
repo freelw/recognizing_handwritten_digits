@@ -702,6 +702,18 @@ std::string VarAction::to_string() const {
     return oss.str();
 }
 
+void MulSVAction::execute() {
+    assert(lhs != nullptr);
+    assert(res != nullptr);
+    g_backend_ops->mulSV(lhs, res, value);
+}
+
+std::string MulSVAction::to_string() const {
+    std::ostringstream oss;
+    oss << "MulSVAction: multiplying " << lhs->get_meta_info() << " with scalar " << value << " to " << res->get_meta_info();
+    return oss.str();
+}
+
 std::vector<Action*> g_actions;
 
 std::vector<Action *> getOnceActions() {
