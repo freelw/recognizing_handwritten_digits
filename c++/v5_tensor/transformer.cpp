@@ -80,6 +80,10 @@ int main(int argc, char *argv[]) {
     std::vector<Parameter *> parameters = seq2seq->get_parameters();
     check_parameters(parameters, num_blks);
 
+    insert_boundary_action();
+    allocMemAndInitTensors();
+    gDoActions();
+
     delete seq2seq;
     destruct_env();
     return 0;
