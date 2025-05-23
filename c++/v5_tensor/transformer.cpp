@@ -53,7 +53,7 @@ void check_parameters(const std::vector<Parameter*> &parameters, int num_blks) {
 }
 
 int main(int argc, char *argv[]) {
-    use_gpu();
+    use_gpu(true);
     construct_env();
     int num_hiddens = 256;
     int num_blks = 2;
@@ -80,9 +80,10 @@ int main(int argc, char *argv[]) {
     std::vector<Parameter *> parameters = seq2seq->get_parameters();
     check_parameters(parameters, num_blks);
 
-    printAllActions();
+    // printAllActions();
     insert_boundary_action();
     allocMemAndInitTensors();
+    while(1)
     gDoActions();
 
     delete seq2seq;

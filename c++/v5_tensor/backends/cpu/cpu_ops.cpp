@@ -43,7 +43,7 @@ void CPUOps::add(
             tmp_index %= tot_length;
         }
         static_cast<float*>(res->get_data())[index_res] = 
-            static_cast<float*>(lhs->get_data())[index_l] * 
+            static_cast<float*>(lhs->get_data())[index_l] +
             static_cast<float*>(rhs->get_data())[index_r];
     }
 }
@@ -539,8 +539,8 @@ void CPUOps::repeat_interleave(Tensor *lhs, Tensor *res, int n) {
     assert(lhs != nullptr);
     assert(res != nullptr);
 
-    assert(lhs->get_dim() == 1);
-    assert(res->get_dim() == 1);
+    // assert(lhs->get_dim() == 1);
+    // assert(res->get_dim() == 1);
 
     auto l_length = lhs->length();
     auto r_length = res->length();

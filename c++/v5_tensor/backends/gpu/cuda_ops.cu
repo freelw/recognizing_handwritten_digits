@@ -678,8 +678,8 @@ void CUDAOps::repeat_interleave(Tensor *lhs, Tensor *res, int n) {
     assert(lhs != nullptr);
     assert(res != nullptr);
 
-    assert(lhs->get_dim() == 1);
-    assert(res->get_dim() == 1);
+    // assert(lhs->get_dim() == 1);
+    // assert(res->get_dim() == 1);
 
     auto l_length = lhs->length();
     auto r_length = res->length();

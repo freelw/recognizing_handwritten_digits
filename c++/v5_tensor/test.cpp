@@ -297,7 +297,6 @@ void test_add() {
         new AddAction(input, wt->transpose(), res_wti_tensor)
     );
     insert_boundary_action();
-    // printAllTensors();
     // printAllActions();
     allocMemAndInitTensors();
     input->fill(0.1f);
@@ -324,6 +323,7 @@ void test_add() {
         res_wi_tensor, res_wti_tensor,
         res_ans, "test_add"
     );
+
     destruct_env();
 }
 
@@ -3571,7 +3571,6 @@ void test_pe() {
 }
 
 void test_pe_1() {
-
     construct_env();
     PosEncoding pe(1000, 20, 0);
     Tensor *input = allocTensor({3, 2, 20}, "input");

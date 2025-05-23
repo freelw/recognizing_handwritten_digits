@@ -189,7 +189,7 @@ __global__ void tensor_add_kernel(
             offset_dst += cur_dim_index * strides_dst[j];
             tmp_index %= tmp_length;
         }
-        dst[offset_dst] = src1[offset_src1] * src2[offset_src2];
+        dst[offset_dst] = src1[offset_src1] + src2[offset_src2];
     }
 }
 
