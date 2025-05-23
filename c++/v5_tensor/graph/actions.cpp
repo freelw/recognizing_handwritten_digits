@@ -705,7 +705,7 @@ std::string VarAction::to_string() const {
 void MulSVAction::execute() {
     assert(lhs != nullptr);
     assert(res != nullptr);
-    g_backend_ops->mulSV(lhs, res, value);
+    g_backend_ops->mulSV(res, lhs, value);
 }
 
 std::string MulSVAction::to_string() const {

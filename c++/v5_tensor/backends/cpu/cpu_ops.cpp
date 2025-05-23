@@ -818,8 +818,13 @@ void CPUOps::normBackward(
     }
 }
 
-void CPUOps::mulSV(Tensor *lhs, Tensor *res, float value) {
-    assert(false);
+void CPUOps::mulSV(Tensor *dst, Tensor *src, float value) {
+    assert(dst->length() == src->length());
+    auto length = dst->length();
+    for (int i = 0; i < length; ++i) {
+        static_cast<float*>(dst->get_data())[i] = 
+            static_cast<float*>(src->get_data())[i] * value;
+    }
 }
 
 void* CPUOps::alloc(size_t size) {

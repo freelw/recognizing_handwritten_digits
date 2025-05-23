@@ -445,7 +445,7 @@ __global__ void softmax_backward_kernel(
     }
 }
 
-__global__ void tensor_div(
+__global__ void tensor_div_scalar(
     float *dst, float *src,
     int length, float value
 ) {
@@ -657,6 +657,18 @@ __global__ void tensor_norm_backward_kernel(
             tmp += g * src[row * src_stride0 + j * src_stride1];
         }
         tgt[row * tgt_stride0 + i * tgt_stride1] = tmp;
+    }
+}
+
+__global__ void tensor_mul_scalar(
+    float *dst, float *src,
+    int length, float value
+) {
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index >= length) {
+        return;
+    } else {
+        dst[index] = src[index] * value;
     }
 }
 

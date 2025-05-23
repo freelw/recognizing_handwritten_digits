@@ -4393,6 +4393,71 @@ void test_ce_mask_all_0() {
     destruct_env();
 }
 
+void test_mulsv() {
+    construct_env();
+    Tensor *input = allocTensor({2, 3}, "input");
+    auto ni = graph::allocNode(input);
+    ni->init_weight_fill(1.0f);
+    ni->require_grad();
+
+    auto res = ni->mulsv(2.0f);
+    insert_boundary_action();
+    res->backward();
+    // printAllActions();
+    allocMemAndInitTensors();
+    float *res_grad_buffer = static_cast<float*>(::malloc(res->get_grad()->size()));
+    for (int i = 0; i < res->get_grad()->length(); ++ i) {
+        res_grad_buffer[i] = 1.0f * i;
+    }
+    g_backend_ops->cp_to_device(
+        res->get_grad(),
+        reinterpret_cast<char*>(res_grad_buffer),
+        res->get_grad()->size()
+    );
+    ::free(res_grad_buffer);
+    gDoActions();
+
+    float res_ans[6] = {
+        2, 2, 2,
+        2, 2, 2
+    };
+
+    bool succ_res = compare_res_ans_1d(
+        res->get_tensor(),
+        res_ans,
+        "res"
+    );
+
+    if (!succ_res) {
+        std::cout << RED << "test_mulsv res failed" << RESET << std::endl;
+    }
+
+    float input_grad_ans[6] = {
+        0, 2, 4,
+        6, 8, 10
+    };
+
+    bool succ_input_grad = compare_res_ans_1d(
+        ni->get_grad(),
+        input_grad_ans,
+        "input_grad"
+    );
+
+    if (!succ_input_grad) {
+        std::cout << RED << "test_mulsv input_grad failed" << RESET << std::endl;
+    }
+
+    bool succ = succ_res && succ_input_grad;
+
+    if (succ) {
+        std::cout << GREEN << "test_mulsv succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_mulsv failed" << RESET << std::endl;
+    }
+
+    destruct_env();
+}
+
 void test_cpu() {
     test_at();
     test_add();
@@ -4446,6 +4511,7 @@ void test_cpu() {
     test_ce_mask();
     test_ce_mask_all_0();
     test_mha_validlens_nullptr();
+    test_mulsv();
 }
 
 Tensor *test_add_with_cpu_base(int m, int n) {
@@ -6278,6 +6344,7 @@ void test_gpu() {
     test_ce_mask();
     test_ce_mask_all_0();
     test_mha_validlens_nullptr();
+    test_mulsv();
 }
 
 int main(int argc, char *argv[]) {

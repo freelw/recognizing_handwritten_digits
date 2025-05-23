@@ -59,7 +59,7 @@ class CUDAOps : public BackendOps {
         void normBackward(
             const Tensor *src_grad, const Tensor *norm_res, const Tensor *var_res, Tensor *tgt_grad
         ) override;
-        void mulSV(Tensor *lhs, Tensor *res, float value) override;
+        void mulSV(Tensor *dst, Tensor *src, float value) override;
 
         // Memory management
         void* alloc(size_t size) override;

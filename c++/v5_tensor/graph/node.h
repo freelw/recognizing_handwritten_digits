@@ -653,7 +653,23 @@ namespace graph {
                 : Edge(MulSV, _node), value(value) {}
             virtual ~MulSVEdge() {}
             void backward(Tensor *grad) override {
-                assert(false);
+                Tensor *tmp = allocTensor(
+                    node->get_grad()->get_shape(),
+                    "mul_sv_tmp"
+                );
+                gCreateAction(
+                    new MulSVAction(
+                        grad,
+                        tmp,
+                        value
+                    )
+                );
+                gCreateAction(
+                    new AddEqAction(
+                        node->get_grad(),
+                        tmp
+                    )
+                );
             }
         private:
             float value;

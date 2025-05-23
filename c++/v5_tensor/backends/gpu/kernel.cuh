@@ -146,7 +146,7 @@ __global__ void softmax_backward_kernel(
     int g_stride0, int g_stride1, int g_stride2
 );
 
-__global__ void tensor_div(
+__global__ void tensor_div_scalar(
     float *dst, float *src,
     int length, float value
 );
@@ -212,6 +212,11 @@ __global__ void tensor_norm_backward_kernel(
     int src_stride0, int src_stride1,
     int norm_stride0, int norm_stride1,
     int tgt_stride0, int tgt_stride1
+);
+
+__global__ void tensor_mul_scalar(
+    float *dst, float *src,
+    int length, float value
 );
 
 #endif // GCC_ASAN

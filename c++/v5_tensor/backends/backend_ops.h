@@ -55,7 +55,7 @@ class BackendOps {
         virtual void normBackward(
             const Tensor *src_grad, const Tensor *norm_res, const Tensor *var_res, Tensor *tgt_grad
         ) = 0;
-        virtual void mulSV(Tensor *lhs, Tensor *res, float value) = 0;
+        virtual void mulSV(Tensor *dst, Tensor *src, float value) = 0;
         // Memory management
         virtual void *alloc(size_t size) = 0;
         virtual void memset(void *ptr, int value, size_t size) = 0;

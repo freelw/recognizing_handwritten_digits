@@ -843,7 +843,7 @@ void CUDAOps::div(Tensor *dst, Tensor *src, float value) {
         (length + TILE_WIDTH - 1) / TILE_WIDTH
     );
     dim3 blockDim(TILE_WIDTH);
-    tensor_div<<<gridDim, blockDim>>>(
+    tensor_div_scalar<<<gridDim, blockDim>>>(
         (float *)dst->get_data(),
         (float *)src->get_data(),
         length,
@@ -924,7 +924,7 @@ void CUDAOps::avg(Tensor *lhs, Tensor *res) {
     );
     dim3 blockDim_div(TILE_WIDTH);
 
-    tensor_div<<<gridDim_div, blockDim_div>>>(
+    tensor_div_scalar<<<gridDim_div, blockDim_div>>>(
         (float *)res->get_data(),
         (float *)res->get_data(),
         length,
@@ -963,7 +963,7 @@ void CUDAOps::var(Tensor *lhs, const Tensor *_avg, Tensor *res) {
     );
     dim3 blockDim_div(TILE_WIDTH);
 
-    tensor_div<<<gridDim_div, blockDim_div>>>(
+    tensor_div_scalar<<<gridDim_div, blockDim_div>>>(
         (float *)res->get_data(),
         (float *)res->get_data(),
         length,
@@ -1045,8 +1045,23 @@ void CUDAOps::normBackward(
     );
 }
 
-void CUDAOps::mulSV(Tensor *lhs, Tensor *res, float value) {
-    assert(false);
+void CUDAOps::mulSV(Tensor *dst, Tensor *src, float value) {
+    assert(dst->length() == src->length());
+    assert(dst->get_shape() == src->get_shape());
+    assert(dst->get_strides() == src->get_strides());
+    auto length = dst->length();
+
+    dim3 gridDim(
+        (length + TILE_WIDTH - 1) / TILE_WIDTH
+    );
+    dim3 blockDim(TILE_WIDTH);
+
+    tensor_mul_scalar<<<gridDim, blockDim>>>(
+        (float *)dst->get_data(),
+        (float *)src->get_data(),
+        length,
+        value
+    );
 }
 
 void* CUDAOps::alloc(size_t size) {
