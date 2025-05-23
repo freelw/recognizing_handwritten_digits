@@ -165,6 +165,25 @@ namespace graph {
         return res_node;
     }
 
+    Node *Node::mulsv(float v) {
+        Tensor *l_tensor = this->get_tensor();
+        assert(l_tensor->is_contiguous()); // 只有在这个前提下，当前的后端实现才是正确的，没有考虑stride
+        Tensor *res_tensor = allocTensor(t->get_shape(), "mulsv_res");
+        gCreateAction(
+            new MulSVAction(
+                l_tensor,
+                res_tensor,
+                v
+            )
+        );
+        Node *res_node = allocNode(res_tensor);
+        if (is_require_grad()) {
+            res_node->require_grad();
+            res_node->edges.push_back(MulSVEdge::create(this, v));
+        }
+        return res_node;
+    }
+
     Node *Node::expand_add(Node *rhs) {
         Tensor *res_tensor = allocTensor(t->get_shape(), "expand_add");
         Tensor *r_tensor = rhs->get_tensor();
@@ -534,6 +553,7 @@ namespace graph {
 
     Node *Node::div(float value) {
         Tensor *l_tensor = this->get_tensor();
+        assert(l_tensor->is_contiguous()); // 只有在这个前提下，当前的后端实现才是正确的，没有考虑stride
         Tensor *res_tensor = allocTensor(l_tensor->get_shape(), "div_res");
         gCreateAction(
             new DivAction(

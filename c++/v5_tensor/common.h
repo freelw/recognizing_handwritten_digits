@@ -17,4 +17,7 @@ void destruct_env();
 void use_gpu(bool use = true);
 bool is_use_gpu();
 
+#define NUM_STEPS 30
+#define MAX_POSENCODING_LEN 10000
+
 #endif

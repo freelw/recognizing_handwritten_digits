@@ -396,5 +396,15 @@
             "stopAtEntry": false,
             "environment": []
         },
+        {
+            "name": "(gdb) Launch cpu transformer",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "/home/cs/project/recognizing_handwritten_digits/c++/v5_tensor/transformer",
+            "args": [],
+            "cwd": "/home/cs/project/recognizing_handwritten_digits/c++/v5_tensor/",
+            "stopAtEntry": false,
+            "environment": []
+        },
     ]
 }

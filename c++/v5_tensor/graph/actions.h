@@ -31,10 +31,14 @@ class Action {
 
 class AddAction : public Action {
     public:
-        AddAction(Tensor *_lhs, const Tensor *_rhs, Tensor *_res)
-            : Action(_lhs, _rhs, _res) {}
+        AddAction(Tensor *_lhs, const Tensor *_rhs, Tensor *_res);
         void execute() override;
         std::string to_string() const override;
+    private:
+        Tensor *lhs_shape;
+        Tensor *lhs_strides;
+        Tensor *rhs_strides;
+        Tensor *res_strides;
 };
 
 // AddEqAction 永远不会出现在forward中
@@ -377,6 +381,28 @@ class DbgPrintAction : public Action {
         std::string to_string() const override;
     private:
         std::string msg;
+};
+
+class MemCpAction : public Action {
+    public:
+        MemCpAction(Tensor *_lhs, const Tensor *_rhs, int _offset_l, int _offset_r, int _size)
+            : Action(_lhs, _rhs, nullptr), offset_l(_offset_l), offset_r(_offset_r), size(_size) {}
+        void execute() override;
+        std::string to_string() const override;
+    private:
+        int offset_l;
+        int offset_r;
+        int size;
+};
+
+class MulSVAction : public Action {
+    public:
+        MulSVAction(Tensor *_lhs, Tensor *_res, float _value)
+            : Action(_lhs, nullptr, _res), value(_value) {}
+        void execute() override;
+        std::string to_string() const override;
+    private:
+        float value;
 };
 
 std::vector<Action *> getOnceActions();

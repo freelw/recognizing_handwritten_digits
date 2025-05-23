@@ -65,7 +65,7 @@ graph::Node *MHA::forward(
     graph::Node *values,
     Tensor *valid_lens
 ) {
-    assert(queries->get_tensor()->get_dim() == 3);
+    assert(queries->get_tensor()->get_dim() == 3); // shape : (batch_size, seq_len, num_hiddens)
     assert(keys->get_tensor()->get_dim() == 3);
     assert(values->get_tensor()->get_dim() == 3);
     queries = transpose_qkv(w_q->forward(queries));
@@ -73,7 +73,7 @@ graph::Node *MHA::forward(
     values = transpose_qkv(w_v->forward(values));
 
     if (valid_lens != nullptr) {
-        assert(valid_lens->get_dim() == 1);
+        // assert(valid_lens->get_dim() == 1);
         valid_lens = valid_lens->repeat_interleave(num_heads);
     }
     auto output = attention->forward(

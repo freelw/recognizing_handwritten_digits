@@ -6,7 +6,7 @@
 
 class PosEncoding {
     public:
-        PosEncoding(int _max_len, int _num_hidden, float p = 0.0f);
+        PosEncoding(int _max_len, int _num_hidden, float p);
         ~PosEncoding();
         graph::Node *forward(graph::Node *input);
     private:

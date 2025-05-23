@@ -34,11 +34,71 @@ std::ostream &operator<<(std::ostream &output, const Action &a) {
     return output;
 }
 
+AddAction::AddAction(Tensor *_lhs, const Tensor *_rhs, Tensor *_res)
+    : Action(_lhs, _rhs, _res) {
+    
+    assert(_lhs->get_dim() == _rhs->get_dim());
+    assert(_lhs->get_shape() == _rhs->get_shape());
+    auto dim = _lhs->get_dim();
+
+    lhs_shape = allocTensor(
+        {dim},
+        _lhs->get_name() + "_shape",
+        INT32
+    );
+    lhs_strides = allocTensor(
+        {dim},
+        _lhs->get_name() + "_strides",
+        INT32
+    );
+    rhs_strides = allocTensor(
+        {dim},
+        _rhs->get_name() + "_strides",
+        INT32
+    );
+    res_strides = allocTensor(
+        {dim},
+        _res->get_name() + "_strides",
+        INT32
+    );
+
+    gCreateAction(
+        new AssignShapeAndStridesAction(
+            lhs_shape,
+            lhs_strides,
+            _lhs->get_shape(),
+            _lhs->get_strides()
+        )
+    );
+
+    gCreateAction(
+        new AssignShapeAndStridesAction(
+            nullptr,
+            rhs_strides,
+            {},
+            _rhs->get_strides()
+        )
+    );
+
+    gCreateAction(
+        new AssignShapeAndStridesAction(
+            nullptr,
+            res_strides,
+            {},
+            _res->get_strides()
+        )
+    );
+}
+
 void AddAction::execute() {
     assert(lhs != nullptr);
     assert(rhs != nullptr);
     assert(res != nullptr);
-    g_backend_ops->add(lhs, rhs, res);
+    g_backend_ops->add(
+        lhs, rhs, res,
+        lhs_shape, lhs_strides,
+        rhs_strides, res_strides
+    );
 }
 
 std::string AddAction::to_string() const {
@@ -464,6 +524,8 @@ std::string ReshapeDeepCpAction::to_string() const {
 void RepeatInterleaveAction::execute() {
     assert(lhs != nullptr);
     assert(res != nullptr);
+    assert(lhs->is_contiguous());
+    assert(res->is_contiguous());
     g_backend_ops->repeat_interleave(lhs, res, n);
 }
 
@@ -672,6 +734,23 @@ std::string DbgPrintAction::to_string() const {
     return oss.str();
 }
 
+void MemCpAction::execute() {
+    assert(lhs != nullptr);
+    assert(rhs != nullptr);
+
+    g_backend_ops->cp_device_to_device(
+        static_cast<char*>(lhs->get_data()) + offset_l,
+        static_cast<char*>(rhs->get_data()) + offset_r,
+        size
+    );
+}
+
+std::string MemCpAction::to_string() const {
+    std::ostringstream oss;
+    oss << "MemCpAction: copying " << size << " bytes from " << rhs->get_meta_info() << " to " << lhs->get_meta_info() << " with offset " << offset_r << " to " << offset_l;
+    return oss.str();
+}
+
 void VarAction::execute() {
     assert(lhs != nullptr);
     assert(rhs != nullptr);
@@ -682,6 +761,18 @@ void VarAction::execute() {
 std::string VarAction::to_string() const {
     std::ostringstream oss;
     oss << "VarAction: variance " << lhs->get_meta_info() << " with mean " << rhs->get_meta_info() << " to " << res->get_meta_info();
+    return oss.str();
+}
+
+void MulSVAction::execute() {
+    assert(lhs != nullptr);
+    assert(res != nullptr);
+    g_backend_ops->mulSV(res, lhs, value);
+}
+
+std::string MulSVAction::to_string() const {
+    std::ostringstream oss;
+    oss << "MulSVAction: multiplying " << lhs->get_meta_info() << " with scalar " << value << " to " << res->get_meta_info();
     return oss.str();
 }
 

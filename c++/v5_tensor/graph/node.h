@@ -67,6 +67,7 @@ namespace graph {
             Node *masked_softmax(Tensor *valid_len);
             Node *add(Node *rhs);
             Node *mul(Node *rhs);
+            Node *mulsv(float v);
             Node *expand_add(Node *rhs);
             Node *expand_mul(Node *rhs);
             Node *at(Node *rhs);
@@ -639,6 +640,39 @@ namespace graph {
             }
         private:
             Tensor *mask_sum_tensor;
+    };
+
+    class MulSVEdge: public Edge {
+        public:
+            static Edge* create(Node *_node, float value) {
+                Edge *edge = new MulSVEdge(_node, value);
+                gAddEdge(edge);
+                return edge;
+            }
+            MulSVEdge(Node *_node, float value)
+                : Edge(MulSV, _node), value(value) {}
+            virtual ~MulSVEdge() {}
+            void backward(Tensor *grad) override {
+                Tensor *tmp = allocTensor(
+                    node->get_grad()->get_shape(),
+                    "mul_sv_tmp"
+                );
+                gCreateAction(
+                    new MulSVAction(
+                        grad,
+                        tmp,
+                        value
+                    )
+                );
+                gCreateAction(
+                    new AddEqAction(
+                        node->get_grad(),
+                        tmp
+                    )
+                );
+            }
+        private:
+            float value;
     };
 
     Node *allocNode(Tensor *t);

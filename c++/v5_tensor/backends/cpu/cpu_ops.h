@@ -9,7 +9,11 @@ class CPUOps : public BackendOps {
     public:
         CPUOps();
         ~CPUOps() override = default;
-        void add(Tensor *lhs, const Tensor *rhs, Tensor *res) override;
+        void add(
+            Tensor *lhs, const Tensor *rhs, Tensor *res,
+            Tensor *l_shape, Tensor *l_strides,
+            Tensor *r_striedes, Tensor *res_striedes
+        ) override;
         void addEq(
             Tensor *lhs, const Tensor *rhs,
             Tensor *l_shape,
@@ -57,6 +61,7 @@ class CPUOps : public BackendOps {
         void normBackward(
             const Tensor *src_grad, const Tensor *norm_res, const Tensor *var_res, Tensor *tgt_grad
         ) override;
+        void mulSV(Tensor *dst, Tensor *src, float value) override;
 
         // Memory management
         void* alloc(size_t size) override;

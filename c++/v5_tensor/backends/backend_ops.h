@@ -7,7 +7,11 @@ class BackendOps {
     public:
         BackendOps() = default;
         virtual ~BackendOps() = default;
-        virtual void add(Tensor *lhs, const Tensor *rhs, Tensor *res) = 0;
+        virtual void add(
+            Tensor *lhs, const Tensor *rhs, Tensor *res,
+            Tensor *l_shape, Tensor *l_strides,
+            Tensor *r_striedes, Tensor *res_striedes
+        ) = 0;
         virtual void addEq(
             Tensor *lhs, const Tensor *rhs,
             Tensor *l_shape,
@@ -55,6 +59,7 @@ class BackendOps {
         virtual void normBackward(
             const Tensor *src_grad, const Tensor *norm_res, const Tensor *var_res, Tensor *tgt_grad
         ) = 0;
+        virtual void mulSV(Tensor *dst, Tensor *src, float value) = 0;
         // Memory management
         virtual void *alloc(size_t size) = 0;
         virtual void memset(void *ptr, int value, size_t size) = 0;

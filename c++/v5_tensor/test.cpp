@@ -297,7 +297,6 @@ void test_add() {
         new AddAction(input, wt->transpose(), res_wti_tensor)
     );
     insert_boundary_action();
-    // printAllTensors();
     // printAllActions();
     allocMemAndInitTensors();
     input->fill(0.1f);
@@ -324,6 +323,7 @@ void test_add() {
         res_wi_tensor, res_wti_tensor,
         res_ans, "test_add"
     );
+
     destruct_env();
 }
 
@@ -3435,9 +3435,38 @@ void test_mha() {
     destruct_env();   
 }
 
+void test_mha_validlens_nullptr() {
+    construct_env();
+    Tensor *queries = allocTensor({2, 1, 2}, "queries");
+    Tensor *keys = allocTensor({2, 5, 2}, "keys");
+    Tensor *values = allocTensor({2, 5, 4}, "values");
+
+    auto nq = graph::allocNode(queries);
+    auto nk = graph::allocNode(keys);
+    auto nv = graph::allocNode(values);
+
+    nq->require_grad();
+    nk->require_grad();
+    nv->require_grad();
+
+    Tensor *labels = allocTensor({2}, "labels", INT32);
+    MHA mha(10, 2, 0.0f, false, true);
+    auto res = mha.forward(nq, nk, nv, nullptr);
+    auto res_shape = res->get_tensor()->get_shape();
+    auto res_dim = res->get_tensor()->get_dim();
+    
+    auto ce_res = res->reshape({-1, res_shape[res_dim-1]})->CrossEntropy(labels)->avg_1d();
+    insert_boundary_action();
+    ce_res->backward();
+    // printAllActions();
+    allocMemAndInitTensors();
+    destruct_env();
+    std::cout << GREEN << "test_mha_validlens_nullptr succ" << RESET << std::endl;
+}
+
 void test_embedding() {
     construct_env();
-    Tensor *indices = allocTensor({3}, "indices", INT32);
+    Tensor *indices = allocTensor({1, 3}, "indices", INT32);
     Embedding emb(10, 5, true);
     auto res = emb.forward(indices);
     auto res_grad = res->get_grad();
@@ -3513,8 +3542,8 @@ void test_embedding() {
 
 void test_pe() {
     construct_env();
-    PosEncoding pe(1000, 20);
-    Tensor *input = allocTensor({2, 20}, "input");
+    PosEncoding pe(1000, 20, 0);
+    Tensor *input = allocTensor({1, 2, 20}, "input");
     auto ni = graph::allocNode(input);
     ni->require_grad();
     ni->init_weight_fill(1.0f);
@@ -3537,6 +3566,40 @@ void test_pe() {
         std::cout << GREEN << "test_pe succ" << RESET << std::endl;
     } else {
         std::cout << RED << "test_pe failed" << RESET << std::endl;
+    }
+    destruct_env();
+}
+
+void test_pe_1() {
+    construct_env();
+    PosEncoding pe(1000, 20, 0);
+    Tensor *input = allocTensor({3, 2, 20}, "input");
+    auto ni = graph::allocNode(input);
+    ni->require_grad();
+    ni->init_weight_fill(1.0f);
+    auto res = pe.forward(ni);
+    insert_boundary_action();
+    res->backward();
+    // printAllActions();
+    allocMemAndInitTensors();
+    gDoActions();
+    float res_ans[120] = {
+        1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2,
+        1.841471, 1.5403023, 1.3876742, 1.9217964, 1.1578267, 1.9874668, 1.0630538, 1.9980102, 1.0251162, 1.9996846, 1.0099999, 1.9999499, 1.0039811, 1.9999921, 1.0015849, 1.9999988, 1.000631, 1.9999998, 1.0002512, 2,
+        1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2,
+        1.841471, 1.5403023, 1.3876742, 1.9217964, 1.1578267, 1.9874668, 1.0630538, 1.9980102, 1.0251162, 1.9996846, 1.0099999, 1.9999499, 1.0039811, 1.9999921, 1.0015849, 1.9999988, 1.000631, 1.9999998, 1.0002512, 2,
+        1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2,
+        1.841471, 1.5403023, 1.3876742, 1.9217964, 1.1578267, 1.9874668, 1.0630538, 1.9980102, 1.0251162, 1.9996846, 1.0099999, 1.9999499, 1.0039811, 1.9999921, 1.0015849, 1.9999988, 1.000631, 1.9999998, 1.0002512, 2
+    };
+    bool succ = compare_res_ans_1d(
+        res->get_tensor(),
+        res_ans,
+        "res"
+    );
+    if (succ) {
+        std::cout << GREEN << "test_pe_1 succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_pe_1 failed" << RESET << std::endl;
     }
     destruct_env();
 }
@@ -4329,6 +4392,71 @@ void test_ce_mask_all_0() {
     destruct_env();
 }
 
+void test_mulsv() {
+    construct_env();
+    Tensor *input = allocTensor({2, 3}, "input");
+    auto ni = graph::allocNode(input);
+    ni->init_weight_fill(1.0f);
+    ni->require_grad();
+
+    auto res = ni->mulsv(2.0f);
+    insert_boundary_action();
+    res->backward();
+    // printAllActions();
+    allocMemAndInitTensors();
+    float *res_grad_buffer = static_cast<float*>(::malloc(res->get_grad()->size()));
+    for (int i = 0; i < res->get_grad()->length(); ++ i) {
+        res_grad_buffer[i] = 1.0f * i;
+    }
+    g_backend_ops->cp_to_device(
+        res->get_grad(),
+        reinterpret_cast<char*>(res_grad_buffer),
+        res->get_grad()->size()
+    );
+    ::free(res_grad_buffer);
+    gDoActions();
+
+    float res_ans[6] = {
+        2, 2, 2,
+        2, 2, 2
+    };
+
+    bool succ_res = compare_res_ans_1d(
+        res->get_tensor(),
+        res_ans,
+        "res"
+    );
+
+    if (!succ_res) {
+        std::cout << RED << "test_mulsv res failed" << RESET << std::endl;
+    }
+
+    float input_grad_ans[6] = {
+        0, 2, 4,
+        6, 8, 10
+    };
+
+    bool succ_input_grad = compare_res_ans_1d(
+        ni->get_grad(),
+        input_grad_ans,
+        "input_grad"
+    );
+
+    if (!succ_input_grad) {
+        std::cout << RED << "test_mulsv input_grad failed" << RESET << std::endl;
+    }
+
+    bool succ = succ_res && succ_input_grad;
+
+    if (succ) {
+        std::cout << GREEN << "test_mulsv succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_mulsv failed" << RESET << std::endl;
+    }
+
+    destruct_env();
+}
+
 void test_cpu() {
     test_at();
     test_add();
@@ -4369,6 +4497,7 @@ void test_cpu() {
     test_mha();
     test_embedding();
     test_pe();
+    test_pe_1();
     test_expand_mul();
     test_at_bp_ledge_add_eq();
     test_at_bp_redge_add_eq();
@@ -4380,6 +4509,8 @@ void test_cpu() {
     test_ce_avg_1d();
     test_ce_mask();
     test_ce_mask_all_0();
+    test_mha_validlens_nullptr();
+    test_mulsv();
 }
 
 Tensor *test_add_with_cpu_base(int m, int n) {
@@ -6021,7 +6152,7 @@ void test_permute_with_cpu() {
 
 std::vector<Tensor *> test_embedding_with_cpu_base(int m, int n) {
     Embedding emb(m, n, true);
-    Tensor *indices = allocTensor({m/2}, "indices", INT32);
+    Tensor *indices = allocTensor({1, m/2}, "indices", INT32);
     auto res = emb.forward(indices);
     insert_boundary_action();
     res->backward();
@@ -6200,6 +6331,7 @@ void test_gpu() {
     test_embedding();
     test_embedding_with_cpu();
     test_pe();
+    test_pe_1();
     test_expand_mul();
     test_at_bp_ledge_add_eq();
     test_at_bp_redge_add_eq();
@@ -6210,6 +6342,8 @@ void test_gpu() {
     test_layernorm();
     test_ce_mask();
     test_ce_mask_all_0();
+    test_mha_validlens_nullptr();
+    test_mulsv();
 }
 
 int main(int argc, char *argv[]) {
