@@ -15,7 +15,8 @@ class Seq2SeqEncoderDecoder {
         graph::Node * forward(
             Tensor *src_token_ids,
             Tensor *tgt_token_ids,
-            Tensor *valid_lens
+            Tensor *enc_valid_lens,
+            Tensor *dec_valid_lens
         );
         std::vector<Parameter *> get_parameters();
     private:

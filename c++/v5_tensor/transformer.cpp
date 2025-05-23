@@ -1,4 +1,7 @@
 #include "module/Seq2Seq.h"
+#include "common.h"
+
+#define NUM_STEPS 9
 
 void check_parameters(const std::vector<Parameter*> &parameters, int num_blks) {
 
@@ -44,9 +47,16 @@ void check_parameters(const std::vector<Parameter*> &parameters, int num_blks) {
     parameters_size_should_be += 1; // target linear w
     parameters_size_should_be += 1; // target linear b
     assert(parameters.size() == parameters_size_should_be);
+    // print all parameters
+    std::cout << "transformer parameters size : " << parameters.size() << std::endl;
+    for (int i = 0; i < parameters.size(); i++) {
+        std::cout << "parameter " << i << " : " << parameters[i]->get_w()->get_meta_info() << std::endl;
+    }
 }
 
 int main(int argc, char *argv[]) {
+    use_gpu();
+    construct_env();
     int num_hiddens = 256;
     int num_blks = 2;
     float dropout = 0.2f;
@@ -55,15 +65,23 @@ int main(int argc, char *argv[]) {
     int vocab_size = 1000; // fix me
     int bos_id = 0; // fix me
     int eos_id = 1; // fix me
+    int batch_size = 128;
+    int num_steps = 9;
     Seq2SeqEncoderDecoder *seq2seq = new Seq2SeqEncoderDecoder(
         bos_id, eos_id,
         vocab_size, num_hiddens, ffn_num_hiddens,
         num_heads, num_blks, dropout
     );
 
+    Tensor *src_token_ids = allocTensor({128, NUM_STEPS}, INT32);
+    Tensor *tgt_token_ids = allocTensor({128, NUM_STEPS}, INT32);
+    Tensor *enc_valid_lens = allocTensor({128}, INT32);
+    Tensor *dec_valid_lens = allocTensor({128, NUM_STEPS}, INT32);
+    auto res = seq2seq->forward(src_token_ids, tgt_token_ids, enc_valid_lens, dec_valid_lens);
     std::vector<Parameter *> parameters = seq2seq->get_parameters();
     check_parameters(parameters, num_blks);
 
     delete seq2seq;
+    destruct_env();
     return 0;
 }
