@@ -110,8 +110,11 @@ int main(int argc, char *argv[]) {
     Tensor *enc_valid_lens = allocTensor({batch_size}, INT32);
     Tensor *dec_valid_lens = allocTensor({batch_size, num_steps}, INT32);
     Tensor *labels = allocTensor({batch_size * num_steps}, INT32);
+    Tensor *ce_mask = allocTensor({batch_size * num_steps}, INT32);
+    auto ce_mask_node = graph::allocNode(ce_mask);
+    ce_mask_node->init_weight_fill(1.0f);
     auto res = seq2seq->forward(src_token_ids, tgt_token_ids, enc_valid_lens, dec_valid_lens);
-    auto loss = res->reshape({-1, dec_vocab_size})->CrossEntropy(labels)->avg_1d();
+    auto loss = res->reshape({-1, dec_vocab_size})->CrossEntropy(labels)->mask(ce_mask)->avg_1d(ce_mask);
     insert_boundary_action();
     
     std::vector<Parameter *> parameters = seq2seq->get_parameters();
@@ -130,7 +133,7 @@ int main(int argc, char *argv[]) {
             print_progress(prefix , j*batch_size, 1306*batch_size);
             gDoActions();
         }
-        std::cout << std::endl;
+        std::cout << "loss : " << *loss->get_tensor() << std::endl;
     }
     
     delete seq2seq;
