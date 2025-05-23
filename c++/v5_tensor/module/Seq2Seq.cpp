@@ -22,3 +22,28 @@ Seq2SeqEncoderDecoder::~Seq2SeqEncoderDecoder() {
     delete encoder;
     delete decoder;
 }
+
+
+graph::Node * Seq2SeqEncoderDecoder::forward(
+    Tensor *src_token_ids,
+    Tensor *tgt_token_ids,
+    Tensor *valid_lens
+) {
+    assert(src_token_ids->get_dim() == 2);
+    assert(tgt_token_ids->get_dim() == 2);
+    auto src_shape = src_token_ids->get_shape();
+    auto tgt_shape = tgt_token_ids->get_shape();
+    assert(src_shape == tgt_shape);
+    assert(valid_lens->get_dim() == 1);
+    assert(src_shape[0] == valid_lens->get_shape()[0]);
+    assert(false);
+}
+
+std::vector<Parameter *> Seq2SeqEncoderDecoder::get_parameters() {
+    std::vector<Parameter *> parameters;
+    auto enc_parameters = encoder->get_parameters();
+    auto dec_parameters = decoder->get_parameters();
+    parameters.insert(parameters.end(), enc_parameters.begin(), enc_parameters.end());
+    parameters.insert(parameters.end(), dec_parameters.begin(), dec_parameters.end());
+    return parameters;
+}

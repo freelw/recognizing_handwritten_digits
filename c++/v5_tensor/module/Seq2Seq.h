@@ -12,6 +12,12 @@ class Seq2SeqEncoderDecoder {
             int num_heads, int num_blks, float dropout, bool bias = false
         );
         ~Seq2SeqEncoderDecoder();
+        graph::Node * forward(
+            Tensor *src_token_ids,
+            Tensor *tgt_token_ids,
+            Tensor *valid_lens
+        );
+        std::vector<Parameter *> get_parameters();
     private:
         TransformerEncoder *encoder;
         TransformerDecoder *decoder;

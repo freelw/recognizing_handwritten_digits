@@ -48,3 +48,15 @@ graph::Node *TransformerDecoder::forward(
     return dense->forward(x);
 }
 
+std::vector<Parameter *> TransformerDecoder::get_parameters() {
+    std::vector<Parameter *> parameters;
+    auto embedding_params = embedding->get_parameters();
+    parameters.insert(parameters.end(), embedding_params.begin(), embedding_params.end());
+    for (auto blk : blks) {
+        auto blk_params = blk->get_parameters();
+        parameters.insert(parameters.end(), blk_params.begin(), blk_params.end());
+    }
+    auto dense_params = dense->get_parameters();
+    parameters.insert(parameters.end(), dense_params.begin(), dense_params.end());
+    return parameters;
+}

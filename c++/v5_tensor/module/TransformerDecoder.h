@@ -30,8 +30,8 @@ class TransformerDecoder{
         int num_hiddens;
         Embedding *embedding;
         PosEncoding *pos_encoding;
-        LazyLinear *dense;
         std::vector<TransformerDecoderBlock *> blks;
+        LazyLinear *dense;
 };
 
 #endif

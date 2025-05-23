@@ -33,3 +33,14 @@ graph::Node *TransformerEncoder::forward(Tensor *indices, Tensor *valid_lens) {
     }
     return x;
 }
+
+std::vector<Parameter *> TransformerEncoder::get_parameters() {
+    std::vector<Parameter *> parameters;
+    auto embedding_params = embedding->get_parameters();
+    parameters.insert(parameters.end(), embedding_params.begin(), embedding_params.end());
+    for (auto blk : blks) {
+        auto blk_params = blk->get_parameters();
+        parameters.insert(parameters.end(), blk_params.begin(), blk_params.end());
+    }
+    return parameters;
+}

@@ -35,3 +35,7 @@ graph::Node *Embedding::forward(Tensor *indices) {
     );
     return res_node->reshape({origin_shape[0], origin_shape[1], hidden_num});
 }
+
+std::vector<Parameter *> Embedding::get_parameters() {
+    return {Pw};
+}
