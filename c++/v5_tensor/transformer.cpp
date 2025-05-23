@@ -46,10 +46,10 @@ void check_parameters(const std::vector<Parameter*> &parameters, int num_blks) {
     parameters_size_should_be += 1; // target linear b
     assert(parameters.size() == parameters_size_should_be);
     // print all parameters
-    std::cout << "transformer parameters size : " << parameters.size() << std::endl;
-    for (int i = 0; i < parameters.size(); i++) {
-        std::cout << "parameter " << i << " : " << parameters[i]->get_w()->get_meta_info() << std::endl;
-    }
+    // std::cout << "transformer parameters size : " << parameters.size() << std::endl;
+    // for (int i = 0; i < parameters.size(); i++) {
+    //     std::cout << "parameter " << i << " : " << parameters[i]->get_w()->get_meta_info() << std::endl;
+    // }
 }
 
 int main(int argc, char *argv[]) {
@@ -80,6 +80,7 @@ int main(int argc, char *argv[]) {
     std::vector<Parameter *> parameters = seq2seq->get_parameters();
     check_parameters(parameters, num_blks);
 
+    printAllActions();
     insert_boundary_action();
     allocMemAndInitTensors();
     gDoActions();

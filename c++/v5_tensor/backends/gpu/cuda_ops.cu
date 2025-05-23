@@ -50,6 +50,7 @@ void CUDAOps::add(Tensor *lhs, const Tensor *rhs, Tensor *res) {
     auto rstrides = rhs->get_strides();
     auto res_strides = res->get_strides();
 
+    std::cout << "lhs meta : " << lhs->get_meta_info() << std::endl;
     assert(lhs->get_dim() == 2);
 
     dim3 gridDim(
