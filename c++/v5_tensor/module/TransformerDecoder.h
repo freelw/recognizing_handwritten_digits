@@ -14,7 +14,8 @@ class TransformerDecoder{
             int ffn_num_hiddens,
             int num_heads,
             int num_blks,
-            float dropout = 0.0f
+            float dropout = 0.0f,
+            bool bias = false
         );
         ~TransformerDecoder();
         graph::Node *forward(

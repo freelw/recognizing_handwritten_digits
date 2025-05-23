@@ -7,14 +7,15 @@ TransformerDecoder::TransformerDecoder(
     int ffn_num_hiddens,
     int num_heads,
     int num_blks,
-    float dropout
+    float dropout,
+    bool bias
 ) : num_hiddens(_num_hiddens) {
     embedding = new Embedding(vocab_size, num_hiddens);
     pos_encoding = new PosEncoding(num_hiddens, dropout);
     
     for (int i = 0; i < num_blks; i++) {
         blks.push_back(new TransformerDecoderBlock(
-            num_hiddens, ffn_num_hiddens, num_heads, dropout
+            num_hiddens, ffn_num_hiddens, num_heads, dropout, bias
         ));
     }
     dense = new LazyLinear(vocab_size, "dense", -1.0f, -1.0f, NONE);
