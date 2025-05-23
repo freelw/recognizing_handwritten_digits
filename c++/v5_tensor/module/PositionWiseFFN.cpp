@@ -2,7 +2,7 @@
 
 PositionWiseFFN::PositionWiseFFN(int ffn_num_hiddens, int ffn_num_outputs) {
     dense1 = new LazyLinear(ffn_num_hiddens, "ffn_dense1", -0.1f, -0.1f, RELU);
-    dense2 = new LazyLinear(ffn_num_outputs, "ffn_dense1");
+    dense2 = new LazyLinear(ffn_num_outputs, "ffn_dense2");
 }
 
 PositionWiseFFN::~PositionWiseFFN() {
