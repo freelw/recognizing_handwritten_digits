@@ -9,7 +9,11 @@ class CPUOps : public BackendOps {
     public:
         CPUOps();
         ~CPUOps() override = default;
-        void add(Tensor *lhs, const Tensor *rhs, Tensor *res) override;
+        void add(
+            Tensor *lhs, const Tensor *rhs, Tensor *res,
+            Tensor *l_shape, Tensor *l_strides,
+            Tensor *r_striedes, Tensor *res_striedes
+        ) override;
         void addEq(
             Tensor *lhs, const Tensor *rhs,
             Tensor *l_shape,

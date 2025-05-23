@@ -163,6 +163,36 @@ __global__ void tensor_mul_kernel(
     }
 }
 
+__global__ void tensor_add_kernel(
+    float *dst, float *src1, float *src2,
+    int32_t *shape,
+    int32_t *strides_dst,
+    int32_t *strides_src1,
+    int32_t *strides_src2,
+    int32_t dim,
+    int32_t length
+) {
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index >= length) {
+        return;
+    } else {
+        int tmp_length = length;
+        int tmp_index = index;
+        int offset_src1 = 0;
+        int offset_src2 = 0;
+        int offset_dst = 0;
+        for (int j = 0; j < dim; ++j) {
+            tmp_length /= shape[j];
+            int cur_dim_index = tmp_index / tmp_length;
+            offset_src1 += cur_dim_index * strides_src1[j];
+            offset_src2 += cur_dim_index * strides_src2[j];
+            offset_dst += cur_dim_index * strides_dst[j];
+            tmp_index %= tmp_length;
+        }
+        dst[offset_dst] = src1[offset_src1] * src2[offset_src2];
+    }
+}
+
 __global__ void tensor_sum_2d_dim0(
     float *Md, float *Pd,
     int M, int N,

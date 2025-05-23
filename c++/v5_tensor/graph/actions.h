@@ -31,10 +31,14 @@ class Action {
 
 class AddAction : public Action {
     public:
-        AddAction(Tensor *_lhs, const Tensor *_rhs, Tensor *_res)
-            : Action(_lhs, _rhs, _res) {}
+        AddAction(Tensor *_lhs, const Tensor *_rhs, Tensor *_res);
         void execute() override;
         std::string to_string() const override;
+    private:
+        Tensor *lhs_shape;
+        Tensor *lhs_strides;
+        Tensor *rhs_strides;
+        Tensor *res_strides;
 };
 
 // AddEqAction 永远不会出现在forward中

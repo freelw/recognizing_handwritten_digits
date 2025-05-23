@@ -34,44 +34,36 @@ CUDAOps::CUDAOps() {
     CURAND_CHECK(curandSetPseudoRandomGeneratorSeed(gen, seed));
 }
 
-void CUDAOps::add(Tensor *lhs, const Tensor *rhs, Tensor *res) {
+void CUDAOps::add(
+    Tensor *lhs, const Tensor *rhs, Tensor *res,
+    Tensor *l_shape, Tensor *l_strides,
+    Tensor *r_striedes, Tensor *res_striedes
+) {
     assert(lhs != nullptr);
     assert(rhs != nullptr);
     assert(res != nullptr);
-
-    auto lshape = lhs->get_shape();
-    auto rshape = rhs->get_shape();
-    auto res_shape = res->get_shape();
-
-    assert(lshape == rshape);
-    assert(res_shape == lshape);
-
-    auto lstrides = lhs->get_strides();
-    auto rstrides = rhs->get_strides();
-    auto res_strides = res->get_strides();
-
-    std::cout << "lhs meta : " << lhs->get_meta_info() << std::endl;
-    assert(lhs->get_dim() == 2);
-
+    assert(l_shape != nullptr);
+    assert(l_strides != nullptr);
+    assert(r_striedes != nullptr);
+    assert(res_striedes != nullptr);
+    
+    auto length = lhs->length();
     dim3 gridDim(
-        (lshape[1] + TILE_WIDTH - 1) / TILE_WIDTH,
-        (lshape[0] + TILE_WIDTH - 1) / TILE_WIDTH
+        (length + TILE_WIDTH - 1) / TILE_WIDTH
     );
 
-    dim3 blockDim(TILE_WIDTH, TILE_WIDTH);
+    dim3 blockDim(TILE_WIDTH);
 
-    tensor_add_2d<<<gridDim, blockDim>>>(
+    tensor_add_kernel<<<gridDim, blockDim>>>(
+        (float *)res->get_data(),
         (float *)lhs->get_data(),
         (float *)rhs->get_data(),
-        (float *)res->get_data(),
-        lshape[0],
-        lshape[1],
-        lstrides[0],
-        lstrides[1],
-        rstrides[0],
-        rstrides[1],
-        res_strides[0],
-        res_strides[1]
+        (int32_t *)l_shape->get_data(),
+        (int32_t *)res_striedes->get_data(),
+        (int32_t *)l_strides->get_data(),
+        (int32_t *)r_striedes->get_data(),
+        lhs->get_dim(),
+        length
     );
 }
 

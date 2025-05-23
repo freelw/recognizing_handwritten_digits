@@ -10,7 +10,12 @@ CPUOps::CPUOps() {
     dis = std::uniform_real_distribution<>(0, 1);
 }
 
-void CPUOps::add(Tensor *lhs, const Tensor *rhs, Tensor *res) {
+void CPUOps::add(
+    Tensor *lhs, const Tensor *rhs, Tensor *res,
+    Tensor */*l_shape*/, Tensor */*l_strides*/,
+    Tensor */*r_striedes*/,
+    Tensor */*res_striedes*/
+) {
     assert(lhs != nullptr);
     assert(rhs != nullptr);
     assert(res != nullptr);
@@ -19,19 +24,27 @@ void CPUOps::add(Tensor *lhs, const Tensor *rhs, Tensor *res) {
     auto rshape = rhs->get_shape();
     auto res_shape = res->get_shape();
 
-    assert(lshape == rshape);
-    assert(res_shape == lshape);
-
     auto lstrides = lhs->get_strides();
     auto rstrides = rhs->get_strides();
     auto res_strides = res->get_strides();
-    
-    for (int i = 0; i < lshape[0]; ++i) {
-        for (int j = 0; j < lshape[1]; ++j) {
-            static_cast<float*>(res->get_data())[i * res_strides[0] + j * res_strides[1]] = 
-                static_cast<float*>(lhs->get_data())[i * lstrides[0] + j * lstrides[1]] + 
-                static_cast<float*>(rhs->get_data())[i * rstrides[0] + j * rstrides[1]];
+
+     for (int i = 0; i < lhs->length(); ++i) {
+        int index_l = 0;
+        int index_r = 0;
+        int index_res = 0;
+        int tmp_index = i;
+        int tot_length = lhs->length();
+        for (int j = 0; j < lhs->get_dim(); ++j) {
+            tot_length /= lhs->get_shape()[j];
+            int cur_dim_index = tmp_index / tot_length;
+            index_l += cur_dim_index * lstrides[j];
+            index_r += cur_dim_index * rstrides[j];
+            index_res += cur_dim_index * res_strides[j];
+            tmp_index %= tot_length;
         }
+        static_cast<float*>(res->get_data())[index_res] = 
+            static_cast<float*>(lhs->get_data())[index_l] * 
+            static_cast<float*>(rhs->get_data())[index_r];
     }
 }
 
@@ -243,7 +256,6 @@ void CPUOps::mul(
             static_cast<float*>(lhs->get_data())[index_l] * 
             static_cast<float*>(rhs->get_data())[index_r];
     }
-
 }
 
 void CPUOps::sum(Tensor *lhs, Tensor *res, int dim) {

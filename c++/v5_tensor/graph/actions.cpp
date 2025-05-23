@@ -34,11 +34,71 @@ std::ostream &operator<<(std::ostream &output, const Action &a) {
     return output;
 }
 
+AddAction::AddAction(Tensor *_lhs, const Tensor *_rhs, Tensor *_res)
+    : Action(_lhs, _rhs, _res) {
+    
+    assert(_lhs->get_dim() == _rhs->get_dim());
+    assert(_lhs->get_shape() == _rhs->get_shape());
+    auto dim = _lhs->get_dim();
+
+    lhs_shape = allocTensor(
+        {dim},
+        _lhs->get_name() + "_shape",
+        INT32
+    );
+    lhs_strides = allocTensor(
+        {dim},
+        _lhs->get_name() + "_strides",
+        INT32
+    );
+    rhs_strides = allocTensor(
+        {dim},
+        _rhs->get_name() + "_strides",
+        INT32
+    );
+    res_strides = allocTensor(
+        {dim},
+        _res->get_name() + "_strides",
+        INT32
+    );
+
+    gCreateAction(
+        new AssignShapeAndStridesAction(
+            lhs_shape,
+            lhs_strides,
+            _lhs->get_shape(),
+            _lhs->get_strides()
+        )
+    );
+
+    gCreateAction(
+        new AssignShapeAndStridesAction(
+            nullptr,
+            rhs_strides,
+            {},
+            _rhs->get_strides()
+        )
+    );
+
+    gCreateAction(
+        new AssignShapeAndStridesAction(
+            nullptr,
+            res_strides,
+            {},
+            _res->get_strides()
+        )
+    );
+}
+
 void AddAction::execute() {
     assert(lhs != nullptr);
     assert(rhs != nullptr);
     assert(res != nullptr);
-    g_backend_ops->add(lhs, rhs, res);
+    g_backend_ops->add(
+        lhs, rhs, res,
+        lhs_shape, lhs_strides,
+        rhs_strides, res_strides
+    );
 }
 
 std::string AddAction::to_string() const {
