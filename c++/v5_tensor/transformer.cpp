@@ -58,6 +58,28 @@ void print_progress(const std::string &prefix, uint i, uint tot) {
     std::cout << "\r" << prefix << " [" << i << "/" << tot << "]" << std::flush;
 }
 
+void init_dec_valid_lens(Tensor *dec_valid_lens) {
+    int32_t *dec_valid_lens_buffer = static_cast<int32_t *>(::malloc(
+        dec_valid_lens->size()
+    ));
+
+    auto shape = dec_valid_lens->get_shape();
+
+    for (int i = 0; i < shape[0]; ++i) {
+        for (int j = 0; j < shape[1]; ++j) {
+            dec_valid_lens_buffer[i * shape[1] + j] = j+1;
+        }
+    }
+
+    g_backend_ops->cp_to_device(
+        dec_valid_lens,
+        reinterpret_cast<char*>(dec_valid_lens_buffer),
+        dec_valid_lens->size()
+    );
+
+    ::free(dec_valid_lens_buffer);
+}
+
 int main(int argc, char *argv[]) {
 
     int opt;
@@ -127,6 +149,7 @@ int main(int argc, char *argv[]) {
     // printAllActions();
     
     allocMemAndInitTensors();
+    init_dec_valid_lens(dec_valid_lens);
     for (int i = 0; i < epochs; ++i) {
         for (int j = 0; j < 1306; ++j) {
             std::string prefix = "epoch " + std::to_string(i) + " : ";
