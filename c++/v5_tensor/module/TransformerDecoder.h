@@ -14,6 +14,7 @@ class TransformerDecoder{
             int ffn_num_hiddens,
             int num_heads,
             int num_blks,
+            int max_posencoding_len,
             float dropout = 0.0f,
             bool bias = false
         );

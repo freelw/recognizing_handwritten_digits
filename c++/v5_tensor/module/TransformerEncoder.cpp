@@ -3,10 +3,11 @@
 
 TransformerEncoder::TransformerEncoder(
     int vocab_size, int _num_hiddens, int ffn_num_hiddens,
-    int num_heads, int num_blks, float dropout, bool bias
+    int num_heads, int num_blks, int max_posencoding_len,
+    float dropout, bool bias
 ) : num_hiddens(_num_hiddens) {
     embedding = new Embedding(vocab_size, num_hiddens);
-    pos_encoding = new PosEncoding(num_hiddens, dropout);
+    pos_encoding = new PosEncoding(max_posencoding_len, num_hiddens, dropout);
     for (int i = 0; i < num_blks; i++) {
         blks.push_back(new TransformerEncoderBlock(num_hiddens, ffn_num_hiddens, num_heads, dropout, bias));
     }   

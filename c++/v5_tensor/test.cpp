@@ -3542,7 +3542,7 @@ void test_embedding() {
 
 void test_pe() {
     construct_env();
-    PosEncoding pe(1000, 20);
+    PosEncoding pe(1000, 20, 0);
     Tensor *input = allocTensor({1, 2, 20}, "input");
     auto ni = graph::allocNode(input);
     ni->require_grad();
@@ -3573,7 +3573,7 @@ void test_pe() {
 void test_pe_1() {
 
     construct_env();
-    PosEncoding pe(1000, 20);
+    PosEncoding pe(1000, 20, 0);
     Tensor *input = allocTensor({3, 2, 20}, "input");
     auto ni = graph::allocNode(input);
     ni->require_grad();

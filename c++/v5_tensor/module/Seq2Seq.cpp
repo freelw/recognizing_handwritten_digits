@@ -4,15 +4,15 @@ Seq2SeqEncoderDecoder::Seq2SeqEncoderDecoder(
     uint _bos_id,
     uint _eos_id,
     int vocab_size, int num_hiddens, int ffn_num_hiddens,
-    int num_heads, int num_blks, float dropout, bool bias
+    int num_heads, int num_blks, int max_posencoding_len, float dropout, bool bias
 ) : bos_id(_bos_id), eos_id(_eos_id) {
     encoder = new TransformerEncoder(
         vocab_size, num_hiddens, ffn_num_hiddens,
-        num_heads, num_blks, dropout, bias
+        num_heads, num_blks, max_posencoding_len, dropout, bias
     );
     decoder = new TransformerDecoder(
         vocab_size, num_hiddens, ffn_num_hiddens,
-        num_heads, num_blks, dropout, bias
+        num_heads, num_blks, max_posencoding_len, dropout, bias
     );
 }
 

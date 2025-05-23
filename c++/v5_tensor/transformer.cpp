@@ -1,8 +1,6 @@
 #include "module/Seq2Seq.h"
 #include "common.h"
 
-#define NUM_STEPS 9
-
 void check_parameters(const std::vector<Parameter*> &parameters, int num_blks) {
 
 
@@ -67,10 +65,11 @@ int main(int argc, char *argv[]) {
     int eos_id = 1; // fix me
     int batch_size = 128;
     int num_steps = 9;
+    int max_posencoding_len = MAX_POSENCODING_LEN;
     Seq2SeqEncoderDecoder *seq2seq = new Seq2SeqEncoderDecoder(
         bos_id, eos_id,
         vocab_size, num_hiddens, ffn_num_hiddens,
-        num_heads, num_blks, dropout
+        num_heads, num_blks, max_posencoding_len, dropout
     );
 
     Tensor *src_token_ids = allocTensor({128, NUM_STEPS}, INT32);

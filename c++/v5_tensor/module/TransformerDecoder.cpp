@@ -7,11 +7,12 @@ TransformerDecoder::TransformerDecoder(
     int ffn_num_hiddens,
     int num_heads,
     int num_blks,
+    int max_posencoding_len,
     float dropout,
     bool bias
 ) : num_hiddens(_num_hiddens) {
     embedding = new Embedding(vocab_size, num_hiddens);
-    pos_encoding = new PosEncoding(num_hiddens, dropout);
+    pos_encoding = new PosEncoding(max_posencoding_len, num_hiddens, dropout);
     
     for (int i = 0; i < num_blks; i++) {
         blks.push_back(new TransformerDecoderBlock(
