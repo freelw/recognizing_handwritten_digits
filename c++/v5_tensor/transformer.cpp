@@ -105,11 +105,11 @@ int main(int argc, char *argv[]) {
         num_heads, num_blks, max_posencoding_len, dropout
     );
 
-    Tensor *src_token_ids = allocTensor({128, num_steps}, INT32);
-    Tensor *tgt_token_ids = allocTensor({128, num_steps}, INT32);
-    Tensor *enc_valid_lens = allocTensor({128}, INT32);
-    Tensor *dec_valid_lens = allocTensor({128, num_steps}, INT32);
-    Tensor *labels = allocTensor({128 * num_steps}, INT32);
+    Tensor *src_token_ids = allocTensor({batch_size, num_steps}, INT32);
+    Tensor *tgt_token_ids = allocTensor({batch_size, num_steps}, INT32);
+    Tensor *enc_valid_lens = allocTensor({batch_size}, INT32);
+    Tensor *dec_valid_lens = allocTensor({batch_size, num_steps}, INT32);
+    Tensor *labels = allocTensor({batch_size * num_steps}, INT32);
     auto res = seq2seq->forward(src_token_ids, tgt_token_ids, enc_valid_lens, dec_valid_lens);
     auto loss = res->reshape({-1, dec_vocab_size})->CrossEntropy(labels)->avg_1d();
     insert_boundary_action();
