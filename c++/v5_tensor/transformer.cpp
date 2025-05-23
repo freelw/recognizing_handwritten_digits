@@ -1,5 +1,6 @@
 #include "module/Seq2Seq.h"
 #include "common.h"
+#include "optimizers/adam.h"
 
 void check_parameters(const std::vector<Parameter*> &parameters, int num_blks) {
 
@@ -60,28 +61,38 @@ int main(int argc, char *argv[]) {
     float dropout = 0.2f;
     int ffn_num_hiddens = 64;
     int num_heads = 4;
-    int vocab_size = 1000; // fix me
+    int enc_vocab_size = 1000; // fix me
+    int dec_vocab_size = 1000;
     int bos_id = 0; // fix me
     int eos_id = 1; // fix me
     int batch_size = 128;
-    int num_steps = 9;
+    int num_steps = NUM_STEPS;
     int max_posencoding_len = MAX_POSENCODING_LEN;
     Seq2SeqEncoderDecoder *seq2seq = new Seq2SeqEncoderDecoder(
         bos_id, eos_id,
-        vocab_size, num_hiddens, ffn_num_hiddens,
+        enc_vocab_size, dec_vocab_size, num_hiddens, ffn_num_hiddens,
         num_heads, num_blks, max_posencoding_len, dropout
     );
 
-    Tensor *src_token_ids = allocTensor({128, NUM_STEPS}, INT32);
-    Tensor *tgt_token_ids = allocTensor({128, NUM_STEPS}, INT32);
+    Tensor *src_token_ids = allocTensor({128, num_steps}, INT32);
+    Tensor *tgt_token_ids = allocTensor({128, num_steps}, INT32);
     Tensor *enc_valid_lens = allocTensor({128}, INT32);
-    Tensor *dec_valid_lens = allocTensor({128, NUM_STEPS}, INT32);
+    Tensor *dec_valid_lens = allocTensor({128, num_steps}, INT32);
+    Tensor *labels = allocTensor({128 * num_steps}, INT32);
     auto res = seq2seq->forward(src_token_ids, tgt_token_ids, enc_valid_lens, dec_valid_lens);
+    auto loss = res->reshape({-1, dec_vocab_size})->CrossEntropy(labels)->avg_1d();
+    insert_boundary_action();
+    
     std::vector<Parameter *> parameters = seq2seq->get_parameters();
     check_parameters(parameters, num_blks);
-
+    Adam adam(parameters, 0.001);
+    zero_grad();
+    loss->backward();
+    adam.clip_grad(1.0f);
+    adam.step();
+    
     // printAllActions();
-    insert_boundary_action();
+    
     allocMemAndInitTensors();
     while(1)
     gDoActions();

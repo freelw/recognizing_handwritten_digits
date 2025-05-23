@@ -8,7 +8,7 @@ class Seq2SeqEncoderDecoder {
         Seq2SeqEncoderDecoder(
             uint _bos_id,
             uint _eos_id,
-            int vocab_size, int num_hiddens, int ffn_num_hiddens,
+            int enc_vocab_size, int dec_vocab_size, int num_hiddens, int ffn_num_hiddens,
             int num_heads, int num_blks, int max_posencoding_len, 
             float dropout, bool bias = false
         );
