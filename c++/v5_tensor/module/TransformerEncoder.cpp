@@ -28,7 +28,6 @@ graph::Node *TransformerEncoder::forward(Tensor *indices, Tensor *valid_lens) {
     auto x_shape = x->get_tensor()->get_shape();
     assert(x_shape[0] == indices_shape[0]);
     assert(x_shape[1] == indices_shape[1]);
-    std::cout << "embedding meta : " << x->get_tensor()->get_meta_info() << std::endl;
     x = pos_encoding->forward(x);
     for (auto blk : blks) {
         x = blk->forward(x, valid_lens);

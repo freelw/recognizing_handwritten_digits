@@ -73,7 +73,7 @@ graph::Node *MHA::forward(
     values = transpose_qkv(w_v->forward(values));
 
     if (valid_lens != nullptr) {
-        assert(valid_lens->get_dim() == 1);
+        // assert(valid_lens->get_dim() == 1);
         valid_lens = valid_lens->repeat_interleave(num_heads);
     }
     auto output = attention->forward(

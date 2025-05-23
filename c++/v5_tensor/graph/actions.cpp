@@ -464,6 +464,8 @@ std::string ReshapeDeepCpAction::to_string() const {
 void RepeatInterleaveAction::execute() {
     assert(lhs != nullptr);
     assert(res != nullptr);
+    assert(lhs->is_contiguous());
+    assert(res->is_contiguous());
     g_backend_ops->repeat_interleave(lhs, res, n);
 }
 

@@ -4,7 +4,7 @@ TransformerEncoderBlock::TransformerEncoderBlock(
     int num_hiddens, int ffn_num_hiddens, int num_heads,
     float dropout, bool bias) {
 
-    attention = new MHA(num_hiddens, num_hiddens, num_heads, dropout, bias);
+    attention = new MHA(num_hiddens, num_heads, dropout, bias);
     addnorm1 = new AddNorm(num_hiddens, dropout);
     ffn = new PositionWiseFFN(ffn_num_hiddens, num_hiddens);
     addnorm2 = new AddNorm(num_hiddens, dropout);

@@ -19,9 +19,8 @@ PosEncoding::~PosEncoding() {
 
 graph::Node *PosEncoding::forward(graph::Node *input) {
     assert(input->get_tensor()->get_dim() == 3);
+    auto origin_shape = input->get_tensor()->get_shape();
     auto shape = input->get_tensor()->get_shape();
-    std::cout << "shape[2] : " << shape[2] << std::endl;
-    std::cout << "num_hidden : " << num_hidden << std::endl;
     assert(shape[2] == num_hidden);
     if (!input->get_tensor()->is_contiguous()) {
         input = input->reshape(shape);
@@ -47,5 +46,5 @@ graph::Node *PosEncoding::forward(graph::Node *input) {
     std::vector<int> add_shape = {-1, num_hidden};
     assert(input->get_tensor()->is_contiguous());
     assert(npe->get_tensor()->is_contiguous());
-    return dropout->forward(input->reshape(add_shape)->add(npe->reshape(add_shape)));
+    return dropout->forward(input->reshape(add_shape)->add(npe->reshape(add_shape)))->reshape(origin_shape);
 }
