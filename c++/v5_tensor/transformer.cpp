@@ -1,6 +1,7 @@
 #include "module/Seq2Seq.h"
 #include "common.h"
 #include "optimizers/adam.h"
+#include <unistd.h>
 
 void check_parameters(const std::vector<Parameter*> &parameters, int num_blks) {
 
@@ -53,8 +54,39 @@ void check_parameters(const std::vector<Parameter*> &parameters, int num_blks) {
     // }
 }
 
+void print_progress(const std::string &prefix, uint i, uint tot) {
+    std::cout << "\r" << prefix << " [" << i << "/" << tot << "]" << std::flush;
+}
+
 int main(int argc, char *argv[]) {
-    use_gpu(true);
+
+    int opt;
+    int epochs = 10;
+    int batch_size = 128;
+    int gpu = 1;
+    float lr = 0.001f;
+
+    while ((opt = getopt(argc, argv, "e:l:b:g:")) != -1) {
+        switch (opt) {
+            case 'e':
+                epochs = atoi(optarg);
+                break;
+            case 'l':
+                lr = atof(optarg);
+                break;
+            case 'b':
+                batch_size = atoi(optarg);
+                break;
+            case 'g':
+                gpu = atoi(optarg);
+                break;
+            default:
+                std::cerr << "Usage: " << argv[0] << " -f <corpus> -c <checpoint> -e <epochs>" << std::endl;
+                return 1;
+        }
+    }
+
+    use_gpu(gpu==1);
     construct_env();
     int num_hiddens = 256;
     int num_blks = 2;
@@ -65,7 +97,6 @@ int main(int argc, char *argv[]) {
     int dec_vocab_size = 1000;
     int bos_id = 0; // fix me
     int eos_id = 1; // fix me
-    int batch_size = 128;
     int num_steps = NUM_STEPS;
     int max_posencoding_len = MAX_POSENCODING_LEN;
     Seq2SeqEncoderDecoder *seq2seq = new Seq2SeqEncoderDecoder(
@@ -90,13 +121,18 @@ int main(int argc, char *argv[]) {
     loss->backward();
     adam.clip_grad(1.0f);
     adam.step();
-    
     // printAllActions();
     
     allocMemAndInitTensors();
-    while(1)
-    gDoActions();
-
+    for (int i = 0; i < epochs; ++i) {
+        for (int j = 0; j < 1306; ++j) {
+            std::string prefix = "epoch " + std::to_string(i) + " : ";
+            print_progress(prefix , j*batch_size, 1306*batch_size);
+            gDoActions();
+        }
+        std::cout << std::endl;
+    }
+    
     delete seq2seq;
     destruct_env();
     return 0;
