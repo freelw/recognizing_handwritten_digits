@@ -46,5 +46,5 @@ graph::Node *PosEncoding::forward(graph::Node *input) {
     std::vector<int> add_shape = {-1, num_hidden};
     assert(input->get_tensor()->is_contiguous());
     assert(npe->get_tensor()->is_contiguous());
-    return dropout->forward(input->reshape(add_shape)->add(npe->reshape(add_shape)))->reshape(origin_shape);
+    return dropout->forward(input->add(npe))->reshape(origin_shape);
 }
