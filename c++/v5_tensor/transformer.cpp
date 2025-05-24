@@ -82,7 +82,9 @@ void init_dec_valid_lens(Tensor *dec_valid_lens) {
 
 void load_tokens_from_file(
     std::vector<std::vector<uint>> &src_token_ids,
-    std::vector<std::vector<uint>> &tgt_token_ids
+    std::vector<std::vector<uint>> &tgt_token_ids,
+    int &enc_vocab_size,
+    int &dec_vocab_size
     ) {
     std::string corpus = RESOURCE_NAME;
     std::string src_vocab_name = SRC_VOCAB_NAME;
@@ -90,6 +92,8 @@ void load_tokens_from_file(
     std::string test_file = TEST_FILE;
     seq2seq::DataLoader loader(corpus, src_vocab_name, tgt_vocab_name, test_file);
     loader.get_token_ids(src_token_ids, tgt_token_ids);
+    enc_vocab_size = loader.src_vocab_size();
+    dec_vocab_size = loader.tgt_vocab_size();
 }
 
 int main(int argc, char *argv[]) {
@@ -120,6 +124,19 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    int enc_vocab_size = 1000; // fix me
+    int dec_vocab_size = 1000;
+
+    std::vector<std::vector<uint>> v_src_token_ids;
+    std::vector<std::vector<uint>> v_tgt_token_ids;
+    load_tokens_from_file(
+        v_src_token_ids, v_tgt_token_ids,
+        enc_vocab_size, dec_vocab_size
+    );
+
+    std::cout << "enc_vocab_size : " << enc_vocab_size << std::endl;
+    std::cout << "dec_vocab_size : " << dec_vocab_size << std::endl;
+
     use_gpu(gpu==1);
     construct_env();
     int num_hiddens = 256;
@@ -127,8 +144,7 @@ int main(int argc, char *argv[]) {
     float dropout = 0.2f;
     int ffn_num_hiddens = 64;
     int num_heads = 4;
-    int enc_vocab_size = 1000; // fix me
-    int dec_vocab_size = 1000;
+    
     int bos_id = 0; // fix me
     int eos_id = 1; // fix me
     int num_steps = NUM_STEPS;
@@ -138,10 +154,6 @@ int main(int argc, char *argv[]) {
         enc_vocab_size, dec_vocab_size, num_hiddens, ffn_num_hiddens,
         num_heads, num_blks, max_posencoding_len, dropout
     );
-
-    std::vector<std::vector<uint>> v_src_token_ids;
-    std::vector<std::vector<uint>> v_tgt_token_ids;
-    load_tokens_from_file(v_src_token_ids, v_tgt_token_ids);
 
     Tensor *src_token_ids = allocTensor({batch_size, num_steps}, INT32);
     Tensor *tgt_token_ids = allocTensor({batch_size, num_steps}, INT32);
@@ -157,7 +169,7 @@ int main(int argc, char *argv[]) {
     
     std::vector<Parameter *> parameters = seq2seq->get_parameters();
     check_parameters(parameters, num_blks);
-    Adam adam(parameters, 0.001);
+    Adam adam(parameters, lr);
     zero_grad();
     loss->backward();
     adam.clip_grad(1.0f);
