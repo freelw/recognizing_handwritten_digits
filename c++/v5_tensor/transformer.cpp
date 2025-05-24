@@ -58,6 +58,22 @@ void print_progress(const std::string &prefix, uint i, uint tot) {
     std::cout << "\r" << prefix << " [" << i << "/" << tot << "]" << std::flush;
 }
 
+std::vector<uint> trim_or_padding(const std::vector<uint> &src, uint max_len, uint pad_id) {
+    std::vector<uint> res = src;
+    if (src.size() > max_len) {
+        res.resize(max_len);
+    } else {
+        res.resize(max_len, pad_id);
+    }
+    return res;
+}
+
+std::vector<uint> add_bos(const std::vector<uint> &src, uint bos_id) {
+    std::vector<uint> res = src;
+    res.insert(res.begin(), bos_id);
+    return res;
+}
+
 void init_dec_valid_lens(Tensor *dec_valid_lens) {
     int32_t *dec_valid_lens_buffer = static_cast<int32_t *>(::malloc(
         dec_valid_lens->size()
@@ -177,7 +193,7 @@ int main(int argc, char *argv[]) {
     Tensor *enc_valid_lens = allocTensor({batch_size}, INT32);
     Tensor *dec_valid_lens = allocTensor({batch_size, num_steps}, INT32);
     Tensor *labels = allocTensor({batch_size * num_steps}, INT32);
-    Tensor *ce_mask = allocTensor({batch_size * num_steps}, INT32);
+    Tensor *ce_mask = allocTensor({batch_size * num_steps});
     auto ce_mask_node = graph::allocNode(ce_mask);
     ce_mask_node->init_weight_fill(1.0f);
 
@@ -220,6 +236,8 @@ int main(int argc, char *argv[]) {
     
     allocMemAndInitTensors();
     init_dec_valid_lens(dec_valid_lens);
+    // std::cout << "dec_valid_lens meta : " << dec_valid_lens->get_meta_info() << std::endl;
+    // std::cout << "dec_valid_lens : " << std::endl << *dec_valid_lens << std::endl;
     for (int epoch = 0; epoch < epochs; ++epoch) {
         float loss_sum = 0;
         int cnt = 0;
@@ -232,8 +250,24 @@ int main(int argc, char *argv[]) {
                 break;
             }
 
-            for (int j = i; i < end; ++j) {
-
+            for (int j = i; j < end; ++j) {
+                std::cout << "j : " << j << " i : " << i << " end : " << end << std::endl;
+                enc_valid_lens_buffer[j - i] = v_src_token_ids[j].size();
+                auto src_j_trim_or_padding_res = trim_or_padding(
+                    v_src_token_ids[j], num_steps, src_pad_id
+                );
+                auto tgt_j_trim_or_padding_res = trim_or_padding(
+                    add_bos(v_tgt_token_ids[j], bos_id), num_steps, tgt_pad_id
+                );
+                auto tgt_j_labels_res = trim_or_padding(
+                    v_tgt_token_ids[j], num_steps, tgt_pad_id
+                );
+                for (int k = 0; k < num_steps; ++k) {
+                    src_token_ids_buffer[(j - i) * num_steps + k] = src_j_trim_or_padding_res[k];
+                    tgt_token_ids_buffer[(j - i) * num_steps + k] = tgt_j_trim_or_padding_res[k];
+                    labels_buffer[(j - i) * num_steps + k] = tgt_j_labels_res[k];
+                    ce_mask_buffer[(j - i) * num_steps + k] = (tgt_j_labels_res[k] != tgt_pad_id) ? 1.0f : 0.0f;
+                }
             }
 
             g_backend_ops->cp_to_device(
@@ -261,6 +295,20 @@ int main(int argc, char *argv[]) {
                 reinterpret_cast<char*>(ce_mask_buffer),
                 ce_mask->size()
             );
+
+            std::cout << "enc_valid_lens meta : " << enc_valid_lens->get_meta_info() << std::endl;
+            std::cout << "src_token_ids meta : " << src_token_ids->get_meta_info() << std::endl;
+            std::cout << "tgt_token_ids meta : " << tgt_token_ids->get_meta_info() << std::endl;
+            std::cout << "labels meta : " << labels->get_meta_info() << std::endl;
+            std::cout << "ce_mask meta : " << ce_mask->get_meta_info() << std::endl;
+
+            std::cout << "enc_valid_lens : " << std::endl << *enc_valid_lens << std::endl;
+            std::cout << "src_token_ids : " << std::endl << *src_token_ids << std::endl;
+            std::cout << "tgt_token_ids : " << std::endl << *tgt_token_ids << std::endl;
+            std::cout << "labels : " << std::endl << *labels << std::endl;
+            std::cout << "ce_mask : " << std::endl << *ce_mask << std::endl;
+
+            exit(0);
 
             print_progress(prefix , end, v_src_token_ids.size());
             gDoActions();
