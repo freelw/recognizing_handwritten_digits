@@ -312,8 +312,15 @@ int main(int argc, char *argv[]) {
 
             print_progress(prefix , end, v_src_token_ids.size());
             gDoActions();
+            float loss_v = 0;
+            g_backend_ops->cp_from_device(
+                reinterpret_cast<char*>(&loss_v),
+                loss->get_tensor(),
+                loss->get_tensor()->size()
+            );
+            loss_sum += loss_v;
         }
-        std::cout << "loss : " << *loss->get_tensor() << std::endl;
+        std::cout << "loss : " << loss_sum / cnt << std::endl;
     }
     
     // free input buffers
