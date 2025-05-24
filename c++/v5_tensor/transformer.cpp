@@ -251,7 +251,7 @@ int main(int argc, char *argv[]) {
             }
 
             for (int j = i; j < end; ++j) {
-                std::cout << "j : " << j << " i : " << i << " end : " << end << std::endl;
+                // std::cout << "j : " << j << " i : " << i << " end : " << end << std::endl;
                 enc_valid_lens_buffer[j - i] = v_src_token_ids[j].size();
                 auto src_j_trim_or_padding_res = trim_or_padding(
                     v_src_token_ids[j], num_steps, src_pad_id
@@ -296,19 +296,19 @@ int main(int argc, char *argv[]) {
                 ce_mask->size()
             );
 
-            std::cout << "enc_valid_lens meta : " << enc_valid_lens->get_meta_info() << std::endl;
-            std::cout << "src_token_ids meta : " << src_token_ids->get_meta_info() << std::endl;
-            std::cout << "tgt_token_ids meta : " << tgt_token_ids->get_meta_info() << std::endl;
-            std::cout << "labels meta : " << labels->get_meta_info() << std::endl;
-            std::cout << "ce_mask meta : " << ce_mask->get_meta_info() << std::endl;
+            // std::cout << "enc_valid_lens meta : " << enc_valid_lens->get_meta_info() << std::endl;
+            // std::cout << "src_token_ids meta : " << src_token_ids->get_meta_info() << std::endl;
+            // std::cout << "tgt_token_ids meta : " << tgt_token_ids->get_meta_info() << std::endl;
+            // std::cout << "labels meta : " << labels->get_meta_info() << std::endl;
+            // std::cout << "ce_mask meta : " << ce_mask->get_meta_info() << std::endl;
 
-            std::cout << "enc_valid_lens : " << std::endl << *enc_valid_lens << std::endl;
-            std::cout << "src_token_ids : " << std::endl << *src_token_ids << std::endl;
-            std::cout << "tgt_token_ids : " << std::endl << *tgt_token_ids << std::endl;
-            std::cout << "labels : " << std::endl << *labels << std::endl;
-            std::cout << "ce_mask : " << std::endl << *ce_mask << std::endl;
+            // std::cout << "enc_valid_lens : " << std::endl << *enc_valid_lens << std::endl;
+            // std::cout << "src_token_ids : " << std::endl << *src_token_ids << std::endl;
+            // std::cout << "tgt_token_ids : " << std::endl << *tgt_token_ids << std::endl;
+            // std::cout << "labels : " << std::endl << *labels << std::endl;
+            // std::cout << "ce_mask : " << std::endl << *ce_mask << std::endl;
 
-            exit(0);
+            // exit(0);
 
             print_progress(prefix , end, v_src_token_ids.size());
             gDoActions();
