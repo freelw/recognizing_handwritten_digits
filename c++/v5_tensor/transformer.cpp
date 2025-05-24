@@ -124,8 +124,8 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    int enc_vocab_size = 1000; // fix me
-    int dec_vocab_size = 1000;
+    int enc_vocab_size = 0;
+    int dec_vocab_size = 0;
 
     std::vector<std::vector<uint>> v_src_token_ids;
     std::vector<std::vector<uint>> v_tgt_token_ids;
