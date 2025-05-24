@@ -1,10 +1,10 @@
-#include "module/Seq2Seq.h"
 #include "common.h"
+#include "dataloader.h"
+#include "module/Seq2Seq.h"
 #include "optimizers/adam.h"
 #include <unistd.h>
 
 void check_parameters(const std::vector<Parameter*> &parameters, int num_blks) {
-
 
     int parameters_size_should_be = 0;
     parameters_size_should_be += 1; // source embedding
@@ -80,6 +80,18 @@ void init_dec_valid_lens(Tensor *dec_valid_lens) {
     ::free(dec_valid_lens_buffer);
 }
 
+void load_tokens_from_file(
+    std::vector<std::vector<uint>> &src_token_ids,
+    std::vector<std::vector<uint>> &tgt_token_ids
+    ) {
+    std::string corpus = RESOURCE_NAME;
+    std::string src_vocab_name = SRC_VOCAB_NAME;
+    std::string tgt_vocab_name = TGT_VOCAB_NAME;
+    std::string test_file = TEST_FILE;
+    seq2seq::DataLoader loader(corpus, src_vocab_name, tgt_vocab_name, test_file);
+    loader.get_token_ids(src_token_ids, tgt_token_ids);
+}
+
 int main(int argc, char *argv[]) {
 
     int opt;
@@ -126,6 +138,10 @@ int main(int argc, char *argv[]) {
         enc_vocab_size, dec_vocab_size, num_hiddens, ffn_num_hiddens,
         num_heads, num_blks, max_posencoding_len, dropout
     );
+
+    std::vector<std::vector<uint>> v_src_token_ids;
+    std::vector<std::vector<uint>> v_tgt_token_ids;
+    load_tokens_from_file(v_src_token_ids, v_tgt_token_ids);
 
     Tensor *src_token_ids = allocTensor({batch_size, num_steps}, INT32);
     Tensor *tgt_token_ids = allocTensor({batch_size, num_steps}, INT32);
