@@ -191,7 +191,7 @@ int main(int argc, char *argv[]) {
     int32_t *labels_buffer = static_cast<int32_t *>(::malloc(
         labels->size()
     ));
-    int32_t *ce_mask_buffer = static_cast<int32_t *>(::malloc(
+    float *ce_mask_buffer = static_cast<float *>(::malloc(
         ce_mask->size()
     ));
 
@@ -226,13 +226,34 @@ int main(int argc, char *argv[]) {
 
             }
 
+            g_backend_ops->cp_to_device(
+                enc_valid_lens,
+                reinterpret_cast<char*>(enc_valid_lens_buffer),
+                enc_valid_lens->size()
+            );
+            g_backend_ops->cp_to_device(
+                src_token_ids,
+                reinterpret_cast<char*>(src_token_ids_buffer),
+                src_token_ids->size()
+            );
+            g_backend_ops->cp_to_device(
+                tgt_token_ids,
+                reinterpret_cast<char*>(tgt_token_ids_buffer),
+                tgt_token_ids->size()
+            );
+            g_backend_ops->cp_to_device(
+                labels,
+                reinterpret_cast<char*>(labels_buffer),
+                labels->size()
+            );
+            g_backend_ops->cp_to_device(
+                ce_mask,
+                reinterpret_cast<char*>(ce_mask_buffer),
+                ce_mask->size()
+            );
+
             print_progress(prefix , end, v_src_token_ids.size());
-            
-            // for (int j = 0; j < 1306; ++j) {
-            //     std::string prefix = "epoch " + std::to_string(epoch) + " : ";
-            //     print_progress(prefix , j*batch_size, 1306*batch_size);
-            //     gDoActions();
-            // }
+            gDoActions();
         }
         std::cout << "loss : " << *loss->get_tensor() << std::endl;
     }
@@ -243,7 +264,7 @@ int main(int argc, char *argv[]) {
     ::free(tgt_token_ids_buffer);
     ::free(labels_buffer);
     ::free(ce_mask_buffer);
-    
+
     delete seq2seq;
     destruct_env();
     return 0;
