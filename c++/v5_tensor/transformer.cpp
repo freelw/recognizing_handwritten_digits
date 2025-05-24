@@ -86,7 +86,9 @@ void load_tokens_from_file(
     int &enc_vocab_size,
     int &dec_vocab_size,
     int &bos_id,
-    int &eos_id
+    int &eos_id,
+    int &src_pad_id,
+    int &tgt_pad_id
     ) {
     std::string corpus = RESOURCE_NAME;
     std::string src_vocab_name = SRC_VOCAB_NAME;
@@ -98,6 +100,8 @@ void load_tokens_from_file(
     dec_vocab_size = loader.tgt_vocab_size();
     bos_id = loader.tgt_bos_id();
     eos_id = loader.tgt_eos_id();
+    src_pad_id = loader.src_pad_id();
+    tgt_pad_id = loader.tgt_pad_id();
 }
 
 int main(int argc, char *argv[]) {
@@ -132,6 +136,8 @@ int main(int argc, char *argv[]) {
     int dec_vocab_size = 0;
     int bos_id = 0;
     int eos_id = 0;
+    int src_pad_id = 0;
+    int tgt_pad_id = 0;
 
     std::vector<std::vector<uint>> v_src_token_ids;
     std::vector<std::vector<uint>> v_tgt_token_ids;
@@ -139,12 +145,16 @@ int main(int argc, char *argv[]) {
         v_src_token_ids, v_tgt_token_ids,
         enc_vocab_size, dec_vocab_size,
         bos_id,
-        eos_id
+        eos_id,
+        src_pad_id,
+        tgt_pad_id
     );
     std::cout << "enc_vocab_size : " << enc_vocab_size << std::endl;
     std::cout << "dec_vocab_size : " << dec_vocab_size << std::endl;
     std::cout << "bos_id : " << bos_id << std::endl;
     std::cout << "eos_id : " << eos_id << std::endl;
+    std::cout << "src_pad_id : " << src_pad_id << std::endl;
+    std::cout << "tgt_pad_id : " << tgt_pad_id << std::endl;
 
     use_gpu(gpu==1);
     construct_env();
