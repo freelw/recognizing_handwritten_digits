@@ -4607,9 +4607,7 @@ void custom_init_x(Tensor *x) {
 }
 
 void test_encoder() {
-
     construct_env();
-
     int num_hiddens = 16;
     int num_blks = 2;
     float dropout = 0;
@@ -4624,17 +4622,20 @@ void test_encoder() {
     );
 
     Tensor *x = allocTensor({2, 3}, "x", INT32);
+    Tensor *labels = allocTensor({6}, "labels", INT32);
     auto res = encoder->forward(x);
+    auto loss = res->reshape({6, -1})->CrossEntropy(labels)->avg_1d();
 
     std::vector<Parameter*> params = encoder->get_parameters();
     // print params meta
-    std::cout << "params : " << std::endl;
-    for (int i = 0; i < params.size(); ++i) {
-        std::cout << i << " : " <<  params[i]->get_w()->get_meta_info() << std::endl;
-    }
+    // std::cout << "params : " << std::endl;
+    // for (int i = 0; i < params.size(); ++i) {
+    //     std::cout << i << " : " <<  params[i]->get_w()->get_meta_info() << std::endl;
+    // }
     // std::cout << "tensors : " << std::endl;
     // printAllTensors();
     insert_boundary_action();
+    loss->backward();
     // printAllActions();
     allocMemAndInitTensors();
     gDoOnceActions();
@@ -4642,17 +4643,55 @@ void test_encoder() {
     // 一定在gDoOnceActions之后，覆盖原始初始化的值
     custom_init_all_weights(params);
     gDoActions();
-    std::cout << x->get_meta_info() << std::endl;
-    std::cout << "x : " << std::endl << *x << std::endl;
-    std::cout << res->get_tensor()->get_meta_info() << std::endl;
-    std::cout << "res : " << std::endl << *res->get_tensor() << std::endl;
+    // std::cout << "loss : " << *loss->get_tensor() << std::endl;
+    // std::cout << x->get_meta_info() << std::endl;
+    // std::cout << "x : " << std::endl << *x << std::endl;
+    // std::cout << res->get_tensor()->get_meta_info() << std::endl;
+    // std::cout << "res : " << std::endl << *res->get_tensor() << std::endl;
+    auto embedding = params[0];
+    assert(embedding->get_w()->get_name() == "embedding");
+    std::cout << embedding->get_w()->get_meta_info() << std::endl;
+    std::cout << "embedding : " << std::endl << *embedding->get_w() << std::endl;
+    std::cout << "embedding grad : " << std::endl << *embedding->get_grad() << std::endl;
+
+    float embedding_grad_ans[64] = {
+        -1.9230e-06, -1.5690e-05,  1.8206e-05, -1.5690e-05,  1.8206e-05,
+         -1.5690e-05,  1.8206e-05, -1.5690e-05,  1.8206e-05, -1.5690e-05,
+          1.8206e-05, -1.5690e-05,  1.8206e-05, -1.5690e-05,  1.8206e-05,
+         -1.5690e-05,
+        -5.8797e-07,  2.4059e-06,  6.4460e-06, -4.8137e-06,  1.0172e-05,
+         -5.5972e-06,  1.1376e-05, -5.6767e-06,  1.1757e-05, -5.6850e-06,
+          1.1878e-05, -5.6850e-06,  1.1917e-05, -5.6850e-06,  1.1928e-05,
+         -5.6850e-06,
+        -1.6251e-06,  1.8622e-05,  4.6481e-06, -1.0590e-05,  1.5443e-05,
+         -1.4484e-05,  1.9090e-05, -1.4885e-05,  2.0251e-05, -1.4924e-05,
+          2.0618e-05, -1.4929e-05,  2.0736e-05, -1.4929e-05,  2.0771e-05,
+         -1.4929e-05,
+        -1.0435e-06,  1.6376e-05, -1.8915e-06, -5.7867e-06,  5.2188e-06,
+         -8.9241e-06,  7.6732e-06, -9.2483e-06,  8.4571e-06, -9.2792e-06,
+          8.7051e-06, -9.2836e-06,  8.7848e-06, -9.2836e-06,  8.8094e-06,
+         -9.2836e-06
+    };
+    bool succ_embedding_grad = compare_res_ans_1d(
+        embedding->get_grad(),
+        embedding_grad_ans,
+        "embedding_grad"
+    );
+    if (!succ_embedding_grad) {
+        std::cout << RED << "test_encoder embedding_grad failed" << RESET << std::endl;
+    }
+
+    bool succ = succ_embedding_grad;
+    if (succ) {
+        std::cout << GREEN << "test_encoder succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_encoder failed" << RESET << std::endl;
+    }
     delete encoder;
     destruct_env();
 }
 
 void test_cpu() {
-    test_encoder();
-    return ;
     test_at();
     test_add();
     test_add_eq();
@@ -4706,6 +4745,7 @@ void test_cpu() {
     test_ce_mask_all_0();
     test_mha_validlens_nullptr();
     test_mulsv();
+    test_encoder();
 }
 
 Tensor *test_add_with_cpu_base(int m, int n) {
@@ -6464,6 +6504,8 @@ void test_embedding_with_cpu() {
 }
 
 void test_gpu() {
+    test_encoder();
+    return ;
     test_at();
     test_at_1();
     test_gpu_at_with_cpu();
@@ -6539,6 +6581,7 @@ void test_gpu() {
     test_ce_mask_all_0();
     test_mha_validlens_nullptr();
     test_mulsv();
+    test_encoder();
 }
 
 int main(int argc, char *argv[]) {
