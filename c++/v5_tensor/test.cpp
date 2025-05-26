@@ -5236,6 +5236,7 @@ void test_cpu() {
     test_mulsv();
     test_encoder();
     test_encoder_mask();
+    test_repeat_interleave_1();
 }
 
 Tensor *test_add_with_cpu_base(int m, int n) {
@@ -7072,6 +7073,7 @@ void test_gpu() {
     test_mulsv();
     test_encoder();
     test_encoder_mask();
+    test_repeat_interleave_1();
 }
 
 int main(int argc, char *argv[]) {
