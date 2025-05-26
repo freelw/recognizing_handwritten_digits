@@ -4513,7 +4513,7 @@ void test_mulsv() {
     destruct_env();
 }
 
-void encoder_init_weight(Tensor *t) {
+void encoder_decoder_init_weight(Tensor *t) {
     float *buffer = static_cast<float*>(::malloc(t->size()));
     auto length = t->length();
     for (int i = 0; i < length; ++i) {
@@ -4592,10 +4592,10 @@ void init_ffn_bias(Tensor *t) {
     ::free(buffer);
 }
 
-void custom_init_all_weights(std::vector<Parameter*> & params) {
+void custom_init_all_encoder_weights(std::vector<Parameter*> & params) {
     // step 1: 所有weight 初始化为1， 除了第0个元素为0.1
     for (auto &param : params) {
-        encoder_init_weight(param->get_w()); 
+        encoder_decoder_init_weight(param->get_w()); 
     }
     // step 2: 所有layernorm的gamma 初始化为1 beta 初始化为0
     auto block_0_addnorm1_gamma = params[5];
@@ -4644,6 +4644,114 @@ void custom_init_all_weights(std::vector<Parameter*> & params) {
     init_ffn_bias(ffn_block1_dense2_bias->get_w());
 }
 
+void custom_init_all_decoder_weights(std::vector<Parameter*> & params) {
+    /*
+        0 : Tensor[1](embedding)(4, 16)
+        1 : Tensor[74](w_q_w_linear)(16, 16)
+        2 : Tensor[94](w_k_w_linear)(16, 16)
+        3 : Tensor[114](w_v_w_linear)(16, 16)
+        4 : Tensor[263](w_o_w_linear)(16, 16)
+        5 : Tensor[6](layernorm_gamma)(16)
+        6 : Tensor[7](layernorm_beta)(16)
+        7 : Tensor[291](w_q_w_linear)(16, 16)
+        8 : Tensor[311](w_k_w_linear)(3, 16)
+        9 : Tensor[330](w_v_w_linear)(3, 16)
+        10 : Tensor[471](w_o_w_linear)(16, 16)
+        11 : Tensor[14](layernorm_gamma)(16)
+        12 : Tensor[15](layernorm_beta)(16)
+        13 : Tensor[499](ffn_dense1_w_linear)(16, 4)
+        14 : Tensor[503](ffn_dense1_b_linear)(4)
+        15 : Tensor[517](ffn_dense2_w_linear)(4, 16)
+        16 : Tensor[521](ffn_dense2_b_linear)(16)
+        17 : Tensor[22](layernorm_gamma)(16)
+        18 : Tensor[23](layernorm_beta)(16)
+        19 : Tensor[551](w_q_w_linear)(16, 16)
+        20 : Tensor[571](w_k_w_linear)(16, 16)
+        21 : Tensor[591](w_v_w_linear)(16, 16)
+        22 : Tensor[740](w_o_w_linear)(16, 16)
+        23 : Tensor[30](layernorm_gamma)(16)
+        24 : Tensor[31](layernorm_beta)(16)
+        25 : Tensor[768](w_q_w_linear)(16, 16)
+        26 : Tensor[788](w_k_w_linear)(3, 16)
+        27 : Tensor[807](w_v_w_linear)(3, 16)
+        28 : Tensor[948](w_o_w_linear)(16, 16)
+        29 : Tensor[38](layernorm_gamma)(16)
+        30 : Tensor[39](layernorm_beta)(16)
+        31 : Tensor[976](ffn_dense1_w_linear)(16, 4)
+        32 : Tensor[980](ffn_dense1_b_linear)(4)
+        33 : Tensor[994](ffn_dense2_w_linear)(4, 16)
+        34 : Tensor[998](ffn_dense2_b_linear)(16)
+        35 : Tensor[46](layernorm_gamma)(16)
+        36 : Tensor[47](layernorm_beta)(16)
+        37 : Tensor[1028](dense_w_linear)(16, 4)
+        38 : Tensor[1032](dense_b_linear)(4)
+    */
+
+    // step 1: 所有weight 初始化为1， 除了第0个元素为0.1
+    for (auto &param : params) {
+        encoder_decoder_init_weight(param->get_w());
+    }
+
+    // step 2: 所有layernorm的gamma 初始化为1 beta 初始化为0
+    auto block_0_addnorm1_gamma = params[5];
+    auto block_0_addnorm1_beta = params[6];
+    assert(block_0_addnorm1_gamma->get_w()->get_name() == "layernorm_gamma");
+    assert(block_0_addnorm1_beta->get_w()->get_name() == "layernorm_beta");
+    auto block_0_addnorm2_gamma = params[11];
+    auto block_0_addnorm2_beta = params[12];
+    assert(block_0_addnorm2_gamma->get_w()->get_name() == "layernorm_gamma");
+    assert(block_0_addnorm2_beta->get_w()->get_name() == "layernorm_beta");
+    auto block_0_addnorm3_gamma = params[17];
+    auto block_0_addnorm3_beta = params[18];
+    assert(block_0_addnorm3_gamma->get_w()->get_name() == "layernorm_gamma");
+    assert(block_0_addnorm3_beta->get_w()->get_name() == "layernorm_beta");
+    auto block_1_addnorm1_gamma = params[23];
+    auto block_1_addnorm1_beta = params[24];
+    assert(block_1_addnorm1_gamma->get_w()->get_name() == "layernorm_gamma");
+    assert(block_1_addnorm1_beta->get_w()->get_name() == "layernorm_beta");
+    auto block_1_addnorm2_gamma = params[29];
+    auto block_1_addnorm2_beta = params[30];
+    assert(block_1_addnorm2_gamma->get_w()->get_name() == "layernorm_gamma");
+    assert(block_1_addnorm2_beta->get_w()->get_name() == "layernorm_beta");
+    auto block_1_addnorm3_gamma = params[35];
+    auto block_1_addnorm3_beta = params[36];
+    assert(block_1_addnorm3_gamma->get_w()->get_name() == "layernorm_gamma");
+    assert(block_1_addnorm3_beta->get_w()->get_name() == "layernorm_beta");
+    init_addnorm_gamma(block_0_addnorm1_gamma->get_w());
+    init_addnorm_beta(block_0_addnorm1_beta->get_w());
+    init_addnorm_gamma(block_0_addnorm2_gamma->get_w());
+    init_addnorm_beta(block_0_addnorm2_beta->get_w());
+    init_addnorm_gamma(block_0_addnorm3_gamma->get_w());
+    init_addnorm_beta(block_0_addnorm3_beta->get_w());
+    init_addnorm_gamma(block_1_addnorm1_gamma->get_w());
+    init_addnorm_beta(block_1_addnorm1_beta->get_w());
+    init_addnorm_gamma(block_1_addnorm2_gamma->get_w());
+    init_addnorm_beta(block_1_addnorm2_beta->get_w());
+    init_addnorm_gamma(block_1_addnorm3_gamma->get_w());
+    init_addnorm_beta(block_1_addnorm3_beta->get_w());
+    // step 3: embedding 的第i行的首元素初始化为i*0.1, 其他都为1
+    auto embedding = params[0];
+    assert(embedding->get_w()->get_name() == "embedding");
+    init_embedding(embedding->get_w());
+    // step 4: ffn bias 0
+    auto ffn_block0_dense1_bias = params[14];
+    auto ffn_block0_dense2_bias = params[16];
+    assert(ffn_block0_dense1_bias->get_w()->get_name() == "ffn_dense1_b_linear");
+    assert(ffn_block0_dense2_bias->get_w()->get_name() == "ffn_dense2_b_linear");
+    auto ffn_block1_dense1_bias = params[32];
+    auto ffn_block1_dense2_bias = params[34];
+    assert(ffn_block1_dense1_bias->get_w()->get_name() == "ffn_dense1_b_linear");
+    assert(ffn_block1_dense2_bias->get_w()->get_name() == "ffn_dense2_b_linear");
+    init_ffn_bias(ffn_block0_dense1_bias->get_w());
+    init_ffn_bias(ffn_block0_dense2_bias->get_w());
+    init_ffn_bias(ffn_block1_dense1_bias->get_w());
+    init_ffn_bias(ffn_block1_dense2_bias->get_w());
+    // step 5: decoder dense 的bias 0
+    auto dense_bias = params[38];
+    assert(dense_bias->get_w()->get_name() == "dense_b_linear");
+    init_ffn_bias(dense_bias->get_w());
+}
+
 void custom_init_x(Tensor *x) {
     assert(x->get_dim() == 2);
     auto shape = x->get_shape();
@@ -4682,13 +4790,6 @@ void test_encoder() {
     auto loss = res->reshape({6, -1})->CrossEntropy(labels)->avg_1d();
 
     std::vector<Parameter*> params = encoder->get_parameters();
-    // print params meta
-    // std::cout << "params : " << std::endl;
-    // for (int i = 0; i < params.size(); ++i) {
-    //     std::cout << i << " : " <<  params[i]->get_w()->get_meta_info() << std::endl;
-    // }
-    // std::cout << "tensors : " << std::endl;
-    // printAllTensors();
     insert_boundary_action();
     loss->backward();
     // printAllActions();
@@ -4696,14 +4797,8 @@ void test_encoder() {
     gDoOnceActions();
     custom_init_x(x);
     // 一定在gDoOnceActions之后，覆盖原始初始化的值
-    custom_init_all_weights(params);
+    custom_init_all_encoder_weights(params);
     gDoActions();
-    // std::cout << "loss : " << *loss->get_tensor() << std::endl;
-    // std::cout << x->get_meta_info() << std::endl;
-    // std::cout << "x : " << std::endl << *x << std::endl;
-    // std::cout << res->get_tensor()->get_meta_info() << std::endl;
-    // std::cout << "res : " << std::endl << *res->get_tensor() << std::endl;
-    // std::cout << "res grad : " << std::endl << *res->get_grad() << std::endl;
     float res_grad_ans[96] = {
         -0.1665,  0.0112,  0.0110,  0.0112,  0.0110,  0.0112,  0.0110,  0.0112,
           0.0110,  0.0112,  0.0110,  0.0112,  0.0110,  0.0112,  0.0110,  0.0112,
@@ -4729,9 +4824,6 @@ void test_encoder() {
     }
     auto embedding = params[0];
     assert(embedding->get_w()->get_name() == "embedding");
-    // std::cout << embedding->get_w()->get_meta_info() << std::endl;
-    // std::cout << "embedding : " << std::endl << *embedding->get_w() << std::endl;
-    // std::cout << "embedding grad : " << std::endl << *embedding->get_grad() << std::endl;
 
     float embedding_grad_ans[64] = {
         -1.9230e-06, -1.5690e-05,  1.8206e-05, -1.5690e-05,  1.8206e-05,
@@ -4826,6 +4918,70 @@ void test_encoder() {
     destruct_env();
 }
 
+void custom_init_dec_valid_lens(Tensor *decode_valid_lens) {
+    auto shape = decode_valid_lens->get_shape();
+    assert(shape[0] == 2);
+    assert(shape[1] == 3);
+    int32_t buffer[6] = {
+        1, 2, 3,
+        1, 2, 3
+    };
+    g_backend_ops->cp_to_device(
+        decode_valid_lens,
+        reinterpret_cast<char*>(buffer),
+        decode_valid_lens->size()
+    );
+}
+
+void test_decoder() {
+    construct_env();
+    int num_hiddens = 16;
+    int num_blks = 2;
+    float dropout = 0;
+    int ffn_num_hiddens = 4;
+    int num_heads = 4;
+    int vocab_size = 4;
+    int max_posencoding_len = 1000;
+
+    auto decoder = new TransformerDecoder(
+        vocab_size, num_hiddens, ffn_num_hiddens,
+        num_heads, num_blks, max_posencoding_len, dropout, false
+    );
+
+    Tensor *x = allocTensor({2, 3}, "x", INT32);
+    Tensor *labels = allocTensor({6}, "labels", INT32);
+    Tensor *enc_outputs = allocTensor({2, 2, 3}, "enc_outputs");
+    auto n_enc_outputs = graph::allocNode(enc_outputs);
+    n_enc_outputs->init_weight_fill(1.0f);
+    Tensor *decode_valid_lens = allocTensor({2, 3}, "decode_valid_lens", INT32);
+    auto res = decoder->forward(x, n_enc_outputs, nullptr, decode_valid_lens);
+
+    insert_boundary_action();
+    auto ce_res = res->reshape({6, -1})->CrossEntropy(labels);
+    auto loss = ce_res->avg_1d();
+    loss->backward();
+
+    std::vector<Parameter*> params = decoder->get_parameters();
+    for (int i = 0; i < params.size(); ++i) {
+        std::cout << i << " : " << params[i]->get_w()->get_meta_info() << std::endl;
+    }
+
+    // printAllActions();
+    allocMemAndInitTensors();
+    gDoOnceActions();
+    custom_init_x(x);
+    custom_init_dec_valid_lens(decode_valid_lens);
+    // 一定在gDoOnceActions之后，覆盖原始初始化的值
+    custom_init_all_decoder_weights(params);
+    gDoActions();
+
+    std::cout << "res : " << std::endl << *res->get_tensor() << std::endl;
+    std::cout << "res grad : " << std::endl << *res->get_grad() << std::endl;
+
+    delete decoder;
+    destruct_env();
+}
+
 void init_mask_and_valid_lens(Tensor *mask, Tensor *valid_lens) {
     assert(mask->get_dim() == 1);
     assert(valid_lens->get_dim() == 1);
@@ -4891,7 +5047,7 @@ void test_encoder_mask() {
     gDoOnceActions();
     custom_init_x(x);
     // 一定在gDoOnceActions之后，覆盖原始初始化的值
-    custom_init_all_weights(params);
+    custom_init_all_encoder_weights(params);
     gDoActions();
     // std::cout << "loss : " << *loss->get_tensor() << std::endl;
     // std::cout << x->get_meta_info() << std::endl;
@@ -4969,6 +5125,8 @@ void test_encoder_mask() {
 }
 
 void test_cpu() {
+    test_decoder();
+    return ;
     test_at();
     test_add();
     test_add_eq();
