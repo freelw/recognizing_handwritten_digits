@@ -35,9 +35,33 @@ TransformerDecoderBlock::~TransformerDecoderBlock() {
 graph::Node *TransformerDecoderBlock::forward(
     graph::Node *x, graph::Node *enc_output,
     Tensor *enc_valid_lens, Tensor *dec_valid_lens) {
+    gCreateAction(
+        new DbgPrintAction(
+            dec_valid_lens,
+            "TransformerDecoderBlock dec_valid_lens"
+        )
+    );
+    gCreateAction(
+        new DbgPrintAction(
+            x->get_tensor(),
+            "TransformerDecoderBlock input"
+        )
+    );
     auto y = masked_attention->forward(x, x, x, dec_valid_lens);
+    gCreateAction(
+        new DbgPrintAction(
+            y->get_tensor(),
+            "TransformerDecoderBlock masked_attention output"
+        )
+    );
     y = addnorm1->forward(x, y);
     auto z = attention->forward(y, enc_output, enc_output, enc_valid_lens);
+    gCreateAction(
+        new DbgPrintAction(
+            z->get_tensor(),
+            "TransformerDecoderBlock attention output"
+        )
+    );
     z = addnorm2->forward(y, z);
     auto out = ffn->forward(z);
     return addnorm3->forward(z, out);
