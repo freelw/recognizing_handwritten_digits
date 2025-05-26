@@ -636,18 +636,18 @@ namespace graph {
             )
         );
 
-        // gCreateAction(
-        //     new DbgPrintAction(
-        //         tmp,
-        //         "cross_entropy_tmp "
-        //     )
-        // );
-        // gCreateAction(
-        //     new DbgPrintAction(
-        //         grad,
-        //         "grad "
-        //     )
-        // );
+        gCreateAction(
+            new DbgPrintAction(
+                tmp,
+                "cross_entropy_tmp "
+            )
+        );
+        gCreateAction(
+            new DbgPrintAction(
+                grad,
+                "CrossEntropyEdge grad "
+            )
+        );
         
         Tensor *tmp2 = allocTensor(
             node->get_grad()->get_shape(),
@@ -658,6 +658,13 @@ namespace graph {
                 tmp->transpose(),
                 grad,
                 tmp2->transpose()
+            )
+        );
+
+        gCreateAction(
+            new DbgPrintAction(
+                tmp2,
+                "cross_entropy_tmp2"
             )
         );
         gCreateAction(
@@ -699,6 +706,13 @@ namespace graph {
         );
 
         gCreateAction(
+            new DbgPrintAction(
+                grad,
+                "EmbeddingEdge inputgrad "
+            )
+        );
+
+        gCreateAction(
             new EmbeddingBackwardAction(
                 grad,
                 indices,
@@ -720,11 +734,23 @@ namespace graph {
             "norm_tmp"
         );
         gCreateAction(
+            new DbgPrintAction(
+                grad,
+                "NormEdge inputgrad "
+            )
+        );
+        gCreateAction(
             new NormBackwardAction(
                 grad,
                 norm_res,
                 var_res,
                 tmp
+            )
+        );
+        gCreateAction(
+            new DbgPrintAction(
+                tmp,
+                "NormEdge tmp "
             )
         );
         gCreateAction(

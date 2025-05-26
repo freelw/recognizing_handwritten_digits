@@ -4870,8 +4870,10 @@ void test_encoder_mask() {
     Tensor *labels = allocTensor({6}, "labels", INT32);
     Tensor *mask = allocTensor({6}, "mask");
     Tensor *valid_lens = allocTensor({2}, "valid_lens", INT32);
-    auto res = encoder->forward(x);
-    auto loss = res->reshape({6, -1})->CrossEntropy(labels)->mask(mask)->avg_1d(mask);
+    auto res = encoder->forward(x, valid_lens);
+    auto ce_res = res->reshape({6, -1})->CrossEntropy(labels);
+    auto mask_res = ce_res->mask(mask);
+    auto loss = mask_res->avg_1d(mask);
 
     std::vector<Parameter*> params = encoder->get_parameters();
     // print params meta
@@ -4896,6 +4898,10 @@ void test_encoder_mask() {
     // std::cout << "x : " << std::endl << *x << std::endl;
     // std::cout << res->get_tensor()->get_meta_info() << std::endl;
     std::cout << "mask : " << std::endl << *mask << std::endl;
+    std::cout << "ce_res : " << std::endl << *ce_res->get_tensor() << std::endl;
+    std::cout << "mask res : " << std::endl << *mask_res->get_tensor() << std::endl;
+    std::cout << "mask res grad : " << std::endl << *mask_res->get_grad() << std::endl;
+    std::cout << "ce_res grad : " << std::endl << *ce_res->get_grad() << std::endl;
     std::cout << "valid_lens : " << std::endl << *valid_lens << std::endl;
     std::cout << "res : " << std::endl << *res->get_tensor() << std::endl;
     std::cout << "res grad : " << std::endl << *res->get_grad() << std::endl;
@@ -4931,6 +4937,32 @@ void test_encoder_mask() {
     std::cout << embedding->get_w()->get_meta_info() << std::endl;
     std::cout << "embedding : " << std::endl << *embedding->get_w() << std::endl;
     std::cout << "embedding grad : " << std::endl << *embedding->get_grad() << std::endl;
+    float embedding_grad_ans[64] = {
+        -5.2684e-06, -4.1972e-05,  5.9960e-05, -4.1972e-05,  5.9960e-05,
+         -4.1972e-05,  5.9960e-05, -4.1972e-05,  5.9960e-05, -4.1972e-05,
+          5.9960e-05, -4.1972e-05,  5.9960e-05, -4.1972e-05,  5.9960e-05,
+         -4.1972e-05,
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    };
+
+    bool succ_embedding_grad = compare_res_ans_1d(
+        embedding->get_grad(),
+        embedding_grad_ans,
+        "embedding_grad"
+    );
+
+    if (!succ_embedding_grad) {
+        std::cout << RED << "test_encoder_mask embedding_grad failed" << RESET << std::endl;
+    }
+
+    bool succ = succ_res_grad && succ_embedding_grad;
+    if (succ) {
+        std::cout << GREEN << "test_encoder_mask succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_encoder_mask failed" << RESET << std::endl;
+    }
  
     delete encoder;
     destruct_env();
