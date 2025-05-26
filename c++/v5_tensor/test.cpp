@@ -4760,8 +4760,6 @@ void test_encoder() {
         std::cout << RED << "test_encoder embedding_grad failed" << RESET << std::endl;
     }
 
-    
-
     auto w_q_w_linear = params[13];
     auto w_k_w_linear = params[14];
     auto w_v_w_linear = params[15];
@@ -4828,8 +4826,118 @@ void test_encoder() {
     destruct_env();
 }
 
+void init_mask_and_valid_lens(Tensor *mask, Tensor *valid_lens) {
+    assert(mask->get_dim() == 1);
+    assert(valid_lens->get_dim() == 1);
+    auto mask_shape = mask->get_shape();
+    auto valid_lens_shape = valid_lens->get_shape();
+
+    assert(mask->length() == 6);
+    assert(valid_lens->length() == 2);
+
+    float mask_buffer[6] = {1, 0, 0, 1, 0, 0};
+    int32_t valid_lens_buffer[2] = {1, 1};
+
+    g_backend_ops->cp_to_device(
+        mask,
+        reinterpret_cast<char*>(mask_buffer),
+        mask->size()
+    );
+
+    g_backend_ops->cp_to_device(
+        valid_lens,
+        reinterpret_cast<char*>(valid_lens_buffer),
+        valid_lens->size()
+    );
+}
+
+void test_encoder_mask() {
+    construct_env();
+    int num_hiddens = 16;
+    int num_blks = 2;
+    float dropout = 0;
+    int ffn_num_hiddens = 4;
+    int num_heads = 4;
+    int vocab_size = 4;
+    int max_posencoding_len = 1000;
+
+    auto encoder = new TransformerEncoder(
+        vocab_size, num_hiddens, ffn_num_hiddens,
+        num_heads, num_blks, max_posencoding_len, dropout, false
+    );
+
+    Tensor *x = allocTensor({2, 3}, "x", INT32);
+    Tensor *labels = allocTensor({6}, "labels", INT32);
+    Tensor *mask = allocTensor({6}, "mask");
+    Tensor *valid_lens = allocTensor({2}, "valid_lens", INT32);
+    auto res = encoder->forward(x);
+    auto loss = res->reshape({6, -1})->CrossEntropy(labels)->mask(mask)->avg_1d(mask);
+
+    std::vector<Parameter*> params = encoder->get_parameters();
+    // print params meta
+    std::cout << "params : " << std::endl;
+    for (int i = 0; i < params.size(); ++i) {
+        std::cout << i << " : " <<  params[i]->get_w()->get_meta_info() << std::endl;
+    }
+    // std::cout << "tensors : " << std::endl;
+    // printAllTensors();
+    insert_boundary_action();
+    loss->backward();
+    // printAllActions();
+    allocMemAndInitTensors();
+    init_mask_and_valid_lens(mask, valid_lens);
+    gDoOnceActions();
+    custom_init_x(x);
+    // 一定在gDoOnceActions之后，覆盖原始初始化的值
+    custom_init_all_weights(params);
+    gDoActions();
+    std::cout << "loss : " << *loss->get_tensor() << std::endl;
+    // std::cout << x->get_meta_info() << std::endl;
+    // std::cout << "x : " << std::endl << *x << std::endl;
+    // std::cout << res->get_tensor()->get_meta_info() << std::endl;
+    std::cout << "mask : " << std::endl << *mask << std::endl;
+    std::cout << "valid_lens : " << std::endl << *valid_lens << std::endl;
+    std::cout << "res : " << std::endl << *res->get_tensor() << std::endl;
+    std::cout << "res grad : " << std::endl << *res->get_grad() << std::endl;
+   
+   float res_grad_ans[96] = {
+        -0.4995,  0.0335,  0.0331,  0.0335,  0.0331,  0.0335,  0.0331,  0.0335,
+          0.0331,  0.0335,  0.0331,  0.0335,  0.0331,  0.0335,  0.0331,  0.0335,
+        -0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,
+          0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,
+        -0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,
+          0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,
+        -0.4995,  0.0335,  0.0331,  0.0335,  0.0331,  0.0335,  0.0331,  0.0335,
+          0.0331,  0.0335,  0.0331,  0.0335,  0.0331,  0.0335,  0.0331,  0.0335,
+        -0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,
+          0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,
+        -0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,
+          0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000
+   };
+
+   bool succ_res_grad = compare_res_ans_1d(
+        res->get_grad(),
+        res_grad_ans,
+        "res_grad",
+        1e-4
+    );
+
+    if (!succ_res_grad) {
+        std::cout << RED << "test_encoder_mask res_grad failed" << RESET << std::endl;
+    }
+
+    auto embedding = params[0];
+    assert(embedding->get_w()->get_name() == "embedding");
+    std::cout << embedding->get_w()->get_meta_info() << std::endl;
+    std::cout << "embedding grad : " << std::endl << *embedding->get_grad() << std::endl;
+ 
+    delete encoder;
+    destruct_env();
+}
+
 void test_cpu() {
-    test_encoder();
+    // test_encoder();
+    test_encoder_mask();
     return;
     test_at();
     test_add();
