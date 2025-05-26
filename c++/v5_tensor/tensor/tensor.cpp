@@ -247,7 +247,11 @@ Tensor *Tensor::repeat_interleave(int n) {
     assert(dtype == INT32);
     auto dim = get_dim();
     std::vector<int> new_shape = shape;
-    new_shape[dim-1] *= n;
+    if (dim == 1) {
+        new_shape[0] *= n;
+    } else {
+        new_shape[dim-2] *= n;
+    }
     Tensor *repeat_interleave_tensor = allocTensor(
         new_shape,
         this->get_name() + "_repeat_interleave",

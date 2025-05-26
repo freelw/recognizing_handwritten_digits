@@ -673,6 +673,7 @@ void CUDAOps::reshape_deep_cp(
 }
 
 void CUDAOps::repeat_interleave(Tensor *lhs, Tensor *res, int n) {
+    assert(false); // fix me
     assert(lhs->get_dtype() == INT32);
     assert(res->get_dtype() == INT32);
     assert(lhs != nullptr);

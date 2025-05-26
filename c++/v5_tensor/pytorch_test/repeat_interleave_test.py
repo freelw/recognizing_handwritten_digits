@@ -9,7 +9,10 @@ batch_size = 2
 
 a = torch.arange(
                 1, num_steps + 1)
-valid_lens = a.repeat(batch_size, 1)
+valid_lens = torch.tensor([
+    [1, 2, 3],
+    [4, 5, 6]]
+)
 
 valid_lens_1 = torch.repeat_interleave(
                 valid_lens, repeats=num_heads, dim=0)

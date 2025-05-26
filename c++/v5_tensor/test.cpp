@@ -2086,6 +2086,7 @@ void test_repeat_interleave() {
     // printAllActions();
     allocMemAndInitTensors();
     gDoActions();
+    // std::cout << "input : " << std::endl << *input << std::endl;
     int32_t res_ans[6] = {
         0, 0, 1, 1, 2, 2
     };
@@ -2095,6 +2096,53 @@ void test_repeat_interleave() {
     } else {
         std::cout << RED << "test_repeat_interleave failed" << RESET << std::endl;
     }
+    destruct_env();
+}
+
+void test_repeat_interleave_1() {
+
+    construct_env();
+    Tensor *input = allocTensor({2, 3}, "input", INT32);
+    auto node = graph::allocNode(input);
+    auto res = input->repeat_interleave(4);
+    insert_boundary_action();
+    // printAllActions();
+    allocMemAndInitTensors();
+    int32_t input_buffer[6] = {
+        1, 2, 3,
+        4, 5, 6
+    };
+    g_backend_ops->cp_to_device(
+        input,
+        reinterpret_cast<char*>(input_buffer),
+        input->size()
+    );
+    gDoActions();
+
+    auto res_shape = res->get_shape();
+    assert(res_shape.size() == 2);
+    assert(res_shape[0] == 8);
+    assert(res_shape[1] == 3);
+    // std::cout << "res : " << std::endl << *res << std::endl;
+
+    int32_t res_ans[24] = {
+        1, 2, 3,
+        1, 2, 3,
+        1, 2, 3,
+        1, 2, 3,
+        4, 5, 6,
+        4, 5, 6,
+        4, 5, 6,
+        4, 5, 6
+    };
+
+    bool succ = compare_res_ans_1d_int32(res, res_ans, "res");
+    if (succ) {
+        std::cout << GREEN << "test_repeat_interleave_1 succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_repeat_interleave_1 failed" << RESET << std::endl;
+    }
+    
     destruct_env();
 }
 
@@ -5130,6 +5178,7 @@ void test_encoder_mask() {
 
 void test_cpu() {
     test_decoder();
+    // test_repeat_interleave_1();
     return ;
     test_at();
     test_add();

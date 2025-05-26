@@ -539,18 +539,31 @@ void CPUOps::repeat_interleave(Tensor *lhs, Tensor *res, int n) {
     assert(lhs != nullptr);
     assert(res != nullptr);
 
-    // assert(lhs->get_dim() == 1);
-    // assert(res->get_dim() == 1);
-
+    auto lshape = lhs->get_shape();
+    auto dim = lhs->get_dim();
+    assert(dim > 0);
+    int width = 0;
+    
+    if (dim == 1) {
+        width = 1;
+    } else {
+        width = lshape[dim-1];   
+    }
     auto l_length = lhs->length();
     auto r_length = res->length();
 
     assert(l_length * n == r_length);
-
-    for (int i = 0; i < l_length; ++i) {
-        for (int j = 0; j < n; ++j) {
-            static_cast<int32_t*>(res->get_data())[i * n + j] = 
-                static_cast<int32_t*>(lhs->get_data())[i];
+    auto blocks = l_length / width;
+    
+    for (int i = 0; i < blocks; ++ i) {
+        int src_offset = i * width;
+        int tgt_offset = i * width * n;
+        for (int j = 0; j < n; ++ j) {
+            for (int k = 0; k < width; ++ k) {
+                static_cast<int32_t*>(res->get_data())[tgt_offset+k] = 
+                static_cast<int32_t*>(lhs->get_data())[src_offset+k];
+            }
+            tgt_offset += width;
         }
     }
 }
