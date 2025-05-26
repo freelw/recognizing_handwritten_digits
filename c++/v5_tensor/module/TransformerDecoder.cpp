@@ -47,12 +47,12 @@ graph::Node *TransformerDecoder::forward(
         x = blk->forward(x, enc_outputs, enc_valid_lens, dec_valid_lens);
     }
     auto dense_res = dense->forward(x);
-    gCreateAction(
-        new DbgPrintAction(
-            dense_res->get_tensor(),
-            "TransformerDecoder dense output"
-        )
-    );
+    // gCreateAction(
+    //     new DbgPrintAction(
+    //         dense_res->get_tensor(),
+    //         "TransformerDecoder dense output"
+    //     )
+    // );
     return dense_res;
 }
 

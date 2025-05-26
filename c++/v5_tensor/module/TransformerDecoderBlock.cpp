@@ -56,33 +56,33 @@ graph::Node *TransformerDecoderBlock::forward(
     // );
     y = addnorm1->forward(x, y);
     auto z = attention->forward(y, enc_output, enc_output, enc_valid_lens);
-    gCreateAction(
-        new DbgPrintAction(
-            z->get_tensor(),
-            "TransformerDecoderBlock attention output"
-        )
-    );
+    // gCreateAction(
+    //     new DbgPrintAction(
+    //         z->get_tensor(),
+    //         "TransformerDecoderBlock attention output"
+    //     )
+    // );
     z = addnorm2->forward(y, z);
-    gCreateAction(
-        new DbgPrintAction(
-            z->get_tensor(),
-            "TransformerDecoderBlock addnorm2 output"
-        )
-    );
+    // gCreateAction(
+    //     new DbgPrintAction(
+    //         z->get_tensor(),
+    //         "TransformerDecoderBlock addnorm2 output"
+    //     )
+    // );
     auto out = ffn->forward(z);
-    gCreateAction(
-        new DbgPrintAction(
-            out->get_tensor(),
-            "TransformerDecoderBlock ffn output"
-        )
-    );
+    // gCreateAction(
+    //     new DbgPrintAction(
+    //         out->get_tensor(),
+    //         "TransformerDecoderBlock ffn output"
+    //     )
+    // );
     auto res = addnorm3->forward(z, out);
-    gCreateAction(
-        new DbgPrintAction(
-            res->get_tensor(),
-            "TransformerDecoderBlock addnorm3 output"
-        )
-    );
+    // gCreateAction(
+    //     new DbgPrintAction(
+    //         res->get_tensor(),
+    //         "TransformerDecoderBlock addnorm3 output"
+    //     )
+    // );
     return res;
 }
 

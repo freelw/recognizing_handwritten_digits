@@ -75,12 +75,12 @@ graph::Node *MHA::forward(
     if (valid_lens != nullptr) {
         // assert(valid_lens->get_dim() == 1);
         valid_lens = valid_lens->repeat_interleave(num_heads);
-        gCreateAction(
-            new DbgPrintAction(
-                valid_lens,
-                "MHA valid_lens"
-            )
-        );
+        // gCreateAction(
+        //     new DbgPrintAction(
+        //         valid_lens,
+        //         "MHA valid_lens"
+        //     )
+        // );
     }
     auto output = attention->forward(
         queries,

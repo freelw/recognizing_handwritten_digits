@@ -296,22 +296,20 @@ int main(int argc, char *argv[]) {
                 ce_mask->size()
             );
 
-            std::cout << "enc_valid_lens meta : " << enc_valid_lens->get_meta_info() << std::endl;
-            std::cout << "dec_valid_lens meta : " << dec_valid_lens->get_meta_info() << std::endl;
-            std::cout << "src_token_ids meta : " << src_token_ids->get_meta_info() << std::endl;
-            std::cout << "tgt_token_ids meta : " << tgt_token_ids->get_meta_info() << std::endl;
-            std::cout << "labels meta : " << labels->get_meta_info() << std::endl;
-            std::cout << "ce_mask meta : " << ce_mask->get_meta_info() << std::endl;
+            // std::cout << "enc_valid_lens meta : " << enc_valid_lens->get_meta_info() << std::endl;
+            // std::cout << "dec_valid_lens meta : " << dec_valid_lens->get_meta_info() << std::endl;
+            // std::cout << "src_token_ids meta : " << src_token_ids->get_meta_info() << std::endl;
+            // std::cout << "tgt_token_ids meta : " << tgt_token_ids->get_meta_info() << std::endl;
+            // std::cout << "labels meta : " << labels->get_meta_info() << std::endl;
+            // std::cout << "ce_mask meta : " << ce_mask->get_meta_info() << std::endl;
 
-            std::cout << "enc_valid_lens : " << std::endl << *enc_valid_lens << std::endl;
-            std::cout << "dec_valid_lens : " << std::endl << *dec_valid_lens << std::endl;
-            std::cout << "src_token_ids : " << std::endl << *src_token_ids << std::endl;
-            std::cout << "tgt_token_ids : " << std::endl << *tgt_token_ids << std::endl;
-            std::cout << "labels : " << std::endl << *labels << std::endl;
-            std::cout << "ce_mask : " << std::endl << *ce_mask << std::endl;
+            // std::cout << "enc_valid_lens : " << std::endl << *enc_valid_lens << std::endl;
+            // std::cout << "dec_valid_lens : " << std::endl << *dec_valid_lens << std::endl;
+            // std::cout << "src_token_ids : " << std::endl << *src_token_ids << std::endl;
+            // std::cout << "tgt_token_ids : " << std::endl << *tgt_token_ids << std::endl;
+            // std::cout << "labels : " << std::endl << *labels << std::endl;
+            // std::cout << "ce_mask : " << std::endl << *ce_mask << std::endl;
 
-            
-            
             gDoActions();
             print_progress(prefix, end, v_src_token_ids.size());
             float loss_v = 0;

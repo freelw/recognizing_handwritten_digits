@@ -4798,6 +4798,10 @@ void custom_init_all_decoder_weights(std::vector<Parameter*> & params) {
     auto dense_bias = params[38];
     assert(dense_bias->get_w()->get_name() == "dense_b_linear");
     init_ffn_bias(dense_bias->get_w());
+    std::cout << "output dense bias : " << std::endl << *dense_bias->get_w() << std::endl;
+    auto dense_w = params[37];
+    assert(dense_w->get_w()->get_name() == "dense_w_linear");
+    std::cout << "output dense w : " << std::endl << *dense_w->get_w() << std::endl;
 }
 
 void custom_init_x(Tensor *x) {
