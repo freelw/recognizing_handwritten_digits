@@ -40,7 +40,7 @@ Linear::Linear(
         w->init_weight_gauss(w_sigma, mean);
     }
     if (bias) {
-        auto b_tensor = allocTensor({output_num}, "_b_linear");
+        auto b_tensor = allocTensor({output_num}, prefix + "_b_linear");
         b = graph::allocNode(b_tensor);
         b->require_grad();
         if (!const_weight) {

@@ -52,7 +52,7 @@ def init_weights(module, input):
         constant_(module.weight, 1)
         module.weight.data[0, 0] = 0.1
         # eye_(module.weight)
-        print("init_weights")
+        #print("init_weights")
         # 移除钩子，保证只执行一次
         module._forward_pre_hooks.pop(list(module._forward_pre_hooks.keys())[0])
 
@@ -136,7 +136,7 @@ def init_weights_ffn(module, input):
         constant_(module.bias, 0)
         module.weight.data[0, 0] = 0.1
         # eye_(module.weight)
-        print("init_weights")
+        #print("init_weights")
         # 移除钩子，保证只执行一次
         module._forward_pre_hooks.pop(list(module._forward_pre_hooks.keys())[0])
 
@@ -166,8 +166,15 @@ class TransformerEncoderBlock(nn.Module):  #@save
         self.addnorm2 = AddNorm(num_hiddens, dropout)
 
     def forward(self, X, valid_lens):
-        Y = self.addnorm1.forward(X, self.attention.forward(X, X, X, valid_lens))
-        return self.addnorm2.forward(Y, self.ffn.forward(Y))
+        attention_res = self.attention.forward(X, X, X, valid_lens)
+        #print("attention_res:", attention_res)
+        Y = self.addnorm1.forward(X, attention_res)
+        #print("addnorm1 res:", Y)
+        ffn_res = self.ffn.forward(Y)
+        #print("ffn_res:", ffn_res)
+        res = self.addnorm2.forward(Y, ffn_res)
+        #print("addnorm2 res:", res)
+        return res
 
 class PositionalEncoding:  #@save
     """Positional encoding."""
@@ -212,10 +219,14 @@ class TransformerEncoder():
         # to rescale before they are summed up
         embs = X @ self.embedding
         embs.requires_grad = True
-        print("embs:", embs)
+        #print("embs:", embs)
         X = self.pos_encoding.forward(embs * math.sqrt(self.num_hiddens))
+        #print("pos_encoding res:", X)
+        cnt = 0
         for i, blk in enumerate(self.blks):
-            X = blk(X, valid_lens)    
+            X = blk(X, valid_lens)
+            #print("blk", cnt, "res:", X)
+            cnt += 1
         return X, embs
 
 def test():
@@ -248,8 +259,8 @@ def test():
 
     res, embs = encoder.forward(x, None)
 
-    print("res:", res)
-    print("res shape:", res.shape)
+    # print("res:", res)
+    # print("res shape:", res.shape)
 
     loss = nn.CrossEntropyLoss()
 
@@ -263,12 +274,12 @@ def test():
 
     loss_value = loss(res, labels)
 
-    print("loss_value:", loss_value)
+    #print("loss_value:", loss_value)
 
     loss_value.backward()
 
-    print("embs:", embs)
-    print("embs.grad:", embs.grad)
+    #print("embs:", embs)
+    #print("embs.grad:", embs.grad)
     
 
 if '__main__' == __name__:

@@ -4522,6 +4522,21 @@ void init_embedding(Tensor *t) {
     ::free(buffer);
 }
 
+void init_ffn_bias(Tensor *t) {
+    // ffn bias 初始化为0
+    float *buffer = static_cast<float*>(::malloc(t->size()));
+    auto length = t->length();
+    for (int i = 0; i < length; ++i) {
+        buffer[i] = 0.0f;
+    }
+    g_backend_ops->cp_to_device(
+        t,
+        reinterpret_cast<char*>(buffer),
+        t->size()
+    );
+    ::free(buffer);
+}
+
 void custom_init_all_weights(std::vector<Parameter*> & params) {
     // step 1: 所有weight 初始化为1， 除了第0个元素为0.1
     for (auto &param : params) {
@@ -4558,6 +4573,37 @@ void custom_init_all_weights(std::vector<Parameter*> & params) {
     auto embedding = params[0];
     assert(embedding->get_w()->get_name() == "embedding");
     init_embedding(embedding->get_w());
+
+    //step 4: ffn bias 0
+    auto ffn_block0_dense1_bias = params[8];
+    auto ffn_block0_dense2_bias = params[10];
+    assert(ffn_block0_dense1_bias->get_w()->get_name() == "ffn_dense1_b_linear");
+    assert(ffn_block0_dense2_bias->get_w()->get_name() == "ffn_dense2_b_linear");
+    auto ffn_block1_dense1_bias = params[20];
+    auto ffn_block1_dense2_bias = params[22];
+    assert(ffn_block1_dense1_bias->get_w()->get_name() == "ffn_dense1_b_linear");
+    assert(ffn_block1_dense2_bias->get_w()->get_name() == "ffn_dense2_b_linear");
+    init_ffn_bias(ffn_block0_dense1_bias->get_w());
+    init_ffn_bias(ffn_block0_dense2_bias->get_w());
+    init_ffn_bias(ffn_block1_dense1_bias->get_w());
+    init_ffn_bias(ffn_block1_dense2_bias->get_w());
+}
+
+void custom_init_x(Tensor *x) {
+    assert(x->get_dim() == 2);
+    auto shape = x->get_shape();
+    assert(shape[0] == 2);
+    assert(shape[1] == 3);
+
+    int32_t buffer[6] = {
+        0, 1, 2,
+        0, 2, 3
+    };
+    g_backend_ops->cp_to_device(
+        x,
+        reinterpret_cast<char*>(buffer),
+        x->size()
+    );
 }
 
 void test_encoder() {
@@ -4592,14 +4638,14 @@ void test_encoder() {
     // printAllActions();
     allocMemAndInitTensors();
     gDoOnceActions();
+    custom_init_x(x);
     // 一定在gDoOnceActions之后，覆盖原始初始化的值
     custom_init_all_weights(params);
     gDoActions();
-    // std::cout << "params : " << std::endl;
-    // for (auto &param : params) {
-    //     std::cout << param->get_w()->get_meta_info() << std::endl;
-    //     std::cout << *param->get_w() << std::endl;
-    // }
+    std::cout << x->get_meta_info() << std::endl;
+    std::cout << "x : " << std::endl << *x << std::endl;
+    std::cout << res->get_tensor()->get_meta_info() << std::endl;
+    std::cout << "res : " << std::endl << *res->get_tensor() << std::endl;
     delete encoder;
     destruct_env();
 }
