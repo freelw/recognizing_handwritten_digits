@@ -194,8 +194,7 @@ int main(int argc, char *argv[]) {
     Tensor *dec_valid_lens = allocTensor({batch_size, num_steps}, INT32);
     Tensor *labels = allocTensor({batch_size * num_steps}, INT32);
     Tensor *ce_mask = allocTensor({batch_size * num_steps});
-    auto ce_mask_node = graph::allocNode(ce_mask);
-    ce_mask_node->init_weight_fill(1.0f);
+    
 
     // alloc input buffers
     // 1. enc_valid_lens
@@ -309,9 +308,9 @@ int main(int argc, char *argv[]) {
             // std::cout << "ce_mask : " << std::endl << *ce_mask << std::endl;
 
             // exit(0);
-
-            print_progress(prefix , end, v_src_token_ids.size());
+            
             gDoActions();
+            print_progress(prefix, end, v_src_token_ids.size());
             float loss_v = 0;
             g_backend_ops->cp_from_device(
                 reinterpret_cast<char*>(&loss_v),
