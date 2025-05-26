@@ -3571,6 +3571,39 @@ void test_pe() {
     destruct_env();
 }
 
+void test_embedding_1() {
+    construct_env();
+    Tensor *indices = allocTensor({1, 2}, "indices", INT32);
+    Embedding emb(10, 5, true);
+    auto res = emb.forward(indices);
+    auto res_grad = res->get_grad();
+    insert_boundary_action();
+    res->backward();
+    // printAllActions();
+    allocMemAndInitTensors();
+    int32_t indices_buffer[3] = {2, 2};
+    g_backend_ops->cp_to_device(
+        indices,
+        reinterpret_cast<char*>(indices_buffer),
+        indices->size()
+    );
+    auto res_grad_buffer = static_cast<float*>(::malloc(res_grad->size()));
+    for (int i = 0; i < res_grad->length(); ++ i) {
+        res_grad_buffer[i] = 1.0f * i;
+    }
+    g_backend_ops->cp_to_device(
+        res_grad,
+        reinterpret_cast<char*>(res_grad_buffer),
+        res_grad->size()
+    );
+    ::free(res_grad_buffer);
+    gDoActions();
+    std::cout << "res: " << std::endl << *res->get_tensor() << std::endl;
+    std::cout << "res grad : " << std::endl << *res_grad << std::endl;
+    std::cout << "emb grad : " << std::endl << *emb.get_grad() << std::endl;
+    destruct_env();
+}
+
 void test_pe_1() {
     construct_env();
     PosEncoding pe(1000, 20, 0);
@@ -4636,18 +4669,19 @@ void test_encoder() {
     // printAllTensors();
     insert_boundary_action();
     loss->backward();
-    // printAllActions();
+    printAllActions();
     allocMemAndInitTensors();
     gDoOnceActions();
     custom_init_x(x);
     // 一定在gDoOnceActions之后，覆盖原始初始化的值
     custom_init_all_weights(params);
     gDoActions();
-    // std::cout << "loss : " << *loss->get_tensor() << std::endl;
-    // std::cout << x->get_meta_info() << std::endl;
-    // std::cout << "x : " << std::endl << *x << std::endl;
-    // std::cout << res->get_tensor()->get_meta_info() << std::endl;
-    // std::cout << "res : " << std::endl << *res->get_tensor() << std::endl;
+    std::cout << "loss : " << *loss->get_tensor() << std::endl;
+    std::cout << x->get_meta_info() << std::endl;
+    std::cout << "x : " << std::endl << *x << std::endl;
+    std::cout << res->get_tensor()->get_meta_info() << std::endl;
+    std::cout << "res : " << std::endl << *res->get_tensor() << std::endl;
+    std::cout << "res grad : " << std::endl << *res->get_grad() << std::endl;
     auto embedding = params[0];
     assert(embedding->get_w()->get_name() == "embedding");
     std::cout << embedding->get_w()->get_meta_info() << std::endl;
@@ -4692,6 +4726,8 @@ void test_encoder() {
 }
 
 void test_cpu() {
+    test_embedding_1();
+    return;
     test_at();
     test_add();
     test_add_eq();
@@ -6504,7 +6540,8 @@ void test_embedding_with_cpu() {
 }
 
 void test_gpu() {
-    test_encoder();
+    test_embedding_1();
+    // test_encoder();
     return ;
     test_at();
     test_at_1();

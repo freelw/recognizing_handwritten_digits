@@ -270,6 +270,7 @@ def test():
     res.retain_grad()
 
     print("res:", res)
+    
 
     labels = torch.tensor([0, 0, 0, 0, 0, 0], dtype=torch.long)
 
@@ -278,6 +279,7 @@ def test():
     print("loss_value:", loss_value)
 
     loss_value.backward()
+    print("res grad:", res.grad)
 
     #print("embs:", embs)
     #print("embs.grad:", embs.grad)

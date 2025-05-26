@@ -692,6 +692,13 @@ namespace graph {
     }
 
     void EmbeddingEdge::backward(Tensor *grad) {
+
+        gCreateAction(
+            new DbgPrintAction(
+                grad,
+                "EmbeddingEdge grad : "
+            )
+        );
         // 这里不用使用addeq，因为不允许embeding原始tensor做其他操作
         gCreateAction(
             new EmbeddingBackwardAction(
