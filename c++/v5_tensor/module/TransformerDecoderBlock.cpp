@@ -70,7 +70,20 @@ graph::Node *TransformerDecoderBlock::forward(
         )
     );
     auto out = ffn->forward(z);
-    return addnorm3->forward(z, out);
+    gCreateAction(
+        new DbgPrintAction(
+            out->get_tensor(),
+            "TransformerDecoderBlock ffn output"
+        )
+    );
+    auto res = addnorm3->forward(z, out);
+    gCreateAction(
+        new DbgPrintAction(
+            res->get_tensor(),
+            "TransformerDecoderBlock addnorm3 output"
+        )
+    );
+    return res;
 }
 
 std::vector<Parameter *> TransformerDecoderBlock::get_parameters() {

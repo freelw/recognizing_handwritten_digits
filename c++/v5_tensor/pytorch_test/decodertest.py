@@ -266,7 +266,11 @@ class TransformerDecoderBlock(nn.Module):
         print("attention2 output : ", Y2)
         Z = self.addnorm2.forward(Y, Y2)
         print("addnorm2 output : ", Z)
-        return self.addnorm3.forward(Z, self.ffn.forward(Z)), state
+        ffn_res = self.ffn.forward(Z)
+        print("ffn_res output : ", ffn_res)
+        addnorm3_res = self.addnorm3.forward(Z, ffn_res)
+        print("addnorm3 output : ", addnorm3_res)
+        return addnorm3_res, state
 
 class TransformerDecoder():
     def __init__(self, vocab_size, num_hiddens, ffn_num_hiddens, num_heads,
