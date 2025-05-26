@@ -546,7 +546,10 @@ __global__ void tensor_embedding_backward_kernel(
     } else {
         int index_src = row * src_stride0 + col * src_strid1;
         int index_dst = indices[row] * dst_stride0 + col * dst_stride1;
-        dst[index_dst] += src[index_src];
+        // dst[index_dst] += src[index_src];
+        atomicAdd(&dst[index_dst], src[index_src]); // todo : atomicAdd is not efficient
+        //printf("index_dst : %d, index_src : %d src val %f\n",
+        //       index_dst, index_src, src[index_src]);
     }
 }
 

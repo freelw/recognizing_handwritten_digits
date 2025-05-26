@@ -693,18 +693,23 @@ namespace graph {
 
     void EmbeddingEdge::backward(Tensor *grad) {
 
-        gCreateAction(
-            new DbgPrintAction(
-                grad,
-                "EmbeddingEdge grad : "
-            )
+        Tensor *tmp = allocTensor(
+            node->get_grad()->get_shape(),
+            "embedding_tmp"
         );
-        // 这里不用使用addeq，因为不允许embeding原始tensor做其他操作
+
         gCreateAction(
             new EmbeddingBackwardAction(
                 grad,
                 indices,
-                node->get_grad()
+                tmp
+            )
+        );
+
+        gCreateAction(
+            new AddEqAction(
+                node->get_grad(),
+                tmp
             )
         );
     }

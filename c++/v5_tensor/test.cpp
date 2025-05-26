@@ -3579,7 +3579,7 @@ void test_embedding_1() {
     auto res_grad = res->get_grad();
     insert_boundary_action();
     res->backward();
-    // printAllActions();
+    printAllActions();
     allocMemAndInitTensors();
     int32_t indices_buffer[3] = {2, 2};
     g_backend_ops->cp_to_device(
@@ -3598,9 +3598,31 @@ void test_embedding_1() {
     );
     ::free(res_grad_buffer);
     gDoActions();
-    std::cout << "res: " << std::endl << *res->get_tensor() << std::endl;
-    std::cout << "res grad : " << std::endl << *res_grad << std::endl;
-    std::cout << "emb grad : " << std::endl << *emb.get_grad() << std::endl;
+    // std::cout << "res: " << std::endl << *res->get_tensor() << std::endl;
+    // std::cout << "res grad : " << std::endl << *res_grad << std::endl;
+    // std::cout << "emb grad : " << std::endl << *emb.get_grad() << std::endl;
+    float ems_grad_ans[50] = {
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        5, 7, 9, 11, 13,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0
+    };
+    bool succ = compare_res_ans_1d(
+        emb.get_grad(),
+        ems_grad_ans,
+        "emb grad"
+    );
+    if (!succ) {
+        std::cout << RED << "test_embedding_1 emb grad failed" << RESET << std::endl;
+    } else {
+        std::cout << GREEN << "test_embedding_1 succ" << RESET << std::endl;
+    }
     destruct_env();
 }
 
@@ -4669,24 +4691,24 @@ void test_encoder() {
     // printAllTensors();
     insert_boundary_action();
     loss->backward();
-    printAllActions();
+    // printAllActions();
     allocMemAndInitTensors();
     gDoOnceActions();
     custom_init_x(x);
     // 一定在gDoOnceActions之后，覆盖原始初始化的值
     custom_init_all_weights(params);
     gDoActions();
-    std::cout << "loss : " << *loss->get_tensor() << std::endl;
-    std::cout << x->get_meta_info() << std::endl;
-    std::cout << "x : " << std::endl << *x << std::endl;
-    std::cout << res->get_tensor()->get_meta_info() << std::endl;
-    std::cout << "res : " << std::endl << *res->get_tensor() << std::endl;
-    std::cout << "res grad : " << std::endl << *res->get_grad() << std::endl;
+    // std::cout << "loss : " << *loss->get_tensor() << std::endl;
+    // std::cout << x->get_meta_info() << std::endl;
+    // std::cout << "x : " << std::endl << *x << std::endl;
+    // std::cout << res->get_tensor()->get_meta_info() << std::endl;
+    // std::cout << "res : " << std::endl << *res->get_tensor() << std::endl;
+    // std::cout << "res grad : " << std::endl << *res->get_grad() << std::endl;
     auto embedding = params[0];
     assert(embedding->get_w()->get_name() == "embedding");
-    std::cout << embedding->get_w()->get_meta_info() << std::endl;
-    std::cout << "embedding : " << std::endl << *embedding->get_w() << std::endl;
-    std::cout << "embedding grad : " << std::endl << *embedding->get_grad() << std::endl;
+    // std::cout << embedding->get_w()->get_meta_info() << std::endl;
+    // std::cout << "embedding : " << std::endl << *embedding->get_w() << std::endl;
+    // std::cout << "embedding grad : " << std::endl << *embedding->get_grad() << std::endl;
 
     float embedding_grad_ans[64] = {
         -1.9230e-06, -1.5690e-05,  1.8206e-05, -1.5690e-05,  1.8206e-05,
@@ -4726,8 +4748,6 @@ void test_encoder() {
 }
 
 void test_cpu() {
-    test_embedding_1();
-    return;
     test_at();
     test_add();
     test_add_eq();
@@ -4766,6 +4786,7 @@ void test_cpu() {
     test_lazy_linear();
     test_mha();
     test_embedding();
+    test_embedding_1();
     test_pe();
     test_pe_1();
     test_expand_mul();
@@ -6540,9 +6561,6 @@ void test_embedding_with_cpu() {
 }
 
 void test_gpu() {
-    test_embedding_1();
-    // test_encoder();
-    return ;
     test_at();
     test_at_1();
     test_gpu_at_with_cpu();
@@ -6604,6 +6622,7 @@ void test_gpu() {
     test_mha();
     test_embedding();
     test_embedding_with_cpu();
+    test_embedding_1();
     test_pe();
     test_pe_1();
     test_expand_mul();
