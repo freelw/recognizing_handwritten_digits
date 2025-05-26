@@ -4975,6 +4975,8 @@ void test_decoder() {
     custom_init_all_decoder_weights(params);
     gDoActions();
 
+    std::cout << "enc_outputs : " << std::endl << *enc_outputs << std::endl;
+    std::cout << "decode_valid_lens : " << std::endl << *decode_valid_lens << std::endl;
     std::cout << "res : " << std::endl << *res->get_tensor() << std::endl;
     std::cout << "res grad : " << std::endl << *res->get_grad() << std::endl;
 
