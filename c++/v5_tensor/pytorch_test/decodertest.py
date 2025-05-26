@@ -191,6 +191,7 @@ def build_my_embedding(vocab_size, num_hiddens):
     matrix.fill_(1)
     for i in range(vocab_size):
         matrix[i, 0] = 0.1 * i
+    matrix.requires_grad = True
     return matrix
 
 class TransformerEncoder():
@@ -212,7 +213,7 @@ class TransformerEncoder():
         # values are multiplied by the square root of the embedding dimension
         # to rescale before they are summed up
         embs = X @ self.embedding
-        embs.requires_grad = True
+        # embs.requires_grad = True
         print("embs:", embs)
         X = self.pos_encoding.forward(embs * math.sqrt(self.num_hiddens))
         for i, blk in enumerate(self.blks):
@@ -293,7 +294,7 @@ class TransformerDecoder():
 
     def forward(self, X, state):
         embs = X @ self.embedding
-        embs.requires_grad = True
+        # embs.requires_grad = True
         print("embs:", embs)
         X = self.pos_encoding.forward(embs * math.sqrt(self.num_hiddens))
         
@@ -340,8 +341,8 @@ def test():
     loss_value = loss(res, labels)
     print("loss_value:", loss_value)
     loss_value.backward()
-    print("embs:", embs)
-    print("embs.grad:", embs.grad)
+    print("decoder.embedding:", decoder.embedding)
+    print("decoder.embedding.grad:", decoder.embedding.grad)
     # print("enc_outputs :", enc_outputs)
 
 if '__main__' == __name__:

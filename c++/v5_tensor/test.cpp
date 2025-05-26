@@ -4798,10 +4798,10 @@ void custom_init_all_decoder_weights(std::vector<Parameter*> & params) {
     auto dense_bias = params[38];
     assert(dense_bias->get_w()->get_name() == "dense_b_linear");
     init_ffn_bias(dense_bias->get_w());
-    std::cout << "output dense bias : " << std::endl << *dense_bias->get_w() << std::endl;
+    // std::cout << "output dense bias : " << std::endl << *dense_bias->get_w() << std::endl;
     auto dense_w = params[37];
     assert(dense_w->get_w()->get_name() == "dense_w_linear");
-    std::cout << "output dense w : " << std::endl << *dense_w->get_w() << std::endl;
+    // std::cout << "output dense w : " << std::endl << *dense_w->get_w() << std::endl;
 }
 
 void custom_init_x(Tensor *x) {
@@ -5014,9 +5014,9 @@ void test_decoder() {
     loss->backward();
 
     std::vector<Parameter*> params = decoder->get_parameters();
-    for (int i = 0; i < params.size(); ++i) {
-        std::cout << i << " : " << params[i]->get_w()->get_meta_info() << std::endl;
-    }
+    // for (int i = 0; i < params.size(); ++i) {
+    //     std::cout << i << " : " << params[i]->get_w()->get_meta_info() << std::endl;
+    // }
 
     // printAllActions();
     allocMemAndInitTensors();
@@ -5027,12 +5027,53 @@ void test_decoder() {
     custom_init_all_decoder_weights(params);
     gDoActions();
 
-    std::cout << "loss : " << *loss->get_tensor() << std::endl;
-    std::cout << "x : " << std::endl << *x << std::endl;
-    std::cout << "enc_outputs : " << std::endl << *enc_outputs << std::endl;
+    // std::cout << "loss : " << *loss->get_tensor() << std::endl;
+    // std::cout << "x : " << std::endl << *x << std::endl;
+    // std::cout << "enc_outputs : " << std::endl << *enc_outputs << std::endl;
     // std::cout << "decode_valid_lens : " << std::endl << *decode_valid_lens << std::endl;
-    std::cout << "res : " << std::endl << *res->get_tensor() << std::endl;
-    std::cout << "res grad : " << std::endl << *res->get_grad() << std::endl;
+    // std::cout << "res : " << std::endl << *res->get_tensor() << std::endl;
+    // std::cout << "res grad : " << std::endl << *res->get_grad() << std::endl;
+
+    auto embedding = params[0];
+    assert(embedding->get_w()->get_name() == "embedding");
+    // std::cout << "embedding : " << std::endl << *embedding->get_w() << std::endl;
+    // std::cout << "embedding grad : " << std::endl << *embedding->get_grad() << std::endl;
+
+    float embedding_grad_ans[64] = {
+        3.7263e-08,  2.9690e-07, -4.2416e-07,  2.9690e-07, -4.2416e-07,
+          2.9690e-07, -4.2416e-07,  2.9690e-07, -4.2416e-07,  2.9690e-07,
+         -4.2416e-07,  2.9690e-07, -4.2416e-07,  2.9690e-07, -4.2416e-07,
+          2.9690e-07,
+        1.4311e-08, -3.2827e-08, -1.1851e-07,  1.2053e-07, -1.9755e-07,
+          1.3722e-07, -2.2300e-07,  1.3893e-07, -2.3115e-07,  1.3903e-07,
+         -2.3366e-07,  1.3903e-07, -2.3447e-07,  1.3903e-07, -2.3477e-07,
+          1.3903e-07,
+        3.6325e-08, -3.7663e-07, -8.0565e-08,  2.4304e-07, -3.0956e-07,
+          3.2580e-07, -3.8683e-07,  3.3443e-07, -4.1145e-07,  3.3513e-07,
+         -4.1915e-07,  3.3523e-07, -4.2178e-07,  3.3523e-07, -4.2250e-07,
+          3.3523e-07,
+        2.2140e-08, -3.4710e-07,  3.9952e-08,  1.2272e-07, -1.1091e-07,
+          1.8939e-07, -1.6290e-07,  1.9632e-07, -1.7952e-07,  1.9693e-07,
+         -1.8472e-07,  1.9704e-07, -1.8645e-07,  1.9704e-07, -1.8696e-07,
+          1.9704e-07
+    };
+
+    bool succ_embedding_grad = compare_res_ans_1d(
+        embedding->get_grad(),
+        embedding_grad_ans,
+        "embedding_grad"
+    );
+
+    if (!succ_embedding_grad) {
+        std::cout << RED << "test_decoder embedding_grad failed" << RESET << std::endl;
+    }
+
+    bool succ = succ_embedding_grad;
+    if (succ) {
+        std::cout << GREEN << "test_decoder succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_decoder failed" << RESET << std::endl;
+    }
 
     delete decoder;
     destruct_env();
@@ -5181,9 +5222,6 @@ void test_encoder_mask() {
 }
 
 void test_cpu() {
-    test_decoder();
-    // test_repeat_interleave_1();
-    return ;
     test_at();
     test_add();
     test_add_eq();
@@ -5241,6 +5279,7 @@ void test_cpu() {
     test_encoder();
     test_encoder_mask();
     test_repeat_interleave_1();
+    test_decoder();
 }
 
 Tensor *test_add_with_cpu_base(int m, int n) {
@@ -7078,6 +7117,7 @@ void test_gpu() {
     test_encoder();
     test_encoder_mask();
     test_repeat_interleave_1();
+    test_decoder();
 }
 
 int main(int argc, char *argv[]) {
