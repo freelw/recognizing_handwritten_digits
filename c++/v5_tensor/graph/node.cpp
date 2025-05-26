@@ -636,18 +636,18 @@ namespace graph {
             )
         );
 
-        gCreateAction(
-            new DbgPrintAction(
-                tmp,
-                "cross_entropy_tmp "
-            )
-        );
-        gCreateAction(
-            new DbgPrintAction(
-                grad,
-                "CrossEntropyEdge grad "
-            )
-        );
+        // gCreateAction(
+        //     new DbgPrintAction(
+        //         tmp,
+        //         "cross_entropy_tmp "
+        //     )
+        // );
+        // gCreateAction(
+        //     new DbgPrintAction(
+        //         grad,
+        //         "CrossEntropyEdge grad "
+        //     )
+        // );
         
         Tensor *tmp2 = allocTensor(
             node->get_grad()->get_shape(),
@@ -661,12 +661,12 @@ namespace graph {
             )
         );
 
-        gCreateAction(
-            new DbgPrintAction(
-                tmp2,
-                "cross_entropy_tmp2"
-            )
-        );
+        // gCreateAction(
+        //     new DbgPrintAction(
+        //         tmp2,
+        //         "cross_entropy_tmp2"
+        //     )
+        // );
         gCreateAction(
             new AddEqAction(
                 node->get_grad(),
@@ -705,12 +705,12 @@ namespace graph {
             "embedding_tmp"
         );
 
-        gCreateAction(
-            new DbgPrintAction(
-                grad,
-                "EmbeddingEdge inputgrad "
-            )
-        );
+        // gCreateAction(
+        //     new DbgPrintAction(
+        //         grad,
+        //         "EmbeddingEdge inputgrad "
+        //     )
+        // );
 
         gCreateAction(
             new EmbeddingBackwardAction(
@@ -733,12 +733,12 @@ namespace graph {
             node->get_grad()->get_shape(),
             "norm_tmp"
         );
-        gCreateAction(
-            new DbgPrintAction(
-                grad,
-                "NormEdge inputgrad "
-            )
-        );
+        // gCreateAction(
+        //     new DbgPrintAction(
+        //         grad,
+        //         "NormEdge inputgrad "
+        //     )
+        // );
         gCreateAction(
             new NormBackwardAction(
                 grad,
@@ -747,12 +747,12 @@ namespace graph {
                 tmp
             )
         );
-        gCreateAction(
-            new DbgPrintAction(
-                tmp,
-                "NormEdge tmp "
-            )
-        );
+        // gCreateAction(
+        //     new DbgPrintAction(
+        //         tmp,
+        //         "NormEdge tmp "
+        //     )
+        // );
         gCreateAction(
             new AddEqAction(
                 node->get_grad(),
