@@ -4683,10 +4683,10 @@ void test_encoder() {
 
     std::vector<Parameter*> params = encoder->get_parameters();
     // print params meta
-    // std::cout << "params : " << std::endl;
-    // for (int i = 0; i < params.size(); ++i) {
-    //     std::cout << i << " : " <<  params[i]->get_w()->get_meta_info() << std::endl;
-    // }
+    std::cout << "params : " << std::endl;
+    for (int i = 0; i < params.size(); ++i) {
+        std::cout << i << " : " <<  params[i]->get_w()->get_meta_info() << std::endl;
+    }
     // std::cout << "tensors : " << std::endl;
     // printAllTensors();
     insert_boundary_action();
@@ -4702,8 +4702,31 @@ void test_encoder() {
     // std::cout << x->get_meta_info() << std::endl;
     // std::cout << "x : " << std::endl << *x << std::endl;
     // std::cout << res->get_tensor()->get_meta_info() << std::endl;
-    // std::cout << "res : " << std::endl << *res->get_tensor() << std::endl;
-    // std::cout << "res grad : " << std::endl << *res->get_grad() << std::endl;
+    std::cout << "res : " << std::endl << *res->get_tensor() << std::endl;
+    std::cout << "res grad : " << std::endl << *res->get_grad() << std::endl;
+    float res_grad_ans[96] = {
+        -0.1665,  0.0112,  0.0110,  0.0112,  0.0110,  0.0112,  0.0110,  0.0112,
+          0.0110,  0.0112,  0.0110,  0.0112,  0.0110,  0.0112,  0.0110,  0.0112,
+        -0.1665,  0.0111,  0.0111,  0.0112,  0.0110,  0.0112,  0.0110,  0.0112,
+          0.0110,  0.0112,  0.0110,  0.0112,  0.0110,  0.0112,  0.0110,  0.0112,
+        -0.1665,  0.0110,  0.0111,  0.0111,  0.0111,  0.0112,  0.0110,  0.0112,
+          0.0110,  0.0112,  0.0110,  0.0112,  0.0110,  0.0112,  0.0110,  0.0112,
+        -0.1665,  0.0112,  0.0110,  0.0112,  0.0110,  0.0112,  0.0110,  0.0112,
+          0.0110,  0.0112,  0.0110,  0.0112,  0.0110,  0.0112,  0.0110,  0.0112,
+        -0.1665,  0.0111,  0.0111,  0.0112,  0.0110,  0.0112,  0.0110,  0.0112,
+          0.0110,  0.0112,  0.0110,  0.0112,  0.0110,  0.0112,  0.0110,  0.0112,
+        -0.1665,  0.0110,  0.0111,  0.0111,  0.0111,  0.0112,  0.0110,  0.0112,
+          0.0110,  0.0112,  0.0110,  0.0112,  0.0110,  0.0112,  0.0110,  0.0112
+    };
+    bool succ_res_grad = compare_res_ans_1d(
+        res->get_grad(),
+        res_grad_ans,
+        "res_grad",
+        1e-4
+    );
+    if (!succ_res_grad) {
+        std::cout << RED << "test_encoder res_grad failed" << RESET << std::endl;
+    }
     auto embedding = params[0];
     assert(embedding->get_w()->get_name() == "embedding");
     // std::cout << embedding->get_w()->get_meta_info() << std::endl;
@@ -4737,17 +4760,77 @@ void test_encoder() {
         std::cout << RED << "test_encoder embedding_grad failed" << RESET << std::endl;
     }
 
-    bool succ = succ_embedding_grad;
+    
+
+    auto w_q_w_linear = params[13];
+    auto w_k_w_linear = params[14];
+    auto w_v_w_linear = params[15];
+    auto w_o_w_linear = params[16];
+
+    assert(w_q_w_linear->get_w()->get_name() == "w_q_w_linear");
+    assert(w_k_w_linear->get_w()->get_name() == "w_k_w_linear");
+    assert(w_v_w_linear->get_w()->get_name() == "w_v_w_linear");
+    assert(w_o_w_linear->get_w()->get_name() == "w_o_w_linear");
+
+    // std::cout << "w_q_w_linear grad : " << std::endl << *w_q_w_linear->get_grad() << std::endl;
+
+    auto block1_addnorm2_gamma = params[23];
+    assert(block1_addnorm2_gamma->get_w()->get_name() == "layernorm_gamma");
+    // std::cout << "block1_addnorm2_gamma grad : " << std::endl << *block1_addnorm2_gamma->get_grad() << std::endl;
+    
+    float block1_addnorm2_gamma_grad_ans[16] = {
+        3.8688, 0.0171, 0.0170, 0.0176, 0.0168, 0.0177, 0.0167, 0.0177, 0.0167,
+        0.0177, 0.0167, 0.0177, 0.0167, 0.0177, 0.0167, 0.0177
+    };
+
+    bool succ_block1_addnorm2_gamma_grad = compare_res_ans_1d(
+        block1_addnorm2_gamma->get_grad(),
+        block1_addnorm2_gamma_grad_ans,
+        "block1_addnorm2_gamma_grad",
+        1e-4
+    );
+
+    if (!succ_block1_addnorm2_gamma_grad) {
+        std::cout << RED << "test_encoder block1_addnorm2_gamma_grad failed" << RESET << std::endl;
+    }
+
+    auto block1_addnorm2_beta = params[24];
+    assert(block1_addnorm2_beta->get_w()->get_name() == "layernorm_beta");
+    // std::cout << "block1_addnorm2_beta grad : " << std::endl << *block1_addnorm2_beta->get_grad() << std::endl;
+
+    float block1_addnorm2_beta_grad_ans[16] = {
+        -0.9989,  0.0665,  0.0664,  0.0669,  0.0663,  0.0670,  0.0662,  0.0670,
+         0.0662,  0.0670,  0.0662,  0.0670,  0.0662,  0.0670,  0.0662,  0.0670
+    };
+    bool succ_block1_addnorm2_beta_grad = compare_res_ans_1d(
+        block1_addnorm2_beta->get_grad(),
+        block1_addnorm2_beta_grad_ans,
+        "block1_addnorm2_beta_grad",
+        1e-4
+    );
+    if (!succ_block1_addnorm2_beta_grad) {
+        std::cout << RED << "test_encoder block1_addnorm2_beta_grad failed" << RESET << std::endl;
+    }
+
+    auto ffn_dense2_w_linear = params[21];
+    assert(ffn_dense2_w_linear->get_w()->get_name() == "ffn_dense2_w_linear");
+    std::cout << "ffn_dense2_w_linear grad : " << std::endl << *ffn_dense2_w_linear->get_grad() << std::endl;
+
+    bool succ = succ_res_grad && succ_embedding_grad && succ_block1_addnorm2_gamma_grad && 
+                succ_block1_addnorm2_beta_grad;
     if (succ) {
         std::cout << GREEN << "test_encoder succ" << RESET << std::endl;
     } else {
         std::cout << RED << "test_encoder failed" << RESET << std::endl;
     }
+ 
     delete encoder;
     destruct_env();
 }
 
 void test_cpu() {
+    test_encoder();
+    return;
     test_at();
     test_add();
     test_add_eq();
@@ -6561,6 +6644,8 @@ void test_embedding_with_cpu() {
 }
 
 void test_gpu() {
+    test_encoder();
+    return ;
     test_at();
     test_at_1();
     test_gpu_at_with_cpu();

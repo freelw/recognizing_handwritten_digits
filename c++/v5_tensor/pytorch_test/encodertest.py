@@ -286,6 +286,11 @@ def test():
 
     print("encoder.embedding:", encoder.embedding)
     print("encoder.embedding.grad:", encoder.embedding.grad)
+
+    print("blocks 1 W_q grad :", encoder.blks[1].attention.W_q.weight.grad)
+    print("blocks 1 addnorm2 ln weight grad :", encoder.blks[1].addnorm2.ln.weight.grad)
+    print("blocks 1 addnorm2 ln beta grad :", encoder.blks[1].addnorm2.ln.bias.grad)
+    print("blocks 1 ffn dense2 grad :", encoder.blks[1].ffn.dense2.weight.grad.transpose(0, 1))
     
 
 if '__main__' == __name__:
