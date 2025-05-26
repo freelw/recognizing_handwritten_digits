@@ -4929,6 +4929,7 @@ void test_encoder_mask() {
     auto embedding = params[0];
     assert(embedding->get_w()->get_name() == "embedding");
     std::cout << embedding->get_w()->get_meta_info() << std::endl;
+    std::cout << "embedding : " << std::endl << *embedding->get_w() << std::endl;
     std::cout << "embedding grad : " << std::endl << *embedding->get_grad() << std::endl;
  
     delete encoder;
