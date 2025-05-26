@@ -4458,6 +4458,108 @@ void test_mulsv() {
     destruct_env();
 }
 
+void encoder_init_weight(Tensor *t) {
+    float *buffer = static_cast<float*>(::malloc(t->size()));
+    auto length = t->length();
+    for (int i = 0; i < length; ++i) {
+        buffer[i] = 1.0f;
+    }
+    buffer[0] = 0.1f;
+    g_backend_ops->cp_to_device(
+        t,
+        reinterpret_cast<char*>(buffer),
+        t->size()
+    );
+    ::free(buffer);
+}
+
+void init_addnorm_gamma(Tensor *t) {
+    // gamma 初始化为1
+    float *buffer = static_cast<float*>(::malloc(t->size()));
+    auto length = t->length();
+    for (int i = 0; i < length; ++i) {
+        buffer[i] = 1.0f;
+    }
+    g_backend_ops->cp_to_device(
+        t,
+        reinterpret_cast<char*>(buffer),
+        t->size()
+    );
+    ::free(buffer);
+}
+
+void init_addnorm_beta(Tensor *t) {
+    // beta 初始化为0
+    float *buffer = static_cast<float*>(::malloc(t->size()));
+    auto length = t->length();
+    for (int i = 0; i < length; ++i) {
+        buffer[i] = 0.0f;
+    }
+    g_backend_ops->cp_to_device(
+        t,
+        reinterpret_cast<char*>(buffer),
+        t->size()
+    );
+    ::free(buffer);
+}
+
+void init_embedding(Tensor *t) {
+    assert(t->get_dim() == 2);
+    auto shape = t->get_shape();
+    float *buffer = static_cast<float*>(::malloc(t->size()));
+    auto length = t->length();
+    for (int i = 0; i < length; ++i) {
+        buffer[i] = 1.0f;
+    }
+    for (int i = 0; i < shape[0]; ++i) {
+        buffer[i * shape[1]] = 0.1f * i; // 每一行的首元素为i*0.1
+    }
+    g_backend_ops->cp_to_device(
+        t,
+        reinterpret_cast<char*>(buffer),
+        t->size()
+    );
+    ::free(buffer);
+}
+
+void custom_init_all_weights(std::vector<Parameter*> & params) {
+    // step 1: 所有weight 初始化为1， 除了第0个元素为0.1
+    for (auto &param : params) {
+        encoder_init_weight(param->get_w()); 
+    }
+    // step 2: 所有layernorm的gamma 初始化为1 beta 初始化为0
+    auto block_0_addnorm1_gamma = params[5];
+    auto block_0_addnorm1_beta = params[6];
+    assert(block_0_addnorm1_gamma->get_w()->get_name() == "layernorm_gamma");
+    assert(block_0_addnorm1_beta->get_w()->get_name() == "layernorm_beta");
+    auto block_0_addnorm2_gamma = params[11];
+    auto block_0_addnorm2_beta = params[12];
+    assert(block_0_addnorm2_gamma->get_w()->get_name() == "layernorm_gamma");
+    assert(block_0_addnorm2_beta->get_w()->get_name() == "layernorm_beta");
+    auto block_1_addnorm1_gamma = params[17];
+    auto block_1_addnorm1_beta = params[18];
+    assert(block_1_addnorm1_gamma->get_w()->get_name() == "layernorm_gamma");
+    assert(block_1_addnorm1_beta->get_w()->get_name() == "layernorm_beta");
+    auto block_1_addnorm2_gamma = params[23];
+    auto block_1_addnorm2_beta = params[24];
+    assert(block_1_addnorm2_gamma->get_w()->get_name() == "layernorm_gamma");
+    assert(block_1_addnorm2_beta->get_w()->get_name() == "layernorm_beta");
+
+    init_addnorm_gamma(block_0_addnorm1_gamma->get_w());
+    init_addnorm_beta(block_0_addnorm1_beta->get_w());
+    init_addnorm_gamma(block_0_addnorm2_gamma->get_w());
+    init_addnorm_beta(block_0_addnorm2_beta->get_w());
+    init_addnorm_gamma(block_1_addnorm1_gamma->get_w());
+    init_addnorm_beta(block_1_addnorm1_beta->get_w());
+    init_addnorm_gamma(block_1_addnorm2_gamma->get_w());
+    init_addnorm_beta(block_1_addnorm2_beta->get_w());
+
+    //step 3: embedding 的第i行的首元素初始化为i*0.1, 其他都为1
+    auto embedding = params[0];
+    assert(embedding->get_w()->get_name() == "embedding");
+    init_embedding(embedding->get_w());
+}
+
 void test_encoder() {
 
     construct_env();
@@ -4480,17 +4582,25 @@ void test_encoder() {
 
     std::vector<Parameter*> params = encoder->get_parameters();
     // print params meta
-    for (auto &param : params) {
-        std::cout << param->get_w()->get_meta_info() << std::endl;
+    std::cout << "params : " << std::endl;
+    for (int i = 0; i < params.size(); ++i) {
+        std::cout << i << " : " <<  params[i]->get_w()->get_meta_info() << std::endl;
     }
+    // std::cout << "tensors : " << std::endl;
+    // printAllTensors();
     insert_boundary_action();
-    printAllActions();
+    // printAllActions();
     allocMemAndInitTensors();
     gDoOnceActions();
+    // 一定在gDoOnceActions之后，覆盖原始初始化的值
+    custom_init_all_weights(params);
     gDoActions();
-
+    // std::cout << "params : " << std::endl;
+    // for (auto &param : params) {
+    //     std::cout << param->get_w()->get_meta_info() << std::endl;
+    //     std::cout << *param->get_w() << std::endl;
+    // }
     delete encoder;
-
     destruct_env();
 }
 
