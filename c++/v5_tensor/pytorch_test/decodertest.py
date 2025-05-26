@@ -299,7 +299,9 @@ class TransformerDecoder():
         
         for i, blk in enumerate(self.blks):
             X, state = blk(X, state)
-        return self.dense(X), state, embs
+        dense_output = self.dense(X)
+        print("dense_output:", dense_output)
+        return dense_output, state, embs
 
 def test():
     x = torch.tensor(
