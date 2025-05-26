@@ -254,17 +254,18 @@ class TransformerDecoderBlock(nn.Module):
         else:
             dec_valid_lens = None
         # Self-attention
-        print ("dec_valid_lens : ", dec_valid_lens)
-        print("X : ", X)
-        print("key_values : ", key_values)
+        # print ("dec_valid_lens : ", dec_valid_lens)
+        # print("X : ", X)
+        # print("key_values : ", key_values)
         X2 = self.attention1.forward(X, key_values, key_values, dec_valid_lens)
-        print("attention1 output : ", X2)
+        #  print("attention1 output : ", X2)
         Y = self.addnorm1.forward(X, X2)
         # Encoder-decoder attention. Shape of enc_outputs:
         # (batch_size, num_steps, num_hiddens)
         Y2 = self.attention2.forward(Y, enc_outputs, enc_outputs, enc_valid_lens)
         print("attention2 output : ", Y2)
         Z = self.addnorm2.forward(Y, Y2)
+        print("addnorm2 output : ", Z)
         return self.addnorm3.forward(Z, self.ffn.forward(Z)), state
 
 class TransformerDecoder():
