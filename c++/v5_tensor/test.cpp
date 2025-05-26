@@ -3579,7 +3579,7 @@ void test_embedding_1() {
     auto res_grad = res->get_grad();
     insert_boundary_action();
     res->backward();
-    printAllActions();
+    // printAllActions();
     allocMemAndInitTensors();
     int32_t indices_buffer[3] = {2, 2};
     g_backend_ops->cp_to_device(
