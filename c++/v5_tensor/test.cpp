@@ -9,6 +9,7 @@
 #include "module/embedding.h"
 #include "module/posencoding.h"
 #include "module/layernorm.h"
+#include "module/Seq2Seq.h"
 #include "common.h"
 #include <iomanip>
 #include <cmath>
@@ -4457,7 +4458,45 @@ void test_mulsv() {
     destruct_env();
 }
 
+void test_encoder() {
+
+    construct_env();
+
+    int num_hiddens = 16;
+    int num_blks = 2;
+    float dropout = 0;
+    int ffn_num_hiddens = 4;
+    int num_heads = 4;
+    int vocab_size = 4;
+    int max_posencoding_len = 1000;
+
+    auto encoder = new TransformerEncoder(
+        vocab_size, num_hiddens, ffn_num_hiddens,
+        num_heads, num_blks, max_posencoding_len, dropout, false
+    );
+
+    Tensor *x = allocTensor({2, 3}, "x", INT32);
+    auto res = encoder->forward(x);
+
+    std::vector<Parameter*> params = encoder->get_parameters();
+    // print params meta
+    for (auto &param : params) {
+        std::cout << param->get_w()->get_meta_info() << std::endl;
+    }
+    insert_boundary_action();
+    printAllActions();
+    allocMemAndInitTensors();
+    gDoOnceActions();
+    gDoActions();
+
+    delete encoder;
+
+    destruct_env();
+}
+
 void test_cpu() {
+    test_encoder();
+    return ;
     test_at();
     test_add();
     test_add_eq();

@@ -820,6 +820,16 @@ void gDoActions() {
     }
 }
 
+void gDoOnceActions() {
+    for (Action *action : g_actions) {
+        if (!action->is_do_once() || action->executed_once()) {
+            continue;
+        }
+        action->execute();
+        action->increase_exec_times();
+    }
+}
+
 void gDoForwardActions() {
     g_training = false;
     for (Action *action : g_actions) {

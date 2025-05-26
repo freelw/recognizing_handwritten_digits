@@ -408,6 +408,7 @@ class MulSVAction : public Action {
 std::vector<Action *> getOnceActions();
 void gCreateAction(Action *action);
 void gDoActions();
+void gDoOnceActions();
 void gDoForwardActions();
 void printAllActions();
 void freeAllActions();
