@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 import math
 from torch.nn.init import constant_
-from torch.nn import functional as F
 
 def masked_softmax(X, valid_lens):  #@save
     """Perform softmax operation by masking elements on the last axis."""
@@ -53,7 +52,7 @@ def init_weights(module, input):
         constant_(module.weight, 1)
         module.weight.data[0, 0] = 0.1
         # eye_(module.weight)
-        #print("init_weights")
+        print("init_weights")
         # 移除钩子，保证只执行一次
         module._forward_pre_hooks.pop(list(module._forward_pre_hooks.keys())[0])
 
@@ -88,6 +87,7 @@ class MultiHeadAttention:
             # times, then copy the next item, and so on
             valid_lens = torch.repeat_interleave(
                 valid_lens, repeats=self.num_heads, dim=0)
+            print("mha valid_lens:", valid_lens)
 
         # Shape of output: (batch_size * num_heads, no. of queries,
         # num_hiddens / num_heads)
@@ -137,7 +137,7 @@ def init_weights_ffn(module, input):
         constant_(module.bias, 0)
         module.weight.data[0, 0] = 0.1
         # eye_(module.weight)
-        #print("init_weights")
+        print("init_weights")
         # 移除钩子，保证只执行一次
         module._forward_pre_hooks.pop(list(module._forward_pre_hooks.keys())[0])
 
@@ -167,15 +167,8 @@ class TransformerEncoderBlock(nn.Module):  #@save
         self.addnorm2 = AddNorm(num_hiddens, dropout)
 
     def forward(self, X, valid_lens):
-        attention_res = self.attention.forward(X, X, X, valid_lens)
-        #print("attention_res:", attention_res)
-        Y = self.addnorm1.forward(X, attention_res)
-        #print("addnorm1 res:", Y)
-        ffn_res = self.ffn.forward(Y)
-        #print("ffn_res:", ffn_res)
-        res = self.addnorm2.forward(Y, ffn_res)
-        #print("addnorm2 res:", res)
-        return res
+        Y = self.addnorm1.forward(X, self.attention.forward(X, X, X, valid_lens))
+        return self.addnorm2.forward(Y, self.ffn.forward(Y))
 
 class PositionalEncoding:  #@save
     """Positional encoding."""
@@ -221,15 +214,95 @@ class TransformerEncoder():
         # to rescale before they are summed up
         embs = X @ self.embedding
         # embs.requires_grad = True
-        #print("embs:", embs)
+        print("embs:", embs)
         X = self.pos_encoding.forward(embs * math.sqrt(self.num_hiddens))
-        #print("pos_encoding res:", X)
-        cnt = 0
         for i, blk in enumerate(self.blks):
-            X = blk(X, valid_lens)
-            #print("blk", cnt, "res:", X)
-            cnt += 1
+            X = blk(X, valid_lens)    
         return X, embs
+
+class TransformerDecoderBlock(nn.Module):
+    # The i-th block in the Transformer decoder
+    def __init__(self, num_hiddens, ffn_num_hiddens, num_heads, dropout, i):
+        super().__init__()
+        self.i = i
+        self.attention1 = MultiHeadAttention(num_hiddens, num_heads,
+                                                 dropout)
+        self.addnorm1 = AddNorm(num_hiddens, dropout)
+        self.attention2 = MultiHeadAttention(num_hiddens, num_heads,
+                                                 dropout)
+        self.addnorm2 = AddNorm(num_hiddens, dropout)
+        self.ffn = PositionWiseFFN(ffn_num_hiddens, num_hiddens)
+        self.addnorm3 = AddNorm(num_hiddens, dropout)
+
+    def forward(self, X, state):
+        enc_outputs, enc_valid_lens = state[0], state[1]
+        # During training, all the tokens of any output sequence are processed
+        # at the same time, so state[2][self.i] is None as initialized. When
+        # decoding any output sequence token by token during prediction,
+        # state[2][self.i] contains representations of the decoded output at
+        # the i-th block up to the current time step
+        if state[2][self.i] is None:
+            key_values = X
+        else:
+            key_values = torch.cat((state[2][self.i], X), dim=1)
+        state[2][self.i] = key_values
+        if self.training:
+            batch_size, num_steps, _ = X.shape
+            # Shape of dec_valid_lens: (batch_size, num_steps), where every
+            # row is [1, 2, ..., num_steps]
+            dec_valid_lens = torch.arange(
+                1, num_steps + 1, device=X.device).repeat(batch_size, 1)
+        else:
+            dec_valid_lens = None
+        # Self-attention
+        # print ("dec_valid_lens : ", dec_valid_lens)
+        # print("X : ", X)
+        # print("key_values : ", key_values)
+        X2 = self.attention1.forward(X, key_values, key_values, dec_valid_lens)
+        #  print("attention1 output : ", X2)
+        Y = self.addnorm1.forward(X, X2)
+        # Encoder-decoder attention. Shape of enc_outputs:
+        # (batch_size, num_steps, num_hiddens)
+        Y2 = self.attention2.forward(Y, enc_outputs, enc_outputs, enc_valid_lens)
+        print("attention2 output : ", Y2)
+        Z = self.addnorm2.forward(Y, Y2)
+        print("addnorm2 output : ", Z)
+        ffn_res = self.ffn.forward(Z)
+        print("ffn_res output : ", ffn_res)
+        addnorm3_res = self.addnorm3.forward(Z, ffn_res)
+        print("addnorm3 output : ", addnorm3_res)
+        return addnorm3_res, state
+
+class TransformerDecoder():
+    def __init__(self, vocab_size, num_hiddens, ffn_num_hiddens, num_heads,
+                 num_blks, dropout):
+        super().__init__()
+        self.num_hiddens = num_hiddens
+        self.num_blks = num_blks
+        #self.embedding = nn.Embedding(vocab_size, num_hiddens)
+        self.embedding = build_my_embedding(vocab_size, num_hiddens)
+        self.pos_encoding = PositionalEncoding(num_hiddens, dropout)
+        self.blks = nn.Sequential()
+        for i in range(num_blks):
+            self.blks.add_module("block"+str(i), TransformerDecoderBlock(
+                num_hiddens, ffn_num_hiddens, num_heads, dropout, i))
+        self.dense = nn.LazyLinear(vocab_size)
+        self.dense.register_forward_pre_hook(init_weights_ffn)
+
+    def init_state(self, enc_outputs, enc_valid_lens):
+        return [enc_outputs, enc_valid_lens, [None] * self.num_blks]
+
+    def forward(self, X, state):
+        embs = X @ self.embedding
+        # embs.requires_grad = True
+        print("embs:", embs)
+        X = self.pos_encoding.forward(embs * math.sqrt(self.num_hiddens))
+        
+        for i, blk in enumerate(self.blks):
+            X, state = blk(X, state)
+        dense_output = self.dense(X)
+        print("dense_output:", dense_output)
+        return dense_output, state, embs
 
 def test():
     x = torch.tensor(
@@ -250,39 +323,27 @@ def test():
     num_heads = 4
     vocab_size = 4
 
-    encoder = TransformerEncoder(vocab_size, num_hiddens, ffn_num_hiddens, num_heads, num_blks, dropout)
-    valid_lens = torch.tensor([1,1], dtype=torch.long)
-    res, embs = encoder.forward(x, valid_lens)
+    decoder = TransformerDecoder(vocab_size, num_hiddens, ffn_num_hiddens, num_heads, num_blks, dropout)
+    
+    # enc_outputs: (2, 2, 3) tensor
+    enc_outputs = torch.randn(2, 2, 3)
+    enc_outputs.fill_(1)
+    enc_outputs.requires_grad = True
+    state = [enc_outputs, None, [None] * num_blks]
 
+    res, state, embs = decoder.forward(x, state)
+    print("res:", res)
+    loss = nn.CrossEntropyLoss()
     res = res.reshape(-1, res.shape[-1])
     res.retain_grad()
     print("res:", res)
-
     labels = torch.tensor([0, 0, 0, 0, 0, 0], dtype=torch.long)
-    mask = torch.tensor([
-        [1, 0, 0,
-        1, 0, 0],
-    ], dtype=torch.float32)
-
-    loss = F.cross_entropy(res, labels, reduction="none")
-    print("loss2: ", loss)
-    print ("mask: ", mask)
-    print ("loss * mask: ", loss * mask)
-    loss_value = (loss * mask).sum() / mask.sum()
-
+    loss_value = loss(res, labels)
     print("loss_value:", loss_value)
-
     loss_value.backward()
-    print("res grad:", res.grad)
-
-    print("encoder.embedding:", encoder.embedding)
-    print("encoder.embedding.grad:", encoder.embedding.grad)
-
-    print("blocks 1 W_q grad :", encoder.blks[1].attention.W_q.weight.grad)
-    print("blocks 1 addnorm2 ln weight grad :", encoder.blks[1].addnorm2.ln.weight.grad)
-    print("blocks 1 addnorm2 ln beta grad :", encoder.blks[1].addnorm2.ln.bias.grad)
-    print("blocks 1 ffn dense2 grad :", encoder.blks[1].ffn.dense2.weight.grad.transpose(0, 1))
-    
+    print("decoder.embedding:", decoder.embedding)
+    print("decoder.embedding.grad:", decoder.embedding.grad)
+    # print("enc_outputs :", enc_outputs)
 
 if '__main__' == __name__:
     test()
