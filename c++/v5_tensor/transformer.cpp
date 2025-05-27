@@ -179,9 +179,9 @@ int main(int argc, char *argv[]) {
     float dropout = 0.2f;
     int ffn_num_hiddens = 64;
     int num_heads = 4;
-    
     int num_steps = NUM_STEPS;
     int max_posencoding_len = MAX_POSENCODING_LEN;
+
     Seq2SeqEncoderDecoder *seq2seq = new Seq2SeqEncoderDecoder(
         bos_id, eos_id,
         enc_vocab_size, dec_vocab_size, num_hiddens, ffn_num_hiddens,
@@ -309,6 +309,7 @@ int main(int argc, char *argv[]) {
             // std::cout << "tgt_token_ids : " << std::endl << *tgt_token_ids << std::endl;
             // std::cout << "labels : " << std::endl << *labels << std::endl;
             // std::cout << "ce_mask : " << std::endl << *ce_mask << std::endl;
+            // exit(0);
 
             gDoActions();
             print_progress(prefix, end, v_src_token_ids.size());

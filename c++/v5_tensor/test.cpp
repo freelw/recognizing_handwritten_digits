@@ -5093,16 +5093,26 @@ void init_mask_and_valid_lens(Tensor *mask, Tensor *valid_lens) {
 
 void test_encoder_decoder() {
     construct_env();
-    int num_hiddens = 16;
-    int num_blks = 2;
-    float dropout = 0;
-    int ffn_num_hiddens = 4;
-    int num_heads = 4;
-    int enc_vocab_size = 4;
-    int dec_vocab_size = 4;
-    int max_posencoding_len = 1000;
+    // int num_hiddens = 16;
+    // int num_blks = 2;
+    // float dropout = 0;
+    // int ffn_num_hiddens = 4;
+    // int num_heads = 4;
+    // int max_posencoding_len = 1000;
+
+    int enc_vocab_size = 7;
+    int dec_vocab_size = 9;
     int bos_id = 3;
     int eos_id = 1;
+    
+
+    int num_hiddens = 256;
+    int num_blks = 2;
+    float dropout = 0.0f;
+    int ffn_num_hiddens = 64;
+    int num_heads = 4;
+    int num_steps = NUM_STEPS;
+    int max_posencoding_len = MAX_POSENCODING_LEN;
 
     Seq2SeqEncoderDecoder *seq2seq = new Seq2SeqEncoderDecoder(
         bos_id, eos_id,
@@ -5110,17 +5120,17 @@ void test_encoder_decoder() {
         num_heads, num_blks, max_posencoding_len, dropout
     );
 
-    Tensor *x = allocTensor({2, 3}, "x", INT32);
-    Tensor *y = allocTensor({2, 3}, "y", INT32);
-    Tensor *enc_valid_lens = allocTensor({2}, "valid_lens", INT32);
-    Tensor *dec_valid_lens = allocTensor({2, 3}, "decode_valid_lens", INT32);
-    Tensor *mask = allocTensor({6}, "mask");
-    Tensor *labels = allocTensor({6}, "labels", INT32);
+    Tensor *src_token_ids = allocTensor({1, 9}, "x", INT32);
+    Tensor *tgt_token_ids = allocTensor({1, 9}, "y", INT32);
+    Tensor *enc_valid_lens = allocTensor({1}, "valid_lens", INT32);
+    Tensor *dec_valid_lens = allocTensor({1, 9}, "decode_valid_lens", INT32);
+    Tensor *ce_mask = allocTensor({9}, "mask");
+    Tensor *labels = allocTensor({9}, "labels", INT32);
     
-    auto res = seq2seq->forward(x, y, enc_valid_lens, dec_valid_lens);
-    auto ce_res = res->reshape({6, -1})->CrossEntropy(labels);
-    auto mask_res = ce_res->mask(mask);
-    auto loss = mask_res->avg_1d(mask);
+    auto res = seq2seq->forward(src_token_ids, tgt_token_ids, enc_valid_lens, dec_valid_lens);
+    auto ce_res = res->reshape({-1, dec_vocab_size})->CrossEntropy(labels);
+    auto mask_res = ce_res->mask(ce_mask);
+    auto loss = mask_res->avg_1d(ce_mask);
     insert_boundary_action();
     
     std::vector<Parameter*> enc_params = seq2seq->get_encoder()->get_parameters();
@@ -5132,50 +5142,75 @@ void test_encoder_decoder() {
     for (int i = 0; i < all_params.size(); i++) {
         std::cout << "param " << i << " name : " << all_params[i]->get_w()->get_name() << std::endl;
     }
-    Adam adam(all_params, 0.1f);
+    Adam adam(all_params, 0.001f);
     zero_grad();
     loss->backward();
     adam.clip_grad(1.0f);
     adam.step();
     // printAllActions();
     allocMemAndInitTensors();
-    int32_t label_buffer[6] = {1, 1, 2, 3, 1, 2};
-    g_backend_ops->cp_to_device(
-        labels,
-        reinterpret_cast<char*>(label_buffer),
-        labels->size()
-    );
     gDoOnceActions();
-
-    
-    // for (int i = 0; i < enc_params.size(); i++) {
-    //     std::cout << "enc param " << i << " name : " << enc_params[i]->get_w()->get_name() << std::endl;
-    // }
     custom_init_all_encoder_weights(enc_params);
-    
-    // for (int i = 0; i < dec_params.size(); i++) {
-    //     std::cout << "dec param " << i << " name : " << dec_params[i]->get_w()->get_name() << std::endl;
-    // }
     custom_init_all_decoder_weights(dec_params);
 
-    custom_init_x(x);
-    custom_init_x(y);
-    custom_init_dec_valid_lens(dec_valid_lens);
-    init_mask_and_valid_lens(mask, enc_valid_lens);
+    int32_t encoder_valid_lens_buffer[1] = {4};
+    g_backend_ops->cp_to_device(
+        enc_valid_lens,
+        reinterpret_cast<char*>(encoder_valid_lens_buffer),
+        enc_valid_lens->size()
+    );
+
+    int32_t decoder_valid_lens_buffer[9] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
+    g_backend_ops->cp_to_device(
+        dec_valid_lens,
+        reinterpret_cast<char*>(decoder_valid_lens_buffer),
+        dec_valid_lens->size()
+    );
+
+    float ce_mask_buffer[9] = {1, 1, 1, 1, 0, 0, 0, 0, 0};
+    g_backend_ops->cp_to_device(
+        ce_mask,
+        reinterpret_cast<char*>(ce_mask_buffer),
+        ce_mask->size()
+    );
+
+    int32_t labels_buffer[9] = {6, 7, 8, 1, 0, 0, 0, 0, 0};
+    g_backend_ops->cp_to_device(
+        labels,
+        reinterpret_cast<char*>(labels_buffer),
+        labels->size()
+    );
+
+    int32_t src_token_ids_buffer[9] = {4, 6, 5, 1, 0, 0, 0, 0, 0};
+    g_backend_ops->cp_to_device(
+        src_token_ids,
+        reinterpret_cast<char*>(src_token_ids_buffer),
+        src_token_ids->size()
+    );
+
+    int32_t tgt_token_ids_buffer[9] = {3, 6, 7, 8, 1, 0, 0, 0, 0};
+    g_backend_ops->cp_to_device(
+        tgt_token_ids,
+        reinterpret_cast<char*>(tgt_token_ids_buffer),
+        tgt_token_ids->size()
+    );
+
     auto enc_embedding = enc_params[0];
     assert(enc_embedding->get_w()->get_name() == "embedding");
     auto dec_embedding = dec_params[0];
     assert(dec_embedding->get_w()->get_name() == "embedding");
 
-    int epochs = 3;
+    int epochs = 100;
     for (int e = 0; e < epochs; e++) {
         gDoActions();
-        std::cout << "enc_embedding : " << std::endl << *enc_embedding->get_w() << std::endl;
-        std::cout << "enc_embedding grad : " << std::endl << *enc_embedding->get_grad() << std::endl;
-        std::cout << "dec_embedding : " << std::endl << *dec_embedding->get_w() << std::endl;
-        std::cout << "dec_embedding grad : " << std::endl << *dec_embedding->get_grad() << std::endl;
         std::cout << "e : " << e << " loss : " << *loss->get_tensor() << std::endl;
     }
+    std::cout << "enc_valid_lens : " << std::endl << *enc_valid_lens << std::endl;
+    std::cout << "dec_valid_lens : " << std::endl << *dec_valid_lens << std::endl;
+    std::cout << "src_token_ids : " << std::endl << *src_token_ids << std::endl;
+    std::cout << "tgt_token_ids : " << std::endl << *tgt_token_ids << std::endl;
+    std::cout << "labels : " << std::endl << *labels << std::endl;
+    std::cout << "ce_mask : " << std::endl << *ce_mask << std::endl;
     // std::cout << "res : " << std::endl << *res->get_tensor() << std::endl;
     // std::cout << "enc_embedding : " << std::endl << *enc_embedding->get_w() << std::endl;
     // std::cout << "enc_embedding grad : " << std::endl << *enc_embedding->get_grad() << std::endl;
