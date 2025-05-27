@@ -159,6 +159,60 @@ void test_bmm() {
     destruct_env();
 }
 
+void test_bmm_bp_2() {
+    construct_env();
+    Tensor *input = allocTensor({1, 2, 3}, "input");
+    Tensor *w = allocTensor({1, 3, 4}, "w");
+    Tensor *v = allocTensor({1, 4, 3}, "v");
+    Tensor *valid_lens = allocTensor({1}, "valid_lens", INT32);
+    
+    graph::Node *ni = graph::allocNode(input);
+    graph::Node *nw = graph::allocNode(w);
+    graph::Node *nv = graph::allocNode(v);
+    ni->require_grad();
+    nw->require_grad();
+    nv->require_grad();
+    ni->init_weight_fill(1.0f);
+    nw->init_weight_fill(2.0f);
+    nv->init_weight_fill(3.0f);
+    
+    
+    auto res_wi = ni->bmm(nw)->masked_softmax(valid_lens)->div(1)->bmm(nv);
+    // printAllActions();
+    insert_boundary_action();
+    res_wi->backward();
+    allocMemAndInitTensors();
+    
+    
+    auto res_wi_grad = res_wi->get_grad();
+    float *res_wi_grad_buffer = static_cast<float*>(::malloc(res_wi_grad->size()));
+    for (int i = 0; i < res_wi_grad->length(); ++i) {
+        res_wi_grad_buffer[i] = 1.0f;
+    }
+    g_backend_ops->cp_to_device(
+        res_wi_grad,
+        reinterpret_cast<char*>(res_wi_grad_buffer),
+        res_wi_grad->size()
+    );
+    ::free(res_wi_grad_buffer);
+
+    float valid_lens_buffer[1] = {1};
+    g_backend_ops->cp_to_device(
+        valid_lens,
+        reinterpret_cast<char*>(valid_lens_buffer),
+        valid_lens->size()
+    );
+
+    gDoActions();
+
+    std::cout << "res_wi : " << std::endl << *res_wi->get_tensor() << std::endl;
+    std::cout << "res_wi_grad : " << std::endl << *res_wi_grad << std::endl;
+    std::cout << "ni grad : " << std::endl << *ni->get_grad() << std::endl;
+    std::cout << "nw grad : " << std::endl << *nw->get_grad() << std::endl;
+    std::cout << "nv grad : " << std::endl << *nv->get_grad() << std::endl;
+    destruct_env();
+}
+
 void test_bmm_1() {
     construct_env();
     int m = 330;
@@ -5167,20 +5221,29 @@ void test_encoder_decoder() {
     auto dec_embedding = dec_params[0];
     assert(dec_embedding->get_w()->get_name() == "embedding");
 
-    int epochs = 3;
+    int epochs = 1;
     for (int e = 0; e < epochs; e++) {
         gDoActions();
-        std::cout << "enc_embedding : " << std::endl << *enc_embedding->get_w() << std::endl;
-        std::cout << "enc_embedding grad : " << std::endl << *enc_embedding->get_grad() << std::endl;
-        std::cout << "dec_embedding : " << std::endl << *dec_embedding->get_w() << std::endl;
-        std::cout << "dec_embedding grad : " << std::endl << *dec_embedding->get_grad() << std::endl;
+        // std::cout << "enc_embedding : " << std::endl << *enc_embedding->get_w() << std::endl;
+        // std::cout << "enc_embedding grad : " << std::endl << *enc_embedding->get_grad() << std::endl;
+        // std::cout << "dec_embedding : " << std::endl << *dec_embedding->get_w() << std::endl;
+        // std::cout << "dec_embedding grad : " << std::endl << *dec_embedding->get_grad() << std::endl;
         std::cout << "e : " << e << " loss : " << *loss->get_tensor() << std::endl;
     }
     // std::cout << "res : " << std::endl << *res->get_tensor() << std::endl;
-    // std::cout << "enc_embedding : " << std::endl << *enc_embedding->get_w() << std::endl;
-    // std::cout << "enc_embedding grad : " << std::endl << *enc_embedding->get_grad() << std::endl;
-    // std::cout << "dec_embedding : " << std::endl << *dec_embedding->get_w() << std::endl;
-    // std::cout << "dec_embedding grad : " << std::endl << *dec_embedding->get_grad() << std::endl;
+    
+
+    // print all parameters value
+    for (int i = 0; i < all_params.size(); i++) {
+        std::cout << "param " << i << " name : " << all_params[i]->get_w()->get_name() << std::endl;
+        std::cout << "param " << i << " value : " << std::endl << *all_params[i]->get_w() << std::endl;
+        std::cout << "param " << i << " grad : " << std::endl << *all_params[i]->get_grad() << std::endl;
+    }
+
+    std::cout << "enc_embedding : " << std::endl << *enc_embedding->get_w() << std::endl;
+    std::cout << "enc_embedding grad : " << std::endl << *enc_embedding->get_grad() << std::endl;
+    std::cout << "dec_embedding : " << std::endl << *dec_embedding->get_w() << std::endl;
+    std::cout << "dec_embedding grad : " << std::endl << *dec_embedding->get_grad() << std::endl;
     
     delete seq2seq;
     destruct_env();
@@ -5282,7 +5345,8 @@ void test_encoder_mask() {
 }
 
 void test_cpu() {
-    test_encoder_decoder();
+    test_bmm_bp_2();
+    // test_encoder_decoder();
     return ;
     test_at();
     test_add();
