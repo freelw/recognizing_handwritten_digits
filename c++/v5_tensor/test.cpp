@@ -5014,9 +5014,6 @@ void test_decoder() {
     loss->backward();
 
     std::vector<Parameter*> params = decoder->get_parameters();
-    // for (int i = 0; i < params.size(); ++i) {
-    //     std::cout << i << " : " << params[i]->get_w()->get_meta_info() << std::endl;
-    // }
 
     // printAllActions();
     allocMemAndInitTensors();
@@ -5026,18 +5023,8 @@ void test_decoder() {
     // 一定在gDoOnceActions之后，覆盖原始初始化的值
     custom_init_all_decoder_weights(params);
     gDoActions();
-
-    // std::cout << "loss : " << *loss->get_tensor() << std::endl;
-    // std::cout << "x : " << std::endl << *x << std::endl;
-    // std::cout << "enc_outputs : " << std::endl << *enc_outputs << std::endl;
-    // std::cout << "decode_valid_lens : " << std::endl << *decode_valid_lens << std::endl;
-    // std::cout << "res : " << std::endl << *res->get_tensor() << std::endl;
-    // std::cout << "res grad : " << std::endl << *res->get_grad() << std::endl;
-
     auto embedding = params[0];
     assert(embedding->get_w()->get_name() == "embedding");
-    // std::cout << "embedding : " << std::endl << *embedding->get_w() << std::endl;
-    // std::cout << "embedding grad : " << std::endl << *embedding->get_grad() << std::endl;
 
     float embedding_grad_ans[64] = {
         3.7263e-08,  2.9690e-07, -4.2416e-07,  2.9690e-07, -4.2416e-07,
@@ -5076,6 +5063,45 @@ void test_decoder() {
     }
 
     delete decoder;
+    destruct_env();
+}
+
+void test_encoder_decoder() {
+    construct_env();
+    int num_hiddens = 16;
+    int num_blks = 2;
+    float dropout = 0;
+    int ffn_num_hiddens = 4;
+    int num_heads = 4;
+    int enc_vocab_size = 4;
+    int dec_vocab_size = 4;
+    int max_posencoding_len = 1000;
+    int bos_id = 3;
+    int eos_id = 1;
+
+    Seq2SeqEncoderDecoder *seq2seq = new Seq2SeqEncoderDecoder(
+        bos_id, eos_id,
+        enc_vocab_size, dec_vocab_size, num_hiddens, ffn_num_hiddens,
+        num_heads, num_blks, max_posencoding_len, dropout
+    );
+
+    Tensor *x = allocTensor({2, 3}, "x", INT32);
+    Tensor *y = allocTensor({2, 3}, "y", INT32);
+    Tensor *enc_valid_lens = allocTensor({2}, "valid_lens", INT32);
+    Tensor *dec_valid_lens = allocTensor({2, 3}, "decode_valid_lens", INT32);
+    auto res = seq2seq->forward(x, y, enc_valid_lens, dec_valid_lens);
+
+    insert_boundary_action();
+    allocMemAndInitTensors();
+    gDoOnceActions();
+
+    custom_init_x(x);
+    custom_init_x(y);
+    custom_init_dec_valid_lens(dec_valid_lens);
+    // custom_init_enc_valid_lens(enc_valid_lens);
+    gDoActions();
+    std::cout << "res : " << std::endl << *res->get_tensor() << std::endl;
+    delete seq2seq;
     destruct_env();
 }
 
@@ -5200,6 +5226,8 @@ void test_encoder_mask() {
 }
 
 void test_cpu() {
+    test_encoder_decoder();
+    return ;
     test_at();
     test_add();
     test_add_eq();
