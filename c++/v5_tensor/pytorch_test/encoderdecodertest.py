@@ -46,13 +46,9 @@ class DotProductAttention(nn.Module):  #@save
 
 # 定义初始化权重的钩子函数
 def init_weights(module, input):
-    # print("init_weights 0")
-    # print(module)
     if isinstance(module, nn.Linear):
         constant_(module.weight, 1)
         module.weight.data[0, 0] = 0.1
-        # eye_(module.weight)
-        print("init_weights")
         # 移除钩子，保证只执行一次
         module._forward_pre_hooks.pop(list(module._forward_pre_hooks.keys())[0])
 
@@ -87,7 +83,6 @@ class MultiHeadAttention:
             # times, then copy the next item, and so on
             valid_lens = torch.repeat_interleave(
                 valid_lens, repeats=self.num_heads, dim=0)
-            print("mha valid_lens:", valid_lens)
 
         # Shape of output: (batch_size * num_heads, no. of queries,
         # num_hiddens / num_heads)
@@ -136,8 +131,6 @@ def init_weights_ffn(module, input):
         constant_(module.weight, 1)
         constant_(module.bias, 0)
         module.weight.data[0, 0] = 0.1
-        # eye_(module.weight)
-        print("init_weights")
         # 移除钩子，保证只执行一次
         module._forward_pre_hooks.pop(list(module._forward_pre_hooks.keys())[0])
 
@@ -148,7 +141,6 @@ class PositionWiseFFN():  #@save
         self.dense1 = nn.LazyLinear(ffn_num_hiddens, bias=True)
         self.relu = nn.ReLU()
         self.dense2 = nn.LazyLinear(ffn_num_outputs, bias=True)
-
         self.dense1.register_forward_pre_hook(init_weights_ffn)
         self.dense2.register_forward_pre_hook(init_weights_ffn)
 
@@ -199,8 +191,6 @@ class TransformerEncoder():
     def __init__(self, vocab_size, num_hiddens, ffn_num_hiddens,
                  num_heads, num_blks, dropout, use_bias=False):
         self.num_hiddens = num_hiddens
-        #self.embedding = nn.Embedding(vocab_size, num_hiddens)
-
         self.embedding = build_my_embedding(vocab_size, num_hiddens)
         self.pos_encoding = PositionalEncoding(num_hiddens, dropout)
         self.blks = nn.Sequential()
@@ -214,7 +204,6 @@ class TransformerEncoder():
         # to rescale before they are summed up
         embs = X @ self.embedding
         # embs.requires_grad = True
-        print("embs:", embs)
         X = self.pos_encoding.forward(embs * math.sqrt(self.num_hiddens))
         for i, blk in enumerate(self.blks):
             X = blk(X, valid_lens)    
@@ -255,22 +244,14 @@ class TransformerDecoderBlock(nn.Module):
         else:
             dec_valid_lens = None
         # Self-attention
-        # print ("dec_valid_lens : ", dec_valid_lens)
-        # print("X : ", X)
-        # print("key_values : ", key_values)
         X2 = self.attention1.forward(X, key_values, key_values, dec_valid_lens)
-        #  print("attention1 output : ", X2)
         Y = self.addnorm1.forward(X, X2)
         # Encoder-decoder attention. Shape of enc_outputs:
         # (batch_size, num_steps, num_hiddens)
         Y2 = self.attention2.forward(Y, enc_outputs, enc_outputs, enc_valid_lens)
-        print("attention2 output : ", Y2)
         Z = self.addnorm2.forward(Y, Y2)
-        print("addnorm2 output : ", Z)
         ffn_res = self.ffn.forward(Z)
-        print("ffn_res output : ", ffn_res)
         addnorm3_res = self.addnorm3.forward(Z, ffn_res)
-        print("addnorm3 output : ", addnorm3_res)
         return addnorm3_res, state
 
 class TransformerDecoder():
@@ -294,18 +275,24 @@ class TransformerDecoder():
 
     def forward(self, X, state):
         embs = X @ self.embedding
-        # embs.requires_grad = True
-        print("embs:", embs)
         X = self.pos_encoding.forward(embs * math.sqrt(self.num_hiddens))
-        
         for i, blk in enumerate(self.blks):
             X, state = blk(X, state)
         dense_output = self.dense(X)
-        print("dense_output:", dense_output)
         return dense_output, state, embs
 
 def test():
     x = torch.tensor(
+        [[
+        [1, 0, 0, 0],
+        [0, 1, 0, 0],
+        [0, 0, 1, 0]
+        ],
+        [[1, 0, 0, 0],
+        [0, 0, 1, 0],
+        [0, 0, 0, 1]]
+        ], dtype=torch.float)
+    y = torch.tensor(
         [[
         [1, 0, 0, 0],
         [0, 1, 0, 0],
@@ -323,24 +310,21 @@ def test():
     num_heads = 4
     vocab_size = 4
 
+    encoder = TransformerEncoder(vocab_size, num_hiddens, ffn_num_hiddens, num_heads, num_blks, dropout)
+    valid_lens = torch.tensor([1,1], dtype=torch.long)
+    enc_outputs, embs = encoder.forward(x, valid_lens)
     decoder = TransformerDecoder(vocab_size, num_hiddens, ffn_num_hiddens, num_heads, num_blks, dropout)
     
-    # enc_outputs: (2, 2, 3) tensor
-    enc_outputs = torch.randn(2, 2, 3)
-    enc_outputs.fill_(1)
-    enc_outputs.requires_grad = True
     state = [enc_outputs, None, [None] * num_blks]
-
-    res, state, embs = decoder.forward(x, state)
-    print("res:", res)
+    res, state, embs = decoder.forward(y, state)
     loss = nn.CrossEntropyLoss()
     res = res.reshape(-1, res.shape[-1])
     res.retain_grad()
-    print("res:", res)
     labels = torch.tensor([0, 0, 0, 0, 0, 0], dtype=torch.long)
     loss_value = loss(res, labels)
-    print("loss_value:", loss_value)
     loss_value.backward()
+    print("res:", res)
+    print("loss_value:", loss_value)
     print("decoder.embedding:", decoder.embedding)
     print("decoder.embedding.grad:", decoder.embedding.grad)
     # print("enc_outputs :", enc_outputs)
