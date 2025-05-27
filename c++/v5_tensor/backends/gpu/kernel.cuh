@@ -126,6 +126,7 @@ __global__ void reshape_deep_cp_float_kernel(
 
 __global__ void repeat_interleave_int32_kernel(
     int32_t *src, int32_t *dst,
+    int32_t width,
     int32_t src_length, int32_t dst_length,
     int32_t n
 );

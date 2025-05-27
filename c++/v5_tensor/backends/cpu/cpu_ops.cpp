@@ -551,8 +551,8 @@ void CPUOps::repeat_interleave(Tensor *lhs, Tensor *res, int n) {
     }
     auto l_length = lhs->length();
     auto r_length = res->length();
-
     assert(l_length * n == r_length);
+    assert(l_length % width == 0);
     auto blocks = l_length / width;
     
     for (int i = 0; i < blocks; ++ i) {
