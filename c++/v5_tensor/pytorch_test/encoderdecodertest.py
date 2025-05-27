@@ -316,11 +316,11 @@ def test():
     enc_outputs, embs = encoder.forward(x, valid_lens)
     decoder = TransformerDecoder(vocab_size, num_hiddens, ffn_num_hiddens, num_heads, num_blks, dropout)
     
-    state = [enc_outputs, None, [None] * num_blks]
+    state = [enc_outputs, valid_lens, [None] * num_blks]
     res, state, embs = decoder.forward(y, state)
     res = res.reshape(-1, res.shape[-1])
     res.retain_grad()
-    labels = torch.tensor([0, 0, 0, 0, 0, 0], dtype=torch.long)
+    labels = torch.tensor([1, 1, 2, 3, 1, 2], dtype=torch.long)
     
     mask = torch.tensor([
         [1, 0, 0,
@@ -328,18 +328,18 @@ def test():
     ], dtype=torch.float32)
 
     loss = F.cross_entropy(res, labels, reduction="none")
-    print("loss: ", loss)
-    print ("mask: ", mask)
-    print ("loss * mask: ", loss * mask)
+    # print("loss: ", loss)
+    # print ("mask: ", mask)
+    # print ("loss * mask: ", loss * mask)
     loss_value = (loss * mask).sum() / mask.sum()
     loss_value.backward()
 
-    print("res:", res)
-    print("loss_value:", loss_value)
-    print("encoder.embedding:", encoder.embedding)
+    # print("res:", res)
+    # print("encoder.embedding:", encoder.embedding)
     print("encoder.embedding.grad:", encoder.embedding.grad)
-    print("decoder.embedding:", decoder.embedding)
+    # print("decoder.embedding:", decoder.embedding)
     print("decoder.embedding.grad:", decoder.embedding.grad)
+    print("loss_value:", loss_value)
     # print("enc_outputs :", enc_outputs)
 
 if '__main__' == __name__:
