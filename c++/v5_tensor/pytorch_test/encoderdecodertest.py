@@ -187,13 +187,15 @@ def build_my_embedding(vocab_size, num_hiddens):
     matrix.requires_grad = True
     return matrix
 
-class TransformerEncoder():
+class TransformerEncoder(nn.Module):
     """The Transformer encoder."""
     def __init__(self, vocab_size, num_hiddens, ffn_num_hiddens,
                  num_heads, num_blks, dropout, use_bias=False):
+        super().__init__()
         self.num_hiddens = num_hiddens
         self.embedding = build_my_embedding(vocab_size, num_hiddens)
         self.pos_encoding = PositionalEncoding(num_hiddens, dropout)
+        self.linear = nn.Linear(1, 1)
         self.blks = nn.Sequential()
         for i in range(num_blks):
             self.blks.add_module("block"+str(i), TransformerEncoderBlock(
@@ -315,6 +317,17 @@ def test():
     valid_lens = torch.tensor([1,1], dtype=torch.long)
     enc_outputs, embs = encoder.forward(x, valid_lens)
     decoder = TransformerDecoder(vocab_size, num_hiddens, ffn_num_hiddens, num_heads, num_blks, dropout)
+
+    # print("encoder parameters:", encoder.parameters())
+    # # enumerate the parameters
+    # for param in encoder.parameters():
+    #     print(param)
+
+    # for name, param in encoder.named_parameters():
+    #     print(f"Encoder parameter {name}: {param.shape}")
+    
+    for name, param in encoder.blks.named_parameters():
+        print(f"Encoder block parameter {name}: {param.shape}")
     
     state = [enc_outputs, valid_lens, [None] * num_blks]
     res, state, embs = decoder.forward(y, state)
