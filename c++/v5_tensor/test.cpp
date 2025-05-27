@@ -5138,17 +5138,14 @@ void test_encoder_decoder() {
     std::vector<Parameter*> all_params;
     all_params.insert(all_params.end(), enc_params.begin(), enc_params.end());
     all_params.insert(all_params.end(), dec_params.begin(), dec_params.end());
-    // print all params
-    for (int i = 0; i < all_params.size(); i++) {
-        std::cout << "param " << i << " name : " << all_params[i]->get_w()->get_name() << std::endl;
-    }
+    
     Adam adam(all_params, 0.001f);
     zero_grad();
     loss->backward();
-    adam.clip_grad(1.0f);
+    // adam.clip_grad(1.0f);
     adam.step();
     // zero_grad();
-    // printAllActions();
+    printAllActions();
     allocMemAndInitTensors();
     gDoOnceActions();
     custom_init_all_encoder_weights(enc_params);
@@ -5201,6 +5198,13 @@ void test_encoder_decoder() {
     auto dec_embedding = dec_params[0];
     assert(dec_embedding->get_w()->get_name() == "embedding");
 
+    std::cout << std::setprecision(8);
+    // print all params
+    for (int i = 0; i < all_params.size(); i++) {
+        std::cout << "param " << i << " "<< all_params[i]->get_w()->get_name() << std::endl;
+        std::cout << *all_params[i]->get_w() << std::endl;
+    }
+
     int epochs = 100;
     for (int e = 0; e < epochs; e++) {
         gDoActions();
@@ -5209,27 +5213,29 @@ void test_encoder_decoder() {
 
     // print all parameters value
     for (int i = 0; i < all_params.size(); i++) {
-        std::cout << "param " << i << " name : " << all_params[i]->get_w()->get_name() << std::endl;
+        std::cout << "param " << i << " name : " << all_params[i]->get_w()->get_meta_info() << std::endl;
         std::cout << "param " << i << " value : " << std::endl << *all_params[i]->get_w() << std::endl;
         std::cout << "param " << i << " grad : " << std::endl << *all_params[i]->get_grad() << std::endl;
     }
 
-    std::cout << "enc_valid_lens : " << std::endl << *enc_valid_lens << std::endl;
-    std::cout << "dec_valid_lens : " << std::endl << *dec_valid_lens << std::endl;
-    std::cout << "src_token_ids : " << std::endl << *src_token_ids << std::endl;
-    std::cout << "tgt_token_ids : " << std::endl << *tgt_token_ids << std::endl;
-    std::cout << "labels : " << std::endl << *labels << std::endl;
-    std::cout << "ce_mask : " << std::endl << *ce_mask << std::endl;
-    std::cout << "res : " << std::endl << *res->get_tensor() << std::endl;
+    // std::cout << "enc_valid_lens : " << std::endl << *enc_valid_lens << std::endl;
+    // std::cout << "dec_valid_lens : " << std::endl << *dec_valid_lens << std::endl;
+    // std::cout << "src_token_ids : " << std::endl << *src_token_ids << std::endl;
+    // std::cout << "tgt_token_ids : " << std::endl << *tgt_token_ids << std::endl;
+    // std::cout << "labels : " << std::endl << *labels << std::endl;
+    // std::cout << "ce_mask : " << std::endl << *ce_mask << std::endl;
+    // std::cout << "res : " << std::endl << *res->get_tensor() << std::endl;
     std::cout << "res grad : " << std::endl << *res->get_grad() << std::endl;
     std::cout << "ce_res : " << std::endl << *ce_res->get_tensor() << std::endl;
     std::cout << "ce_res grad : " << std::endl << *ce_res->get_grad() << std::endl;
     std::cout << "mask_res : " << std::endl << *mask_res->get_tensor() << std::endl;
     std::cout << "mask_res grad : " << std::endl << *mask_res->get_grad() << std::endl;
-    std::cout << "enc_embedding : " << std::endl << *enc_embedding->get_w() << std::endl;
-    std::cout << "enc_embedding grad : " << std::endl << *enc_embedding->get_grad() << std::endl;
-    std::cout << "dec_embedding : " << std::endl << *dec_embedding->get_w() << std::endl;
-    std::cout << "dec_embedding grad : " << std::endl << *dec_embedding->get_grad() << std::endl;
+    // std::cout << "enc_embedding : " << std::endl << *enc_embedding->get_w() << std::endl;
+    // std::cout << "enc_embedding grad : " << std::endl << *enc_embedding->get_grad() << std::endl;
+    // std::cout << "dec_embedding : " << std::endl << *dec_embedding->get_w() << std::endl;
+    // std::cout << "dec_embedding grad : " << std::endl << *dec_embedding->get_grad() << std::endl;
+
+    std::cout << "res : " << std::endl << *res->get_tensor() << std::endl;
     
     delete seq2seq;
     destruct_env();

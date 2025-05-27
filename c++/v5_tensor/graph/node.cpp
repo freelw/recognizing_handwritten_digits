@@ -185,7 +185,12 @@ namespace graph {
     }
 
     Node *Node::expand_add(Node *rhs) {
-        Tensor *res_tensor = allocTensor(t->get_shape(), "expand_add");
+        Tensor *res_tensor = allocTensor(
+            t->get_shape(),
+            this->get_tensor()->get_name() + "_" +
+            rhs->get_tensor()->get_name() +
+            "_expand_add_res"
+        );
         Tensor *r_tensor = rhs->get_tensor();
         assert(r_tensor->get_dim() == 1);
         gCreateAction(

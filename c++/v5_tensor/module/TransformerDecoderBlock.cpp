@@ -66,14 +66,14 @@ graph::Node *TransformerDecoderBlock::forward(
     // gCreateAction(
     //     new DbgPrintAction(
     //         z->get_tensor(),
-    //         "TransformerDecoderBlock addnorm2 output"
+    //         "TransformerDecoderBlock addnorm3 z"
     //     )
     // );
     auto out = ffn->forward(z);
     // gCreateAction(
     //     new DbgPrintAction(
     //         out->get_tensor(),
-    //         "TransformerDecoderBlock ffn output"
+    //         "TransformerDecoderBlock addnorm3 ffn_res"
     //     )
     // );
     auto res = addnorm3->forward(z, out);

@@ -725,7 +725,9 @@ std::string NormBackwardAction::to_string() const {
 
 void DbgPrintAction::execute() {
     assert(lhs != nullptr);
-    std::cout << "[====== DEBUGGIN ======] " << msg << lhs->get_meta_info() << " : " << std::endl << *lhs << std::endl;
+    if (expected_name == "" || expected_name == lhs->get_name()) {
+        std::cout << "[====== DEBUGGIN ======] " << msg << lhs->get_meta_info() << " : " << std::endl << *lhs << std::endl;
+    }
 }
 
 std::string DbgPrintAction::to_string() const {

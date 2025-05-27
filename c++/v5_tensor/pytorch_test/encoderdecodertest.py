@@ -5,6 +5,8 @@ from torch.nn.init import constant_
 from torch.nn import functional as F
 import torch.optim as optim
 
+torch.set_printoptions(precision=8)
+
 def masked_softmax(X, valid_lens):  #@save
     """Perform softmax operation by masking elements on the last axis."""
     # X: 3D tensor, valid_lens: 1D or 2D tensor
@@ -198,10 +200,9 @@ class TransformerEncoder(nn.Module):
         nn.init.constant_(self.embedding.weight, 1.0)  # Non-in-place initialization
         for i in range(vocab_size):
             self.embedding.weight.data[i, 0] = 0.1 * i  # Modify specific row
-        print("embedding weight:", self.embedding.weight)
+        # print("embedding weight:", self.embedding.weight)
         self.embedding.weight.requires_grad = True
         self.pos_encoding = PositionalEncoding(num_hiddens, dropout)
-        self.linear = nn.Linear(1, 1)
         self.blks = nn.Sequential()
         for i in range(num_blks):
             self.blks.add_module("block"+str(i), TransformerEncoderBlock(
@@ -261,7 +262,11 @@ class TransformerDecoderBlock(nn.Module):
         Y2 = self.attention2.forward(Y, enc_outputs, enc_outputs, enc_valid_lens)
         Z = self.addnorm2.forward(Y, Y2)
         ffn_res = self.ffn.forward(Z)
+        # print("self.i  : ", self.i)
+        # print("addnorm3 z : ", Z)
+        # print("addnorm3 ffn_res : ", ffn_res)
         addnorm3_res = self.addnorm3.forward(Z, ffn_res)
+        # print("addnorm3 output : ", addnorm3_res)
         return addnorm3_res, state
 
 class TransformerDecoder((nn.Module)):
@@ -274,10 +279,11 @@ class TransformerDecoder((nn.Module)):
         nn.init.constant_(self.embedding.weight, 1.0)  # Non-in-place initialization
         for i in range(vocab_size):
             self.embedding.weight.data[i, 0] = 0.1 * i  # Modify specific row
-        print("embedding weight:", self.embedding.weight)
+        # print("embedding weight:", self.embedding.weight)
         self.embedding.weight.requires_grad = True
         self.pos_encoding = PositionalEncoding(num_hiddens, dropout)
         self.blks = nn.Sequential()
+        # print("num_blks:", num_blks)
         for i in range(num_blks):
             self.blks.add_module("block"+str(i), TransformerDecoderBlock(
                 num_hiddens, ffn_num_hiddens, num_heads, dropout, i))
@@ -294,6 +300,9 @@ class TransformerDecoder((nn.Module)):
         for i, blk in enumerate(self.blks):
             X, state = blk(X, state)
         dense_output = self.dense(X)
+        # print("dense weight:", self.dense.weight.transpose(0, 1))
+        # print("dense bias:", self.dense.bias)
+        # print("dense_output:", dense_output)
         dense_output.retain_grad()  # Retain gradients for the dense output
         return dense_output, state, embs
 
@@ -326,6 +335,15 @@ def test():
     decoder = TransformerDecoder(dec_vocab_size, num_hiddens, ffn_num_hiddens, num_heads, num_blks, dropout)
 
     res, state, embs = forward(encoder, decoder, x, y, valid_lens, num_blks)
+    print("-----------------------------------------")
+    print("-----------------------------------------")
+    print("-----------------------------------------")
+    print("-----------------------------------------")
+    print("-----------------------------------------")
+    print("-----------------------------------------")
+    print("-----------------------------------------")
+    print("-----------------------------------------")
+    print("-----------------------------------------")
     params = list(encoder.parameters()) + list(decoder.parameters())
     
     optimizer = optim.Adam(params, lr=0.001, betas=(0.9, 0.999), eps=1e-20)
@@ -347,9 +365,14 @@ def test():
     for name, param in encoder.named_parameters():
         print(f"{name}: {param.shape}")
         #print weight value & grad
-        print(f"weight: {param.data}")
-        if param.requires_grad:
-            print(f"grad: {param.grad}")
+        if param.data.dim() == 2:
+            print(f"weight: {param.data.transpose(0,1)}")
+            if param.requires_grad:
+                print(f"grad: {param.grad.transpose(0,1)}")
+        else:
+            print(f"weight: {param.data}")
+            if param.requires_grad:
+                print(f"grad: {param.grad}")
         
 
     # 打印 encoder 参数
@@ -357,15 +380,21 @@ def test():
     print("\nDecoder 参数:")
     for name, param in decoder.named_parameters():
         print(f"{name}: {param.shape}")
-        print(f"weight: {param.data}")
-        if param.requires_grad:
-            print(f"grad: {param.grad}")
-    print("Final res:", f_res)
+        if param.data.dim() == 2:
+            print(f"weight: {param.data.transpose(0,1)}")
+            if param.requires_grad:
+                print(f"grad: {param.grad.transpose(0,1)}")
+        else:
+            print(f"weight: {param.data}")
+            if param.requires_grad:
+                print(f"grad: {param.grad}")
     print("Final res grad:", f_res.grad)
-    print("encoder.embedding:", encoder.embedding.weight)
-    print("encoder.embedding.grad:", encoder.embedding.weight.grad)
-    print("decoder.embedding:", decoder.embedding.weight)
-    print("decoder.embedding.grad:", decoder.embedding.weight.grad)
+    print("Final res:", f_res)
+    
+    # print("encoder.embedding:", encoder.embedding.weight)
+    # print("encoder.embedding.grad:", encoder.embedding.weight.grad)
+    # print("decoder.embedding:", decoder.embedding.weight)
+    # print("decoder.embedding.grad:", decoder.embedding.weight.grad)
     
 
     #print("res:", res)

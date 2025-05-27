@@ -375,12 +375,13 @@ class NormBackwardAction : public Action {
 
 class DbgPrintAction : public Action {
     public:
-        DbgPrintAction(Tensor *_lhs, const std::string &_msg)
-            : Action(_lhs, nullptr, nullptr), msg(_msg) {}
+        DbgPrintAction(Tensor *_lhs, const std::string &_msg, const std::string &_expected_name = "")
+            : Action(_lhs, nullptr, nullptr), msg(_msg), expected_name(_expected_name) {}
         void execute() override;
         std::string to_string() const override;
     private:
         std::string msg;
+        std::string expected_name;
 };
 
 class MemCpAction : public Action {
