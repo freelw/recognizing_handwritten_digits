@@ -301,6 +301,12 @@ Tensor *Tensor::softmax() {
             res
         )
     );
+    gCreateAction(
+        new DbgPrintAction(
+            res,
+            "softmax_res "
+        )
+    );
     return res;
 }
 

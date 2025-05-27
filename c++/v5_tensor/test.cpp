@@ -172,17 +172,19 @@ void test_bmm_bp_2() {
     ni->require_grad();
     nw->require_grad();
     nv->require_grad();
-    ni->init_weight_fill(1.0f);
-    nw->init_weight_fill(2.0f);
+    ni->init_weight_for_dbg(10000.0f);
+    nw->init_weight_for_dbg(1000.0f);
     nv->init_weight_fill(3.0f);
     
     
-    auto res_wi = ni->bmm(nw)->masked_softmax(valid_lens)->div(1)->bmm(nv);
-    // printAllActions();
+    // auto res_wi = ni->bmm(nw)->masked_softmax(valid_lens)->div(1)->bmm(nv);
+    auto bmm_res_1 = ni->bmm(nw);
+    auto res_wi = bmm_res_1->masked_softmax(valid_lens)->div(1)->bmm(nv);
+    
     insert_boundary_action();
     res_wi->backward();
+    printAllActions();
     allocMemAndInitTensors();
-    
     
     auto res_wi_grad = res_wi->get_grad();
     float *res_wi_grad_buffer = static_cast<float*>(::malloc(res_wi_grad->size()));
@@ -207,6 +209,8 @@ void test_bmm_bp_2() {
 
     std::cout << "res_wi : " << std::endl << *res_wi->get_tensor() << std::endl;
     std::cout << "res_wi_grad : " << std::endl << *res_wi_grad << std::endl;
+    std::cout << "ni : " << std::endl << *ni->get_tensor() << std::endl;
+    std::cout << "bmm_res_1 : " << std::endl << *bmm_res_1->get_tensor() << std::endl;
     std::cout << "ni grad : " << std::endl << *ni->get_grad() << std::endl;
     std::cout << "nw grad : " << std::endl << *nw->get_grad() << std::endl;
     std::cout << "nv grad : " << std::endl << *nv->get_grad() << std::endl;
@@ -5345,8 +5349,8 @@ void test_encoder_mask() {
 }
 
 void test_cpu() {
-    test_bmm_bp_2();
-    // test_encoder_decoder();
+    // test_bmm_bp_2();
+    test_encoder_decoder();
     return ;
     test_at();
     test_add();

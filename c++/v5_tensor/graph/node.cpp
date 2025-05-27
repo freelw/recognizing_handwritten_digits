@@ -681,13 +681,31 @@ namespace graph {
             node->get_grad()->get_shape(),
             "softmax_tmp"
         );
-        
+
+        gCreateAction(
+            new DbgPrintAction(
+                grad,
+                "SoftmaxEdge inputgrad "
+            )
+        );
+        gCreateAction(
+            new DbgPrintAction(
+                softmax_res,
+                "SoftmaxEdge softmax_res "
+            )
+        );
         gCreateAction(
             new SoftmaxBackwardAction(
                 tmp,
                 // node->get_grad(),
                 softmax_res,
                 grad
+            )
+        );
+        gCreateAction(
+            new DbgPrintAction(
+                tmp,
+                "SoftmaxEdge tmp "
             )
         );
         gCreateAction(
