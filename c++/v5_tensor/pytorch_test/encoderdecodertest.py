@@ -308,10 +308,10 @@ def test():
     y = torch.tensor(
         [[3, 6, 7, 8, 1, 0, 0, 0, 0],], dtype=torch.long)
 
-    num_hiddens = 16
+    num_hiddens = 4
     num_blks = 2
     dropout = 0
-    ffn_num_hiddens = 17
+    ffn_num_hiddens = 4
     num_heads = 4
     enc_vocab_size = 7
     dec_vocab_size = 9
@@ -328,9 +328,9 @@ def test():
     res, state, embs = forward(encoder, decoder, x, y, valid_lens, num_blks)
     params = list(encoder.parameters()) + list(decoder.parameters())
     
-    optimizer = optim.Adam(params, lr=0.001)
+    optimizer = optim.Adam(params, lr=0.001, betas=(0.9, 0.999), eps=1e-20)
     
-    epochs = 10
+    epochs = 100
     f_res = 0
     for e in range(epochs):
         res, state, embs = forward(encoder, decoder, x, y, valid_lens, num_blks)

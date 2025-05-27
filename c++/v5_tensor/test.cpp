@@ -5106,10 +5106,10 @@ void test_encoder_decoder() {
     int eos_id = 1;
     
 
-    int num_hiddens = 16;
+    int num_hiddens = 4;
     int num_blks = 2;
     float dropout = 0.0f;
-    int ffn_num_hiddens = 17;
+    int ffn_num_hiddens = 5;
     int num_heads = 4;
     int num_steps = NUM_STEPS;
     int max_posencoding_len = MAX_POSENCODING_LEN;
@@ -5201,7 +5201,7 @@ void test_encoder_decoder() {
     auto dec_embedding = dec_params[0];
     assert(dec_embedding->get_w()->get_name() == "embedding");
 
-    int epochs = 10;
+    int epochs = 100;
     for (int e = 0; e < epochs; e++) {
         gDoActions();
         std::cout << "e : " << e << " loss : " << *loss->get_tensor() << std::endl;

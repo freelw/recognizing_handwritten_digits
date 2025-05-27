@@ -6,7 +6,7 @@
 class Adam {
     public:
         Adam(const std::vector<Parameter*> &_parameters, float _lr,
-            float _beta1 = 0.9, float _beta2 = 0.999, float _epsilon = 1e-8)
+            float _beta1 = 0.9, float _beta2 = 0.999, float _epsilon = 1e-20)
             : parameters(_parameters), lr(_lr),
                 beta1(_beta1), beta2(_beta2), epsilon(_epsilon)
             {}
