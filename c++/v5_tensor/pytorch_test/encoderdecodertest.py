@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import math
 from torch.nn.init import constant_
+from torch.nn import functional as F
 
 def masked_softmax(X, valid_lens):  #@save
     """Perform softmax operation by masking elements on the last axis."""
@@ -317,14 +318,26 @@ def test():
     
     state = [enc_outputs, None, [None] * num_blks]
     res, state, embs = decoder.forward(y, state)
-    loss = nn.CrossEntropyLoss()
     res = res.reshape(-1, res.shape[-1])
     res.retain_grad()
     labels = torch.tensor([0, 0, 0, 0, 0, 0], dtype=torch.long)
-    loss_value = loss(res, labels)
+    
+    mask = torch.tensor([
+        [1, 0, 0,
+        1, 0, 0],
+    ], dtype=torch.float32)
+
+    loss = F.cross_entropy(res, labels, reduction="none")
+    print("loss: ", loss)
+    print ("mask: ", mask)
+    print ("loss * mask: ", loss * mask)
+    loss_value = (loss * mask).sum() / mask.sum()
     loss_value.backward()
+
     print("res:", res)
     print("loss_value:", loss_value)
+    print("encoder.embedding:", encoder.embedding)
+    print("encoder.embedding.grad:", encoder.embedding.grad)
     print("decoder.embedding:", decoder.embedding)
     print("decoder.embedding.grad:", decoder.embedding.grad)
     # print("enc_outputs :", enc_outputs)
