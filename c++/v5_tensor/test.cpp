@@ -5093,6 +5093,7 @@ void init_mask_and_valid_lens(Tensor *mask, Tensor *valid_lens) {
 
 void test_encoder_decoder() {
     construct_env();
+    std::cout << std::setprecision(8);
     // int num_hiddens = 16;
     // int num_blks = 2;
     // float dropout = 0;
@@ -5131,6 +5132,8 @@ void test_encoder_decoder() {
     auto ce_res = res->reshape({-1, dec_vocab_size})->CrossEntropy(labels);
     auto mask_res = ce_res->mask(ce_mask);
     auto loss = mask_res->avg_1d(ce_mask);
+    // auto mask_res = ce_res;
+    // auto loss = mask_res->avg_1d();
     insert_boundary_action();
     
     std::vector<Parameter*> enc_params = seq2seq->get_encoder()->get_parameters();
@@ -5144,8 +5147,7 @@ void test_encoder_decoder() {
     loss->backward();
     // adam.clip_grad(1.0f);
     adam.step();
-    // zero_grad();
-    printAllActions();
+    // printAllActions();
     allocMemAndInitTensors();
     gDoOnceActions();
     custom_init_all_encoder_weights(enc_params);
@@ -5198,17 +5200,17 @@ void test_encoder_decoder() {
     auto dec_embedding = dec_params[0];
     assert(dec_embedding->get_w()->get_name() == "embedding");
 
-    std::cout << std::setprecision(8);
     // print all params
     for (int i = 0; i < all_params.size(); i++) {
         std::cout << "param " << i << " "<< all_params[i]->get_w()->get_name() << std::endl;
         std::cout << *all_params[i]->get_w() << std::endl;
     }
 
-    int epochs = 100;
+    int epochs = 200;
     for (int e = 0; e < epochs; e++) {
         gDoActions();
         std::cout << "e : " << e << " loss : " << *loss->get_tensor() << std::endl;
+        validateAllTensors();
     }
 
     // print all parameters value
@@ -5230,10 +5232,10 @@ void test_encoder_decoder() {
     std::cout << "ce_res grad : " << std::endl << *ce_res->get_grad() << std::endl;
     std::cout << "mask_res : " << std::endl << *mask_res->get_tensor() << std::endl;
     std::cout << "mask_res grad : " << std::endl << *mask_res->get_grad() << std::endl;
-    // std::cout << "enc_embedding : " << std::endl << *enc_embedding->get_w() << std::endl;
-    // std::cout << "enc_embedding grad : " << std::endl << *enc_embedding->get_grad() << std::endl;
-    // std::cout << "dec_embedding : " << std::endl << *dec_embedding->get_w() << std::endl;
-    // std::cout << "dec_embedding grad : " << std::endl << *dec_embedding->get_grad() << std::endl;
+    std::cout << "enc_embedding : " << std::endl << *enc_embedding->get_w() << std::endl;
+    std::cout << "enc_embedding grad : " << std::endl << *enc_embedding->get_grad() << std::endl;
+    std::cout << "dec_embedding : " << std::endl << *dec_embedding->get_w() << std::endl;
+    std::cout << "dec_embedding grad : " << std::endl << *dec_embedding->get_grad() << std::endl;
 
     std::cout << "res : " << std::endl << *res->get_tensor() << std::endl;
     
@@ -5336,7 +5338,40 @@ void test_encoder_mask() {
     destruct_env();
 }
 
+void test_clip() {
+
+
+    construct_env();
+
+
+    Tensor *t = allocTensor({9}, "t");
+    auto n = graph::allocNode(t);
+    n->require_grad();
+
+    auto pn = allocParameter(n);
+    Adam adam({pn}, 0.001f);
+    adam.clip_grad(0.1f);
+
+    insert_boundary_action();
+    allocMemAndInitTensors();
+    float grad_buffer[9] = {
+        0.12111016, -0.10640603, 0.074760601, 0.074760601, 0.074760601, 0.074760601, -0.10398109, -0.10427228, -0.10549314
+    };
+    g_backend_ops->cp_to_device(
+        n->get_grad(),
+        reinterpret_cast<char*>(grad_buffer),
+        n->get_grad()->size()
+    );
+    
+    std::cout << "t grad : " << std::endl << *n->get_grad() << std::endl;
+    gDoActions();
+    std::cout << "t grad : " << std::endl << *n->get_grad() << std::endl;
+    
+    destruct_env();
+}
+
 void test_cpu() {
+    // test_clip();
     test_encoder_decoder();
     return ;
     test_at();

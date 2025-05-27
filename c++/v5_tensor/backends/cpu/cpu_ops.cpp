@@ -349,6 +349,19 @@ void CPUOps::crossEntropy(Tensor *lhs, const Tensor *labels, Tensor *maxs, Tenso
         static_cast<float*>(maxs->get_data())[j] = max;
         static_cast<float*>(sums->get_data())[j] = sum;
         static_cast<float*>(res->get_data())[j] = -(zt - max - std::log(sum));
+
+        if (std::isnan(static_cast<float*>(res->get_data())[j])) {
+            std::cerr << "CrossEntropy loss is NaN at batch " << j << ", max: " << max
+                      << ", sum: " << sum << ", zt: " << zt << std::endl;
+            std::cerr << "lstrides[0] = " << lstrides[0] << ", lstrides[1] = " << lstrides[1] << std::endl;
+            for (int i = 0; i < size; ++i) {
+               auto e = data[j * lstrides[0] + i * lstrides[1]];
+                std::cerr << "data[" << j << "][" << i << "] = " << e << std::endl;
+            }
+
+            validateAllTensors();
+            abort();
+        }
     }
 }
 
@@ -692,6 +705,9 @@ void CPUOps::softmax_bacward(Tensor *target_grad, const Tensor *softmax_res, Ten
 void CPUOps::div(Tensor *dst, Tensor *src, float value) {
     assert(dst->length() == src->length());
     auto length = dst->length();
+    if (length == 1) {
+        std::cout << "static_cast<float*>(src->get_data())[0]" << static_cast<float*>(src->get_data())[0] << " value " << value << std::endl;   
+    }
     for (int i = 0; i < length; ++i) {
         static_cast<float*>(dst->get_data())[i] = 
             static_cast<float*>(src->get_data())[i] / value;

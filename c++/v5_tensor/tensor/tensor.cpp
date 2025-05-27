@@ -3,6 +3,7 @@
 #include "graph/actions.h"
 #include "graph/node.h"
 #include <sstream>
+#include <cmath>
 
 std::string TensorDtype_to_string(TensorDType dtype) {
     switch (dtype) {
@@ -461,6 +462,43 @@ void freeAllGradTensors() {
         delete grad_tensor;
     }
     g_grad_tensors.clear();
+}
+
+
+void validateAllTensors() {
+
+    for (Tensor *tensor : g_tensors) {
+        char *buffer = reinterpret_cast<char*>(::malloc(tensor->size()));
+
+        g_backend_ops->cp_from_device(
+            buffer,
+            tensor,
+            tensor->size()
+        );
+
+        if (tensor->get_dtype() == FLOAT32) {
+            float *data = reinterpret_cast<float*>(buffer);
+            for (int i = 0; i < tensor->length(); ++i) {
+                bool valid = !std::isnan(data[i]) && !std::isinf(data[i]);
+                if (!valid) {
+                    std::cerr << "Invalid value at index " << i << " in tensor " 
+                              << tensor->get_meta_info() << ": " << data[i] << std::endl;
+                }
+            }
+        } else if (tensor->get_dtype() == INT32) {
+            int32_t *data = reinterpret_cast<int32_t*>(buffer);
+            for (int i = 0; i < tensor->length(); ++i) {
+                bool valid = !std::isnan(data[i]) && !std::isinf(data[i]);
+                if (!valid) {
+                    std::cerr << "Invalid value at index " << i << " in tensor " 
+                              << tensor->get_meta_info() << ": " << data[i] << std::endl;
+                }
+            }
+        }
+
+        ::free(buffer);
+    }
+    
 }
 
 void *tensors_data = nullptr;

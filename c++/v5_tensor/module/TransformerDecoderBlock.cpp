@@ -59,7 +59,7 @@ graph::Node *TransformerDecoderBlock::forward(
     // gCreateAction(
     //     new DbgPrintAction(
     //         z->get_tensor(),
-    //         "TransformerDecoderBlock attention output"
+    //         "TransformerDecoderBlock attention2 res"
     //     )
     // );
     z = addnorm2->forward(y, z);
