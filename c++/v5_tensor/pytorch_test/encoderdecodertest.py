@@ -3,6 +3,7 @@ import torch.nn as nn
 import math
 from torch.nn.init import constant_
 from torch.nn import functional as F
+import torch.optim as optim
 
 def masked_softmax(X, valid_lens):  #@save
     """Perform softmax operation by masking elements on the last axis."""
@@ -45,7 +46,7 @@ class DotProductAttention(nn.Module):  #@save
         return torch.bmm(self.dropout(self.attention_weights), values)
 
 
-# 定义初始化权重的钩子函数
+# 定义初始化权重的���子函数
 def init_weights(module, input):
     if isinstance(module, nn.Linear):
         constant_(module.weight, 1)
@@ -53,7 +54,7 @@ def init_weights(module, input):
         # 移除钩子，保证只执行一次
         module._forward_pre_hooks.pop(list(module._forward_pre_hooks.keys())[0])
 
-class MultiHeadAttention:
+class MultiHeadAttention(nn.Module):
     """Multi-head attention."""
     def __init__(self, num_hiddens, num_heads, dropout, bias=False, **kwargs):
         super().__init__()
@@ -111,14 +112,14 @@ class MultiHeadAttention:
         X = X.permute(0, 2, 1, 3)
         return X.reshape(X.shape[0], X.shape[1], -1)
 
-class AddNorm():  #@save
+class AddNorm((nn.Module)):  #@save
     """The residual connection followed by layer normalization."""
     def __init__(self, norm_shape, dropout):
         super().__init__()
         self.dropout = nn.Dropout(dropout)
         self.ln = nn.LayerNorm(norm_shape)
         # 设定 gamma（weight）的初始化值
-        # 例如，将 gamma 初始化为全 1
+        # 例如��将 gamma 初始化为全 1
         nn.init.ones_(self.ln.weight)
         # 设定 beta（bias）的初始化值
         # 例如，将 beta 初始化为全 0
@@ -135,7 +136,7 @@ def init_weights_ffn(module, input):
         # 移除钩子，保证只执行一次
         module._forward_pre_hooks.pop(list(module._forward_pre_hooks.keys())[0])
 
-class PositionWiseFFN():  #@save
+class PositionWiseFFN((nn.Module)):  #@save
     """The positionwise feed-forward network."""
     def __init__(self, ffn_num_hiddens, ffn_num_outputs):
         super().__init__()
@@ -193,7 +194,11 @@ class TransformerEncoder(nn.Module):
                  num_heads, num_blks, dropout, use_bias=False):
         super().__init__()
         self.num_hiddens = num_hiddens
-        self.embedding = build_my_embedding(vocab_size, num_hiddens)
+        self.embedding = nn.Embedding(vocab_size, num_hiddens)
+        nn.init.constant_(self.embedding.weight, 1.0)  # Non-in-place initialization
+        self.embedding.weight.data[0] = 0.1  # Modify specific row
+        print("embedding weight:", self.embedding.weight)
+        self.embedding.weight.requires_grad = True
         self.pos_encoding = PositionalEncoding(num_hiddens, dropout)
         self.linear = nn.Linear(1, 1)
         self.blks = nn.Sequential()
@@ -205,7 +210,8 @@ class TransformerEncoder(nn.Module):
         # Since positional encoding values are between -1 and 1, the embedding
         # values are multiplied by the square root of the embedding dimension
         # to rescale before they are summed up
-        embs = X @ self.embedding
+        #embs = X @ self.embedding
+        embs = self.embedding(X)
         # embs.requires_grad = True
         X = self.pos_encoding.forward(embs * math.sqrt(self.num_hiddens))
         for i, blk in enumerate(self.blks):
@@ -257,14 +263,17 @@ class TransformerDecoderBlock(nn.Module):
         addnorm3_res = self.addnorm3.forward(Z, ffn_res)
         return addnorm3_res, state
 
-class TransformerDecoder():
+class TransformerDecoder((nn.Module)):
     def __init__(self, vocab_size, num_hiddens, ffn_num_hiddens, num_heads,
                  num_blks, dropout):
         super().__init__()
         self.num_hiddens = num_hiddens
         self.num_blks = num_blks
-        #self.embedding = nn.Embedding(vocab_size, num_hiddens)
-        self.embedding = build_my_embedding(vocab_size, num_hiddens)
+        self.embedding = nn.Embedding(vocab_size, num_hiddens)
+        nn.init.constant_(self.embedding.weight, 1.0)  # Non-in-place initialization
+        self.embedding.weight.data[0] = 0.1  # Modify specific row
+        print("embedding weight:", self.embedding.weight)
+        self.embedding.weight.requires_grad = True
         self.pos_encoding = PositionalEncoding(num_hiddens, dropout)
         self.blks = nn.Sequential()
         for i in range(num_blks):
@@ -277,7 +286,8 @@ class TransformerDecoder():
         return [enc_outputs, enc_valid_lens, [None] * self.num_blks]
 
     def forward(self, X, state):
-        embs = X @ self.embedding
+        #embs = X @ self.embedding
+        embs = self.embedding(X)
         X = self.pos_encoding.forward(embs * math.sqrt(self.num_hiddens))
         for i, blk in enumerate(self.blks):
             X, state = blk(X, state)
@@ -286,25 +296,11 @@ class TransformerDecoder():
 
 def test():
     x = torch.tensor(
-        [[
-        [1, 0, 0, 0],
-        [0, 1, 0, 0],
-        [0, 0, 1, 0]
-        ],
-        [[1, 0, 0, 0],
-        [0, 0, 1, 0],
-        [0, 0, 0, 1]]
-        ], dtype=torch.float)
+        [[0, 1, 2],
+        [0, 2, 3]], dtype=torch.long)
     y = torch.tensor(
-        [[
-        [1, 0, 0, 0],
-        [0, 1, 0, 0],
-        [0, 0, 1, 0]
-        ],
-        [[1, 0, 0, 0],
-        [0, 0, 1, 0],
-        [0, 0, 0, 1]]
-        ], dtype=torch.float)
+        [[0, 1, 2],
+        [0, 2, 3]], dtype=torch.long)
 
     num_hiddens = 16
     num_blks = 2
@@ -318,16 +314,6 @@ def test():
     enc_outputs, embs = encoder.forward(x, valid_lens)
     decoder = TransformerDecoder(vocab_size, num_hiddens, ffn_num_hiddens, num_heads, num_blks, dropout)
 
-    # print("encoder parameters:", encoder.parameters())
-    # # enumerate the parameters
-    # for param in encoder.parameters():
-    #     print(param)
-
-    # for name, param in encoder.named_parameters():
-    #     print(f"Encoder parameter {name}: {param.shape}")
-    
-    for name, param in encoder.blks.named_parameters():
-        print(f"Encoder block parameter {name}: {param.shape}")
     
     state = [enc_outputs, valid_lens, [None] * num_blks]
     res, state, embs = decoder.forward(y, state)
@@ -347,13 +333,25 @@ def test():
     loss_value = (loss * mask).sum() / mask.sum()
     loss_value.backward()
 
-    # print("res:", res)
+    print("Encoder 参数:")
+    for name, param in encoder.named_parameters():
+        print(f"{name}: {param.shape}")
+
+    # 打印 decoder 参数
+    print("\nDecoder 参数:")
+    for name, param in decoder.named_parameters():
+        print(f"{name}: {param.shape}")
+
+    params = list(encoder.parameters()) + list(decoder.parameters())
+    optimizer = optim.Adam(params, lr=0.001)
+
+    print("res:", res)
     # print("encoder.embedding:", encoder.embedding)
-    print("encoder.embedding.grad:", encoder.embedding.grad)
+    print("encoder.embedding.grad:", encoder.embedding.weight.grad)
     # print("decoder.embedding:", decoder.embedding)
-    print("decoder.embedding.grad:", decoder.embedding.grad)
+    print("decoder.embedding.grad:", decoder.embedding.weight.grad)
     print("loss_value:", loss_value)
-    # print("enc_outputs :", enc_outputs)
+    print("enc_outputs :", enc_outputs)
 
 if '__main__' == __name__:
     test()
