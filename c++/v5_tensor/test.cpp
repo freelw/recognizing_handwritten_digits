@@ -5147,6 +5147,7 @@ void test_encoder_decoder() {
     loss->backward();
     adam.clip_grad(1.0f);
     adam.step();
+    // zero_grad();
     // printAllActions();
     allocMemAndInitTensors();
     gDoOnceActions();
@@ -5200,7 +5201,7 @@ void test_encoder_decoder() {
     auto dec_embedding = dec_params[0];
     assert(dec_embedding->get_w()->get_name() == "embedding");
 
-    int epochs = 100;
+    int epochs = 10;
     for (int e = 0; e < epochs; e++) {
         gDoActions();
         std::cout << "e : " << e << " loss : " << *loss->get_tensor() << std::endl;
@@ -5225,10 +5226,10 @@ void test_encoder_decoder() {
     std::cout << "ce_res grad : " << std::endl << *ce_res->get_grad() << std::endl;
     std::cout << "mask_res : " << std::endl << *mask_res->get_tensor() << std::endl;
     std::cout << "mask_res grad : " << std::endl << *mask_res->get_grad() << std::endl;
-    // std::cout << "enc_embedding : " << std::endl << *enc_embedding->get_w() << std::endl;
-    // std::cout << "enc_embedding grad : " << std::endl << *enc_embedding->get_grad() << std::endl;
-    // std::cout << "dec_embedding : " << std::endl << *dec_embedding->get_w() << std::endl;
-    // std::cout << "dec_embedding grad : " << std::endl << *dec_embedding->get_grad() << std::endl;
+    std::cout << "enc_embedding : " << std::endl << *enc_embedding->get_w() << std::endl;
+    std::cout << "enc_embedding grad : " << std::endl << *enc_embedding->get_grad() << std::endl;
+    std::cout << "dec_embedding : " << std::endl << *dec_embedding->get_w() << std::endl;
+    std::cout << "dec_embedding grad : " << std::endl << *dec_embedding->get_grad() << std::endl;
     
     delete seq2seq;
     destruct_env();

@@ -166,7 +166,7 @@ class TransformerEncoderBlock(nn.Module):  #@save
 
 class PositionalEncoding:  #@save
     """Positional encoding."""
-    def __init__(self, num_hiddens, dropout, max_len=1000):
+    def __init__(self, num_hiddens, dropout, max_len=10000):
         self.dropout = nn.Dropout(dropout)
         # Create a long enough P
         self.P = torch.zeros((1, max_len, num_hiddens))
@@ -294,6 +294,7 @@ class TransformerDecoder((nn.Module)):
         for i, blk in enumerate(self.blks):
             X, state = blk(X, state)
         dense_output = self.dense(X)
+        dense_output.retain_grad()  # Retain gradients for the dense output
         return dense_output, state, embs
 
 def forward(encoder, decoder, x, y, valid_lens, num_blks):
@@ -303,43 +304,37 @@ def forward(encoder, decoder, x, y, valid_lens, num_blks):
 
 def test():
     x = torch.tensor(
-        [[0, 1, 2],
-        [0, 2, 3]], dtype=torch.long)
+        [[4, 6, 5, 1, 0, 0, 0, 0, 0],], dtype=torch.long)
     y = torch.tensor(
-        [[0, 1, 2],
-        [0, 2, 3]], dtype=torch.long)
+        [[3, 6, 7, 8, 1, 0, 0, 0, 0],], dtype=torch.long)
 
     num_hiddens = 16
     num_blks = 2
     dropout = 0
-    ffn_num_hiddens = 4
+    ffn_num_hiddens = 17
     num_heads = 4
-    vocab_size = 4
+    enc_vocab_size = 7
+    dec_vocab_size = 9
 
-    labels = torch.tensor([1, 1, 2, 3, 1, 2], dtype=torch.long)
+    labels = torch.tensor([6, 7, 8, 1, 0, 0, 0, 0, 0], dtype=torch.long)
     mask = torch.tensor([
-        [1, 0, 0,
-        1, 0, 0],
+        [1, 1, 1, 1, 0, 0, 0, 0, 0],
     ], dtype=torch.float32)
 
-    encoder = TransformerEncoder(vocab_size, num_hiddens, ffn_num_hiddens, num_heads, num_blks, dropout)
-    valid_lens = torch.tensor([1,1], dtype=torch.long)
-    decoder = TransformerDecoder(vocab_size, num_hiddens, ffn_num_hiddens, num_heads, num_blks, dropout)
+    encoder = TransformerEncoder(enc_vocab_size, num_hiddens, ffn_num_hiddens, num_heads, num_blks, dropout)
+    valid_lens = torch.tensor([4], dtype=torch.long)
+    decoder = TransformerDecoder(dec_vocab_size, num_hiddens, ffn_num_hiddens, num_heads, num_blks, dropout)
 
     res, state, embs = forward(encoder, decoder, x, y, valid_lens, num_blks)
     params = list(encoder.parameters()) + list(decoder.parameters())
-    print("Encoder 参数:")
-    for name, param in encoder.named_parameters():
-        print(f"{name}: {param.shape}")
-    # 打印 decoder 参数
-    print("\nDecoder 参数:")
-    for name, param in decoder.named_parameters():
-        print(f"{name}: {param.shape}")
-    optimizer = optim.Adam(params, lr=0.1)
     
-    epochs = 3
+    optimizer = optim.Adam(params, lr=0.001)
+    
+    epochs = 10
+    f_res = 0
     for e in range(epochs):
         res, state, embs = forward(encoder, decoder, x, y, valid_lens, num_blks)
+        f_res = res
         optimizer.zero_grad()
         res = res.reshape(-1, res.shape[-1])
         loss = F.cross_entropy(res, labels, reduction="none")
@@ -347,11 +342,31 @@ def test():
         loss_value.backward()
         torch.nn.utils.clip_grad_norm_(params, max_norm=1.0)
         optimizer.step()
-        print("encoder.embedding:", encoder.embedding.weight)
-        print("encoder.embedding.grad:", encoder.embedding.weight.grad)
-        print("decoder.embedding:", decoder.embedding.weight)
-        print("decoder.embedding.grad:", decoder.embedding.weight.grad)
         print("e: ", e, "loss_value:", loss_value)
+    print("Encoder 参数:")
+    for name, param in encoder.named_parameters():
+        print(f"{name}: {param.shape}")
+        #print weight value & grad
+        print(f"weight: {param.data}")
+        if param.requires_grad:
+            print(f"grad: {param.grad}")
+        
+
+    # 打印 encoder 参数
+    # 打印 decoder 参数
+    print("\nDecoder 参数:")
+    for name, param in decoder.named_parameters():
+        print(f"{name}: {param.shape}")
+        print(f"weight: {param.data}")
+        if param.requires_grad:
+            print(f"grad: {param.grad}")
+    print("Final res:", f_res)
+    print("Final res grad:", f_res.grad)
+    print("encoder.embedding:", encoder.embedding.weight)
+    print("encoder.embedding.grad:", encoder.embedding.weight.grad)
+    print("decoder.embedding:", decoder.embedding.weight)
+    print("decoder.embedding.grad:", decoder.embedding.weight.grad)
+    
 
     #print("res:", res)
     # print("encoder.embedding:", encoder.embedding)
