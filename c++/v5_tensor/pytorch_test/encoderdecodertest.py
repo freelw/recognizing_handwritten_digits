@@ -335,19 +335,23 @@ def test():
     print("\nDecoder 参数:")
     for name, param in decoder.named_parameters():
         print(f"{name}: {param.shape}")
-    optimizer = optim.Adam(params, lr=0.001)
+    optimizer = optim.Adam(params, lr=0.1)
     
-    epochs = 300
+    epochs = 3
     for e in range(epochs):
         res, state, embs = forward(encoder, decoder, x, y, valid_lens, num_blks)
         optimizer.zero_grad()
         res = res.reshape(-1, res.shape[-1])
         loss = F.cross_entropy(res, labels, reduction="none")
         loss_value = (loss * mask).sum() / mask.sum()
-        print("loss_value:", loss_value)
         loss_value.backward()
         torch.nn.utils.clip_grad_norm_(params, max_norm=1.0)
         optimizer.step()
+        print("encoder.embedding:", encoder.embedding.weight)
+        print("encoder.embedding.grad:", encoder.embedding.weight.grad)
+        print("decoder.embedding:", decoder.embedding.weight)
+        print("decoder.embedding.grad:", decoder.embedding.weight.grad)
+        print("e: ", e, "loss_value:", loss_value)
 
     #print("res:", res)
     # print("encoder.embedding:", encoder.embedding)

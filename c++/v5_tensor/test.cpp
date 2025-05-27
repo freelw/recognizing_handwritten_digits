@@ -5122,16 +5122,22 @@ void test_encoder_decoder() {
     auto mask_res = ce_res->mask(mask);
     auto loss = mask_res->avg_1d(mask);
     insert_boundary_action();
-    loss->backward();
+    
     std::vector<Parameter*> enc_params = seq2seq->get_encoder()->get_parameters();
     std::vector<Parameter*> dec_params = seq2seq->get_decoder()->get_parameters();
     std::vector<Parameter*> all_params;
     all_params.insert(all_params.end(), enc_params.begin(), enc_params.end());
-    Adam adam(all_params, 0.001f);
+    all_params.insert(all_params.end(), dec_params.begin(), dec_params.end());
+    // print all params
+    for (int i = 0; i < all_params.size(); i++) {
+        std::cout << "param " << i << " name : " << all_params[i]->get_w()->get_name() << std::endl;
+    }
+    Adam adam(all_params, 0.1f);
     zero_grad();
+    loss->backward();
     adam.clip_grad(1.0f);
     adam.step();
-    printAllActions();
+    // printAllActions();
     allocMemAndInitTensors();
     int32_t label_buffer[6] = {1, 1, 2, 3, 1, 2};
     g_backend_ops->cp_to_device(
@@ -5161,10 +5167,14 @@ void test_encoder_decoder() {
     auto dec_embedding = dec_params[0];
     assert(dec_embedding->get_w()->get_name() == "embedding");
 
-    int epochs = 300;
+    int epochs = 3;
     for (int e = 0; e < epochs; e++) {
         gDoActions();
-        std::cout << "loss : " << *loss->get_tensor() << std::endl;
+        std::cout << "enc_embedding : " << std::endl << *enc_embedding->get_w() << std::endl;
+        std::cout << "enc_embedding grad : " << std::endl << *enc_embedding->get_grad() << std::endl;
+        std::cout << "dec_embedding : " << std::endl << *dec_embedding->get_w() << std::endl;
+        std::cout << "dec_embedding grad : " << std::endl << *dec_embedding->get_grad() << std::endl;
+        std::cout << "e : " << e << " loss : " << *loss->get_tensor() << std::endl;
     }
     // std::cout << "res : " << std::endl << *res->get_tensor() << std::endl;
     // std::cout << "enc_embedding : " << std::endl << *enc_embedding->get_w() << std::endl;
