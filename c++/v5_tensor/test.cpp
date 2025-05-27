@@ -5129,13 +5129,6 @@ void test_encoder_mask() {
     auto loss = mask_res->avg_1d(mask);
 
     std::vector<Parameter*> params = encoder->get_parameters();
-    // print params meta
-    // std::cout << "params : " << std::endl;
-    // for (int i = 0; i < params.size(); ++i) {
-    //     std::cout << i << " : " <<  params[i]->get_w()->get_meta_info() << std::endl;
-    // }
-    // std::cout << "tensors : " << std::endl;
-    // printAllTensors();
     insert_boundary_action();
     loss->backward();
     // printAllActions();
@@ -5146,18 +5139,6 @@ void test_encoder_mask() {
     // 一定在gDoOnceActions之后，覆盖原始初始化的值
     custom_init_all_encoder_weights(params);
     gDoActions();
-    // std::cout << "loss : " << *loss->get_tensor() << std::endl;
-    // std::cout << x->get_meta_info() << std::endl;
-    // std::cout << "x : " << std::endl << *x << std::endl;
-    // std::cout << res->get_tensor()->get_meta_info() << std::endl;
-    // std::cout << "mask : " << std::endl << *mask << std::endl;
-    // std::cout << "ce_res : " << std::endl << *ce_res->get_tensor() << std::endl;
-    // std::cout << "mask res : " << std::endl << *mask_res->get_tensor() << std::endl;
-    // std::cout << "mask res grad : " << std::endl << *mask_res->get_grad() << std::endl;
-    // std::cout << "ce_res grad : " << std::endl << *ce_res->get_grad() << std::endl;
-    // std::cout << "valid_lens : " << std::endl << *valid_lens << std::endl;
-    // std::cout << "res : " << std::endl << *res->get_tensor() << std::endl;
-    // std::cout << "res grad : " << std::endl << *res->get_grad() << std::endl;
    
    float res_grad_ans[96] = {
         -0.4995,  0.0335,  0.0331,  0.0335,  0.0331,  0.0335,  0.0331,  0.0335,
@@ -5187,9 +5168,6 @@ void test_encoder_mask() {
 
     auto embedding = params[0];
     assert(embedding->get_w()->get_name() == "embedding");
-    // std::cout << embedding->get_w()->get_meta_info() << std::endl;
-    // std::cout << "embedding : " << std::endl << *embedding->get_w() << std::endl;
-    // std::cout << "embedding grad : " << std::endl << *embedding->get_grad() << std::endl;
     float embedding_grad_ans[64] = {
         -5.2684e-06, -4.1972e-05,  5.9960e-05, -4.1972e-05,  5.9960e-05,
          -4.1972e-05,  5.9960e-05, -4.1972e-05,  5.9960e-05, -4.1972e-05,
