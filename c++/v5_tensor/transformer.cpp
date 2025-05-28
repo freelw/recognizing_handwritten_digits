@@ -127,9 +127,13 @@ int main(int argc, char *argv[]) {
     int batch_size = 128;
     int gpu = 1;
     float lr = 0.001f;
+    std::string checkpoint;
 
     while ((opt = getopt(argc, argv, "e:l:b:g:")) != -1) {
         switch (opt) {
+            case 'c':
+                checkpoint = optarg;
+                break;
             case 'e':
                 epochs = atoi(optarg);
                 break;
@@ -143,10 +147,17 @@ int main(int argc, char *argv[]) {
                 gpu = atoi(optarg);
                 break;
             default:
-                std::cerr << "Usage: " << argv[0] << " -f <corpus> -c <checpoint> -e <epochs>" << std::endl;
+                std::cerr << "Usage: " << argv[0] 
+                    << " -f <corpus> -c <checpoint> -e <epochs>" << std::endl;
                 return 1;
         }
     }
+
+    std::cout << "epochs : " << epochs << std::endl;
+    std::cout << "batch_size : " << batch_size << std::endl;
+    std::cout << "gpu : " << gpu << std::endl;
+    std::cout << "learning rate : " << lr << std::endl;
+    std::cout << "checkpoint : " << checkpoint << std::endl;
 
     int enc_vocab_size = 0;
     int dec_vocab_size = 0;
@@ -196,7 +207,6 @@ int main(int argc, char *argv[]) {
     Tensor *dec_valid_lens = allocTensor({batch_size, num_steps}, INT32);
     Tensor *labels = allocTensor({batch_size * num_steps}, INT32);
     Tensor *ce_mask = allocTensor({batch_size * num_steps});
-    
 
     // alloc input buffers
     // 1. enc_valid_lens
@@ -224,7 +234,6 @@ int main(int argc, char *argv[]) {
 
     auto res = seq2seq->forward(src_token_ids, tgt_token_ids, enc_valid_lens, dec_valid_lens);
     auto loss = res->reshape({-1, dec_vocab_size})->CrossEntropy(labels)->mask(ce_mask)->avg_1d(ce_mask);
-    // auto loss = res->reshape({-1, dec_vocab_size})->CrossEntropy(labels)->avg_1d();
     insert_boundary_action();
     
     std::vector<Parameter *> parameters = seq2seq->get_parameters();
@@ -234,11 +243,8 @@ int main(int argc, char *argv[]) {
     adam.clip_grad(1.0f);
     adam.step();
     // printAllActions();
-    
     allocMemAndInitTensors();
     init_dec_valid_lens(dec_valid_lens);
-    // std::cout << "dec_valid_lens meta : " << dec_valid_lens->get_meta_info() << std::endl;
-    // std::cout << "dec_valid_lens : " << std::endl << *dec_valid_lens << std::endl;
     for (int epoch = 0; epoch < epochs; ++epoch) {
         float loss_sum = 0;
         int cnt = 0;
@@ -297,21 +303,6 @@ int main(int argc, char *argv[]) {
                 ce_mask->size()
             );
 
-            // std::cout << "enc_valid_lens meta : " << enc_valid_lens->get_meta_info() << std::endl;
-            // std::cout << "dec_valid_lens meta : " << dec_valid_lens->get_meta_info() << std::endl;
-            // std::cout << "src_token_ids meta : " << src_token_ids->get_meta_info() << std::endl;
-            // std::cout << "tgt_token_ids meta : " << tgt_token_ids->get_meta_info() << std::endl;
-            // std::cout << "labels meta : " << labels->get_meta_info() << std::endl;
-            // std::cout << "ce_mask meta : " << ce_mask->get_meta_info() << std::endl;
-
-            // std::cout << "enc_valid_lens : " << std::endl << *enc_valid_lens << std::endl;
-            // std::cout << "dec_valid_lens : " << std::endl << *dec_valid_lens << std::endl;
-            // std::cout << "src_token_ids : " << std::endl << *src_token_ids << std::endl;
-            // std::cout << "tgt_token_ids : " << std::endl << *tgt_token_ids << std::endl;
-            // std::cout << "labels : " << std::endl << *labels << std::endl;
-            // std::cout << "ce_mask : " << std::endl << *ce_mask << std::endl;
-            // exit(0);
-
             gDoActions();
             print_progress(prefix, end, v_src_token_ids.size());
             float loss_v = 0;
@@ -321,14 +312,6 @@ int main(int argc, char *argv[]) {
                 loss->get_tensor()->size()
             );
             loss_sum += loss_v;
-
-            // print all parameters
-            // std::cout << "transformer parameters size : " << parameters.size() << std::endl;
-            // for (int i = 0; i < parameters.size(); i++) {
-            //     std::cout << "parameter " << i << " : " << parameters[i]->get_w()->get_meta_info() << std::endl;
-            //    std::cout << "grad : " << std::endl << *parameters[i]->get_grad() << std::endl;
-            // }
-            // exit(0);
         }
         std::cout << "loss : " << loss_sum / cnt << std::endl;
     }
