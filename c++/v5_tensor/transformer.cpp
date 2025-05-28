@@ -261,6 +261,7 @@ int main(int argc, char *argv[]) {
     if (!checkpoint.empty()) {
         std::cout << "loading from checkpoint : " << checkpoint << std::endl;
         disableInitWeightAction();
+        loadfrom_checkpoint(checkpoint, parameters);
         std::cout << "loaded from checkpoint" << std::endl;
     }
     init_dec_valid_lens(dec_valid_lens);
