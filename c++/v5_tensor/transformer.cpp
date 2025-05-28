@@ -250,6 +250,11 @@ int main(int argc, char *argv[]) {
     adam.step();
     // printAllActions();
     allocMemAndInitTensors();
+    if (!checkpoint.empty()) {
+        std::cout << "loading from checkpoint : " << checkpoint << std::endl;
+        // todo : load from checkpoint
+        std::cout << "loaded from checkpoint" << std::endl;
+    }
     init_dec_valid_lens(dec_valid_lens);
     for (int epoch = 0; epoch < epochs; ++epoch) {
         float loss_sum = 0;
