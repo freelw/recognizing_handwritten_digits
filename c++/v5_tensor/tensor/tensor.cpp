@@ -403,11 +403,11 @@ Tensor *allocTensor(const std::vector<int> &shape, const std::string &name, Tens
 Tensor *callocTensor(const std::vector<int> &shape, const std::string &name, TensorDType dtype) {
     Tensor *tensor = new Tensor(shape, name, dtype);
     g_c_tensors.push_back(tensor);
-    gCreateAction(
-        new ClearAction(
-            tensor
-        )
-    );
+    // gCreateAction(
+    //     new ClearAction(
+    //         tensor
+    //     )
+    // );
     return tensor;
 }
 

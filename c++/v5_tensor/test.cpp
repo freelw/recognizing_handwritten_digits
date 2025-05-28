@@ -3026,13 +3026,14 @@ void test_dropout() {
     auto ni = graph::allocNode(input);
     ni->require_grad();
     auto res = dropout.forward(ni)->reshape(input_shape);
-    res->backward();
     insert_boundary_action();
+    res->backward();
     allocMemAndInitTensors();
     input->fill(1.0f);
+    gDoForwardActions(true);
     res->get_grad()->fill(1.0f);
     // printAllActions();
-    gDoActions();
+    gDoBackwardActions();
     float *res_buffer = static_cast<float*>(::malloc(res->get_tensor()->size()));
     g_backend_ops->cp_from_device(
         reinterpret_cast<char*>(res_buffer),
@@ -6988,7 +6989,8 @@ void test_div_bp_with_cpu() {
 std::vector<Tensor *> test_attention_bp_with_cpu_base(
     int batch, int m, int n, int k, int p
 ) {
-
+    zero_c_tensors();
+    zero_grad();
     DotProductAttention attention;
     Tensor *querys = allocTensor({batch, m, n}, "querys");
     Tensor *keys = allocTensor({batch, k, n}, "keys");
@@ -7172,6 +7174,8 @@ void test_attention_bp_with_cpu() {
 std::vector<Tensor *> test_permute_with_cpu_base(
     int m, int n, int k, int p, int q
 ) {
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({m, n, k, p}, "input");
     Tensor *w = allocTensor({p, q}, "w");
     auto ni = graph::allocNode(input);
@@ -7280,6 +7284,8 @@ void test_permute_with_cpu() {
 }
 
 std::vector<Tensor *> test_embedding_with_cpu_base(int m, int n) {
+    zero_c_tensors();
+    zero_grad();
     Embedding emb(m, n, true);
     Tensor *indices = allocTensor({1, m/2}, "indices", INT32);
     auto res = emb.forward(indices);
