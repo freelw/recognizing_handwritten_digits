@@ -93,6 +93,7 @@ extern std::vector<Tensor*> g_tensor_views;
 extern std::vector<Tensor*> g_grad_tensors;
 
 Tensor *allocTensor(const std::vector<int> &shape, const std::string &name, TensorDType _dtype = FLOAT32);
+Tensor *callocTensor(const std::vector<int> &shape, const std::string &name, TensorDType _dtype = FLOAT32);
 Tensor *allocTensor(const std::vector<int> &shape, TensorDType _dtype = FLOAT32);
 Tensor *allocTensorView(
     const Tensor *parent, const std::vector<int> &shape,

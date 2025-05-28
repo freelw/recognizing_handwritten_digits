@@ -3,7 +3,7 @@
 
 Embedding::Embedding(int _vocab_size, int _hidden_num, bool const_weight)
     : vocab_size(_vocab_size), hidden_num(_hidden_num) {
-    Tensor * t = allocTensor({vocab_size, hidden_num}, "embedding");
+    Tensor * t = allocTensor({vocab_size, hidden_num}, "embedding"); // do not calloc
     w = graph::allocNode(t);
     w->require_grad();
     if (const_weight) {
@@ -20,7 +20,7 @@ graph::Node *Embedding::forward(Tensor *indices) {
     assert(indices->is_contiguous());
     auto origin_shape = indices->get_shape();
     indices = indices->reshape({-1});
-    Tensor *res = allocTensor({indices->get_shape()[0], hidden_num}, "embedding_out");
+    Tensor *res = callocTensor({indices->get_shape()[0], hidden_num}, "embedding_out");
     auto res_node = graph::allocNode(res);
     res_node->require_grad();
     gCreateAction(

@@ -198,17 +198,17 @@ Tensor *Tensor::reshape(const std::vector<int> &shape) const {
         );
         return reshape_view;
     } else {
-        Tensor *reshape_deep_cpy = allocTensor(
+        Tensor *reshape_deep_cpy = callocTensor(
             calc_req_shape,
             this->get_name() + "_reshape_deep_copy",
             this->get_dtype()
         );
-        Tensor *tensor_shape = allocTensor(
+        Tensor *tensor_shape = callocTensor(
             {get_dim()},
             this->get_name() + "_reshape_deep_copy_shape",
             INT32
         );
-        Tensor *tensor_strides = allocTensor(
+        Tensor *tensor_strides = callocTensor(
             {get_dim()},
             this->get_name() + "_reshape_deep_copy_strides",
             INT32
@@ -253,7 +253,7 @@ Tensor *Tensor::repeat_interleave(int n) {
     } else {
         new_shape[dim-2] *= n;
     }
-    Tensor *repeat_interleave_tensor = allocTensor(
+    Tensor *repeat_interleave_tensor = callocTensor(
         new_shape,
         this->get_name() + "_repeat_interleave",
         INT32
@@ -274,7 +274,7 @@ Tensor *Tensor::sequence_mask(Tensor *mask, float value) {
     assert(mask->get_shape()[0] == shape[0]);
     assert(this->get_dtype() == FLOAT32);
     assert(this->get_dim() == 2);
-    Tensor *sequence_mask_tensor = allocTensor(
+    Tensor *sequence_mask_tensor = callocTensor(
         {shape[0], shape[1]},
         this->get_name() + "_sequence_mask",
         this->get_dtype()
@@ -291,7 +291,7 @@ Tensor *Tensor::sequence_mask(Tensor *mask, float value) {
 }
 
 Tensor *Tensor::softmax() {
-    Tensor *res = allocTensor(
+    Tensor *res = callocTensor(
         shape,
         this->get_name() + "_softmax",
         this->get_dtype()
@@ -396,6 +396,16 @@ std::vector<Tensor*> g_grad_tensors;
 Tensor *allocTensor(const std::vector<int> &shape, const std::string &name, TensorDType dtype) {
     Tensor *tensor = new Tensor(shape, name, dtype);
     g_tensors.push_back(tensor);
+    return tensor;
+}
+
+Tensor *callocTensor(const std::vector<int> &shape, const std::string &name, TensorDType dtype) {
+    Tensor *tensor = allocTensor(shape, name, dtype);
+    gCreateAction(
+        new ClearAction(
+            tensor
+        )
+    );
     return tensor;
 }
 

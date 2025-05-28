@@ -6,7 +6,7 @@ graph::Node *Dropout::forward(graph::Node *x) {
         auto x_tensor = x->get_tensor();
         auto shape = x_tensor->get_shape();
         graph::Node *res_node = nullptr;
-        Tensor *mask = allocTensor(
+        Tensor *mask = callocTensor(
             shape,
             x_tensor->get_name() + "_dropout_mask",
             x_tensor->get_dtype()
@@ -17,7 +17,7 @@ graph::Node *Dropout::forward(graph::Node *x) {
                 p
             )
         );
-        Tensor *res_tensor = allocTensor(
+        Tensor *res_tensor = callocTensor(
             shape,
             x_tensor->get_name() + "_dropout_res",
             x_tensor->get_dtype()
@@ -31,7 +31,7 @@ graph::Node *Dropout::forward(graph::Node *x) {
             )
         );
         if (x->is_require_grad()) {
-            Tensor *res_grad = allocTensor(
+            Tensor *res_grad = callocTensor(
                 x->get_grad()->get_shape(),
                 x->get_grad()->get_name() + "_dropout_grad",
                 x->get_grad()->get_dtype()

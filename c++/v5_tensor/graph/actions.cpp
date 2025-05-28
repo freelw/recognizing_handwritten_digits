@@ -41,22 +41,22 @@ AddAction::AddAction(Tensor *_lhs, const Tensor *_rhs, Tensor *_res)
     assert(_lhs->get_shape() == _rhs->get_shape());
     auto dim = _lhs->get_dim();
 
-    lhs_shape = allocTensor(
+    lhs_shape = callocTensor(
         {dim},
         _lhs->get_name() + "_shape",
         INT32
     );
-    lhs_strides = allocTensor(
+    lhs_strides = callocTensor(
         {dim},
         _lhs->get_name() + "_strides",
         INT32
     );
-    rhs_strides = allocTensor(
+    rhs_strides = callocTensor(
         {dim},
         _rhs->get_name() + "_strides",
         INT32
     );
-    res_strides = allocTensor(
+    res_strides = callocTensor(
         {dim},
         _res->get_name() + "_strides",
         INT32
@@ -112,17 +112,17 @@ AddEqAction::AddEqAction(Tensor *_lhs, const Tensor *_rhs)
     assert(_lhs->get_dim() == _rhs->get_dim());
     assert(_lhs->get_shape() == _rhs->get_shape());
     auto dim = _lhs->get_dim();
-    lhs_shape = allocTensor(
+    lhs_shape = callocTensor(
         {dim},
         _lhs->get_name() + "_shape",
         INT32
     );
-    lhs_strides = allocTensor(
+    lhs_strides = callocTensor(
         {dim},
         _lhs->get_name() + "_strides",
         INT32
     );
-    rhs_strides = allocTensor(
+    rhs_strides = callocTensor(
         {dim},
         _rhs->get_name() + "_strides",
         INT32
@@ -203,22 +203,22 @@ MulAction::MulAction(Tensor *_lhs, const Tensor *_rhs, Tensor *_res)
     assert(_lhs->get_shape() == _rhs->get_shape());
     auto dim = _lhs->get_dim();
 
-    lhs_shape = allocTensor(
+    lhs_shape = callocTensor(
         {dim},
         _lhs->get_name() + "_shape",
         INT32
     );
-    lhs_strides = allocTensor(
+    lhs_strides = callocTensor(
         {dim},
         _lhs->get_name() + "_strides",
         INT32
     );
-    rhs_strides = allocTensor(
+    rhs_strides = callocTensor(
         {dim},
         _rhs->get_name() + "_strides",
         INT32
     );
-    res_strides = allocTensor(
+    res_strides = callocTensor(
         {dim},
         _res->get_name() + "_strides",
         INT32
@@ -610,12 +610,12 @@ std::string LazyDivAction::to_string() const {
 DropoutMaskAction::DropoutMaskAction(Tensor *mask, float _p)
     : Action(nullptr, nullptr, mask), p(_p) {
     assert(mask != nullptr);
-    shape = allocTensor(
+    shape = callocTensor(
         {mask->get_dim()},
         mask->get_name() + "_shape",
         INT32
     );
-    strides = allocTensor(
+    strides = callocTensor(
         {mask->get_dim()},
         mask->get_name() + "_strides",
         INT32

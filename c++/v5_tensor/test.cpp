@@ -5374,9 +5374,9 @@ void test_clip() {
 }
 
 void test_cpu() {
-    test_adam();
+    // test_adam();
     // test_clip();
-    // test_encoder_decoder();
+    test_encoder_decoder();
     return ;
     test_at();
     test_add();

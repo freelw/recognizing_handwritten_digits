@@ -120,7 +120,7 @@ namespace graph {
         }
     }
     Node *Node::add(Node *rhs) {
-        Tensor *res_tensor = allocTensor(t->get_shape(), "add_res");
+        Tensor *res_tensor = callocTensor(t->get_shape(), "add_res");
         Tensor *r_tensor = rhs->get_tensor();
         gCreateAction(
             new AddAction(
@@ -143,7 +143,7 @@ namespace graph {
     }
 
     Node *Node::mul(Node *rhs) {
-        Tensor *res_tensor = allocTensor(t->get_shape(), "mul_res");
+        Tensor *res_tensor = callocTensor(t->get_shape(), "mul_res");
         Tensor *r_tensor = rhs->get_tensor();
         gCreateAction(
             new MulAction(
@@ -168,7 +168,7 @@ namespace graph {
     Node *Node::mulsv(float v) {
         Tensor *l_tensor = this->get_tensor();
         assert(l_tensor->is_contiguous()); // 只有在这个前提下，当前的后端实现才是正确的，没有考虑stride
-        Tensor *res_tensor = allocTensor(t->get_shape(), "mulsv_res");
+        Tensor *res_tensor = callocTensor(t->get_shape(), "mulsv_res");
         gCreateAction(
             new MulSVAction(
                 l_tensor,
@@ -185,7 +185,7 @@ namespace graph {
     }
 
     Node *Node::expand_add(Node *rhs) {
-        Tensor *res_tensor = allocTensor(
+        Tensor *res_tensor = callocTensor(
             t->get_shape(),
             this->get_tensor()->get_name() + "_" +
             rhs->get_tensor()->get_name() +
@@ -214,7 +214,7 @@ namespace graph {
     }
 
     Node *Node::expand_mul(Node *rhs) {
-        Tensor *res_tensor = allocTensor(t->get_shape(), "expand_mul");
+        Tensor *res_tensor = callocTensor(t->get_shape(), "expand_mul");
         Tensor *r_tensor = rhs->get_tensor();
         assert(r_tensor->get_dim() == 1);
         gCreateAction(
@@ -265,7 +265,13 @@ namespace graph {
         assert(l_tensor->get_dim() == 2);
         assert(r_tensor->get_dim() == 2);
         assert(l_tensor->get_shape()[1] == r_tensor->get_shape()[0]);
-        Tensor *res_tensor = allocTensor({l_tensor->get_shape()[0], r_tensor->get_shape()[1]}, "res_at");
+        Tensor *res_tensor = callocTensor({l_tensor->get_shape()[0], r_tensor->get_shape()[1]}, "res_at");
+        // gCreateAction(
+        //     new DbgPrintAction(
+        //         l_tensor,
+        //         "at_lhs"
+        //     )
+        // );
         Node *res_node = allocNode(res_tensor);
         atImpl(this, rhs, res_node);
         return res_node;
@@ -308,7 +314,7 @@ namespace graph {
         r_node->split_3d(r_split_2d_nodes);
 
         assert(l_split_2d_nodes.size() == r_split_2d_nodes.size());
-        Tensor *res_tensor = allocTensor(
+        Tensor *res_tensor = callocTensor(
             {l_tensor->get_shape()[0], l_tensor->get_shape()[1], r_tensor->get_shape()[2]},
             "bmm_res_" + l_tensor->get_name() + "_" + r_tensor->get_name()
         );
@@ -379,7 +385,7 @@ namespace graph {
 
     Node *Node::relu() {
         Tensor *l_tensor = this->get_tensor();
-        Tensor *res_tensor = allocTensor(l_tensor->get_shape(), "relu_res");
+        Tensor *res_tensor = callocTensor(l_tensor->get_shape(), "relu_res");
         gCreateAction(
             new ReluAction(
                 l_tensor,
@@ -398,8 +404,8 @@ namespace graph {
         assert(this->get_tensor()->get_dim() == 2);
         auto shape = this->get_tensor()->get_shape();
 
-        Tensor *avg_tensor = allocTensor({shape[0]}, "avg");
-        Tensor *var_tensor = allocTensor({shape[0]}, "var");
+        Tensor *avg_tensor = callocTensor({shape[0]}, "avg");
+        Tensor *var_tensor = callocTensor({shape[0]}, "var");
 
         gCreateAction(
             new AvgAction(
@@ -416,7 +422,7 @@ namespace graph {
             )
         );
 
-        Tensor *norm_res = allocTensor(
+        Tensor *norm_res = callocTensor(
             this->get_tensor()->get_shape(),
             "norm_res"
         );
@@ -442,7 +448,7 @@ namespace graph {
         Tensor *l_tensor = this->get_tensor();
         assert(l_tensor->get_dim() == 1);
         if (mask == nullptr) {
-            mask = allocTensor({l_tensor->get_shape()[0]}, "avg_1d_mask");
+            mask = callocTensor({l_tensor->get_shape()[0]}, "avg_1d_mask");
             gCreateAction(
                 new FillWeightAction(
                     mask,
@@ -456,9 +462,9 @@ namespace graph {
         mask = mask->reshape({-1, 1});
         auto shape = l_tensor->get_shape();
         l_tensor = l_tensor->reshape({1, shape[0]});
-        Tensor *res_tensor = allocTensor({1}, "avg_1d_res");
-        Tensor *sum_tensor = allocTensor({1}, "avg_1d_sum");
-        Tensor *mask_sum_tensor = allocTensor({1}, "avg_1d_mask_sum");
+        Tensor *res_tensor = callocTensor({1}, "avg_1d_res");
+        Tensor *sum_tensor = callocTensor({1}, "avg_1d_sum");
+        Tensor *mask_sum_tensor = callocTensor({1}, "avg_1d_mask_sum");
         gCreateAction(
             new FillWeightAction(
                 sum_tensor,
@@ -535,9 +541,9 @@ namespace graph {
             labels->get_dtype() == INT32 
         );
         assert(labels->get_shape()[0] == this->get_tensor()->get_shape()[0]);
-        Tensor *tensor_maxs = allocTensor(labels->get_shape(), "maxs");
-        Tensor *tensor_sums = allocTensor(labels->get_shape(), "sums");
-        Tensor *ce_res = allocTensor({labels->get_shape()}, "cross_entropy");
+        Tensor *tensor_maxs = callocTensor(labels->get_shape(), "maxs");
+        Tensor *tensor_sums = callocTensor(labels->get_shape(), "sums");
+        Tensor *ce_res = callocTensor({labels->get_shape()}, "cross_entropy");
 
         gCreateAction(
             new CrossEntropyAction(
@@ -559,7 +565,7 @@ namespace graph {
     Node *Node::div(float value) {
         Tensor *l_tensor = this->get_tensor();
         assert(l_tensor->is_contiguous()); // 只有在这个前提下，当前的后端实现才是正确的，没有考虑stride
-        Tensor *res_tensor = allocTensor(l_tensor->get_shape(), "div_res");
+        Tensor *res_tensor = callocTensor(l_tensor->get_shape(), "div_res");
         gCreateAction(
             new DivAction(
                 l_tensor,
@@ -627,14 +633,9 @@ namespace graph {
     }
 
     void CrossEntropyEdge::backward(Tensor *grad) {
-        Tensor *tmp = allocTensor(
+        Tensor *tmp = callocTensor(
             node->get_grad()->get_shape(),
             "cross_entropy_tmp"
-        );
-        gCreateAction(
-            new ClearAction(
-                tmp
-            )
         );
         gCreateAction(
             new CrossEntropyBackwardAction(
@@ -659,7 +660,7 @@ namespace graph {
         //     )
         // );
         
-        Tensor *tmp2 = allocTensor(
+        Tensor *tmp2 = callocTensor(
             node->get_grad()->get_shape(),
             "cross_entropy_tmp2"
         );
@@ -687,14 +688,9 @@ namespace graph {
 
     void SoftmaxEdge::backward(Tensor *grad) {
         
-        Tensor *tmp = allocTensor(
+        Tensor *tmp = callocTensor(
             node->get_grad()->get_shape(),
             "softmax_tmp"
-        );
-        gCreateAction(
-            new ClearAction(
-                tmp
-            )
         );
         
         gCreateAction(
@@ -715,15 +711,9 @@ namespace graph {
 
     void EmbeddingEdge::backward(Tensor *grad) {
 
-        Tensor *tmp = allocTensor(
+        Tensor *tmp = callocTensor(
             node->get_grad()->get_shape(),
             "embedding_tmp"
-        );
-
-        gCreateAction(
-            new ClearAction(
-                tmp
-            )
         );
 
         // gCreateAction(
@@ -757,14 +747,9 @@ namespace graph {
     }
 
     void NormEdge::backward(Tensor *grad) {
-        Tensor *tmp = allocTensor(
+        Tensor *tmp = callocTensor(
             node->get_grad()->get_shape(),
             "norm_tmp"
-        );
-        gCreateAction(
-            new ClearAction(
-                tmp
-            )
         );
         // gCreateAction(
         //     new DbgPrintAction(
