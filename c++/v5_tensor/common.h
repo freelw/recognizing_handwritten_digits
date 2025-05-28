@@ -10,6 +10,7 @@ extern BackendOps *g_backend_ops;
 extern bool g_training;
 void zero_grad();
 void zero_c_tensors();
+void print_no_zero_tensor_names();
 void insert_boundary_action();
 void init_backend();
 void release_backend();

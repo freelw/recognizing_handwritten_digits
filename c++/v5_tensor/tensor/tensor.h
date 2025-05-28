@@ -89,6 +89,7 @@ class Tensor {
 };
 
 extern std::vector<Tensor*> g_tensors;
+extern std::vector<Tensor*> g_c_tensors;
 extern std::vector<Tensor*> g_tensor_views;
 extern std::vector<Tensor*> g_grad_tensors;
 

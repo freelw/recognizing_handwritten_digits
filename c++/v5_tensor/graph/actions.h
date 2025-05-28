@@ -191,6 +191,14 @@ class ZeroCTensorsAction : public Action {
         std::string to_string() const override;
 };
 
+class PrintNoZeroTensorNamesAction : public Action {
+    public:
+        PrintNoZeroTensorNamesAction()
+            : Action(nullptr, nullptr, nullptr) {}
+        void execute() override;
+        std::string to_string() const override;
+};
+
 class FillWeightAction : public Action {
     public:
         FillWeightAction(Tensor *_lhs, const std::string &_init_type, float _sigma, float _mean)

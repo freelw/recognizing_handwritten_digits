@@ -5118,6 +5118,7 @@ void test_encoder_decoder() {
     int num_steps = NUM_STEPS;
     int max_posencoding_len = MAX_POSENCODING_LEN;
     zero_c_tensors();
+    print_no_zero_tensor_names();
 
     Seq2SeqEncoderDecoder *seq2seq = new Seq2SeqEncoderDecoder(
         bos_id, eos_id,

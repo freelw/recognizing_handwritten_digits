@@ -412,6 +412,33 @@ std::string ZeroCTensorsAction::to_string() const {
     return "ZeroCTensorsAction: zeroing c tensors";
 }
 
+void PrintNoZeroTensorNamesAction::execute() {
+    for (const auto &tensor : g_c_tensors) {
+        char *data = static_cast<char*>(::malloc(tensor->size()));
+        g_backend_ops->cp_from_device(
+            data,
+            tensor,
+            tensor->size()
+        );
+        bool succ = true;
+        for (int i = 0; i < tensor->size(); ++i) {
+            if (data[i] != (char)0) {
+                succ = false;
+                break;
+            }
+        }
+
+        if (!succ) {
+            std::cout << "Tensor with non-zero data: " << tensor->get_meta_info() << std::endl;
+        }
+        ::free(data);
+    }
+}
+
+std::string PrintNoZeroTensorNamesAction::to_string() const {
+    return "PrintNoZeroTensorNamesAction: printing tensors with non-zero data";
+}
+
 void FillWeightAction::execute() {
     assert(lhs != nullptr);
     if (init_type == "gauss") {
