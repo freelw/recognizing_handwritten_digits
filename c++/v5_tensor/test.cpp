@@ -2796,6 +2796,7 @@ void test_attention_bp_part() {
 
 void test_attention_bp() {
     construct_env();
+    zero_c_tensors();
     DotProductAttention attention;
     Tensor *querys = allocTensor({2, 1, 2}, "querys");
     Tensor *keys = allocTensor({2, 10, 2}, "keys");
@@ -3243,7 +3244,7 @@ void test_lazy_linear() {
 
 void test_mha() {
     construct_env();
-
+    zero_c_tensors();
     Tensor *queries = allocTensor({2, 1, 2}, "queries");
 
     float queries_buffer[2 * 1 * 2] = {
@@ -3385,6 +3386,7 @@ void test_mha() {
     ::free(w_o_w_linear_buffer);
 
     disableOnceAction();
+    gDoActions();
     gDoActions();
 
     float res_ans[20] = {
@@ -5400,7 +5402,9 @@ void test_clip() {
 void test_cpu() {
     // test_adam();
     // test_clip();
-    test_encoder_decoder();
+    // test_attention_bp();
+    test_mha();
+    // test_encoder_decoder();
     return ;
     test_at();
     test_add();
