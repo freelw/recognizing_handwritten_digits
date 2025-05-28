@@ -19,6 +19,7 @@ class Action {
         virtual bool is_do_once() const;
         virtual bool is_backward_boundary() const;
         virtual bool is_zero_c_tensors() const;
+        virtual bool is_zero_grad() const;
         bool executed_once() const;
         void increase_exec_times();
         int get_exec_times() const;
@@ -178,6 +179,9 @@ class ZeroGradAction : public Action {
             : Action(nullptr, nullptr, nullptr) {}
         void execute() override;
         std::string to_string() const override;
+        bool is_zero_grad() const override {
+            return true;
+        }
 };
 
 class ZeroCTensorsAction : public Action {

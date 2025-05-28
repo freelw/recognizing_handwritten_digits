@@ -3242,9 +3242,30 @@ void test_lazy_linear() {
     ::free(res1_buffer);
 }
 
+void print_all_tensors() {
+    //print all tensors
+    for (int i = 0; i < g_c_tensors.size(); i++) {
+        std::cout << "c_tensor " << i << " name : " << g_c_tensors[i]->get_meta_info() << std::endl;
+        std::cout << "c_tensor " << i << " value : " << std::endl << *g_c_tensors[i] << std::endl;
+    }
+    for (int i = 0; i < g_grad_tensors.size(); i++) {
+        std::cout << "grad_tensor " << i << " name : " << g_grad_tensors[i]->get_meta_info() << std::endl;
+        std::cout << "grad_tensor " << i << " value : " << std::endl << *g_grad_tensors[i] << std::endl;
+    }
+    for (int i = 0; i < g_tensors.size(); ++ i) {
+        std::cout << "tensor " << i << " name : " << g_tensors[i]->get_meta_info() << std::endl;
+        std::cout << "tensor " << i << " value : " << std::endl << *g_tensors[i] << std::endl;
+    }
+    for (int i = 0; i < g_tensor_views.size(); ++ i) {
+        std::cout << "tensor_view " << i << " name : " << g_tensor_views[i]->get_meta_info() << std::endl;
+        std::cout << "tensor_view " << i << " value : " << std::endl << *g_tensor_views[i] << std::endl;
+    }
+}
+
 void test_mha() {
     construct_env();
     zero_c_tensors();
+    zero_grad();
     Tensor *queries = allocTensor({2, 1, 2}, "queries");
 
     float queries_buffer[2 * 1 * 2] = {
@@ -3302,8 +3323,9 @@ void test_mha() {
     
     auto ce_res = res->reshape({-1, res_shape[res_dim-1]})->CrossEntropy(labels)->avg_1d();
     insert_boundary_action();
+    zero_grad();
     ce_res->backward();
-    // printAllActions();
+    printAllActions();
     allocMemAndInitTensors();
 
     std::vector<Parameter *> params = mha.get_parameters();
@@ -3386,8 +3408,17 @@ void test_mha() {
     ::free(w_o_w_linear_buffer);
 
     disableOnceAction();
+    print_all_tensors();
+    std::cout << "-------------print all tensors done 1---------------" << std::endl;
     gDoActions();
+    print_all_tensors();
+    std::cout << "-------------print all tensors done 2---------------" << std::endl;
+    std::cout << "res grad 1: " << *res->get_grad() << std::endl;
     gDoActions();
+    print_all_tensors();
+    std::cout << "-------------print all tensors done 3---------------" << std::endl;
+    std::cout << "res grad 2: " << *res->get_grad() << std::endl;
+    
 
     float res_ans[20] = {
         114.45257, 123.24643, 123.24643, 123.24643, 123.24643, 123.24643, 123.24643, 123.24643, 123.24643, 123.24643,

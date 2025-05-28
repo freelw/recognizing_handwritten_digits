@@ -21,6 +21,10 @@ bool Action::is_zero_c_tensors() const {
     return false;
 }
 
+bool Action::is_zero_grad() const {
+    return false;
+}
+
 bool Action::executed_once() const {
     return exec_times > 0;
 }
@@ -855,13 +859,17 @@ bool validateBoundaryFound() {
 }
 
 bool validteZeroCTensorsFound() {
-    int cnt = 0;
-    for (Action *action : g_actions) {
-        if (action->is_zero_c_tensors()) {
-            cnt ++;
-        }
-    }
-    return cnt == 1 && g_actions[0]->is_zero_c_tensors(); // the first action should be ZeroCTensorsAction
+    assert(g_actions.size() > 0);
+    return g_actions[0]->is_zero_c_tensors(); // the first action should be ZeroCTensorsAction
+}
+
+bool validateZeroGradFound() {
+    /*
+    zero grad action 一定要出现在第二个 非常重要！！！！
+    因为我们的bmm实现中，会优先将结果切割成输入，这时候拷贝了上一次的grad，如果没有在最开始清除grad，就会有残留
+    */
+    assert(g_actions.size() > 1);
+    return g_actions[1]->is_zero_grad(); // the second action should be ZeroGradAction
 }
 
 bool validateAddEqActionsInBackward() {
@@ -873,6 +881,7 @@ void gDoActions() {
     assert(validateBoundaryFound());
     assert(validateAddEqActionsInBackward());
     assert(validteZeroCTensorsFound());
+    assert(validateZeroGradFound());
     g_training = true;
     for (Action *action : g_actions) {
         if (action->is_do_once() && action->executed_once()) {
