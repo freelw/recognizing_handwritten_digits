@@ -886,7 +886,10 @@ void test_adam() {
     std::vector<Parameter*> params = {pnw, pnb, pnw1, pnb1};
     Adam adam(
         params,
-        0.01f
+        0.01f,
+        0.9f,
+        0.999f,
+        1e-8f
     );
 
     Tensor *labels = allocTensor({1}, "labels", INT32);
@@ -5371,8 +5374,9 @@ void test_clip() {
 }
 
 void test_cpu() {
+    test_adam();
     // test_clip();
-    test_encoder_decoder();
+    // test_encoder_decoder();
     return ;
     test_at();
     test_add();
