@@ -174,6 +174,8 @@ int main(int argc, char *argv[]) {
 
     use_gpu(gpu==1);
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     int num_hiddens = 256;
     int num_blks = 2;
     float dropout = 0.2f;
@@ -228,7 +230,6 @@ int main(int argc, char *argv[]) {
     std::vector<Parameter *> parameters = seq2seq->get_parameters();
     check_parameters(parameters, num_blks);
     Adam adam(parameters, lr);
-    zero_grad();
     loss->backward();
     adam.clip_grad(1.0f);
     adam.step();
