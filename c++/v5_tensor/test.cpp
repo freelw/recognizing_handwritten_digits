@@ -5607,6 +5607,8 @@ void test_cpu() {
 }
 
 Tensor *test_add_with_cpu_base(int m, int n) {
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({m, n}, "input");
     Tensor *w = allocTensor({m, n}, "w");
     Tensor *res_wi_tensor = allocTensor({m, n}, "res_wi");
@@ -5637,6 +5639,8 @@ Tensor *test_add_with_cpu_base(int m, int n) {
 }
 
 Tensor *test_at_with_cpu_base(int m, int n, int p) {
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({m, n}, "input");
     Tensor *w = allocTensor({n, p}, "w");
     Tensor *res_wi_tensor = allocTensor({m, p}, "res_wi");
@@ -5764,6 +5768,8 @@ void test_gpu_at_with_cpu() {
 }
 
 Tensor *test_add_eq_1d_with_cpu_base(int m) {
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({m}, "input");
     Tensor *w = allocTensor({m}, "w");
     gCreateAction(
@@ -5791,6 +5797,8 @@ Tensor *test_add_eq_1d_with_cpu_base(int m) {
 }
 
 Tensor *test_add_eq_2d_with_cpu_base(int m, int n) {
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({m, n}, "input");
     Tensor *w = allocTensor({m, n}, "w");
     gCreateAction(
@@ -5913,6 +5921,8 @@ void test_gpu_add_eq_2d_with_cpu() {
 }
 
 Tensor *test_expand_add_with_cpu_base(int m, int n) {
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({m, n}, "input");
     Tensor *w = allocTensor({n}, "w");
     Tensor *res_wi_tensor = allocTensor({m, n}, "res_wi");
@@ -5986,6 +5996,8 @@ void test_gpu_expand_add_with_cpu() {
 }
 
 Tensor *test_mul_with_cpu_base(int m, int n) {
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({m, n}, "input");
     Tensor *w = allocTensor({m, n}, "w");
     Tensor *res_wi_tensor = allocTensor({m, n}, "res_wi");
@@ -6063,6 +6075,8 @@ void test_gpu_mul_with_cpu() {
 }
 
 Tensor *test_gpu_sum_with_cpu_base(int m, int n) {
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({m, n}, "input");
     Tensor *res_wi_tensor = allocTensor({n}, "res_wi");
     gCreateAction(
@@ -6125,6 +6139,8 @@ void test_gpu_sum_with_cpu() {
 }
 
 Tensor *test_cross_entropy_with_cpu_base(int m, int n) {
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({m, n}, "input");
     Tensor *labels = allocTensor({m}, "labels", INT32);
     Tensor *res_wi_tensor = allocTensor({m}, "res_wi");
@@ -6188,6 +6204,8 @@ void test_gpu_cross_entropy_with_cpu() {
 }
 
 Tensor *test_cross_entropy_backward_with_cpu_base(int m, int n) {
+    zero_c_tensors();
+    zero_grad();
     Tensor *labels = allocTensor({m}, "input", INT32);
     Tensor *w = allocTensor({m, n}, "w");
     Tensor *res_wi_tensor = allocTensor({m}, "res_wi");
@@ -6258,6 +6276,8 @@ void test_mlp_with_cpu_base(
      int m, int n, int k,
      int batch_size, int epochs,
      std::vector<float> &loss_res) {
+    zero_c_tensors();
+    zero_grad();
     
     MLP mlp(
         m,
@@ -6339,6 +6359,8 @@ void test_mlp_with_cpu() {
 }
 
 Tensor *test_repeat_interleave_with_cpu_base(int m, int n) {
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({m}, "input", INT32);
     auto node = graph::allocNode(input);
     node->init_weight_for_dbg();
@@ -6391,6 +6413,8 @@ void test_repeat_interleave_with_cpu() {
 }
 
 Tensor *test_mask_with_cpu_base(int m, int n, int k) {
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({m, n, k}, "input");
     auto ni = graph::allocNode(input);
     ni->init_weight_for_dbg();
@@ -6445,6 +6469,8 @@ void test_mask_with_cpu() {
 }
 
 Tensor *test_mask_with_cpu_base_1(int m, int n, int k) {
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({m, n, k}, "input");
     auto ni = graph::allocNode(input);
     ni->init_weight_for_dbg();
@@ -6499,6 +6525,8 @@ void test_mask_with_cpu_1() {
 }
 
 Tensor *test_softmax_with_cpu_base(int m, int n, int k) {
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({m, n, k}, "input");
     auto ni = graph::allocNode(input);
     ni->init_weight_for_dbg(10000.0f);
@@ -6561,6 +6589,8 @@ void test_softmax_with_cpu() {
 }
 
 Tensor *test_masked_softmax_with_cpu_base(int m, int n, int k) {
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({m, n, k}, "input");
     auto ni = graph::allocNode(input);
     ni->init_weight_for_dbg(10000.0f);
@@ -6619,6 +6649,8 @@ void test_masked_softmax_with_cpu() {
 Tensor *test_masked_softmax_bp_with_cpu_base(
     int m, int n, int k
 ) {
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({m, n, k}, "input");
     auto ni = graph::allocNode(input);
     ni->require_grad();
@@ -6684,6 +6716,8 @@ void test_masked_softmax_bp_with_cpu() {
 std::vector<Tensor *> test_bmm_bp_with_cpu_base(
     int batch, int m, int n, int k
 ) {
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({batch, m, n}, "input");
     auto ni = graph::allocNode(input);
     ni->require_grad();
@@ -6809,6 +6843,8 @@ void test_bmm_bp_with_cpu() {
 std::vector<Tensor *> test_div_bp_with_cpu_base(
     int m, int n, int k
 ) {
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({m, n}, "input");
     auto ni = graph::allocNode(input);
     ni->require_grad();
