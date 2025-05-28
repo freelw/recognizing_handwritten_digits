@@ -270,6 +270,7 @@ def test():
     res.retain_grad()
 
     print("res:", res)
+    
 
     labels = torch.tensor([0, 0, 0, 0, 0, 0], dtype=torch.long)
 
@@ -278,12 +279,18 @@ def test():
     print("loss_value:", loss_value)
 
     loss_value.backward()
+    print("res grad:", res.grad)
 
     #print("embs:", embs)
     #print("embs.grad:", embs.grad)
 
     print("encoder.embedding:", encoder.embedding)
     print("encoder.embedding.grad:", encoder.embedding.grad)
+
+    print("blocks 1 W_q grad :", encoder.blks[1].attention.W_q.weight.grad)
+    print("blocks 1 addnorm2 ln weight grad :", encoder.blks[1].addnorm2.ln.weight.grad)
+    print("blocks 1 addnorm2 ln beta grad :", encoder.blks[1].addnorm2.ln.bias.grad)
+    print("blocks 1 ffn dense2 grad :", encoder.blks[1].ffn.dense2.weight.grad.transpose(0, 1))
     
 
 if '__main__' == __name__:

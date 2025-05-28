@@ -10,7 +10,7 @@ Linear::Linear(
     bool _bias,
     bool const_weight
 ): input_num(_input_num), output_num(_output_num), bias(_bias){
-    auto w_tensor = allocTensor({input_num, output_num}, prefix + "_w_linear");
+    auto w_tensor = allocTensor({input_num, output_num}, prefix + "_w_linear"); // do not calloc
     w = graph::allocNode(w_tensor);
     w->require_grad();
     Pw = allocParameter(w);
@@ -40,7 +40,7 @@ Linear::Linear(
         w->init_weight_gauss(w_sigma, mean);
     }
     if (bias) {
-        auto b_tensor = allocTensor({output_num}, "_b_linear");
+        auto b_tensor = allocTensor({output_num}, prefix + "_b_linear"); // do not calloc
         b = graph::allocNode(b_tensor);
         b->require_grad();
         if (!const_weight) {

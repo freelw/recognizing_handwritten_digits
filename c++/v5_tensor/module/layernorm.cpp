@@ -1,8 +1,8 @@
 #include "layernorm.h"
 
 LayerNorm::LayerNorm(int len, bool const_weight) {
-    Tensor *t_gamma = allocTensor({len}, "layernorm_gamma");
-    Tensor *t_beta = allocTensor({len}, "layernorm_beta");
+    Tensor *t_gamma = allocTensor({len}, "layernorm_gamma"); // do not calloc
+    Tensor *t_beta = allocTensor({len}, "layernorm_beta"); // do not calloc
     gamma = graph::allocNode(t_gamma);
     beta = graph::allocNode(t_beta);
     gamma->require_grad();

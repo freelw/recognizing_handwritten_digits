@@ -1,6 +1,7 @@
 #include "tensor.h"
 #include "backends/cpu/cpu_ops.h"
 #include "graph/node.h"
+#include "graph/actions.h"
 #include "optimizers/parameter.h"
 #include "optimizers/adam.h"
 #include "model/mlp.h"
@@ -9,6 +10,7 @@
 #include "module/embedding.h"
 #include "module/posencoding.h"
 #include "module/layernorm.h"
+#include "module/Seq2Seq.h"
 #include "common.h"
 #include <iomanip>
 #include <cmath>
@@ -131,6 +133,8 @@ bool compare_res_wi_wt_ans(
 
 void test_bmm() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({1, 2, 3}, "input");
     Tensor *w = allocTensor({1, 3, 4}, "w");
     Tensor *wt = allocTensor({1, 4, 3}, "wt");
@@ -160,6 +164,8 @@ void test_bmm() {
 
 void test_bmm_1() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     int m = 330;
     int n = 620;
     int p = 102;
@@ -191,6 +197,8 @@ void test_bmm_1() {
 
 void test_bmm_2() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({2, 2, 3}, "input");
     Tensor *w = allocTensor({2, 3, 4}, "w");
     Tensor *wt = allocTensor({2, 4, 3}, "wt");
@@ -227,6 +235,8 @@ void test_bmm_2() {
 
 void test_at() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({2, 3}, "input");
     Tensor *w = allocTensor({3, 4}, "w");
     Tensor *wt = allocTensor({4, 3}, "wt");
@@ -256,6 +266,8 @@ void test_at() {
 
 void test_at_1() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     int m = 330;
     int n = 620;
     int p = 102;
@@ -285,6 +297,8 @@ void test_at_1() {
 
 void test_add() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({3, 4}, "input");
     Tensor *w = allocTensor({3, 4}, "w");
     Tensor *wt = allocTensor({4, 3}, "wt");
@@ -329,6 +343,8 @@ void test_add() {
 
 void test_add_eq() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({3, 4}, "input");
     Tensor *input1 = allocTensor({3, 4}, "input1");
     Tensor *w = allocTensor({3, 4}, "w");
@@ -358,6 +374,8 @@ void test_add_eq() {
 
 void test_expand_add() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *bias = allocTensor({4}, "bias");
     Tensor *w = allocTensor({3, 4}, "w");
     Tensor *wt = allocTensor({4, 3}, "wt");
@@ -385,6 +403,8 @@ void test_expand_add() {
 
 void test_mul() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({3, 4}, "input");
     Tensor *w = allocTensor({3, 4}, "w");
     Tensor *wt = allocTensor({4, 3}, "wt");
@@ -413,6 +433,8 @@ void test_mul() {
 
 void test_mul_1() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({1, 3, 4}, "input");
     Tensor *w = allocTensor({1, 3, 4}, "w");
     Tensor *wt = allocTensor({1, 4, 3}, "wt");
@@ -452,6 +474,8 @@ void test_mul_1() {
 
 void test_sum() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *w = allocTensor({3, 4}, "w");
     Tensor *wt = allocTensor({4, 3}, "wt");
     Tensor *res_wi_tensor = allocTensor({4}, "res_wi");
@@ -491,6 +515,8 @@ void init_labels(Tensor *labels) {
 
 void test_cross_entropy() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *labels = allocTensor({3}, "input", INT32);
     Tensor *w = allocTensor({3, 4}, "w");
     Tensor *wt = allocTensor({4, 3}, "wt");
@@ -523,6 +549,8 @@ void test_cross_entropy() {
 
 void test_cross_entropy_backward() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *labels = allocTensor({3}, "input", INT32);
     Tensor *w = allocTensor({3, 4}, "w");
     Tensor *wt = allocTensor({4, 3}, "wt");
@@ -565,6 +593,8 @@ void test_cross_entropy_backward() {
 
 void test_bp() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({1, 2}, "input");
     Tensor *w = allocTensor({3, 2}, "w");
     Tensor *bias = allocTensor({3}, "bias");
@@ -859,6 +889,8 @@ Tensor *calc_norm(const std::vector<Parameter*> &params) {
 
 void test_adam() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({1, 2}, "input");
     Tensor *w = allocTensor({3, 2}, "w");
     Tensor *bias = allocTensor({3}, "bias");
@@ -885,7 +917,10 @@ void test_adam() {
     std::vector<Parameter*> params = {pnw, pnb, pnw1, pnb1};
     Adam adam(
         params,
-        0.01f
+        0.01f,
+        0.9f,
+        0.999f,
+        1e-8f
     );
 
     Tensor *labels = allocTensor({1}, "labels", INT32);
@@ -1279,6 +1314,8 @@ float calc_std(Tensor *tensor) {
 
 void test_mlp() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     MLP mlp(
         784,
         {30, 10},
@@ -1347,6 +1384,8 @@ void test_mlp() {
 
 void test_print_tensor() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({2, 2, 4}, "input");
     auto node = graph::allocNode(input);
     node->init_weight_gauss(0.02, 0);
@@ -1447,6 +1486,8 @@ bool compare_res_ans_1d_int32(
 
 void test_reshape() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
 
     Tensor *l = allocTensor({3, 4}, "input");
     auto n = graph::allocNode(l);
@@ -1506,6 +1547,8 @@ void test_reshape() {
 
 void test_reshape_1() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
 
     Tensor *l = allocTensor({3, 4}, "input");
     auto n = graph::allocNode(l);
@@ -1565,6 +1608,8 @@ void test_reshape_with_cpu_base(
     float *l_t_shape_ans,
     float *l_r_ans
 ) {
+    zero_c_tensors();
+    zero_grad();
     Tensor *l = allocTensor({m, n}, "input");
     auto node = graph::allocNode(l);
     node->init_weight_for_dbg();
@@ -1705,6 +1750,8 @@ void test_reshape_with_cpu() {
 
 void test_reshape_bp() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({5, 4}, "input");
     Tensor *w = allocTensor({3, 2}, "w");
     Tensor *bias = allocTensor({3}, "bias");
@@ -1883,6 +1930,8 @@ void test_reshape_bp() {
 void test_reshape_bp_1() {
 
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({5, 4}, "input");
     Tensor *w = allocTensor({3, 2}, "w");
     Tensor *bias = allocTensor({3}, "bias");
@@ -2060,6 +2109,8 @@ void test_reshape_bp_1() {
 
 void test_contiguous() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({2, 2, 4}, "input");
     auto t_input = input->transpose();
     bool succ =
@@ -2077,6 +2128,8 @@ void test_contiguous() {
 
 void test_repeat_interleave() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({3}, "input", INT32);
     auto node = graph::allocNode(input);
     node->init_weight_for_dbg();
@@ -2085,6 +2138,7 @@ void test_repeat_interleave() {
     // printAllActions();
     allocMemAndInitTensors();
     gDoActions();
+    // std::cout << "input : " << std::endl << *input << std::endl;
     int32_t res_ans[6] = {
         0, 0, 1, 1, 2, 2
     };
@@ -2097,8 +2151,59 @@ void test_repeat_interleave() {
     destruct_env();
 }
 
+void test_repeat_interleave_1() {
+
+    construct_env();
+    zero_c_tensors();
+    zero_grad();
+    Tensor *input = allocTensor({2, 3}, "input", INT32);
+    auto node = graph::allocNode(input);
+    auto res = input->repeat_interleave(4);
+    insert_boundary_action();
+    // printAllActions();
+    allocMemAndInitTensors();
+    int32_t input_buffer[6] = {
+        1, 2, 3,
+        4, 5, 6
+    };
+    g_backend_ops->cp_to_device(
+        input,
+        reinterpret_cast<char*>(input_buffer),
+        input->size()
+    );
+    gDoActions();
+
+    auto res_shape = res->get_shape();
+    assert(res_shape.size() == 2);
+    assert(res_shape[0] == 8);
+    assert(res_shape[1] == 3);
+    // std::cout << "res : " << std::endl << *res << std::endl;
+
+    int32_t res_ans[24] = {
+        1, 2, 3,
+        1, 2, 3,
+        1, 2, 3,
+        1, 2, 3,
+        4, 5, 6,
+        4, 5, 6,
+        4, 5, 6,
+        4, 5, 6
+    };
+
+    bool succ = compare_res_ans_1d_int32(res, res_ans, "res");
+    if (succ) {
+        std::cout << GREEN << "test_repeat_interleave_1 succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_repeat_interleave_1 failed" << RESET << std::endl;
+    }
+    
+    destruct_env();
+}
+
 void test_mask() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     int m = 3;
     int n = 4;
     int k = 5;
@@ -2137,6 +2242,8 @@ void test_mask() {
 
 void test_mask_1() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     int m = 3;
     int n = 4;
     int k = 13;
@@ -2175,6 +2282,8 @@ void test_mask_1() {
 
 void test_softmax() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({1, 3, 4}, "input");
     auto ni = graph::allocNode(input);
     ni->init_weight_for_dbg(10000.0f);
@@ -2203,6 +2312,8 @@ void test_softmax() {
 
 void test_masked_softmax() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({2, 2, 4}, "input");
     auto ni = graph::allocNode(input);
     ni->init_weight_for_dbg(10000.0f);
@@ -2234,6 +2345,8 @@ void test_masked_softmax() {
 
 void test_masked_softmax_1() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({2, 2, 4}, "input");
     auto ni = graph::allocNode(input);
     ni->init_weight_for_dbg(10000.0f);
@@ -2266,6 +2379,8 @@ void test_masked_softmax_1() {
 
 void test_masked_softmax_bp() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *labels = allocTensor({4}, "input", INT32);
     Tensor *input = allocTensor({2, 2, 4}, "input");
     auto ni = graph::allocNode(input);
@@ -2327,6 +2442,8 @@ void test_masked_softmax_bp() {
 void test_bmm_bp() {
 
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({2, 3, 4}, "input");
     auto ni = graph::allocNode(input);
     ni->require_grad();
@@ -2439,6 +2556,8 @@ void test_bmm_bp() {
 
 void test_bmm_bp_1() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({2, 3, 4}, "input");
     auto ni = graph::allocNode(input);
     ni->require_grad();
@@ -2531,6 +2650,8 @@ void test_bmm_bp_1() {
 
 void test_div_bp() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({3, 4}, "input");
     auto ni = graph::allocNode(input);
     ni->require_grad();
@@ -2615,6 +2736,8 @@ void test_div_bp() {
 
 void test_attention_bp_part() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     auto d = 2;
     Tensor *querys = allocTensor({2, 1, d}, "querys");
     Tensor *keys = allocTensor({2, 10, d}, "keys");
@@ -2744,6 +2867,8 @@ void test_attention_bp_part() {
 
 void test_attention_bp() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     DotProductAttention attention;
     Tensor *querys = allocTensor({2, 1, 2}, "querys");
     Tensor *keys = allocTensor({2, 10, 2}, "keys");
@@ -2765,7 +2890,6 @@ void test_attention_bp() {
     int32_t valid_lens_buffer[2] = {2, 6};
     auto softmax_res = attention.forward(nq, nk, nv, valid_lens)->softmax();
     auto ce_res = softmax_res->reshape({-1, 4})->CrossEntropy(labels)->avg_1d();
-    zero_grad();
     insert_boundary_action();
     ce_res->backward();
     // printAllActions();
@@ -2893,6 +3017,8 @@ void test_attention_bp() {
 
 void test_dropout() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Dropout dropout(0.5f);
     Tensor *input = allocTensor({22, 33, 55}, "input");
     // Tensor *input = allocTensor({2, 3, 5}, "input");
@@ -2900,13 +3026,14 @@ void test_dropout() {
     auto ni = graph::allocNode(input);
     ni->require_grad();
     auto res = dropout.forward(ni)->reshape(input_shape);
-    res->backward();
     insert_boundary_action();
+    res->backward();
     allocMemAndInitTensors();
     input->fill(1.0f);
+    gDoForwardActions(true);
     res->get_grad()->fill(1.0f);
     // printAllActions();
-    gDoActions();
+    gDoBackwardActions();
     float *res_buffer = static_cast<float*>(::malloc(res->get_tensor()->size()));
     g_backend_ops->cp_from_device(
         reinterpret_cast<char*>(res_buffer),
@@ -2954,6 +3081,8 @@ void test_dropout() {
 
 void test_dropout_1() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Dropout dropout(1.0001f);
     Tensor *input = allocTensor({1, 10}, "input");
     Tensor *input_1 = allocTensor({1, 10}, "input_1");
@@ -2966,6 +3095,7 @@ void test_dropout_1() {
     // printAllActions();
     allocMemAndInitTensors();
     float *res_grad_buffer = static_cast<float*>(::malloc(res->get_grad()->size()));
+    gDoForwardActions(true);
     auto res_grad_length = res->get_grad()->length();
     for (int i = 0; i < res_grad_length; ++ i) {
         res_grad_buffer[i] = 1.0f;
@@ -2976,8 +3106,7 @@ void test_dropout_1() {
         res->get_grad()->size()
     );
     ::free(res_grad_buffer);
-
-    gDoActions();
+    gDoBackwardActions();
     float ni_grad_ans[10] = {
         1.0, 1.0, 1.0, 1.0, 1.0,
         1.0, 1.0, 1.0, 1.0, 1.0
@@ -2999,6 +3128,8 @@ void test_dropout_1() {
 
 void test_permute() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({2, 3, 4, 5}, "input");
     Tensor *w = allocTensor({5, 4}, "w");
     auto ni = graph::allocNode(input);
@@ -3143,6 +3274,8 @@ void test_permute() {
 void test_lazy_linear() {
 
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({20, 30, 10}, "input");
     Tensor *input1 = allocTensor({20 * 30, 10}, "input");
     auto ni = graph::allocNode(input);
@@ -3189,9 +3322,30 @@ void test_lazy_linear() {
     ::free(res1_buffer);
 }
 
+void print_all_tensors() {
+    //print all tensors
+    for (int i = 0; i < g_c_tensors.size(); i++) {
+        std::cout << "c_tensor " << i << " name : " << g_c_tensors[i]->get_meta_info() << std::endl;
+        std::cout << "c_tensor " << i << " value : " << std::endl << *g_c_tensors[i] << std::endl;
+    }
+    for (int i = 0; i < g_grad_tensors.size(); i++) {
+        std::cout << "grad_tensor " << i << " name : " << g_grad_tensors[i]->get_meta_info() << std::endl;
+        std::cout << "grad_tensor " << i << " value : " << std::endl << *g_grad_tensors[i] << std::endl;
+    }
+    for (int i = 0; i < g_tensors.size(); ++ i) {
+        std::cout << "tensor " << i << " name : " << g_tensors[i]->get_meta_info() << std::endl;
+        std::cout << "tensor " << i << " value : " << std::endl << *g_tensors[i] << std::endl;
+    }
+    for (int i = 0; i < g_tensor_views.size(); ++ i) {
+        std::cout << "tensor_view " << i << " name : " << g_tensor_views[i]->get_meta_info() << std::endl;
+        std::cout << "tensor_view " << i << " value : " << std::endl << *g_tensor_views[i] << std::endl;
+    }
+}
+
 void test_mha() {
     construct_env();
-
+    zero_c_tensors();
+    zero_grad();
     Tensor *queries = allocTensor({2, 1, 2}, "queries");
 
     float queries_buffer[2 * 1 * 2] = {
@@ -3249,6 +3403,7 @@ void test_mha() {
     
     auto ce_res = res->reshape({-1, res_shape[res_dim-1]})->CrossEntropy(labels)->avg_1d();
     insert_boundary_action();
+    zero_grad();
     ce_res->backward();
     // printAllActions();
     allocMemAndInitTensors();
@@ -3334,6 +3489,8 @@ void test_mha() {
 
     disableOnceAction();
     gDoActions();
+    gDoActions();
+    
 
     float res_ans[20] = {
         114.45257, 123.24643, 123.24643, 123.24643, 123.24643, 123.24643, 123.24643, 123.24643, 123.24643, 123.24643,
@@ -3437,6 +3594,8 @@ void test_mha() {
 
 void test_mha_validlens_nullptr() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *queries = allocTensor({2, 1, 2}, "queries");
     Tensor *keys = allocTensor({2, 5, 2}, "keys");
     Tensor *values = allocTensor({2, 5, 4}, "values");
@@ -3466,6 +3625,8 @@ void test_mha_validlens_nullptr() {
 
 void test_embedding() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *indices = allocTensor({1, 3}, "indices", INT32);
     Embedding emb(10, 5, true);
     auto res = emb.forward(indices);
@@ -3480,6 +3641,9 @@ void test_embedding() {
         reinterpret_cast<char*>(indices_buffer),
         indices->size()
     );
+    
+    gDoForwardActions(true);
+
     auto res_grad_buffer = static_cast<float*>(::malloc(res_grad->size()));
     for (int i = 0; i < res_grad->length(); ++ i) {
         res_grad_buffer[i] = 1.0f * i;
@@ -3490,7 +3654,8 @@ void test_embedding() {
         res_grad->size()
     );
     ::free(res_grad_buffer);
-    gDoActions();
+
+    gDoBackwardActions();
 
     float res_ans[15] = {
         2.5, 2.6, 2.7, 2.8, 2.9,
@@ -3542,6 +3707,8 @@ void test_embedding() {
 
 void test_pe() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     PosEncoding pe(1000, 20, 0);
     Tensor *input = allocTensor({1, 2, 20}, "input");
     auto ni = graph::allocNode(input);
@@ -3570,8 +3737,70 @@ void test_pe() {
     destruct_env();
 }
 
+void test_embedding_1() {
+    construct_env();
+    zero_c_tensors();
+    zero_grad();
+    Tensor *indices = allocTensor({1, 2}, "indices", INT32);
+    Embedding emb(10, 5, true);
+    auto res = emb.forward(indices);
+    auto res_grad = res->get_grad();
+    insert_boundary_action();
+    res->backward();
+    // printAllActions();
+    allocMemAndInitTensors();
+    int32_t indices_buffer[3] = {2, 2};
+    g_backend_ops->cp_to_device(
+        indices,
+        reinterpret_cast<char*>(indices_buffer),
+        indices->size()
+    );
+    
+    gDoForwardActions(true);
+    auto res_grad_buffer = static_cast<float*>(::malloc(res_grad->size()));
+    for (int i = 0; i < res_grad->length(); ++ i) {
+        res_grad_buffer[i] = 1.0f * i;
+    }
+    g_backend_ops->cp_to_device(
+        res_grad,
+        reinterpret_cast<char*>(res_grad_buffer),
+        res_grad->size()
+    );
+    ::free(res_grad_buffer);
+
+    gDoBackwardActions();
+    // std::cout << "res: " << std::endl << *res->get_tensor() << std::endl;
+    // std::cout << "res grad : " << std::endl << *res_grad << std::endl;
+    // std::cout << "emb grad : " << std::endl << *emb.get_grad() << std::endl;
+    float ems_grad_ans[50] = {
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        5, 7, 9, 11, 13,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0
+    };
+    bool succ = compare_res_ans_1d(
+        emb.get_grad(),
+        ems_grad_ans,
+        "emb grad"
+    );
+    if (!succ) {
+        std::cout << RED << "test_embedding_1 emb grad failed" << RESET << std::endl;
+    } else {
+        std::cout << GREEN << "test_embedding_1 succ" << RESET << std::endl;
+    }
+    destruct_env();
+}
+
 void test_pe_1() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     PosEncoding pe(1000, 20, 0);
     Tensor *input = allocTensor({3, 2, 20}, "input");
     auto ni = graph::allocNode(input);
@@ -3606,7 +3835,8 @@ void test_pe_1() {
 
 void test_expand_mul() {
     construct_env();
-
+    zero_c_tensors();
+    zero_grad();
     Tensor *gamma = allocTensor({5}, "gamma");
     Tensor *input1 = allocTensor({2, 5}, "input1");
     Tensor *input2 = allocTensor({2, 5}, "input2");
@@ -3629,6 +3859,7 @@ void test_expand_mul() {
     res->backward();
     // printAllActions();
     allocMemAndInitTensors();
+    gDoForwardActions(true);
     auto res_grad = res->get_grad();
     float *res_grad_buffer = static_cast<float*>(::malloc(res_grad->size()));
     for (int i = 0; i < res_grad->length(); ++ i) {
@@ -3640,7 +3871,7 @@ void test_expand_mul() {
         res_grad->size()
     );
     ::free(res_grad_buffer);
-    gDoActions();
+    gDoBackwardActions();
 
     // std::cout << "res grad: " << std::endl << *res_grad << std::endl;
     // std::cout << "gamma : " << std::endl << *ng->get_tensor() << std::endl;
@@ -3714,6 +3945,8 @@ void test_expand_mul() {
 void test_at_bp_ledge_add_eq() {
     // bug : https://github.com/freelw/recognizing_handwritten_digits/issues/35
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({2, 3}, "input");
     Tensor *w1 = allocTensor({3, 4}, "w1");
     Tensor *w2 = allocTensor({3, 4}, "w2");
@@ -3737,6 +3970,7 @@ void test_at_bp_ledge_add_eq() {
     // printAllActions();
     allocMemAndInitTensors();
 
+    gDoForwardActions(true);
     float *res_grad_buffer = static_cast<float*>(::malloc(res->get_grad()->size()));
     for (int i = 0; i < res->get_grad()->length(); ++ i) {
         res_grad_buffer[i] = 1.0f * i;
@@ -3747,7 +3981,7 @@ void test_at_bp_ledge_add_eq() {
         res->get_grad()->size()
     );
     ::free(res_grad_buffer);
-    gDoActions();
+    gDoBackwardActions();
 
     // std::cout << "input : " << std::endl << *input << std::endl;
     // std::cout << "w1 : " << std::endl << *w1 << std::endl;
@@ -3825,7 +4059,8 @@ void test_at_bp_ledge_add_eq() {
 void test_at_bp_redge_add_eq() {
     // bug : https://github.com/freelw/recognizing_handwritten_digits/issues/35
     construct_env();
-
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({3, 4}, "input");
     Tensor *w1 = allocTensor({2, 3}, "w1");
     Tensor *w2 = allocTensor({2, 3}, "w2");
@@ -3847,6 +4082,7 @@ void test_at_bp_redge_add_eq() {
     res->backward();
     // printAllActions();
     allocMemAndInitTensors();
+    gDoForwardActions(true);
     float *res_grad_buffer = static_cast<float*>(::malloc(res->get_grad()->size()));
     for (int i = 0; i < res->get_grad()->length(); ++ i) {
         res_grad_buffer[i] = 1.0f * i;
@@ -3857,7 +4093,7 @@ void test_at_bp_redge_add_eq() {
         res->get_grad()->size()
     );
     ::free(res_grad_buffer);
-    gDoActions();
+    gDoBackwardActions();
     // std::cout << "input : " << std::endl << *input << std::endl;
     // std::cout << "w1 : " << std::endl << *w1 << std::endl;
     // std::cout << "w2 : " << std::endl << *w2 << std::endl;
@@ -3939,6 +4175,8 @@ void test_at_bp_redge_add_eq() {
 
 void test_softmax_1() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({1, 2, 3}, "input");
     auto ni = graph::allocNode(input);
     ni->require_grad();
@@ -3948,6 +4186,8 @@ void test_softmax_1() {
     res->backward();
     // printAllActions();
     allocMemAndInitTensors();
+
+    gDoForwardActions(true);
     
     float *res_grad_buffer = static_cast<float*>(::malloc(res->get_grad()->size()));
     for (int i = 0; i < res->get_grad()->length(); ++ i) {
@@ -3960,7 +4200,7 @@ void test_softmax_1() {
     );
     ::free(res_grad_buffer);
 
-    gDoActions();
+    gDoBackwardActions();
     // std::cout << "res : " << std::endl << *res->get_tensor() << std::endl;
     // std::cout << "res grad : " << std::endl << *res->get_grad() << std::endl;
     // std::cout << "input : " << std::endl << *input << std::endl;
@@ -3986,7 +4226,8 @@ void test_softmax_1() {
 
 void test_layernorm() {
     construct_env();
-
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({2, 6}, "input");
     Tensor *labels = allocTensor({2}, "labels", INT32);
     LayerNorm layer_norm(6, true);
@@ -4092,9 +4333,9 @@ void test_layernorm() {
 
 void test_avg() {
     construct_env();
-
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({2, 11}, "input");
-
     auto ni = graph::allocNode(input);
     ni->require_grad();
     ni->init_weight_for_dbg(100000.0f);
@@ -4133,6 +4374,8 @@ void test_avg() {
 
 void test_var() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({2, 11}, "input");
     auto ni = graph::allocNode(input);
     ni->require_grad();
@@ -4175,6 +4418,8 @@ void test_var() {
 
 void test_ce_avg_1d() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({2, 11}, "input");
     auto ni = graph::allocNode(input);
     ni->require_grad();
@@ -4237,6 +4482,8 @@ void test_ce_avg_1d() {
 
 void test_ce_mask() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({3, 3}, "input");
     auto ni = graph::allocNode(input);
     ni->require_grad();
@@ -4318,6 +4565,8 @@ void test_ce_mask() {
 
 void test_ce_mask_all_0() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({3, 3}, "input");
     auto ni = graph::allocNode(input);
     ni->require_grad();
@@ -4394,6 +4643,8 @@ void test_ce_mask_all_0() {
 
 void test_mulsv() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({2, 3}, "input");
     auto ni = graph::allocNode(input);
     ni->init_weight_fill(1.0f);
@@ -4404,6 +4655,7 @@ void test_mulsv() {
     res->backward();
     // printAllActions();
     allocMemAndInitTensors();
+    gDoForwardActions(true);
     float *res_grad_buffer = static_cast<float*>(::malloc(res->get_grad()->size()));
     for (int i = 0; i < res->get_grad()->length(); ++ i) {
         res_grad_buffer[i] = 1.0f * i;
@@ -4414,7 +4666,7 @@ void test_mulsv() {
         res->get_grad()->size()
     );
     ::free(res_grad_buffer);
-    gDoActions();
+    gDoBackwardActions();
 
     float res_ans[6] = {
         2, 2, 2,
@@ -4457,6 +4709,843 @@ void test_mulsv() {
     destruct_env();
 }
 
+void encoder_decoder_init_weight(Tensor *t) {
+    float *buffer = static_cast<float*>(::malloc(t->size()));
+    auto length = t->length();
+    for (int i = 0; i < length; ++i) {
+        buffer[i] = 1.0f;
+    }
+    buffer[0] = 0.1f;
+    g_backend_ops->cp_to_device(
+        t,
+        reinterpret_cast<char*>(buffer),
+        t->size()
+    );
+    ::free(buffer);
+}
+
+void init_addnorm_gamma(Tensor *t) {
+    // gamma 初始化为1
+    float *buffer = static_cast<float*>(::malloc(t->size()));
+    auto length = t->length();
+    for (int i = 0; i < length; ++i) {
+        buffer[i] = 1.0f;
+    }
+    g_backend_ops->cp_to_device(
+        t,
+        reinterpret_cast<char*>(buffer),
+        t->size()
+    );
+    ::free(buffer);
+}
+
+void init_addnorm_beta(Tensor *t) {
+    // beta 初始化为0
+    float *buffer = static_cast<float*>(::malloc(t->size()));
+    auto length = t->length();
+    for (int i = 0; i < length; ++i) {
+        buffer[i] = 0.0f;
+    }
+    g_backend_ops->cp_to_device(
+        t,
+        reinterpret_cast<char*>(buffer),
+        t->size()
+    );
+    ::free(buffer);
+}
+
+void init_embedding(Tensor *t) {
+    assert(t->get_dim() == 2);
+    auto shape = t->get_shape();
+    float *buffer = static_cast<float*>(::malloc(t->size()));
+    auto length = t->length();
+    for (int i = 0; i < length; ++i) {
+        buffer[i] = 1.0f;
+    }
+    for (int i = 0; i < shape[0]; ++i) {
+        buffer[i * shape[1]] = 0.1f * i; // 每一行的首元素为i*0.1
+    }
+    g_backend_ops->cp_to_device(
+        t,
+        reinterpret_cast<char*>(buffer),
+        t->size()
+    );
+    ::free(buffer);
+}
+
+void init_ffn_bias(Tensor *t) {
+    // ffn bias 初始化为0
+    float *buffer = static_cast<float*>(::malloc(t->size()));
+    auto length = t->length();
+    for (int i = 0; i < length; ++i) {
+        buffer[i] = 0.0f;
+    }
+    g_backend_ops->cp_to_device(
+        t,
+        reinterpret_cast<char*>(buffer),
+        t->size()
+    );
+    ::free(buffer);
+}
+
+void custom_init_all_encoder_weights(std::vector<Parameter*> & params) {
+    // step 1: 所有weight 初始化为1， 除了第0个元素为0.1
+    for (auto &param : params) {
+        encoder_decoder_init_weight(param->get_w()); 
+    }
+    // step 2: 所有layernorm的gamma 初始化为1 beta 初始化为0
+    auto block_0_addnorm1_gamma = params[5];
+    auto block_0_addnorm1_beta = params[6];
+    assert(block_0_addnorm1_gamma->get_w()->get_name() == "layernorm_gamma");
+    assert(block_0_addnorm1_beta->get_w()->get_name() == "layernorm_beta");
+    auto block_0_addnorm2_gamma = params[11];
+    auto block_0_addnorm2_beta = params[12];
+    assert(block_0_addnorm2_gamma->get_w()->get_name() == "layernorm_gamma");
+    assert(block_0_addnorm2_beta->get_w()->get_name() == "layernorm_beta");
+    auto block_1_addnorm1_gamma = params[17];
+    auto block_1_addnorm1_beta = params[18];
+    assert(block_1_addnorm1_gamma->get_w()->get_name() == "layernorm_gamma");
+    assert(block_1_addnorm1_beta->get_w()->get_name() == "layernorm_beta");
+    auto block_1_addnorm2_gamma = params[23];
+    auto block_1_addnorm2_beta = params[24];
+    assert(block_1_addnorm2_gamma->get_w()->get_name() == "layernorm_gamma");
+    assert(block_1_addnorm2_beta->get_w()->get_name() == "layernorm_beta");
+
+    init_addnorm_gamma(block_0_addnorm1_gamma->get_w());
+    init_addnorm_beta(block_0_addnorm1_beta->get_w());
+    init_addnorm_gamma(block_0_addnorm2_gamma->get_w());
+    init_addnorm_beta(block_0_addnorm2_beta->get_w());
+    init_addnorm_gamma(block_1_addnorm1_gamma->get_w());
+    init_addnorm_beta(block_1_addnorm1_beta->get_w());
+    init_addnorm_gamma(block_1_addnorm2_gamma->get_w());
+    init_addnorm_beta(block_1_addnorm2_beta->get_w());
+
+    //step 3: embedding 的第i行的首元素初始化为i*0.1, 其他都为1
+    auto embedding = params[0];
+    assert(embedding->get_w()->get_name() == "embedding");
+    init_embedding(embedding->get_w());
+
+    //step 4: ffn bias 0
+    auto ffn_block0_dense1_bias = params[8];
+    auto ffn_block0_dense2_bias = params[10];
+    assert(ffn_block0_dense1_bias->get_w()->get_name() == "ffn_dense1_b_linear");
+    assert(ffn_block0_dense2_bias->get_w()->get_name() == "ffn_dense2_b_linear");
+    auto ffn_block1_dense1_bias = params[20];
+    auto ffn_block1_dense2_bias = params[22];
+    assert(ffn_block1_dense1_bias->get_w()->get_name() == "ffn_dense1_b_linear");
+    assert(ffn_block1_dense2_bias->get_w()->get_name() == "ffn_dense2_b_linear");
+    init_ffn_bias(ffn_block0_dense1_bias->get_w());
+    init_ffn_bias(ffn_block0_dense2_bias->get_w());
+    init_ffn_bias(ffn_block1_dense1_bias->get_w());
+    init_ffn_bias(ffn_block1_dense2_bias->get_w());
+}
+
+void custom_init_all_decoder_weights(std::vector<Parameter*> & params) {
+    /*
+        0 : Tensor[1](embedding)(4, 16)
+        1 : Tensor[74](w_q_w_linear)(16, 16)
+        2 : Tensor[94](w_k_w_linear)(16, 16)
+        3 : Tensor[114](w_v_w_linear)(16, 16)
+        4 : Tensor[263](w_o_w_linear)(16, 16)
+        5 : Tensor[6](layernorm_gamma)(16)
+        6 : Tensor[7](layernorm_beta)(16)
+        7 : Tensor[291](w_q_w_linear)(16, 16)
+        8 : Tensor[311](w_k_w_linear)(3, 16)
+        9 : Tensor[330](w_v_w_linear)(3, 16)
+        10 : Tensor[471](w_o_w_linear)(16, 16)
+        11 : Tensor[14](layernorm_gamma)(16)
+        12 : Tensor[15](layernorm_beta)(16)
+        13 : Tensor[499](ffn_dense1_w_linear)(16, 4)
+        14 : Tensor[503](ffn_dense1_b_linear)(4)
+        15 : Tensor[517](ffn_dense2_w_linear)(4, 16)
+        16 : Tensor[521](ffn_dense2_b_linear)(16)
+        17 : Tensor[22](layernorm_gamma)(16)
+        18 : Tensor[23](layernorm_beta)(16)
+        19 : Tensor[551](w_q_w_linear)(16, 16)
+        20 : Tensor[571](w_k_w_linear)(16, 16)
+        21 : Tensor[591](w_v_w_linear)(16, 16)
+        22 : Tensor[740](w_o_w_linear)(16, 16)
+        23 : Tensor[30](layernorm_gamma)(16)
+        24 : Tensor[31](layernorm_beta)(16)
+        25 : Tensor[768](w_q_w_linear)(16, 16)
+        26 : Tensor[788](w_k_w_linear)(3, 16)
+        27 : Tensor[807](w_v_w_linear)(3, 16)
+        28 : Tensor[948](w_o_w_linear)(16, 16)
+        29 : Tensor[38](layernorm_gamma)(16)
+        30 : Tensor[39](layernorm_beta)(16)
+        31 : Tensor[976](ffn_dense1_w_linear)(16, 4)
+        32 : Tensor[980](ffn_dense1_b_linear)(4)
+        33 : Tensor[994](ffn_dense2_w_linear)(4, 16)
+        34 : Tensor[998](ffn_dense2_b_linear)(16)
+        35 : Tensor[46](layernorm_gamma)(16)
+        36 : Tensor[47](layernorm_beta)(16)
+        37 : Tensor[1028](dense_w_linear)(16, 4)
+        38 : Tensor[1032](dense_b_linear)(4)
+    */
+
+    // step 1: 所有weight 初始化为1， 除了第0个元素为0.1
+    for (auto &param : params) {
+        encoder_decoder_init_weight(param->get_w());
+    }
+
+    // step 2: 所有layernorm的gamma 初始化为1 beta 初始化为0
+    auto block_0_addnorm1_gamma = params[5];
+    auto block_0_addnorm1_beta = params[6];
+    assert(block_0_addnorm1_gamma->get_w()->get_name() == "layernorm_gamma");
+    assert(block_0_addnorm1_beta->get_w()->get_name() == "layernorm_beta");
+    auto block_0_addnorm2_gamma = params[11];
+    auto block_0_addnorm2_beta = params[12];
+    assert(block_0_addnorm2_gamma->get_w()->get_name() == "layernorm_gamma");
+    assert(block_0_addnorm2_beta->get_w()->get_name() == "layernorm_beta");
+    auto block_0_addnorm3_gamma = params[17];
+    auto block_0_addnorm3_beta = params[18];
+    assert(block_0_addnorm3_gamma->get_w()->get_name() == "layernorm_gamma");
+    assert(block_0_addnorm3_beta->get_w()->get_name() == "layernorm_beta");
+    auto block_1_addnorm1_gamma = params[23];
+    auto block_1_addnorm1_beta = params[24];
+    assert(block_1_addnorm1_gamma->get_w()->get_name() == "layernorm_gamma");
+    assert(block_1_addnorm1_beta->get_w()->get_name() == "layernorm_beta");
+    auto block_1_addnorm2_gamma = params[29];
+    auto block_1_addnorm2_beta = params[30];
+    assert(block_1_addnorm2_gamma->get_w()->get_name() == "layernorm_gamma");
+    assert(block_1_addnorm2_beta->get_w()->get_name() == "layernorm_beta");
+    auto block_1_addnorm3_gamma = params[35];
+    auto block_1_addnorm3_beta = params[36];
+    assert(block_1_addnorm3_gamma->get_w()->get_name() == "layernorm_gamma");
+    assert(block_1_addnorm3_beta->get_w()->get_name() == "layernorm_beta");
+    init_addnorm_gamma(block_0_addnorm1_gamma->get_w());
+    init_addnorm_beta(block_0_addnorm1_beta->get_w());
+    init_addnorm_gamma(block_0_addnorm2_gamma->get_w());
+    init_addnorm_beta(block_0_addnorm2_beta->get_w());
+    init_addnorm_gamma(block_0_addnorm3_gamma->get_w());
+    init_addnorm_beta(block_0_addnorm3_beta->get_w());
+    init_addnorm_gamma(block_1_addnorm1_gamma->get_w());
+    init_addnorm_beta(block_1_addnorm1_beta->get_w());
+    init_addnorm_gamma(block_1_addnorm2_gamma->get_w());
+    init_addnorm_beta(block_1_addnorm2_beta->get_w());
+    init_addnorm_gamma(block_1_addnorm3_gamma->get_w());
+    init_addnorm_beta(block_1_addnorm3_beta->get_w());
+    // step 3: embedding 的第i行的首元素初始化为i*0.1, 其他都为1
+    auto embedding = params[0];
+    assert(embedding->get_w()->get_name() == "embedding");
+    init_embedding(embedding->get_w());
+    // step 4: ffn bias 0
+    auto ffn_block0_dense1_bias = params[14];
+    auto ffn_block0_dense2_bias = params[16];
+    assert(ffn_block0_dense1_bias->get_w()->get_name() == "ffn_dense1_b_linear");
+    assert(ffn_block0_dense2_bias->get_w()->get_name() == "ffn_dense2_b_linear");
+    auto ffn_block1_dense1_bias = params[32];
+    auto ffn_block1_dense2_bias = params[34];
+    assert(ffn_block1_dense1_bias->get_w()->get_name() == "ffn_dense1_b_linear");
+    assert(ffn_block1_dense2_bias->get_w()->get_name() == "ffn_dense2_b_linear");
+    init_ffn_bias(ffn_block0_dense1_bias->get_w());
+    init_ffn_bias(ffn_block0_dense2_bias->get_w());
+    init_ffn_bias(ffn_block1_dense1_bias->get_w());
+    init_ffn_bias(ffn_block1_dense2_bias->get_w());
+    // step 5: decoder dense 的bias 0
+    auto dense_bias = params[38];
+    assert(dense_bias->get_w()->get_name() == "dense_b_linear");
+    init_ffn_bias(dense_bias->get_w());
+    // std::cout << "output dense bias : " << std::endl << *dense_bias->get_w() << std::endl;
+    auto dense_w = params[37];
+    assert(dense_w->get_w()->get_name() == "dense_w_linear");
+    // std::cout << "output dense w : " << std::endl << *dense_w->get_w() << std::endl;
+}
+
+void custom_init_x(Tensor *x) {
+    assert(x->get_dim() == 2);
+    auto shape = x->get_shape();
+    assert(shape[0] == 2);
+    assert(shape[1] == 3);
+
+    int32_t buffer[6] = {
+        0, 1, 2,
+        0, 2, 3
+    };
+    g_backend_ops->cp_to_device(
+        x,
+        reinterpret_cast<char*>(buffer),
+        x->size()
+    );
+}
+
+void test_encoder() {
+    construct_env();
+    zero_c_tensors();
+    zero_grad();
+    int num_hiddens = 16;
+    int num_blks = 2;
+    float dropout = 0;
+    int ffn_num_hiddens = 4;
+    int num_heads = 4;
+    int vocab_size = 4;
+    int max_posencoding_len = 1000;
+
+    auto encoder = new TransformerEncoder(
+        vocab_size, num_hiddens, ffn_num_hiddens,
+        num_heads, num_blks, max_posencoding_len, dropout, false
+    );
+
+    Tensor *x = allocTensor({2, 3}, "x", INT32);
+    Tensor *labels = allocTensor({6}, "labels", INT32);
+    auto res = encoder->forward(x);
+    auto loss = res->reshape({6, -1})->CrossEntropy(labels)->avg_1d();
+
+    std::vector<Parameter*> params = encoder->get_parameters();
+    insert_boundary_action();
+    loss->backward();
+    // printAllActions();
+    allocMemAndInitTensors();
+    gDoOnceActions();
+    custom_init_x(x);
+    // 一定在gDoOnceActions之后，覆盖原始初始化的值
+    custom_init_all_encoder_weights(params);
+    gDoActions();
+    float res_grad_ans[96] = {
+        -0.1665,  0.0112,  0.0110,  0.0112,  0.0110,  0.0112,  0.0110,  0.0112,
+          0.0110,  0.0112,  0.0110,  0.0112,  0.0110,  0.0112,  0.0110,  0.0112,
+        -0.1665,  0.0111,  0.0111,  0.0112,  0.0110,  0.0112,  0.0110,  0.0112,
+          0.0110,  0.0112,  0.0110,  0.0112,  0.0110,  0.0112,  0.0110,  0.0112,
+        -0.1665,  0.0110,  0.0111,  0.0111,  0.0111,  0.0112,  0.0110,  0.0112,
+          0.0110,  0.0112,  0.0110,  0.0112,  0.0110,  0.0112,  0.0110,  0.0112,
+        -0.1665,  0.0112,  0.0110,  0.0112,  0.0110,  0.0112,  0.0110,  0.0112,
+          0.0110,  0.0112,  0.0110,  0.0112,  0.0110,  0.0112,  0.0110,  0.0112,
+        -0.1665,  0.0111,  0.0111,  0.0112,  0.0110,  0.0112,  0.0110,  0.0112,
+          0.0110,  0.0112,  0.0110,  0.0112,  0.0110,  0.0112,  0.0110,  0.0112,
+        -0.1665,  0.0110,  0.0111,  0.0111,  0.0111,  0.0112,  0.0110,  0.0112,
+          0.0110,  0.0112,  0.0110,  0.0112,  0.0110,  0.0112,  0.0110,  0.0112
+    };
+    bool succ_res_grad = compare_res_ans_1d(
+        res->get_grad(),
+        res_grad_ans,
+        "res_grad",
+        1e-4
+    );
+    if (!succ_res_grad) {
+        std::cout << RED << "test_encoder res_grad failed" << RESET << std::endl;
+    }
+    auto embedding = params[0];
+    assert(embedding->get_w()->get_name() == "embedding");
+
+    float embedding_grad_ans[64] = {
+        -1.9230e-06, -1.5690e-05,  1.8206e-05, -1.5690e-05,  1.8206e-05,
+         -1.5690e-05,  1.8206e-05, -1.5690e-05,  1.8206e-05, -1.5690e-05,
+          1.8206e-05, -1.5690e-05,  1.8206e-05, -1.5690e-05,  1.8206e-05,
+         -1.5690e-05,
+        -5.8797e-07,  2.4059e-06,  6.4460e-06, -4.8137e-06,  1.0172e-05,
+         -5.5972e-06,  1.1376e-05, -5.6767e-06,  1.1757e-05, -5.6850e-06,
+          1.1878e-05, -5.6850e-06,  1.1917e-05, -5.6850e-06,  1.1928e-05,
+         -5.6850e-06,
+        -1.6251e-06,  1.8622e-05,  4.6481e-06, -1.0590e-05,  1.5443e-05,
+         -1.4484e-05,  1.9090e-05, -1.4885e-05,  2.0251e-05, -1.4924e-05,
+          2.0618e-05, -1.4929e-05,  2.0736e-05, -1.4929e-05,  2.0771e-05,
+         -1.4929e-05,
+        -1.0435e-06,  1.6376e-05, -1.8915e-06, -5.7867e-06,  5.2188e-06,
+         -8.9241e-06,  7.6732e-06, -9.2483e-06,  8.4571e-06, -9.2792e-06,
+          8.7051e-06, -9.2836e-06,  8.7848e-06, -9.2836e-06,  8.8094e-06,
+         -9.2836e-06
+    };
+    bool succ_embedding_grad = compare_res_ans_1d(
+        embedding->get_grad(),
+        embedding_grad_ans,
+        "embedding_grad"
+    );
+    if (!succ_embedding_grad) {
+        std::cout << RED << "test_encoder embedding_grad failed" << RESET << std::endl;
+    }
+
+    auto w_q_w_linear = params[13];
+    auto w_k_w_linear = params[14];
+    auto w_v_w_linear = params[15];
+    auto w_o_w_linear = params[16];
+
+    assert(w_q_w_linear->get_w()->get_name() == "w_q_w_linear");
+    assert(w_k_w_linear->get_w()->get_name() == "w_k_w_linear");
+    assert(w_v_w_linear->get_w()->get_name() == "w_v_w_linear");
+    assert(w_o_w_linear->get_w()->get_name() == "w_o_w_linear");
+
+    // std::cout << "w_q_w_linear grad : " << std::endl << *w_q_w_linear->get_grad() << std::endl;
+
+    auto block1_addnorm2_gamma = params[23];
+    assert(block1_addnorm2_gamma->get_w()->get_name() == "layernorm_gamma");
+    // std::cout << "block1_addnorm2_gamma grad : " << std::endl << *block1_addnorm2_gamma->get_grad() << std::endl;
+    
+    float block1_addnorm2_gamma_grad_ans[16] = {
+        3.8688, 0.0171, 0.0170, 0.0176, 0.0168, 0.0177, 0.0167, 0.0177, 0.0167,
+        0.0177, 0.0167, 0.0177, 0.0167, 0.0177, 0.0167, 0.0177
+    };
+
+    bool succ_block1_addnorm2_gamma_grad = compare_res_ans_1d(
+        block1_addnorm2_gamma->get_grad(),
+        block1_addnorm2_gamma_grad_ans,
+        "block1_addnorm2_gamma_grad",
+        1e-4
+    );
+
+    if (!succ_block1_addnorm2_gamma_grad) {
+        std::cout << RED << "test_encoder block1_addnorm2_gamma_grad failed" << RESET << std::endl;
+    }
+
+    auto block1_addnorm2_beta = params[24];
+    assert(block1_addnorm2_beta->get_w()->get_name() == "layernorm_beta");
+    // std::cout << "block1_addnorm2_beta grad : " << std::endl << *block1_addnorm2_beta->get_grad() << std::endl;
+
+    float block1_addnorm2_beta_grad_ans[16] = {
+        -0.9989,  0.0665,  0.0664,  0.0669,  0.0663,  0.0670,  0.0662,  0.0670,
+         0.0662,  0.0670,  0.0662,  0.0670,  0.0662,  0.0670,  0.0662,  0.0670
+    };
+    bool succ_block1_addnorm2_beta_grad = compare_res_ans_1d(
+        block1_addnorm2_beta->get_grad(),
+        block1_addnorm2_beta_grad_ans,
+        "block1_addnorm2_beta_grad",
+        1e-4
+    );
+    if (!succ_block1_addnorm2_beta_grad) {
+        std::cout << RED << "test_encoder block1_addnorm2_beta_grad failed" << RESET << std::endl;
+    }
+
+    auto ffn_dense2_w_linear = params[21];
+    assert(ffn_dense2_w_linear->get_w()->get_name() == "ffn_dense2_w_linear");
+    // std::cout << "ffn_dense2_w_linear grad : " << std::endl << *ffn_dense2_w_linear->get_grad() << std::endl;
+
+    bool succ = succ_res_grad && succ_embedding_grad && succ_block1_addnorm2_gamma_grad && 
+                succ_block1_addnorm2_beta_grad;
+    if (succ) {
+        std::cout << GREEN << "test_encoder succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_encoder failed" << RESET << std::endl;
+    }
+ 
+    delete encoder;
+    destruct_env();
+}
+
+void custom_init_dec_valid_lens(Tensor *decode_valid_lens) {
+    auto shape = decode_valid_lens->get_shape();
+    assert(shape[0] == 2);
+    assert(shape[1] == 3);
+    int32_t buffer[6] = {
+        1, 2, 3,
+        1, 2, 3
+    };
+    g_backend_ops->cp_to_device(
+        decode_valid_lens,
+        reinterpret_cast<char*>(buffer),
+        decode_valid_lens->size()
+    );
+}
+
+void test_decoder() {
+    construct_env();
+    zero_c_tensors();
+    zero_grad();
+    int num_hiddens = 16;
+    int num_blks = 2;
+    float dropout = 0;
+    int ffn_num_hiddens = 4;
+    int num_heads = 4;
+    int vocab_size = 4;
+    int max_posencoding_len = 1000;
+
+    auto decoder = new TransformerDecoder(
+        vocab_size, num_hiddens, ffn_num_hiddens,
+        num_heads, num_blks, max_posencoding_len, dropout, false
+    );
+
+    Tensor *x = allocTensor({2, 3}, "x", INT32);
+    Tensor *labels = allocTensor({6}, "labels", INT32);
+    Tensor *enc_outputs = allocTensor({2, 2, 3}, "enc_outputs");
+    auto n_enc_outputs = graph::allocNode(enc_outputs);
+    n_enc_outputs->init_weight_fill(1.0f);
+    Tensor *decode_valid_lens = allocTensor({2, 3}, "decode_valid_lens", INT32);
+    auto res = decoder->forward(x, n_enc_outputs, nullptr, decode_valid_lens);
+
+    insert_boundary_action();
+    auto ce_res = res->reshape({6, -1})->CrossEntropy(labels);
+    auto loss = ce_res->avg_1d();
+    loss->backward();
+
+    std::vector<Parameter*> params = decoder->get_parameters();
+
+    // printAllActions();
+    allocMemAndInitTensors();
+    gDoOnceActions();
+    custom_init_x(x);
+    custom_init_dec_valid_lens(decode_valid_lens);
+    // 一定在gDoOnceActions之后，覆盖原始初始化的值
+    custom_init_all_decoder_weights(params);
+    gDoActions();
+    auto embedding = params[0];
+    assert(embedding->get_w()->get_name() == "embedding");
+
+    float embedding_grad_ans[64] = {
+        3.7263e-08,  2.9690e-07, -4.2416e-07,  2.9690e-07, -4.2416e-07,
+          2.9690e-07, -4.2416e-07,  2.9690e-07, -4.2416e-07,  2.9690e-07,
+         -4.2416e-07,  2.9690e-07, -4.2416e-07,  2.9690e-07, -4.2416e-07,
+          2.9690e-07,
+        1.4311e-08, -3.2827e-08, -1.1851e-07,  1.2053e-07, -1.9755e-07,
+          1.3722e-07, -2.2300e-07,  1.3893e-07, -2.3115e-07,  1.3903e-07,
+         -2.3366e-07,  1.3903e-07, -2.3447e-07,  1.3903e-07, -2.3477e-07,
+          1.3903e-07,
+        3.6325e-08, -3.7663e-07, -8.0565e-08,  2.4304e-07, -3.0956e-07,
+          3.2580e-07, -3.8683e-07,  3.3443e-07, -4.1145e-07,  3.3513e-07,
+         -4.1915e-07,  3.3523e-07, -4.2178e-07,  3.3523e-07, -4.2250e-07,
+          3.3523e-07,
+        2.2140e-08, -3.4710e-07,  3.9952e-08,  1.2272e-07, -1.1091e-07,
+          1.8939e-07, -1.6290e-07,  1.9632e-07, -1.7952e-07,  1.9693e-07,
+         -1.8472e-07,  1.9704e-07, -1.8645e-07,  1.9704e-07, -1.8696e-07,
+          1.9704e-07
+    };
+
+    bool succ_embedding_grad = compare_res_ans_1d(
+        embedding->get_grad(),
+        embedding_grad_ans,
+        "embedding_grad"
+    );
+
+    if (!succ_embedding_grad) {
+        std::cout << RED << "test_decoder embedding_grad failed" << RESET << std::endl;
+    }
+
+    bool succ = succ_embedding_grad;
+    if (succ) {
+        std::cout << GREEN << "test_decoder succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_decoder failed" << RESET << std::endl;
+    }
+
+    delete decoder;
+    destruct_env();
+}
+
+void init_mask_and_valid_lens(Tensor *mask, Tensor *valid_lens) {
+    assert(mask->get_dim() == 1);
+    assert(valid_lens->get_dim() == 1);
+    auto mask_shape = mask->get_shape();
+    auto valid_lens_shape = valid_lens->get_shape();
+
+    assert(mask->length() == 6);
+    assert(valid_lens->length() == 2);
+
+    float mask_buffer[6] = {1, 0, 0, 1, 0, 0};
+    int32_t valid_lens_buffer[2] = {1, 1};
+
+    g_backend_ops->cp_to_device(
+        mask,
+        reinterpret_cast<char*>(mask_buffer),
+        mask->size()
+    );
+
+    g_backend_ops->cp_to_device(
+        valid_lens,
+        reinterpret_cast<char*>(valid_lens_buffer),
+        valid_lens->size()
+    );
+}
+
+void test_encoder_decoder() {
+    construct_env();
+    zero_c_tensors();
+    zero_grad();
+    std::cout << std::setprecision(8);
+    // int num_hiddens = 16;
+    // int num_blks = 2;
+    // float dropout = 0;
+    // int ffn_num_hiddens = 4;
+    // int num_heads = 4;
+    // int max_posencoding_len = 1000;
+
+    int enc_vocab_size = 7;
+    int dec_vocab_size = 9;
+    int bos_id = 3;
+    int eos_id = 1;
+    
+
+    int num_hiddens = 4;
+    int num_blks = 2;
+    float dropout = 0.0f;
+    int ffn_num_hiddens = 5;
+    int num_heads = 4;
+    int num_steps = NUM_STEPS;
+    int max_posencoding_len = MAX_POSENCODING_LEN;
+    print_no_zero_tensor_names();
+
+    Seq2SeqEncoderDecoder *seq2seq = new Seq2SeqEncoderDecoder(
+        bos_id, eos_id,
+        enc_vocab_size, dec_vocab_size, num_hiddens, ffn_num_hiddens,
+        num_heads, num_blks, max_posencoding_len, dropout
+    );
+
+    Tensor *src_token_ids = allocTensor({1, 9}, "x", INT32);
+    Tensor *tgt_token_ids = allocTensor({1, 9}, "y", INT32);
+    Tensor *enc_valid_lens = allocTensor({1}, "valid_lens", INT32);
+    Tensor *dec_valid_lens = allocTensor({1, 9}, "decode_valid_lens", INT32);
+    Tensor *ce_mask = allocTensor({9}, "mask");
+    Tensor *labels = allocTensor({9}, "labels", INT32);
+    
+    auto res = seq2seq->forward(src_token_ids, tgt_token_ids, enc_valid_lens, dec_valid_lens);
+    auto ce_res = res->reshape({-1, dec_vocab_size})->CrossEntropy(labels);
+    auto mask_res = ce_res->mask(ce_mask);
+    auto loss = mask_res->avg_1d(ce_mask);
+    // auto mask_res = ce_res;
+    // auto loss = mask_res->avg_1d();
+    insert_boundary_action();
+    
+    std::vector<Parameter*> enc_params = seq2seq->get_encoder()->get_parameters();
+    std::vector<Parameter*> dec_params = seq2seq->get_decoder()->get_parameters();
+    std::vector<Parameter*> all_params;
+    all_params.insert(all_params.end(), enc_params.begin(), enc_params.end());
+    all_params.insert(all_params.end(), dec_params.begin(), dec_params.end());
+    
+    Adam adam(all_params, 0.001f);
+    zero_grad();
+    loss->backward();
+    adam.clip_grad(1.0f);
+    adam.step();
+    printAllActions();
+    allocMemAndInitTensors();
+    gDoOnceActions();
+    custom_init_all_encoder_weights(enc_params);
+    custom_init_all_decoder_weights(dec_params);
+
+    int32_t encoder_valid_lens_buffer[1] = {4};
+    g_backend_ops->cp_to_device(
+        enc_valid_lens,
+        reinterpret_cast<char*>(encoder_valid_lens_buffer),
+        enc_valid_lens->size()
+    );
+
+    int32_t decoder_valid_lens_buffer[9] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
+    g_backend_ops->cp_to_device(
+        dec_valid_lens,
+        reinterpret_cast<char*>(decoder_valid_lens_buffer),
+        dec_valid_lens->size()
+    );
+
+    float ce_mask_buffer[9] = {1, 1, 1, 1, 0, 0, 0, 0, 0};
+    g_backend_ops->cp_to_device(
+        ce_mask,
+        reinterpret_cast<char*>(ce_mask_buffer),
+        ce_mask->size()
+    );
+
+    int32_t labels_buffer[9] = {6, 7, 8, 1, 0, 0, 0, 0, 0};
+    g_backend_ops->cp_to_device(
+        labels,
+        reinterpret_cast<char*>(labels_buffer),
+        labels->size()
+    );
+
+    int32_t src_token_ids_buffer[9] = {4, 6, 5, 1, 0, 0, 0, 0, 0};
+    g_backend_ops->cp_to_device(
+        src_token_ids,
+        reinterpret_cast<char*>(src_token_ids_buffer),
+        src_token_ids->size()
+    );
+
+    int32_t tgt_token_ids_buffer[9] = {3, 6, 7, 8, 1, 0, 0, 0, 0};
+    g_backend_ops->cp_to_device(
+        tgt_token_ids,
+        reinterpret_cast<char*>(tgt_token_ids_buffer),
+        tgt_token_ids->size()
+    );
+
+    auto enc_embedding = enc_params[0];
+    assert(enc_embedding->get_w()->get_name() == "embedding");
+    auto dec_embedding = dec_params[0];
+    assert(dec_embedding->get_w()->get_name() == "embedding");
+
+    // print all params
+    // for (int i = 0; i < all_params.size(); i++) {
+    //     std::cout << "param " << i << " "<< all_params[i]->get_w()->get_name() << std::endl;
+    //     std::cout << *all_params[i]->get_w() << std::endl;
+    // }
+
+    int epochs = 1000;
+    for (int e = 0; e < epochs; e++) {
+        gDoActions();
+        std::cout << "e : " << e << " loss : " << *loss->get_tensor() << std::endl;
+        validateAllTensorNames();
+        validateAllTensors();
+        // print all parameters value
+        // for (int i = 0; i < all_params.size(); i++) {
+        //     std::cout << "param " << i << " name : " << all_params[i]->get_w()->get_meta_info() << std::endl;
+        //     // std::cout << "param " << i << " value : " << std::endl << *all_params[i]->get_w() << std::endl;
+        //     std::cout << "param " << i << " grad : " << std::endl << *all_params[i]->get_grad() << std::endl;
+        // }
+    }
+
+    
+
+    
+    // g_backend_ops->memset(grad_tensors_data, 0, grad_tensors_data_capacity);
+    // g_backend_ops->memset(c_tensors_data, 0, c_tensors_data_capacity);
+
+    //print all tensors
+    // for (int i = 0; i < g_c_tensors.size(); i++) {
+    //     std::cout << "c_tensor " << i << " name : " << g_c_tensors[i]->get_meta_info() << std::endl;
+    //     std::cout << "c_tensor " << i << " value : " << std::endl << *g_c_tensors[i] << std::endl;
+    // }
+    // for (int i = 0; i < g_grad_tensors.size(); i++) {
+    //     std::cout << "grad_tensor " << i << " name : " << g_grad_tensors[i]->get_meta_info() << std::endl;
+    //     std::cout << "grad_tensor " << i << " value : " << std::endl << *g_grad_tensors[i] << std::endl;
+    // }
+    // for (int i = 0; i < g_tensors.size(); ++ i) {
+    //     std::cout << "tensor " << i << " name : " << g_tensors[i]->get_meta_info() << std::endl;
+    //     std::cout << "tensor " << i << " value : " << std::endl << *g_tensors[i] << std::endl;
+    // }
+
+    // std::cout << "enc_valid_lens : " << std::endl << *enc_valid_lens << std::endl;
+    // std::cout << "dec_valid_lens : " << std::endl << *dec_valid_lens << std::endl;
+    // std::cout << "src_token_ids : " << std::endl << *src_token_ids << std::endl;
+    // std::cout << "tgt_token_ids : " << std::endl << *tgt_token_ids << std::endl;
+    // std::cout << "labels : " << std::endl << *labels << std::endl;
+    // std::cout << "ce_mask : " << std::endl << *ce_mask << std::endl;
+    // std::cout << "res : " << std::endl << *res->get_tensor() << std::endl;
+    // std::cout << "res grad : " << std::endl << *res->get_grad() << std::endl;
+    // std::cout << "ce_res : " << std::endl << *ce_res->get_tensor() << std::endl;
+    // std::cout << "ce_res grad : " << std::endl << *ce_res->get_grad() << std::endl;
+    // std::cout << "mask_res : " << std::endl << *mask_res->get_tensor() << std::endl;
+    // std::cout << "mask_res grad : " << std::endl << *mask_res->get_grad() << std::endl;
+    // std::cout << "enc_embedding : " << std::endl << *enc_embedding->get_w() << std::endl;
+    // std::cout << "enc_embedding grad : " << std::endl << *enc_embedding->get_grad() << std::endl;
+    // std::cout << "dec_embedding : " << std::endl << *dec_embedding->get_w() << std::endl;
+    // std::cout << "dec_embedding grad : " << std::endl << *dec_embedding->get_grad() << std::endl;
+
+    // std::cout << "res : " << std::endl << *res->get_tensor() << std::endl;
+    
+    delete seq2seq;
+    destruct_env();
+}
+
+void test_encoder_mask() {
+    construct_env();
+    zero_c_tensors();
+    zero_grad();
+    int num_hiddens = 16;
+    int num_blks = 2;
+    float dropout = 0;
+    int ffn_num_hiddens = 4;
+    int num_heads = 4;
+    int vocab_size = 4;
+    int max_posencoding_len = 1000;
+
+    auto encoder = new TransformerEncoder(
+        vocab_size, num_hiddens, ffn_num_hiddens,
+        num_heads, num_blks, max_posencoding_len, dropout, false
+    );
+
+    Tensor *x = allocTensor({2, 3}, "x", INT32);
+    Tensor *labels = allocTensor({6}, "labels", INT32);
+    Tensor *mask = allocTensor({6}, "mask");
+    Tensor *valid_lens = allocTensor({2}, "valid_lens", INT32);
+    auto res = encoder->forward(x, valid_lens);
+    auto ce_res = res->reshape({6, -1})->CrossEntropy(labels);
+    auto mask_res = ce_res->mask(mask);
+    auto loss = mask_res->avg_1d(mask);
+
+    std::vector<Parameter*> params = encoder->get_parameters();
+    insert_boundary_action();
+    loss->backward();
+    // printAllActions();
+    allocMemAndInitTensors();
+    init_mask_and_valid_lens(mask, valid_lens);
+    gDoOnceActions();
+    custom_init_x(x);
+    // 一定在gDoOnceActions之后，覆盖原始初始化的值
+    custom_init_all_encoder_weights(params);
+    gDoActions();
+   
+   float res_grad_ans[96] = {
+        -0.4995,  0.0335,  0.0331,  0.0335,  0.0331,  0.0335,  0.0331,  0.0335,
+          0.0331,  0.0335,  0.0331,  0.0335,  0.0331,  0.0335,  0.0331,  0.0335,
+        -0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,
+          0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,
+        -0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,
+          0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,
+        -0.4995,  0.0335,  0.0331,  0.0335,  0.0331,  0.0335,  0.0331,  0.0335,
+          0.0331,  0.0335,  0.0331,  0.0335,  0.0331,  0.0335,  0.0331,  0.0335,
+        -0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,
+          0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,
+        -0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,
+          0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000,  0.0000
+   };
+
+   bool succ_res_grad = compare_res_ans_1d(
+        res->get_grad(),
+        res_grad_ans,
+        "res_grad",
+        1e-4
+    );
+
+    if (!succ_res_grad) {
+        std::cout << RED << "test_encoder_mask res_grad failed" << RESET << std::endl;
+    }
+
+    auto embedding = params[0];
+    assert(embedding->get_w()->get_name() == "embedding");
+    float embedding_grad_ans[64] = {
+        -5.2684e-06, -4.1972e-05,  5.9960e-05, -4.1972e-05,  5.9960e-05,
+         -4.1972e-05,  5.9960e-05, -4.1972e-05,  5.9960e-05, -4.1972e-05,
+          5.9960e-05, -4.1972e-05,  5.9960e-05, -4.1972e-05,  5.9960e-05,
+         -4.1972e-05,
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    };
+
+    bool succ_embedding_grad = compare_res_ans_1d(
+        embedding->get_grad(),
+        embedding_grad_ans,
+        "embedding_grad"
+    );
+
+    if (!succ_embedding_grad) {
+        std::cout << RED << "test_encoder_mask embedding_grad failed" << RESET << std::endl;
+    }
+
+    bool succ = succ_res_grad && succ_embedding_grad;
+    if (succ) {
+        std::cout << GREEN << "test_encoder_mask succ" << RESET << std::endl;
+    } else {
+        std::cout << RED << "test_encoder_mask failed" << RESET << std::endl;
+    }
+ 
+    delete encoder;
+    destruct_env();
+}
+
+void test_clip() {
+    construct_env();
+    zero_c_tensors();
+    zero_grad();
+
+    Tensor *t = allocTensor({9}, "t");
+    auto n = graph::allocNode(t);
+    n->require_grad();
+
+    auto pn = allocParameter(n);
+    Adam adam({pn}, 0.001f);
+    adam.clip_grad(0.1f);
+
+    insert_boundary_action();
+    allocMemAndInitTensors();
+    float grad_buffer[9] = {
+        0.12111016, -0.10640603, 0.074760601, 0.074760601, 0.074760601, 0.074760601, -0.10398109, -0.10427228, -0.10549314
+    };
+    g_backend_ops->cp_to_device(
+        n->get_grad(),
+        reinterpret_cast<char*>(grad_buffer),
+        n->get_grad()->size()
+    );
+    
+    std::cout << "t grad : " << std::endl << *n->get_grad() << std::endl;
+    gDoActions();
+    std::cout << "t grad : " << std::endl << *n->get_grad() << std::endl;
+    
+    destruct_env();
+}
+
 void test_cpu() {
     test_at();
     test_add();
@@ -4496,6 +5585,7 @@ void test_cpu() {
     test_lazy_linear();
     test_mha();
     test_embedding();
+    test_embedding_1();
     test_pe();
     test_pe_1();
     test_expand_mul();
@@ -4511,9 +5601,15 @@ void test_cpu() {
     test_ce_mask_all_0();
     test_mha_validlens_nullptr();
     test_mulsv();
+    test_encoder();
+    test_encoder_mask();
+    test_repeat_interleave_1();
+    test_decoder();
 }
 
 Tensor *test_add_with_cpu_base(int m, int n) {
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({m, n}, "input");
     Tensor *w = allocTensor({m, n}, "w");
     Tensor *res_wi_tensor = allocTensor({m, n}, "res_wi");
@@ -4544,6 +5640,8 @@ Tensor *test_add_with_cpu_base(int m, int n) {
 }
 
 Tensor *test_at_with_cpu_base(int m, int n, int p) {
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({m, n}, "input");
     Tensor *w = allocTensor({n, p}, "w");
     Tensor *res_wi_tensor = allocTensor({m, p}, "res_wi");
@@ -4671,6 +5769,8 @@ void test_gpu_at_with_cpu() {
 }
 
 Tensor *test_add_eq_1d_with_cpu_base(int m) {
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({m}, "input");
     Tensor *w = allocTensor({m}, "w");
     gCreateAction(
@@ -4698,6 +5798,8 @@ Tensor *test_add_eq_1d_with_cpu_base(int m) {
 }
 
 Tensor *test_add_eq_2d_with_cpu_base(int m, int n) {
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({m, n}, "input");
     Tensor *w = allocTensor({m, n}, "w");
     gCreateAction(
@@ -4820,6 +5922,8 @@ void test_gpu_add_eq_2d_with_cpu() {
 }
 
 Tensor *test_expand_add_with_cpu_base(int m, int n) {
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({m, n}, "input");
     Tensor *w = allocTensor({n}, "w");
     Tensor *res_wi_tensor = allocTensor({m, n}, "res_wi");
@@ -4893,6 +5997,8 @@ void test_gpu_expand_add_with_cpu() {
 }
 
 Tensor *test_mul_with_cpu_base(int m, int n) {
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({m, n}, "input");
     Tensor *w = allocTensor({m, n}, "w");
     Tensor *res_wi_tensor = allocTensor({m, n}, "res_wi");
@@ -4970,6 +6076,8 @@ void test_gpu_mul_with_cpu() {
 }
 
 Tensor *test_gpu_sum_with_cpu_base(int m, int n) {
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({m, n}, "input");
     Tensor *res_wi_tensor = allocTensor({n}, "res_wi");
     gCreateAction(
@@ -5032,6 +6140,8 @@ void test_gpu_sum_with_cpu() {
 }
 
 Tensor *test_cross_entropy_with_cpu_base(int m, int n) {
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({m, n}, "input");
     Tensor *labels = allocTensor({m}, "labels", INT32);
     Tensor *res_wi_tensor = allocTensor({m}, "res_wi");
@@ -5095,6 +6205,8 @@ void test_gpu_cross_entropy_with_cpu() {
 }
 
 Tensor *test_cross_entropy_backward_with_cpu_base(int m, int n) {
+    zero_c_tensors();
+    zero_grad();
     Tensor *labels = allocTensor({m}, "input", INT32);
     Tensor *w = allocTensor({m, n}, "w");
     Tensor *res_wi_tensor = allocTensor({m}, "res_wi");
@@ -5165,6 +6277,8 @@ void test_mlp_with_cpu_base(
      int m, int n, int k,
      int batch_size, int epochs,
      std::vector<float> &loss_res) {
+    zero_c_tensors();
+    zero_grad();
     
     MLP mlp(
         m,
@@ -5246,6 +6360,8 @@ void test_mlp_with_cpu() {
 }
 
 Tensor *test_repeat_interleave_with_cpu_base(int m, int n) {
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({m}, "input", INT32);
     auto node = graph::allocNode(input);
     node->init_weight_for_dbg();
@@ -5298,6 +6414,8 @@ void test_repeat_interleave_with_cpu() {
 }
 
 Tensor *test_mask_with_cpu_base(int m, int n, int k) {
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({m, n, k}, "input");
     auto ni = graph::allocNode(input);
     ni->init_weight_for_dbg();
@@ -5352,6 +6470,8 @@ void test_mask_with_cpu() {
 }
 
 Tensor *test_mask_with_cpu_base_1(int m, int n, int k) {
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({m, n, k}, "input");
     auto ni = graph::allocNode(input);
     ni->init_weight_for_dbg();
@@ -5406,6 +6526,8 @@ void test_mask_with_cpu_1() {
 }
 
 Tensor *test_softmax_with_cpu_base(int m, int n, int k) {
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({m, n, k}, "input");
     auto ni = graph::allocNode(input);
     ni->init_weight_for_dbg(10000.0f);
@@ -5468,6 +6590,8 @@ void test_softmax_with_cpu() {
 }
 
 Tensor *test_masked_softmax_with_cpu_base(int m, int n, int k) {
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({m, n, k}, "input");
     auto ni = graph::allocNode(input);
     ni->init_weight_for_dbg(10000.0f);
@@ -5526,6 +6650,8 @@ void test_masked_softmax_with_cpu() {
 Tensor *test_masked_softmax_bp_with_cpu_base(
     int m, int n, int k
 ) {
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({m, n, k}, "input");
     auto ni = graph::allocNode(input);
     ni->require_grad();
@@ -5591,6 +6717,8 @@ void test_masked_softmax_bp_with_cpu() {
 std::vector<Tensor *> test_bmm_bp_with_cpu_base(
     int batch, int m, int n, int k
 ) {
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({batch, m, n}, "input");
     auto ni = graph::allocNode(input);
     ni->require_grad();
@@ -5716,6 +6844,8 @@ void test_bmm_bp_with_cpu() {
 std::vector<Tensor *> test_div_bp_with_cpu_base(
     int m, int n, int k
 ) {
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({m, n}, "input");
     auto ni = graph::allocNode(input);
     ni->require_grad();
@@ -5859,7 +6989,8 @@ void test_div_bp_with_cpu() {
 std::vector<Tensor *> test_attention_bp_with_cpu_base(
     int batch, int m, int n, int k, int p
 ) {
-
+    zero_c_tensors();
+    zero_grad();
     DotProductAttention attention;
     Tensor *querys = allocTensor({batch, m, n}, "querys");
     Tensor *keys = allocTensor({batch, k, n}, "keys");
@@ -6043,6 +7174,8 @@ void test_attention_bp_with_cpu() {
 std::vector<Tensor *> test_permute_with_cpu_base(
     int m, int n, int k, int p, int q
 ) {
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({m, n, k, p}, "input");
     Tensor *w = allocTensor({p, q}, "w");
     auto ni = graph::allocNode(input);
@@ -6151,6 +7284,8 @@ void test_permute_with_cpu() {
 }
 
 std::vector<Tensor *> test_embedding_with_cpu_base(int m, int n) {
+    zero_c_tensors();
+    zero_grad();
     Embedding emb(m, n, true);
     Tensor *indices = allocTensor({1, m/2}, "indices", INT32);
     auto res = emb.forward(indices);
@@ -6330,6 +7465,7 @@ void test_gpu() {
     test_mha();
     test_embedding();
     test_embedding_with_cpu();
+    test_embedding_1();
     test_pe();
     test_pe_1();
     test_expand_mul();
@@ -6344,6 +7480,10 @@ void test_gpu() {
     test_ce_mask_all_0();
     test_mha_validlens_nullptr();
     test_mulsv();
+    test_encoder();
+    test_encoder_mask();
+    test_repeat_interleave_1();
+    test_decoder();
 }
 
 int main(int argc, char *argv[]) {

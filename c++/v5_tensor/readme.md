@@ -175,3 +175,17 @@ real    0m2.328s
 user    0m1.940s
 sys     0m0.358s
 ```
+
+## 20250528 transformer loss可以收敛了
+
+```
+(base) cs@cs-desktop:~/project/recognizing_handwritten_digits/c++/v5_tensor$ ./transformer 
+enc_vocab_size : 7939
+dec_vocab_size : 13387
+bos_id : 3
+eos_id : 1
+src_pad_id : 0
+tgt_pad_id : 0
+epoch 0 :  [167040/167130]loss : 4.69666
+epoch 1 :  [167040/167130]loss : 3.93095
+```

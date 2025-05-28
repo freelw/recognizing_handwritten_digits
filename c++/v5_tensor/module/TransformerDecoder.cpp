@@ -46,7 +46,14 @@ graph::Node *TransformerDecoder::forward(
     for (auto blk : blks) {
         x = blk->forward(x, enc_outputs, enc_valid_lens, dec_valid_lens);
     }
-    return dense->forward(x);
+    auto dense_res = dense->forward(x);
+    // gCreateAction(
+    //     new DbgPrintAction(
+    //         dense_res->get_tensor(),
+    //         "TransformerDecoder dense output"
+    //     )
+    // );
+    return dense_res;
 }
 
 std::vector<Parameter *> TransformerDecoder::get_parameters() {

@@ -3,7 +3,7 @@
 
 PosEncoding::PosEncoding(int _max_len, int _num_hidden, float p)
     :max_len(_max_len), num_hidden(_num_hidden) {
-    pos_enc = allocTensor({max_len, num_hidden}, "pos_enc");
+    pos_enc = allocTensor({max_len, num_hidden}, "pos_enc"); // do not calloc
     gCreateAction(
         new PosEncodingAction(
             pos_enc
@@ -26,7 +26,7 @@ graph::Node *PosEncoding::forward(graph::Node *input) {
         input = input->reshape(shape);
     }
     auto cp_size = shape[1] * num_hidden * sizeof(float);
-    Tensor *pe = allocTensor(
+    Tensor *pe = callocTensor(
         {shape[0], shape[1], num_hidden},
         "pos_enc"
     );

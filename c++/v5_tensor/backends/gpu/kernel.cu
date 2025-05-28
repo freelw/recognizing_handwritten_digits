@@ -380,6 +380,7 @@ __global__ void reshape_deep_cp_float_kernel(
 
 __global__ void repeat_interleave_int32_kernel(
     int32_t *src, int32_t *dst,
+    int32_t width,
     int32_t src_length, int32_t dst_length,
     int32_t n
 ) {
@@ -387,8 +388,10 @@ __global__ void repeat_interleave_int32_kernel(
     if (index >= dst_length) {
         return;
     } else {
-        int tmp_index = index / n;
-        dst[index] = src[tmp_index];
+        int j = index /(width * n);
+        int k = index % width;
+        int offset = j * width + k;
+        dst[index] = src[offset];
     }
 }
 
@@ -546,7 +549,10 @@ __global__ void tensor_embedding_backward_kernel(
     } else {
         int index_src = row * src_stride0 + col * src_strid1;
         int index_dst = indices[row] * dst_stride0 + col * dst_stride1;
-        dst[index_dst] += src[index_src];
+        // dst[index_dst] += src[index_src];
+        atomicAdd(&dst[index_dst], src[index_src]); // todo : atomicAdd is not efficient
+        //printf("index_dst : %d, index_src : %d src val %f\n",
+        //       index_dst, index_src, src[index_src]);
     }
 }
 

@@ -19,13 +19,13 @@ void Adam::clip_grad(float grad_clip_val) {
         assert(param->get_grad() != nullptr);
         grads.push_back(param->get_grad());
     }
-    Tensor *norm = allocTensor({1}, "clip_grad_norm");
+    Tensor *norm = callocTensor({1}, "clip_grad_norm");
     gCreateAction(
         new CalcAllGradNormAction(grads, norm)
     );
     for (auto grad: grads) {
         gCreateAction(
             new ClipGradAction(grad, norm, grad_clip_val)
-        );    
+        );
     }
 }

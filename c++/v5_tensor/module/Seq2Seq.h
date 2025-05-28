@@ -20,6 +20,12 @@ class Seq2SeqEncoderDecoder {
             Tensor *dec_valid_lens
         );
         std::vector<Parameter *> get_parameters();
+        TransformerEncoder *get_encoder() const {
+            return encoder;
+        }
+        TransformerDecoder *get_decoder() const {
+            return decoder;
+        }
     private:
         TransformerEncoder *encoder;
         TransformerDecoder *decoder;

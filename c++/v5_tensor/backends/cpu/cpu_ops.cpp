@@ -349,6 +349,19 @@ void CPUOps::crossEntropy(Tensor *lhs, const Tensor *labels, Tensor *maxs, Tenso
         static_cast<float*>(maxs->get_data())[j] = max;
         static_cast<float*>(sums->get_data())[j] = sum;
         static_cast<float*>(res->get_data())[j] = -(zt - max - std::log(sum));
+
+        if (std::isnan(static_cast<float*>(res->get_data())[j])) {
+            std::cerr << "CrossEntropy loss is NaN at batch " << j << ", max: " << max
+                      << ", sum: " << sum << ", zt: " << zt << std::endl;
+            std::cerr << "lstrides[0] = " << lstrides[0] << ", lstrides[1] = " << lstrides[1] << std::endl;
+            for (int i = 0; i < size; ++i) {
+               auto e = data[j * lstrides[0] + i * lstrides[1]];
+                std::cerr << "data[" << j << "][" << i << "] = " << e << std::endl;
+            }
+
+            validateAllTensors();
+            abort();
+        }
     }
 }
 
@@ -397,6 +410,7 @@ void CPUOps::calcAllGradNorm(const std::vector<Tensor*> &grads, Tensor *norm) {
     assert(norm->get_shape().size() == 1);
     assert(norm->get_shape()[0] == 1);
     float *norm_data = static_cast<float*>(norm->get_data());
+    // assert(!std::isinf(tmp));
     norm_data[0] = tmp;
 }
 
@@ -539,18 +553,31 @@ void CPUOps::repeat_interleave(Tensor *lhs, Tensor *res, int n) {
     assert(lhs != nullptr);
     assert(res != nullptr);
 
-    // assert(lhs->get_dim() == 1);
-    // assert(res->get_dim() == 1);
-
+    auto lshape = lhs->get_shape();
+    auto dim = lhs->get_dim();
+    assert(dim > 0);
+    int width = 0;
+    
+    if (dim == 1) {
+        width = 1;
+    } else {
+        width = lshape[dim-1];   
+    }
     auto l_length = lhs->length();
     auto r_length = res->length();
-
     assert(l_length * n == r_length);
-
-    for (int i = 0; i < l_length; ++i) {
-        for (int j = 0; j < n; ++j) {
-            static_cast<int32_t*>(res->get_data())[i * n + j] = 
-                static_cast<int32_t*>(lhs->get_data())[i];
+    assert(l_length % width == 0);
+    auto blocks = l_length / width;
+    
+    for (int i = 0; i < blocks; ++ i) {
+        int src_offset = i * width;
+        int tgt_offset = i * width * n;
+        for (int j = 0; j < n; ++ j) {
+            for (int k = 0; k < width; ++ k) {
+                static_cast<int32_t*>(res->get_data())[tgt_offset+k] = 
+                static_cast<int32_t*>(lhs->get_data())[src_offset+k];
+            }
+            tgt_offset += width;
         }
     }
 }

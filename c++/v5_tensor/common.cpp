@@ -12,6 +12,18 @@ void zero_grad() {
     );
 }
 
+void zero_c_tensors() {
+    gCreateAction(
+        new ZeroCTensorsAction()
+    );
+}
+
+void print_no_zero_tensor_names() {
+    gCreateAction(
+        new PrintNoZeroTensorNamesAction()
+    );
+}
+
 void insert_boundary_action() {
     gCreateAction(
         new BoundaryAction()
@@ -45,6 +57,7 @@ void destruct_env() {
     releaseParameters();
     freeAllActions();
     freeAllTensors();
+    freeAllCTensors();
     freeAllTensorViews();
     freeAllGradTensors();
     graph::freeAllNodes();

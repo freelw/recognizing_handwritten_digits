@@ -3,6 +3,7 @@
 #include "graph/actions.h"
 #include "graph/node.h"
 #include <sstream>
+#include <cmath>
 
 std::string TensorDtype_to_string(TensorDType dtype) {
     switch (dtype) {
@@ -197,17 +198,17 @@ Tensor *Tensor::reshape(const std::vector<int> &shape) const {
         );
         return reshape_view;
     } else {
-        Tensor *reshape_deep_cpy = allocTensor(
+        Tensor *reshape_deep_cpy = callocTensor(
             calc_req_shape,
             this->get_name() + "_reshape_deep_copy",
             this->get_dtype()
         );
-        Tensor *tensor_shape = allocTensor(
+        Tensor *tensor_shape = callocTensor(
             {get_dim()},
             this->get_name() + "_reshape_deep_copy_shape",
             INT32
         );
-        Tensor *tensor_strides = allocTensor(
+        Tensor *tensor_strides = callocTensor(
             {get_dim()},
             this->get_name() + "_reshape_deep_copy_strides",
             INT32
@@ -247,8 +248,12 @@ Tensor *Tensor::repeat_interleave(int n) {
     assert(dtype == INT32);
     auto dim = get_dim();
     std::vector<int> new_shape = shape;
-    new_shape[dim-1] *= n;
-    Tensor *repeat_interleave_tensor = allocTensor(
+    if (dim == 1) {
+        new_shape[0] *= n;
+    } else {
+        new_shape[dim-2] *= n;
+    }
+    Tensor *repeat_interleave_tensor = callocTensor(
         new_shape,
         this->get_name() + "_repeat_interleave",
         INT32
@@ -269,7 +274,7 @@ Tensor *Tensor::sequence_mask(Tensor *mask, float value) {
     assert(mask->get_shape()[0] == shape[0]);
     assert(this->get_dtype() == FLOAT32);
     assert(this->get_dim() == 2);
-    Tensor *sequence_mask_tensor = allocTensor(
+    Tensor *sequence_mask_tensor = callocTensor(
         {shape[0], shape[1]},
         this->get_name() + "_sequence_mask",
         this->get_dtype()
@@ -286,7 +291,7 @@ Tensor *Tensor::sequence_mask(Tensor *mask, float value) {
 }
 
 Tensor *Tensor::softmax() {
-    Tensor *res = allocTensor(
+    Tensor *res = callocTensor(
         shape,
         this->get_name() + "_softmax",
         this->get_dtype()
@@ -387,10 +392,22 @@ std::ostream &operator<<(std::ostream &output, const Tensor &s) {
 std::vector<Tensor*> g_tensors;
 std::vector<Tensor*> g_tensor_views;
 std::vector<Tensor*> g_grad_tensors;
+std::vector<Tensor*> g_c_tensors; // temp tensors should be clear in each epoch
 
 Tensor *allocTensor(const std::vector<int> &shape, const std::string &name, TensorDType dtype) {
     Tensor *tensor = new Tensor(shape, name, dtype);
     g_tensors.push_back(tensor);
+    return tensor;
+}
+
+Tensor *callocTensor(const std::vector<int> &shape, const std::string &name, TensorDType dtype) {
+    Tensor *tensor = new Tensor(shape, name, dtype);
+    g_c_tensors.push_back(tensor);
+    // gCreateAction(
+    //     new ClearAction(
+    //         tensor
+    //     )
+    // );
     return tensor;
 }
 
@@ -445,6 +462,13 @@ void freeAllTensors() {
     g_tensor_id = 0;
 }
 
+void freeAllCTensors() {
+    for (Tensor *c_tensor : g_c_tensors) {
+        delete c_tensor;
+    }
+    g_c_tensors.clear();
+}
+
 void freeAllTensorViews() {
     for (Tensor *tensor_view : g_tensor_views) {
         delete tensor_view;
@@ -459,9 +483,55 @@ void freeAllGradTensors() {
     g_grad_tensors.clear();
 }
 
+
+void validateAllTensors() {
+    for (Tensor *tensor : g_tensors) {
+        char *buffer = reinterpret_cast<char*>(::malloc(tensor->size()));
+
+        g_backend_ops->cp_from_device(
+            buffer,
+            tensor,
+            tensor->size()
+        );
+
+        if (tensor->get_dtype() == FLOAT32) {
+            float *data = reinterpret_cast<float*>(buffer);
+            for (int i = 0; i < tensor->length(); ++i) {
+                bool valid = !std::isnan(data[i]) && !std::isinf(data[i]);
+                if (!valid) {
+                    std::cerr << "Invalid value at index " << i << " in tensor " 
+                              << tensor->get_meta_info() << ": " << data[i] << std::endl;
+                }
+            }
+        } else if (tensor->get_dtype() == INT32) {
+            int32_t *data = reinterpret_cast<int32_t*>(buffer);
+            for (int i = 0; i < tensor->length(); ++i) {
+                bool valid = !std::isnan(data[i]) && !std::isinf(data[i]);
+                if (!valid) {
+                    std::cerr << "Invalid value at index " << i << " in tensor " 
+                              << tensor->get_meta_info() << ": " << data[i] << std::endl;
+                }
+            }
+        }
+        ::free(buffer);
+    }
+}
+
+void validateAllTensorNames() {
+    for (Tensor *tensor : g_tensors) {
+        auto name = tensor->get_name();
+        if (name.find("grad") != std::string::npos) {
+            std::cerr << "Tensor name contains 'grad': " << name << std::endl;
+            abort();
+        }
+    }
+}
+
 void *tensors_data = nullptr;
+void *c_tensors_data = nullptr;
 void *grad_tensors_data = nullptr;
 size_t tensors_data_capacity = 0;
+size_t c_tensors_data_capacity = 0;
 size_t grad_tensors_data_capacity = 0;
 
 void allocMemAndInitTensors() {
@@ -475,18 +545,30 @@ void allocMemAndInitTensors() {
     for (Tensor *tensor : g_tensors) {
         tensors_data_capacity += tensor->capacity();
     }
+    for (Tensor *tensor : g_c_tensors) {
+        c_tensors_data_capacity += tensor->capacity();
+    }
     for (Tensor *tensor : g_grad_tensors) {
         grad_tensors_data_capacity += tensor->capacity();
     }
+    
     tensors_data = g_backend_ops->alloc(tensors_data_capacity);
+    c_tensors_data = g_backend_ops->alloc(c_tensors_data_capacity);
     grad_tensors_data = g_backend_ops->alloc(grad_tensors_data_capacity);
 
     g_backend_ops->memset(tensors_data, 0, tensors_data_capacity);
+    g_backend_ops->memset(c_tensors_data, 0, c_tensors_data_capacity);
     g_backend_ops->memset(grad_tensors_data, 0, grad_tensors_data_capacity);
 
     int64_t offset = 0;
     for (Tensor *tensor : g_tensors) {
         tensor->set_data(reinterpret_cast<char*>(tensors_data) + offset);
+        offset += tensor->capacity();
+    }
+
+    offset = 0;
+    for (Tensor *tensor : g_c_tensors) {
+        tensor->set_data(reinterpret_cast<char*>(c_tensors_data) + offset);
         offset += tensor->capacity();
     }
 
@@ -503,9 +585,14 @@ void releaseTensorMem() {
         g_backend_ops->free(grad_tensors_data);
         grad_tensors_data = nullptr;
     }
+    if (c_tensors_data != nullptr) {
+        g_backend_ops->free(c_tensors_data);
+        c_tensors_data = nullptr;
+    }
     g_backend_ops->free(tensors_data);
     tensors_data = nullptr;
     tensors_data_capacity = 0;
+    c_tensors_data_capacity = 0;
     grad_tensors_data_capacity = 0;
 }
 

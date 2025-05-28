@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import math
 from torch.nn.init import constant_
+from torch.nn import functional as F
 
 def masked_softmax(X, valid_lens):  #@save
     """Perform softmax operation by masking elements on the last axis."""
@@ -242,13 +243,6 @@ def test():
         [0, 0, 0, 1]]
         ], dtype=torch.float)
 
-    # uint num_hiddens = 16;
-    # uint num_blks = 2;
-    # float dropout = 0;
-    # uint ffn_num_hiddens = 4;
-    # uint num_heads = 4;
-    # uint vocab_size = 4;
-
     num_hiddens = 16
     num_blks = 2
     dropout = 0
@@ -257,33 +251,37 @@ def test():
     vocab_size = 4
 
     encoder = TransformerEncoder(vocab_size, num_hiddens, ffn_num_hiddens, num_heads, num_blks, dropout)
-
-    res, embs = encoder.forward(x, None)
-
-    # print("res:", res)
-    # print("res shape:", res.shape)
-
-    loss = nn.CrossEntropyLoss()
+    valid_lens = torch.tensor([1,1], dtype=torch.long)
+    res, embs = encoder.forward(x, valid_lens)
 
     res = res.reshape(-1, res.shape[-1])
-
     res.retain_grad()
-
     print("res:", res)
 
     labels = torch.tensor([0, 0, 0, 0, 0, 0], dtype=torch.long)
+    mask = torch.tensor([
+        [1, 0, 0,
+        1, 0, 0],
+    ], dtype=torch.float32)
 
-    loss_value = loss(res, labels)
+    loss = F.cross_entropy(res, labels, reduction="none")
+    print("loss2: ", loss)
+    print ("mask: ", mask)
+    print ("loss * mask: ", loss * mask)
+    loss_value = (loss * mask).sum() / mask.sum()
 
     print("loss_value:", loss_value)
 
     loss_value.backward()
-
-    #print("embs:", embs)
-    #print("embs.grad:", embs.grad)
+    print("res grad:", res.grad)
 
     print("encoder.embedding:", encoder.embedding)
     print("encoder.embedding.grad:", encoder.embedding.grad)
+
+    print("blocks 1 W_q grad :", encoder.blks[1].attention.W_q.weight.grad)
+    print("blocks 1 addnorm2 ln weight grad :", encoder.blks[1].addnorm2.ln.weight.grad)
+    print("blocks 1 addnorm2 ln beta grad :", encoder.blks[1].addnorm2.ln.bias.grad)
+    print("blocks 1 ffn dense2 grad :", encoder.blks[1].ffn.dense2.weight.grad.transpose(0, 1))
     
 
 if '__main__' == __name__:

@@ -13,7 +13,15 @@ bool Action::is_do_once() const {
     return false;
 }
 
-bool Action::is_backward_boundary() {
+bool Action::is_backward_boundary() const {
+    return false;
+}
+
+bool Action::is_zero_c_tensors() const {
+    return false;
+}
+
+bool Action::is_zero_grad() const {
     return false;
 }
 
@@ -41,22 +49,22 @@ AddAction::AddAction(Tensor *_lhs, const Tensor *_rhs, Tensor *_res)
     assert(_lhs->get_shape() == _rhs->get_shape());
     auto dim = _lhs->get_dim();
 
-    lhs_shape = allocTensor(
+    lhs_shape = callocTensor(
         {dim},
         _lhs->get_name() + "_shape",
         INT32
     );
-    lhs_strides = allocTensor(
+    lhs_strides = callocTensor(
         {dim},
         _lhs->get_name() + "_strides",
         INT32
     );
-    rhs_strides = allocTensor(
+    rhs_strides = callocTensor(
         {dim},
         _rhs->get_name() + "_strides",
         INT32
     );
-    res_strides = allocTensor(
+    res_strides = callocTensor(
         {dim},
         _res->get_name() + "_strides",
         INT32
@@ -112,17 +120,17 @@ AddEqAction::AddEqAction(Tensor *_lhs, const Tensor *_rhs)
     assert(_lhs->get_dim() == _rhs->get_dim());
     assert(_lhs->get_shape() == _rhs->get_shape());
     auto dim = _lhs->get_dim();
-    lhs_shape = allocTensor(
+    lhs_shape = callocTensor(
         {dim},
         _lhs->get_name() + "_shape",
         INT32
     );
-    lhs_strides = allocTensor(
+    lhs_strides = callocTensor(
         {dim},
         _lhs->get_name() + "_strides",
         INT32
     );
-    rhs_strides = allocTensor(
+    rhs_strides = callocTensor(
         {dim},
         _rhs->get_name() + "_strides",
         INT32
@@ -203,22 +211,22 @@ MulAction::MulAction(Tensor *_lhs, const Tensor *_rhs, Tensor *_res)
     assert(_lhs->get_shape() == _rhs->get_shape());
     auto dim = _lhs->get_dim();
 
-    lhs_shape = allocTensor(
+    lhs_shape = callocTensor(
         {dim},
         _lhs->get_name() + "_shape",
         INT32
     );
-    lhs_strides = allocTensor(
+    lhs_strides = callocTensor(
         {dim},
         _lhs->get_name() + "_strides",
         INT32
     );
-    rhs_strides = allocTensor(
+    rhs_strides = callocTensor(
         {dim},
         _rhs->get_name() + "_strides",
         INT32
     );
-    res_strides = allocTensor(
+    res_strides = callocTensor(
         {dim},
         _res->get_name() + "_strides",
         INT32
@@ -400,6 +408,41 @@ std::string ZeroGradAction::to_string() const {
     return "ZeroGradAction: zeroing gradients";
 }
 
+void ZeroCTensorsAction::execute() {
+    g_backend_ops->memset(c_tensors_data, 0, c_tensors_data_capacity);
+}
+
+std::string ZeroCTensorsAction::to_string() const {
+    return "ZeroCTensorsAction: zeroing c tensors";
+}
+
+void PrintNoZeroTensorNamesAction::execute() {
+    for (const auto &tensor : g_c_tensors) {
+        char *data = static_cast<char*>(::malloc(tensor->size()));
+        g_backend_ops->cp_from_device(
+            data,
+            tensor,
+            tensor->size()
+        );
+        bool succ = true;
+        for (int i = 0; i < tensor->size(); ++i) {
+            if (data[i] != (char)0) {
+                succ = false;
+                break;
+            }
+        }
+
+        if (!succ) {
+            std::cout << "Tensor with non-zero data: " << tensor->get_meta_info() << std::endl;
+        }
+        ::free(data);
+    }
+}
+
+std::string PrintNoZeroTensorNamesAction::to_string() const {
+    return "PrintNoZeroTensorNamesAction: printing tensors with non-zero data";
+}
+
 void FillWeightAction::execute() {
     assert(lhs != nullptr);
     if (init_type == "gauss") {
@@ -448,7 +491,7 @@ std::string BoundaryAction::to_string() const {
     return "============= BoundaryAction: boundary action =============";
 }
 
-bool BoundaryAction::is_backward_boundary() {
+bool BoundaryAction::is_backward_boundary() const {
     return true;
 }
 
@@ -517,7 +560,7 @@ void ReshapeDeepCpAction::execute() {
 
 std::string ReshapeDeepCpAction::to_string() const {
     std::ostringstream oss;
-    oss << "ReshapeDeepCpAction: deep copy " << lhs->get_meta_info() << " to " << rhs->get_meta_info() << " with strides " << strides->get_meta_info();
+    oss << "ReshapeDeepCpAction: deep copy " << lhs->get_meta_info() << " from " << rhs->get_meta_info() << " with strides " << strides->get_meta_info();
     return oss.str();
 }
 
@@ -597,7 +640,7 @@ void LazyDivAction::execute() {
         value,
         value->size()
     );
-    fvalue += 1e-10;
+    fvalue += 1e-20;
     g_backend_ops->div(res, lhs, fvalue);
 }
 
@@ -610,12 +653,12 @@ std::string LazyDivAction::to_string() const {
 DropoutMaskAction::DropoutMaskAction(Tensor *mask, float _p)
     : Action(nullptr, nullptr, mask), p(_p) {
     assert(mask != nullptr);
-    shape = allocTensor(
+    shape = callocTensor(
         {mask->get_dim()},
         mask->get_name() + "_shape",
         INT32
     );
-    strides = allocTensor(
+    strides = callocTensor(
         {mask->get_dim()},
         mask->get_name() + "_strides",
         INT32
@@ -725,7 +768,9 @@ std::string NormBackwardAction::to_string() const {
 
 void DbgPrintAction::execute() {
     assert(lhs != nullptr);
-    std::cout << "[====== DEBUGGIN ======] " << msg << lhs->get_meta_info() << " : " << std::endl << *lhs << std::endl;
+    if (expected_name == "" || expected_name == lhs->get_name()) {
+        std::cout << "[====== DEBUGGIN ======] " << msg << lhs->get_meta_info() << " : " << std::endl << *lhs << std::endl;
+    }
 }
 
 std::string DbgPrintAction::to_string() const {
@@ -776,6 +821,17 @@ std::string MulSVAction::to_string() const {
     return oss.str();
 }
 
+void ClearAction::execute() {
+    assert(lhs != nullptr);
+    g_backend_ops->memset(lhs->get_data(), 0, lhs->size());
+}
+
+std::string ClearAction::to_string() const {
+    std::ostringstream oss;
+    oss << "ClearAction: clearing " << lhs->get_meta_info();
+    return oss.str();
+}
+
 std::vector<Action*> g_actions;
 
 std::vector<Action *> getOnceActions() {
@@ -802,6 +858,20 @@ bool validateBoundaryFound() {
     return boundary_found;
 }
 
+bool validteZeroCTensorsFound() {
+    assert(g_actions.size() > 0);
+    return g_actions[0]->is_zero_c_tensors(); // the first action should be ZeroCTensorsAction
+}
+
+bool validateZeroGradFound() {
+    /*
+    zero grad action 一定要出现在第二个 非常重要！！！！
+    因为我们的bmm实现中，会优先将结果切割成输入，这时候拷贝了上一次的grad，如果没有在最开始清除grad，就会有残留
+    */
+    assert(g_actions.size() > 1);
+    return g_actions[1]->is_zero_grad(); // the second action should be ZeroGradAction
+}
+
 bool validateAddEqActionsInBackward() {
     // todo: all AddEqAction should be in backward(behind boundary)
     return true;
@@ -810,6 +880,8 @@ bool validateAddEqActionsInBackward() {
 void gDoActions() {
     assert(validateBoundaryFound());
     assert(validateAddEqActionsInBackward());
+    assert(validteZeroCTensorsFound());
+    assert(validateZeroGradFound());
     g_training = true;
     for (Action *action : g_actions) {
         if (action->is_do_once() && action->executed_once()) {
@@ -820,14 +892,42 @@ void gDoActions() {
     }
 }
 
-void gDoForwardActions() {
-    g_training = false;
+void gDoOnceActions() {
+    for (Action *action : g_actions) {
+        if (!action->is_do_once() || action->executed_once()) {
+            continue;
+        }
+        action->execute();
+        action->increase_exec_times();
+    }
+}
+
+void gDoForwardActions(bool training) {
+    g_training = training;
     for (Action *action : g_actions) {
         if (action->is_do_once() && action->executed_once()) {
             continue;
         }
         if (action->is_backward_boundary()) {
             break;
+        }
+        action->execute();
+        action->increase_exec_times();
+    }
+}
+
+void gDoBackwardActions() {
+    g_training = true;
+    bool start = false;
+    for (Action *action : g_actions) {
+        if (action->is_do_once() && action->executed_once()) {
+            continue;
+        }
+        if (action->is_backward_boundary()) {
+            start = true;
+        }
+        if (!start) {
+            continue; // skip actions before backward boundary
         }
         action->execute();
         action->increase_exec_times();

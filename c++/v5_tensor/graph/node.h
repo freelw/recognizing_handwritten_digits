@@ -171,7 +171,7 @@ namespace graph {
                 : Edge(Mul, _node), rhs(_rhs) {}
             virtual ~MulEdge() {}
             void backward(Tensor *grad) override {
-                Tensor *tmp = allocTensor(
+                Tensor *tmp = callocTensor(
                     node->get_grad()->get_shape(),
                     "mul_tmp"
                 );
@@ -207,6 +207,7 @@ namespace graph {
                 assert(grad->get_shape().size() == 2);
                 std::vector<int> shape = {grad->get_shape()[1]};
                 Tensor *tmp = allocGradTensor(shape, "sum_tmp"); // 行向量
+                
                 gCreateAction(
                     new SumAction(
                         grad,
@@ -236,7 +237,7 @@ namespace graph {
                 : Edge(ExpandMulL, _node), rhs(_rhs) {}
             virtual ~ExpandMulEdgeL() {}
             void backward(Tensor *grad) override {
-                Tensor *tmp = allocTensor(
+                Tensor *tmp = callocTensor(
                     grad->get_shape(),
                     "expand_mul_l_add_tmp"
                 );
@@ -267,7 +268,7 @@ namespace graph {
                 : Edge(ExpandMulR, _node), rhs(_rhs) {}
             virtual ~ExpandMulEdgeR() {}
             void backward(Tensor *grad) override {
-                Tensor *tmp = allocTensor(
+                Tensor *tmp = callocTensor(
                     grad->get_shape(),
                     "expand_mul_r_tmp"
                 );
@@ -278,7 +279,7 @@ namespace graph {
                         tmp
                     )
                 );
-                Tensor *sum_tmp = allocTensor(
+                Tensor *sum_tmp = callocTensor(
                     node->get_tensor()->get_shape(),
                     "expand_mul_r_sum_tmp"
                 );
@@ -314,7 +315,7 @@ namespace graph {
                 Tensor *r_tensor = rhs->get_tensor();
                 Tensor *l_tensor = node->get_tensor();
                 Tensor *r_transpose_view = r_tensor->transpose();
-                Tensor *tmp = allocTensor(
+                Tensor *tmp = callocTensor(
                     node->get_grad()->get_shape(),
                     "matmul_l_tmp"
                 );
@@ -351,7 +352,7 @@ namespace graph {
                 Tensor *r_tensor = node->get_tensor();
                 Tensor *l_transpose_view = l_tensor->transpose();
                 
-                Tensor *tmp = allocTensor(
+                Tensor *tmp = callocTensor(
                     node->get_grad()->get_shape(),
                     "matmul_r_tmp"
                 );
@@ -384,7 +385,7 @@ namespace graph {
                 : Edge(Relu, _node) {}
             virtual ~ReluEdge() {}
             void backward(Tensor *grad) override {
-                Tensor *relu_prime_tensor = allocTensor(
+                Tensor *relu_prime_tensor = callocTensor(
                     node->get_tensor()->get_shape(),
                     "relu_prime"
                 );
@@ -396,7 +397,7 @@ namespace graph {
                     )
                 );
 
-                Tensor *grad_mul_relu_prime = allocTensor(
+                Tensor *grad_mul_relu_prime = callocTensor(
                     node->get_tensor()->get_shape(),
                     "grad_mul_relu_prime"
                 );
@@ -500,7 +501,7 @@ namespace graph {
                 : Edge(Div, _node), value(value) {}
             virtual ~DivEdge() {}
             void backward(Tensor *grad) override {
-                Tensor *tmp = allocTensor(
+                Tensor *tmp = callocTensor(
                     node->get_tensor()->get_shape(),
                     "div_tmp"
                 );
@@ -533,7 +534,7 @@ namespace graph {
                 : Edge(Dropout, _node), mask(_mask) {}
             virtual ~DropoutEdge() {}
             void backward(Tensor *grad) override {
-                Tensor *tmp = allocTensor(
+                Tensor *tmp = callocTensor(
                     node->get_grad()->get_shape(),
                     "dropout_tmp"
                 );
@@ -604,9 +605,9 @@ namespace graph {
                 assert(grad->get_dim() == 1);
                 auto shape = grad->get_shape();
                 assert(shape[0] == 1);
-                Tensor *tmp = allocTensor(
+                Tensor *tmp = callocTensor(
                     node->get_grad()->get_shape(),
-                    "avg_1d_tmp"
+                    "avg_1d_tmp_grad"
                 );
                 
                 gCreateAction(
@@ -653,7 +654,7 @@ namespace graph {
                 : Edge(MulSV, _node), value(value) {}
             virtual ~MulSVEdge() {}
             void backward(Tensor *grad) override {
-                Tensor *tmp = allocTensor(
+                Tensor *tmp = callocTensor(
                     node->get_grad()->get_shape(),
                     "mul_sv_tmp"
                 );
@@ -678,6 +679,7 @@ namespace graph {
     Node *allocNode(Tensor *t);
     Node *allocNode(Tensor *t, Tensor *grad);
     void validateAllNodes();
+    void validateAllNodesGradZero();
     void freeAllNodes();
     void freeAllEdges();
 }

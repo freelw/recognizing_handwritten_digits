@@ -17,7 +17,9 @@ class Action {
             return "Action not implemented";
         }
         virtual bool is_do_once() const;
-        virtual bool is_backward_boundary();
+        virtual bool is_backward_boundary() const;
+        virtual bool is_zero_c_tensors() const;
+        virtual bool is_zero_grad() const;
         bool executed_once() const;
         void increase_exec_times();
         int get_exec_times() const;
@@ -177,6 +179,28 @@ class ZeroGradAction : public Action {
             : Action(nullptr, nullptr, nullptr) {}
         void execute() override;
         std::string to_string() const override;
+        bool is_zero_grad() const override {
+            return true;
+        }
+};
+
+class ZeroCTensorsAction : public Action {
+    public:
+        ZeroCTensorsAction()
+            : Action(nullptr, nullptr, nullptr) {}
+        bool is_zero_c_tensors() const override {
+            return true;
+        }
+        void execute() override;
+        std::string to_string() const override;
+};
+
+class PrintNoZeroTensorNamesAction : public Action {
+    public:
+        PrintNoZeroTensorNamesAction()
+            : Action(nullptr, nullptr, nullptr) {}
+        void execute() override;
+        std::string to_string() const override;
 };
 
 class FillWeightAction : public Action {
@@ -206,7 +230,7 @@ class BoundaryAction : public Action {
         BoundaryAction()
             : Action(nullptr, nullptr, nullptr) {}
         void execute() override;
-        bool is_backward_boundary() override;
+        bool is_backward_boundary() const override;
         std::string to_string() const override;
 };
 
@@ -375,12 +399,13 @@ class NormBackwardAction : public Action {
 
 class DbgPrintAction : public Action {
     public:
-        DbgPrintAction(Tensor *_lhs, const std::string &_msg)
-            : Action(_lhs, nullptr, nullptr), msg(_msg) {}
+        DbgPrintAction(Tensor *_lhs, const std::string &_msg, const std::string &_expected_name = "")
+            : Action(_lhs, nullptr, nullptr), msg(_msg), expected_name(_expected_name) {}
         void execute() override;
         std::string to_string() const override;
     private:
         std::string msg;
+        std::string expected_name;
 };
 
 class MemCpAction : public Action {
@@ -405,10 +430,20 @@ class MulSVAction : public Action {
         float value;
 };
 
+class ClearAction : public Action {
+    public:
+        ClearAction(Tensor *_lhs)
+            : Action(_lhs, nullptr, nullptr) {}
+        void execute() override;
+        std::string to_string() const override;
+};
+
 std::vector<Action *> getOnceActions();
 void gCreateAction(Action *action);
 void gDoActions();
-void gDoForwardActions();
+void gDoOnceActions();
+void gDoForwardActions(bool training = false);
+void gDoBackwardActions();
 void printAllActions();
 void freeAllActions();
 

@@ -1,5 +1,6 @@
 #include "TransformerEncoder.h"
 #include <cmath>
+#include <sstream>
 
 TransformerEncoder::TransformerEncoder(
     int vocab_size, int _num_hiddens, int ffn_num_hiddens,
@@ -24,13 +25,29 @@ TransformerEncoder::~TransformerEncoder() {
 graph::Node *TransformerEncoder::forward(Tensor *indices, Tensor *valid_lens) {
     assert(indices->get_dim() == 2); // shape : (batch_size, seq_len)
     auto indices_shape = indices->get_shape();
-    auto x = embedding->forward(indices)->mulsv(std::sqrt(num_hiddens));
+    auto x = embedding->forward(indices);
+    // gCreateAction(new DbgPrintAction(
+    //     x->get_tensor(),
+    //     "TransformerEncoder embedding res x : "
+    // ));
+    x = x->mulsv(std::sqrt(num_hiddens));
     auto x_shape = x->get_tensor()->get_shape();
     assert(x_shape[0] == indices_shape[0]);
     assert(x_shape[1] == indices_shape[1]);
     x = pos_encoding->forward(x);
+    // gCreateAction(new DbgPrintAction(
+    //     x->get_tensor(),
+    //     "TransformerEncoder pos_encoding res x : "
+    // ));
+    int cnt = 0;
     for (auto blk : blks) {
+        // std::ostringstream oss;
+        // oss << "TransformerEncoder blk " << cnt++ << " res x : ";
         x = blk->forward(x, valid_lens);
+        // gCreateAction(new DbgPrintAction(
+        //     x->get_tensor(),
+        //     oss.str()
+        // ));
     }
     return x;
 }

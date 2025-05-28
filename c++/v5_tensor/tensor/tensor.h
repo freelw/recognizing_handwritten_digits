@@ -89,10 +89,12 @@ class Tensor {
 };
 
 extern std::vector<Tensor*> g_tensors;
+extern std::vector<Tensor*> g_c_tensors;
 extern std::vector<Tensor*> g_tensor_views;
 extern std::vector<Tensor*> g_grad_tensors;
 
 Tensor *allocTensor(const std::vector<int> &shape, const std::string &name, TensorDType _dtype = FLOAT32);
+Tensor *callocTensor(const std::vector<int> &shape, const std::string &name, TensorDType _dtype = FLOAT32);
 Tensor *allocTensor(const std::vector<int> &shape, TensorDType _dtype = FLOAT32);
 Tensor *allocTensorView(
     const Tensor *parent, const std::vector<int> &shape,
@@ -103,11 +105,17 @@ Tensor *allocGradTensor(const std::vector<int> &shape);
 void printAllTensors();
 
 void freeAllTensors();
+void freeAllCTensors();
 void freeAllTensorViews();
 void freeAllGradTensors();
+void validateAllTensors(); // for dbg
+void validateAllTensorNames(); // for dbg
 
 extern void *grad_tensors_data;
 extern size_t grad_tensors_data_capacity;
+extern void *c_tensors_data;
+extern size_t c_tensors_data_capacity;
+
 void allocMemAndInitTensors();
 void releaseTensorMem();
 
