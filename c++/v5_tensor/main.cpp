@@ -55,6 +55,7 @@ void train(int epochs, float lr, int batch_size) {
     std::cout << "data loaded." << std::endl;
 
     zero_c_tensors();
+    zero_grad();
     MLP m(INPUT_LAYER_SIZE, {30, 10}, -0.01f);
     Tensor *inputs = allocTensor({batch_size, 784}, "inputs");
     Tensor *labels = allocTensor({batch_size}, "labels", INT32);
@@ -63,7 +64,6 @@ void train(int epochs, float lr, int batch_size) {
     auto loss = forward_res->CrossEntropy(labels)->avg_1d();
     assert(loss->get_tensor()->size() == sizeof(float));
     insert_boundary_action();
-    zero_grad();
     loss->backward();
     Adam optimizer(m.get_parameters(), lr);
     optimizer.clip_grad(1.0f);
