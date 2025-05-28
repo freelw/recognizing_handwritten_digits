@@ -33,7 +33,6 @@ bool Parameter::is_require_grad() {
 }
 
 std::string Parameter::serialize() {
-
     int weight_size = get_w()->size();
     int grad_size = get_grad()->size();
     int m_size = m->size();
@@ -50,11 +49,7 @@ std::string Parameter::serialize() {
     tot_size += m_size;
     tot_size += v_size;
     
-
     char *buffer = static_cast<char *>(::malloc(tot_size)); 
-
-    
-
     int offset = 0;
 
     ::memcpy(buffer + offset, &weight_size, sizeof(weight_size));
@@ -96,6 +91,53 @@ std::string Parameter::serialize() {
     std::string res((char *)buffer, tot_size);
     ::free(buffer);
     return res;
+}
+
+void Parameter::deserialize(char *buffer) {
+    int weight_size, grad_size, m_size, v_size;
+    int offset = 0;
+
+    ::memcpy(&weight_size, buffer + offset, sizeof(weight_size));
+    offset += sizeof(weight_size);
+    ::memcpy(&grad_size, buffer + offset, sizeof(grad_size));
+    offset += sizeof(grad_size);
+    ::memcpy(&m_size, buffer + offset, sizeof(m_size));
+    offset += sizeof(m_size);
+    ::memcpy(&v_size, buffer + offset, sizeof(v_size));
+    offset += sizeof(v_size);
+    ::memcpy(&t, buffer + offset, sizeof(t));
+    offset += sizeof(t);
+
+    assert(weight_size == get_w()->size());
+    assert(grad_size == get_grad()->size());
+    assert(m_size == m->size());
+    assert(v_size == v->size());
+
+    g_backend_ops->cp_to_device(
+        get_w(),
+        buffer + offset,
+        weight_size
+    );
+    offset += weight_size;
+    g_backend_ops->cp_to_device(
+        get_grad(),
+        buffer + offset,
+        grad_size
+    );
+    offset += grad_size;
+    g_backend_ops->cp_to_device(
+        m,
+        buffer + offset,
+        m_size
+    );
+    offset += m_size;
+    g_backend_ops->cp_to_device(
+        v,
+        buffer + offset,
+        v_size
+    );
+    offset += v_size;
+    assert(offset == weight_size + grad_size + m_size + v_size + sizeof(t) + 4 * sizeof(int));
 }
 
 std::vector<Parameter *> g_parameters;
