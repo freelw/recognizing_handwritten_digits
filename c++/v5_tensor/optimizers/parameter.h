@@ -19,6 +19,7 @@ class Parameter {
         }
         std::string serialize();
         void deserialize(char *buffer);
+        int get_serialized_size();
         
     private:
         graph::Node *node;

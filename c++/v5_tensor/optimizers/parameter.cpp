@@ -137,7 +137,12 @@ void Parameter::deserialize(char *buffer) {
         v_size
     );
     offset += v_size;
-    assert(offset == weight_size + grad_size + m_size + v_size + sizeof(t) + 4 * sizeof(int));
+    assert(offset == get_serialized_size());
+}
+
+int Parameter::get_serialized_size() {
+    return sizeof(int) * 4 + sizeof(t) + 
+           get_w()->size() + get_grad()->size() + m->size() + v->size();
 }
 
 std::vector<Parameter *> g_parameters;
