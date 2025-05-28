@@ -252,7 +252,7 @@ int main(int argc, char *argv[]) {
     allocMemAndInitTensors();
     if (!checkpoint.empty()) {
         std::cout << "loading from checkpoint : " << checkpoint << std::endl;
-        // todo : load from checkpoint
+        disableInitWeightAction();
         std::cout << "loaded from checkpoint" << std::endl;
     }
     init_dec_valid_lens(dec_valid_lens);

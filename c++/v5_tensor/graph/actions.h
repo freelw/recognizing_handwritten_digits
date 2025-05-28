@@ -16,10 +16,21 @@ class Action {
         virtual std::string to_string() const {
             return "Action not implemented";
         }
-        virtual bool is_do_once() const;
-        virtual bool is_backward_boundary() const;
-        virtual bool is_zero_c_tensors() const;
-        virtual bool is_zero_grad() const;
+        virtual bool is_do_once() const {
+            return false;
+        }
+        virtual bool is_backward_boundary() const {
+            return false;
+        }
+        virtual bool is_zero_c_tensors() const {
+            return false;
+        }
+        virtual bool is_zero_grad() const {
+            return false;
+        }
+        virtual bool is_init_weight() const {
+            return false;
+        }
         bool executed_once() const;
         void increase_exec_times();
         int get_exec_times() const;
@@ -220,6 +231,9 @@ class InitWeightAction : public FillWeightAction {
         InitWeightAction(Tensor *_lhs, const std::string &_init_type, float _sigma, float _mean)
             : FillWeightAction(_lhs, _init_type, _sigma, _mean) {}
         bool is_do_once() const override {
+            return true;
+        }
+        bool is_init_weight() const override {
             return true;
         }
         std::string to_string() const override;
@@ -447,7 +461,9 @@ void gDoBackwardActions();
 void printAllActions();
 void freeAllActions();
 
+void disableInitWeightAction();
 // for test
 void disableOnceAction();
+
 
 #endif
