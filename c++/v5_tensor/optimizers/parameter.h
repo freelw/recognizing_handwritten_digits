@@ -17,6 +17,10 @@ class Parameter {
         int get_t() {
             return t;
         }
+        std::string serialize();
+        void deserialize(char *buffer);
+        int get_serialized_size();
+        
     private:
         graph::Node *node;
         Tensor *m;

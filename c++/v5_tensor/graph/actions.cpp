@@ -9,22 +9,6 @@
 
 extern bool g_training;
 
-bool Action::is_do_once() const {
-    return false;
-}
-
-bool Action::is_backward_boundary() const {
-    return false;
-}
-
-bool Action::is_zero_c_tensors() const {
-    return false;
-}
-
-bool Action::is_zero_grad() const {
-    return false;
-}
-
 bool Action::executed_once() const {
     return exec_times > 0;
 }
@@ -949,6 +933,14 @@ void freeAllActions() {
         delete action;
     }
     g_actions.clear();
+}
+
+void disableInitWeightAction() {
+    for (Action *action : g_actions) {
+        if (action->is_init_weight()) {
+            action->increase_exec_times();
+        }
+    }
 }
 
 void disableOnceAction() {

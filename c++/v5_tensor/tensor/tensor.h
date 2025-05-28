@@ -7,7 +7,7 @@
 #include <ostream>
 #include <string>
 
-#define TENSOR_PADDING_SIZE 16
+#define TENSOR_PADDING_SIZE 0
 
 enum TensorDType {
     INT8 = 0,

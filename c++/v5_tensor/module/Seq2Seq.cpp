@@ -41,12 +41,6 @@ graph::Node * Seq2SeqEncoderDecoder::forward(
     assert(src_shape[0] == enc_valid_lens->get_shape()[0]);
     
     auto enc_outputs = encoder->forward(src_token_ids, enc_valid_lens);
-    // gCreateAction(
-    //     new DbgPrintAction(
-    //         enc_outputs->get_tensor(),
-    //         "Seq2SeqEncoderDecoder encoder output"
-    //     )
-    // );
     auto dec_outputs = decoder->forward(
         tgt_token_ids, enc_outputs, enc_valid_lens, dec_valid_lens
     );
