@@ -20,25 +20,9 @@ TransformerEncoderBlock::~TransformerEncoderBlock() {
 graph::Node *TransformerEncoderBlock::forward(
     graph::Node *x, Tensor *valid_lens) {
     auto y = attention->forward(x, x, x, valid_lens);
-    // gCreateAction(new DbgPrintAction(
-    //     y->get_tensor(),
-    //     "TransformerEncoderBlock attention res y : "
-    // ));
     y = addnorm1->forward(x, y);
-    // gCreateAction(new DbgPrintAction(
-    //     y->get_tensor(),
-    //     "TransformerEncoderBlock addnorm1 res y : "
-    // ));
     auto z = ffn->forward(y);
-    // gCreateAction(new DbgPrintAction(
-    //     z->get_tensor(),
-    //     "TransformerEncoderBlock ffn res z : "
-    // ));
     auto res = addnorm2->forward(y, z);
-    // gCreateAction(new DbgPrintAction(
-    //     res->get_tensor(),
-    //     "TransformerEncoderBlock addnorm2 res : "
-    // ));
     return res;
 }
 

@@ -626,12 +626,6 @@ namespace graph {
                     )
                 );
                 
-                // gCreateAction(
-                //     new DbgPrintAction(
-                //         tmp,
-                //         "avg_1d_tmp"
-                //     )
-                // );
                 gCreateAction(
                     new AddEqAction(
                         node->get_grad(),

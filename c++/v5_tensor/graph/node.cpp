@@ -242,12 +242,6 @@ namespace graph {
         Tensor *l_tensor = lhs->get_tensor();
         Tensor *r_tensor = rhs->get_tensor();
         Tensor *res_tensor = res_node->get_tensor();
-        // gCreateAction(
-        //     new DbgPrintAction(
-        //         res_tensor,
-        //         "atimpl res_tensor"
-        //     )
-        // );
         gCreateAction(
             new AtAction(
                 l_tensor,
@@ -272,15 +266,8 @@ namespace graph {
         assert(l_tensor->get_dim() == 2);
         assert(r_tensor->get_dim() == 2);
         assert(l_tensor->get_shape()[1] == r_tensor->get_shape()[0]);
-        // Tensor *res_tensor = allocGradTensor({l_tensor->get_shape()[0], r_tensor->get_shape()[1]}, "res_at");
 
         Tensor *res_tensor = callocTensor({l_tensor->get_shape()[0], r_tensor->get_shape()[1]}, "res_at");
-        // gCreateAction(
-        //     new DbgPrintAction(
-        //         res_tensor,
-        //         "res_tensor"
-        //     )
-        // );
         Node *res_node = allocNode(res_tensor);
         atImpl(this, rhs, res_node);
         return res_node;
@@ -497,18 +484,6 @@ namespace graph {
                 0
             )
         );
-        // gCreateAction(
-        //     new DbgPrintAction(
-        //         sum_tensor,
-        //         " "
-        //     )
-        // );
-        // gCreateAction(
-        //     new DbgPrintAction(
-        //         mask,
-        //         " "
-        //     )
-        // );
         gCreateAction(
             new SumAction(
                 mask,
@@ -516,12 +491,6 @@ namespace graph {
                 0
             )
         );
-        // gCreateAction(
-        //     new DbgPrintAction(
-        //         mask_sum_tensor,
-        //         " "
-        //     )
-        // );
         gCreateAction(
             new LazyDivAction(
                 sum_tensor,
@@ -529,12 +498,6 @@ namespace graph {
                 mask_sum_tensor
             )
         );
-        // gCreateAction(
-        //     new DbgPrintAction(
-        //         res_tensor,
-        //         " "
-        //     )
-        // );
         auto res_node = allocNode(res_tensor);
         if (is_require_grad()) {
             res_node->require_grad();
@@ -655,19 +618,6 @@ namespace graph {
                 tmp
             )
         );
-
-        // gCreateAction(
-        //     new DbgPrintAction(
-        //         tmp,
-        //         "cross_entropy_tmp "
-        //     )
-        // );
-        // gCreateAction(
-        //     new DbgPrintAction(
-        //         grad,
-        //         "CrossEntropyEdge grad "
-        //     )
-        // );
         
         Tensor *tmp2 = callocTensor(
             node->get_grad()->get_shape(),
@@ -681,12 +631,6 @@ namespace graph {
             )
         );
 
-        // gCreateAction(
-        //     new DbgPrintAction(
-        //         tmp2,
-        //         "cross_entropy_tmp2"
-        //     )
-        // );
         gCreateAction(
             new AddEqAction(
                 node->get_grad(),
@@ -725,20 +669,6 @@ namespace graph {
             "embedding_tmp"
         );
 
-        // gCreateAction(
-        //     new DbgPrintAction(
-        //         tmp,
-        //         "EmbeddingEdge embedding_tmp "
-        //     )
-        // );
-
-        // gCreateAction(
-        //     new DbgPrintAction(
-        //         grad,
-        //         "EmbeddingEdge inputgrad "
-        //     )
-        // );
-
         gCreateAction(
             new EmbeddingBackwardAction(
                 grad,
@@ -760,12 +690,7 @@ namespace graph {
             node->get_grad()->get_shape(),
             "norm_tmp"
         );
-        // gCreateAction(
-        //     new DbgPrintAction(
-        //         grad,
-        //         "NormEdge inputgrad "
-        //     )
-        // );
+
         gCreateAction(
             new NormBackwardAction(
                 grad,
@@ -774,12 +699,7 @@ namespace graph {
                 tmp
             )
         );
-        // gCreateAction(
-        //     new DbgPrintAction(
-        //         tmp,
-        //         "NormEdge tmp "
-        //     )
-        // );
+
         gCreateAction(
             new AddEqAction(
                 node->get_grad(),
