@@ -13,7 +13,11 @@ bool Action::is_do_once() const {
     return false;
 }
 
-bool Action::is_backward_boundary() {
+bool Action::is_backward_boundary() const {
+    return false;
+}
+
+bool Action::is_zero_c_tensors() const {
     return false;
 }
 
@@ -400,6 +404,14 @@ std::string ZeroGradAction::to_string() const {
     return "ZeroGradAction: zeroing gradients";
 }
 
+void ZeroCTensorsAction::execute() {
+    g_backend_ops->memset(c_tensors_data, 0, c_tensors_data_capacity);
+}
+
+std::string ZeroCTensorsAction::to_string() const {
+    return "ZeroCTensorsAction: zeroing c tensors";
+}
+
 void FillWeightAction::execute() {
     assert(lhs != nullptr);
     if (init_type == "gauss") {
@@ -448,7 +460,7 @@ std::string BoundaryAction::to_string() const {
     return "============= BoundaryAction: boundary action =============";
 }
 
-bool BoundaryAction::is_backward_boundary() {
+bool BoundaryAction::is_backward_boundary() const {
     return true;
 }
 
@@ -815,6 +827,16 @@ bool validateBoundaryFound() {
     return boundary_found;
 }
 
+bool validteZeroCTensorsFound() {
+    bool zero_action_found = false;
+    for (Action *action : g_actions) {
+        if (action->is_zero_c_tensors()) {
+            zero_action_found = true;
+        }
+    }
+    return zero_action_found;
+}
+
 bool validateAddEqActionsInBackward() {
     // todo: all AddEqAction should be in backward(behind boundary)
     return true;
@@ -823,6 +845,7 @@ bool validateAddEqActionsInBackward() {
 void gDoActions() {
     assert(validateBoundaryFound());
     assert(validateAddEqActionsInBackward());
+    assert(validteZeroCTensorsFound());
     g_training = true;
     for (Action *action : g_actions) {
         if (action->is_do_once() && action->executed_once()) {

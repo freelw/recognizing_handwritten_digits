@@ -104,12 +104,17 @@ Tensor *allocGradTensor(const std::vector<int> &shape);
 void printAllTensors();
 
 void freeAllTensors();
+void freeAllCTensors();
 void freeAllTensorViews();
 void freeAllGradTensors();
 void validateAllTensors(); // for dbg
+void validateAllTensorNames(); // for dbg
 
 extern void *grad_tensors_data;
 extern size_t grad_tensors_data_capacity;
+extern void *c_tensors_data;
+extern size_t c_tensors_data_capacity;
+
 void allocMemAndInitTensors();
 void releaseTensorMem();
 

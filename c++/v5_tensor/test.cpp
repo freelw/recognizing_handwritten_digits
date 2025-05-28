@@ -5146,6 +5146,7 @@ void test_encoder_decoder() {
     all_params.insert(all_params.end(), dec_params.begin(), dec_params.end());
     
     Adam adam(all_params, 0.001f);
+    zero_c_tensors();
     zero_grad();
     loss->backward();
     adam.clip_grad(1.0f);
@@ -5213,6 +5214,7 @@ void test_encoder_decoder() {
     for (int e = 0; e < epochs; e++) {
         gDoActions();
         std::cout << "e : " << e << " loss : " << *loss->get_tensor() << std::endl;
+        validateAllTensorNames();
         validateAllTensors();
     }
 

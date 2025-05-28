@@ -392,6 +392,7 @@ std::ostream &operator<<(std::ostream &output, const Tensor &s) {
 std::vector<Tensor*> g_tensors;
 std::vector<Tensor*> g_tensor_views;
 std::vector<Tensor*> g_grad_tensors;
+std::vector<Tensor*> g_c_tensors; // temp tensors should be clear in each epoch
 
 Tensor *allocTensor(const std::vector<int> &shape, const std::string &name, TensorDType dtype) {
     Tensor *tensor = new Tensor(shape, name, dtype);
@@ -400,12 +401,13 @@ Tensor *allocTensor(const std::vector<int> &shape, const std::string &name, Tens
 }
 
 Tensor *callocTensor(const std::vector<int> &shape, const std::string &name, TensorDType dtype) {
-    Tensor *tensor = allocTensor(shape, name, dtype);
-    gCreateAction(
-        new ClearAction(
-            tensor
-        )
-    );
+    Tensor *tensor = new Tensor(shape, name, dtype);
+    g_c_tensors.push_back(tensor);
+    // gCreateAction(
+    //     new ClearAction(
+    //         tensor
+    //     )
+    // );
     return tensor;
 }
 
@@ -460,6 +462,13 @@ void freeAllTensors() {
     g_tensor_id = 0;
 }
 
+void freeAllCTensors() {
+    for (Tensor *c_tensor : g_c_tensors) {
+        delete c_tensor;
+    }
+    g_c_tensors.clear();
+}
+
 void freeAllTensorViews() {
     for (Tensor *tensor_view : g_tensor_views) {
         delete tensor_view;
@@ -476,7 +485,6 @@ void freeAllGradTensors() {
 
 
 void validateAllTensors() {
-
     for (Tensor *tensor : g_tensors) {
         char *buffer = reinterpret_cast<char*>(::malloc(tensor->size()));
 
@@ -505,15 +513,25 @@ void validateAllTensors() {
                 }
             }
         }
-
         ::free(buffer);
     }
-    
+}
+
+void validateAllTensorNames() {
+    for (Tensor *tensor : g_tensors) {
+        auto name = tensor->get_name();
+        if (name.find("grad") != std::string::npos) {
+            std::cerr << "Tensor name contains 'grad': " << name << std::endl;
+            abort();
+        }
+    }
 }
 
 void *tensors_data = nullptr;
+void *c_tensors_data = nullptr;
 void *grad_tensors_data = nullptr;
 size_t tensors_data_capacity = 0;
+size_t c_tensors_data_capacity = 0;
 size_t grad_tensors_data_capacity = 0;
 
 void allocMemAndInitTensors() {
@@ -530,15 +548,26 @@ void allocMemAndInitTensors() {
     for (Tensor *tensor : g_grad_tensors) {
         grad_tensors_data_capacity += tensor->capacity();
     }
+    for (Tensor *tensor : g_c_tensors) {
+        c_tensors_data_capacity += tensor->capacity();
+    }
     tensors_data = g_backend_ops->alloc(tensors_data_capacity);
+    c_tensors_data = g_backend_ops->alloc(c_tensors_data_capacity);
     grad_tensors_data = g_backend_ops->alloc(grad_tensors_data_capacity);
 
     g_backend_ops->memset(tensors_data, 0, tensors_data_capacity);
+    g_backend_ops->memset(c_tensors_data, 0, c_tensors_data_capacity);
     g_backend_ops->memset(grad_tensors_data, 0, grad_tensors_data_capacity);
 
     int64_t offset = 0;
     for (Tensor *tensor : g_tensors) {
         tensor->set_data(reinterpret_cast<char*>(tensors_data) + offset);
+        offset += tensor->capacity();
+    }
+
+    offset = 0;
+    for (Tensor *tensor : g_c_tensors) {
+        tensor->set_data(reinterpret_cast<char*>(c_tensors_data) + offset);
         offset += tensor->capacity();
     }
 
@@ -555,9 +584,14 @@ void releaseTensorMem() {
         g_backend_ops->free(grad_tensors_data);
         grad_tensors_data = nullptr;
     }
+    if (c_tensors_data != nullptr) {
+        g_backend_ops->free(c_tensors_data);
+        c_tensors_data = nullptr;
+    }
     g_backend_ops->free(tensors_data);
     tensors_data = nullptr;
     tensors_data_capacity = 0;
+    c_tensors_data_capacity = 0;
     grad_tensors_data_capacity = 0;
 }
 

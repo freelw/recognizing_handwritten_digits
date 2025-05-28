@@ -17,7 +17,8 @@ class Action {
             return "Action not implemented";
         }
         virtual bool is_do_once() const;
-        virtual bool is_backward_boundary();
+        virtual bool is_backward_boundary() const;
+        virtual bool is_zero_c_tensors() const;
         bool executed_once() const;
         void increase_exec_times();
         int get_exec_times() const;
@@ -179,6 +180,17 @@ class ZeroGradAction : public Action {
         std::string to_string() const override;
 };
 
+class ZeroCTensorsAction : public Action {
+    public:
+        ZeroCTensorsAction()
+            : Action(nullptr, nullptr, nullptr) {}
+        bool is_zero_c_tensors() const override {
+            return true;
+        }
+        void execute() override;
+        std::string to_string() const override;
+};
+
 class FillWeightAction : public Action {
     public:
         FillWeightAction(Tensor *_lhs, const std::string &_init_type, float _sigma, float _mean)
@@ -206,7 +218,7 @@ class BoundaryAction : public Action {
         BoundaryAction()
             : Action(nullptr, nullptr, nullptr) {}
         void execute() override;
-        bool is_backward_boundary() override;
+        bool is_backward_boundary() const override;
         std::string to_string() const override;
 };
 

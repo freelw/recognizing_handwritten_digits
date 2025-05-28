@@ -265,11 +265,13 @@ namespace graph {
         assert(l_tensor->get_dim() == 2);
         assert(r_tensor->get_dim() == 2);
         assert(l_tensor->get_shape()[1] == r_tensor->get_shape()[0]);
+        // Tensor *res_tensor = allocGradTensor({l_tensor->get_shape()[0], r_tensor->get_shape()[1]}, "res_at");
+
         Tensor *res_tensor = callocTensor({l_tensor->get_shape()[0], r_tensor->get_shape()[1]}, "res_at");
         // gCreateAction(
         //     new DbgPrintAction(
-        //         l_tensor,
-        //         "at_lhs"
+        //         res_tensor,
+        //         "res_tensor"
         //     )
         // );
         Node *res_node = allocNode(res_tensor);
