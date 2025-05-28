@@ -176,20 +176,16 @@ user    0m1.940s
 sys     0m0.358s
 ```
 
-## bug
+## 20250528 transformer loss可以收敛了
 
-bmm_res_div_res_reshape_sequence_mask_reshape_softmax_res_at_reshape_reshape_permute_reshape_deep_copy_grad_reshape_permute_reshape_deep_copy
-
-Tensor[139](bmm_res_div_res_reshape_sequence_mask_reshape_softmax_res_at_reshape_reshape_permute_reshape_deep_copy_grad_split_3)(1, 5) 不一样
-
-Tensor[195](bmm_res_div_res_reshape_sequence_mask_reshape_softmax_res_at_reshape_reshape_permute_reshape_deep_copy_grad_reshape_permute_reshape_deep_copy_reshape)(2, 1, 2, 5) 不一样
-
-Tensor[186](matmul_l_tmp) 相同
-
-[75](res_at_grad_reshape_reshape_permute_reshape_deep_copy_transpose_reshape_deep_copy)(4, 5, 5) 不相同
-
-Tensor[22](res_at_grad_reshape_reshape_permute)(2, 2, 1, 5) 不相同
-
- Tensor[155](bmm_res_div_res_reshape_sequence_mask_reshape_softmax_res_at_reshape_reshape_permute_reshape_deep_copy_grad_reshape_permute_reshape_deep_copy_reshape)(2, 10) 不相同
-
- bmm_res_res_at_reshape_reshape_permute_reshape_deep_copy_res_at_reshape_reshape_permute_reshape_deep_copy_transpose_reshape_deep_copy_grad
+```
+(base) cs@cs-desktop:~/project/recognizing_handwritten_digits/c++/v5_tensor$ ./transformer 
+enc_vocab_size : 7939
+dec_vocab_size : 13387
+bos_id : 3
+eos_id : 1
+src_pad_id : 0
+tgt_pad_id : 0
+epoch 0 :  [167040/167130]loss : 4.69666
+epoch 1 :  [167040/167130]loss : 3.93095
+```
