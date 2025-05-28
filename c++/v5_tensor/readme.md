@@ -189,3 +189,59 @@ tgt_pad_id : 0
 epoch 0 :  [167040/167130]loss : 4.69666
 epoch 1 :  [167040/167130]loss : 3.93095
 ```
+
+# checkpoint test
+
+```
+(base) cs@cs-desktop:~/project/recognizing_handwritten_digits/c++/v5_tensor$ ./transformer -f ../../resources/fra_tiny.txt 
+corpus : ../../resources/fra_tiny.txt
+epochs : 10
+batch_size : 128
+gpu : 1
+learning rate : 0.001
+checkpoint : 
+enc_vocab_size : 7939
+dec_vocab_size : 13387
+bos_id : 3
+eos_id : 1
+src_pad_id : 0
+tgt_pad_id : 0
+epoch 0 :  [384/384]loss : 9.27215
+epoch 1 :  [384/384]loss : 8.31903
+epoch 2 :  [384/384]loss : 7.43319
+epoch 3 :  [384/384]loss : 6.61569
+epoch 4 :  [384/384]loss : 5.94754
+epoch 5 :  [384/384]loss : 5.45714
+epoch 6 :  [384/384]loss : 5.1212
+epoch 7 :  [384/384]loss : 4.92025
+epoch 8 :  [384/384]loss : 4.82687
+epoch 9 :  [384/384]loss : 4.78579
+checkpoint saved : ./checkpoints/checkpoint_20250528_215330_9.bin
+
+(base) cs@cs-desktop:~/project/recognizing_handwritten_digits/c++/v5_tensor$ ./transformer -f ../../resources/fra_tiny.txt -c ./checkpoints/checkpoint_20250528_215330_9.bin
+corpus : ../../resources/fra_tiny.txt
+epochs : 10
+batch_size : 128
+gpu : 1
+learning rate : 0.001
+checkpoint : ./checkpoints/checkpoint_20250528_215330_9.bin
+enc_vocab_size : 7939
+dec_vocab_size : 13387
+bos_id : 3
+eos_id : 1
+src_pad_id : 0
+tgt_pad_id : 0
+loading from checkpoint : ./checkpoints/checkpoint_20250528_215330_9.bin
+loaded from checkpoint
+epoch 0 :  [384/384]loss : 4.76779
+epoch 1 :  [384/384]loss : 4.73401
+epoch 2 :  [384/384]loss : 4.68025
+epoch 3 :  [384/384]loss : 4.59945
+epoch 4 :  [384/384]loss : 4.50977
+epoch 5 :  [384/384]loss : 4.46144
+epoch 6 :  [384/384]loss : 4.34954
+epoch 7 :  [384/384]loss : 4.27593
+epoch 8 :  [384/384]loss : 4.19153
+epoch 9 :  [384/384]loss : 4.11973
+checkpoint saved : ./checkpoints/checkpoint_20250528_215401_9.bin
+```
