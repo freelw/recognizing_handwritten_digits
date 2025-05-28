@@ -442,7 +442,8 @@ std::vector<Action *> getOnceActions();
 void gCreateAction(Action *action);
 void gDoActions();
 void gDoOnceActions();
-void gDoForwardActions();
+void gDoForwardActions(bool training = false);
+void gDoBackwardActions();
 void printAllActions();
 void freeAllActions();
 

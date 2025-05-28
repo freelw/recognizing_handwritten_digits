@@ -902,14 +902,32 @@ void gDoOnceActions() {
     }
 }
 
-void gDoForwardActions() {
-    g_training = false;
+void gDoForwardActions(bool training) {
+    g_training = training;
     for (Action *action : g_actions) {
         if (action->is_do_once() && action->executed_once()) {
             continue;
         }
         if (action->is_backward_boundary()) {
             break;
+        }
+        action->execute();
+        action->increase_exec_times();
+    }
+}
+
+void gDoBackwardActions() {
+    g_training = true;
+    bool start = false;
+    for (Action *action : g_actions) {
+        if (action->is_do_once() && action->executed_once()) {
+            continue;
+        }
+        if (action->is_backward_boundary()) {
+            start = true;
+        }
+        if (!start) {
+            continue; // skip actions before backward boundary
         }
         action->execute();
         action->increase_exec_times();

@@ -1,6 +1,7 @@
 #include "tensor.h"
 #include "backends/cpu/cpu_ops.h"
 #include "graph/node.h"
+#include "graph/actions.h"
 #include "optimizers/parameter.h"
 #include "optimizers/adam.h"
 #include "model/mlp.h"
@@ -3093,6 +3094,7 @@ void test_dropout_1() {
     // printAllActions();
     allocMemAndInitTensors();
     float *res_grad_buffer = static_cast<float*>(::malloc(res->get_grad()->size()));
+    gDoForwardActions(true);
     auto res_grad_length = res->get_grad()->length();
     for (int i = 0; i < res_grad_length; ++ i) {
         res_grad_buffer[i] = 1.0f;
@@ -3103,8 +3105,7 @@ void test_dropout_1() {
         res->get_grad()->size()
     );
     ::free(res_grad_buffer);
-
-    gDoActions();
+    gDoBackwardActions();
     float ni_grad_ans[10] = {
         1.0, 1.0, 1.0, 1.0, 1.0,
         1.0, 1.0, 1.0, 1.0, 1.0
@@ -3403,7 +3404,7 @@ void test_mha() {
     insert_boundary_action();
     zero_grad();
     ce_res->backward();
-    printAllActions();
+    // printAllActions();
     allocMemAndInitTensors();
 
     std::vector<Parameter *> params = mha.get_parameters();
@@ -3486,16 +3487,8 @@ void test_mha() {
     ::free(w_o_w_linear_buffer);
 
     disableOnceAction();
-    // print_all_tensors();
-    // std::cout << "-------------print all tensors done 1---------------" << std::endl;
     gDoActions();
-    print_all_tensors();
-    // std::cout << "-------------print all tensors done 2---------------" << std::endl;
-    // std::cout << "res grad 1: " << *res->get_grad() << std::endl;
     gDoActions();
-    // print_all_tensors();
-    // std::cout << "-------------print all tensors done 3---------------" << std::endl;
-    std::cout << "res grad 2: " << *res->get_grad() << std::endl;
     
 
     float res_ans[20] = {
@@ -3647,6 +3640,9 @@ void test_embedding() {
         reinterpret_cast<char*>(indices_buffer),
         indices->size()
     );
+    
+    gDoForwardActions(true);
+
     auto res_grad_buffer = static_cast<float*>(::malloc(res_grad->size()));
     for (int i = 0; i < res_grad->length(); ++ i) {
         res_grad_buffer[i] = 1.0f * i;
@@ -3657,7 +3653,8 @@ void test_embedding() {
         res_grad->size()
     );
     ::free(res_grad_buffer);
-    gDoActions();
+
+    gDoBackwardActions();
 
     float res_ans[15] = {
         2.5, 2.6, 2.7, 2.8, 2.9,
@@ -3757,6 +3754,8 @@ void test_embedding_1() {
         reinterpret_cast<char*>(indices_buffer),
         indices->size()
     );
+    
+    gDoForwardActions(true);
     auto res_grad_buffer = static_cast<float*>(::malloc(res_grad->size()));
     for (int i = 0; i < res_grad->length(); ++ i) {
         res_grad_buffer[i] = 1.0f * i;
@@ -3767,7 +3766,8 @@ void test_embedding_1() {
         res_grad->size()
     );
     ::free(res_grad_buffer);
-    gDoActions();
+
+    gDoBackwardActions();
     // std::cout << "res: " << std::endl << *res->get_tensor() << std::endl;
     // std::cout << "res grad : " << std::endl << *res_grad << std::endl;
     // std::cout << "emb grad : " << std::endl << *emb.get_grad() << std::endl;
@@ -3858,6 +3858,7 @@ void test_expand_mul() {
     res->backward();
     // printAllActions();
     allocMemAndInitTensors();
+    gDoForwardActions(true);
     auto res_grad = res->get_grad();
     float *res_grad_buffer = static_cast<float*>(::malloc(res_grad->size()));
     for (int i = 0; i < res_grad->length(); ++ i) {
@@ -3869,7 +3870,7 @@ void test_expand_mul() {
         res_grad->size()
     );
     ::free(res_grad_buffer);
-    gDoActions();
+    gDoBackwardActions();
 
     // std::cout << "res grad: " << std::endl << *res_grad << std::endl;
     // std::cout << "gamma : " << std::endl << *ng->get_tensor() << std::endl;
@@ -3968,6 +3969,7 @@ void test_at_bp_ledge_add_eq() {
     // printAllActions();
     allocMemAndInitTensors();
 
+    gDoForwardActions(true);
     float *res_grad_buffer = static_cast<float*>(::malloc(res->get_grad()->size()));
     for (int i = 0; i < res->get_grad()->length(); ++ i) {
         res_grad_buffer[i] = 1.0f * i;
@@ -3978,7 +3980,7 @@ void test_at_bp_ledge_add_eq() {
         res->get_grad()->size()
     );
     ::free(res_grad_buffer);
-    gDoActions();
+    gDoBackwardActions();
 
     // std::cout << "input : " << std::endl << *input << std::endl;
     // std::cout << "w1 : " << std::endl << *w1 << std::endl;
@@ -4079,6 +4081,7 @@ void test_at_bp_redge_add_eq() {
     res->backward();
     // printAllActions();
     allocMemAndInitTensors();
+    gDoForwardActions(true);
     float *res_grad_buffer = static_cast<float*>(::malloc(res->get_grad()->size()));
     for (int i = 0; i < res->get_grad()->length(); ++ i) {
         res_grad_buffer[i] = 1.0f * i;
@@ -4089,7 +4092,7 @@ void test_at_bp_redge_add_eq() {
         res->get_grad()->size()
     );
     ::free(res_grad_buffer);
-    gDoActions();
+    gDoBackwardActions();
     // std::cout << "input : " << std::endl << *input << std::endl;
     // std::cout << "w1 : " << std::endl << *w1 << std::endl;
     // std::cout << "w2 : " << std::endl << *w2 << std::endl;
@@ -4182,6 +4185,8 @@ void test_softmax_1() {
     res->backward();
     // printAllActions();
     allocMemAndInitTensors();
+
+    gDoForwardActions(true);
     
     float *res_grad_buffer = static_cast<float*>(::malloc(res->get_grad()->size()));
     for (int i = 0; i < res->get_grad()->length(); ++ i) {
@@ -4194,7 +4199,7 @@ void test_softmax_1() {
     );
     ::free(res_grad_buffer);
 
-    gDoActions();
+    gDoBackwardActions();
     // std::cout << "res : " << std::endl << *res->get_tensor() << std::endl;
     // std::cout << "res grad : " << std::endl << *res->get_grad() << std::endl;
     // std::cout << "input : " << std::endl << *input << std::endl;
@@ -4649,6 +4654,7 @@ void test_mulsv() {
     res->backward();
     // printAllActions();
     allocMemAndInitTensors();
+    gDoForwardActions(true);
     float *res_grad_buffer = static_cast<float*>(::malloc(res->get_grad()->size()));
     for (int i = 0; i < res->get_grad()->length(); ++ i) {
         res_grad_buffer[i] = 1.0f * i;
@@ -4659,7 +4665,7 @@ void test_mulsv() {
         res->get_grad()->size()
     );
     ::free(res_grad_buffer);
-    gDoActions();
+    gDoBackwardActions();
 
     float res_ans[6] = {
         2, 2, 2,
@@ -5540,11 +5546,6 @@ void test_clip() {
 }
 
 void test_cpu() {
-    // test_adam();
-    // test_clip();
-    // test_attention_bp();
-    // test_mha();
-    // test_encoder_decoder();
     test_at();
     test_add();
     test_add_eq();
