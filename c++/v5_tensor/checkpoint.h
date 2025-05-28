@@ -3,6 +3,8 @@
 
 #include "optimizers/parameter.h"
 
+
+std::string generateDateTimeSuffix();
 void save_checkpoint(const std::string & prefix, int epoch, const std::vector<Parameter*> &parameters);
 
 #endif
