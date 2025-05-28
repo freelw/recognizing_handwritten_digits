@@ -1,8 +1,14 @@
 #include "common.h"
+#include "checkpoint.h"
 #include "dataloader.h"
 #include "module/Seq2Seq.h"
 #include "optimizers/adam.h"
 #include <unistd.h>
+#include <iomanip>
+#include <signal.h>
+
+extern bool shutdown;
+void signal_callback_handler(int signum);
 
 void check_parameters(const std::vector<Parameter*> &parameters, int num_blks) {
 
@@ -120,7 +126,19 @@ void load_tokens_from_file(
     tgt_pad_id = loader.tgt_pad_id();
 }
 
+std::string generateDateTimeSuffix() {    
+    auto now = std::chrono::system_clock::now();
+    std::time_t currentTime = std::chrono::system_clock::to_time_t(now);
+    struct std::tm* localTime = std::localtime(&currentTime);
+    std::ostringstream oss;
+    oss << std::put_time(localTime, "_%Y%m%d_%H%M%S");
+    return oss.str();
+}
+
 int main(int argc, char *argv[]) {
+
+    signal(SIGINT, signal_callback_handler);
+    shutdown = false;
 
     int opt;
     int epochs = 10;
@@ -255,8 +273,13 @@ int main(int argc, char *argv[]) {
         disableInitWeightAction();
         std::cout << "loaded from checkpoint" << std::endl;
     }
+    std::string checkpoint_prefix = "checkpoint" + generateDateTimeSuffix();
     init_dec_valid_lens(dec_valid_lens);
-    for (int epoch = 0; epoch < epochs; ++epoch) {
+    int epoch = 0;
+    for (; epoch < epochs; ++epoch) {
+        if (shutdown) {
+            break;
+        }
         float loss_sum = 0;
         int cnt = 0;
         std::string prefix = "epoch " + std::to_string(epoch) + " : ";
@@ -326,6 +349,8 @@ int main(int argc, char *argv[]) {
         }
         std::cout << "loss : " << loss_sum / cnt << std::endl;
     }
+
+    save_checkpoint(checkpoint_prefix, epoch, parameters);
     
     // free input buffers
     ::free(enc_valid_lens_buffer);
