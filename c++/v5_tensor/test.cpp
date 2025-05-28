@@ -3016,6 +3016,8 @@ void test_attention_bp() {
 
 void test_dropout() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Dropout dropout(0.5f);
     Tensor *input = allocTensor({22, 33, 55}, "input");
     // Tensor *input = allocTensor({2, 3, 5}, "input");
@@ -3077,6 +3079,8 @@ void test_dropout() {
 
 void test_dropout_1() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Dropout dropout(1.0001f);
     Tensor *input = allocTensor({1, 10}, "input");
     Tensor *input_1 = allocTensor({1, 10}, "input_1");
@@ -3122,6 +3126,8 @@ void test_dropout_1() {
 
 void test_permute() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({2, 3, 4, 5}, "input");
     Tensor *w = allocTensor({5, 4}, "w");
     auto ni = graph::allocNode(input);
@@ -3266,6 +3272,8 @@ void test_permute() {
 void test_lazy_linear() {
 
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({20, 30, 10}, "input");
     Tensor *input1 = allocTensor({20 * 30, 10}, "input");
     auto ni = graph::allocNode(input);
@@ -3592,6 +3600,8 @@ void test_mha() {
 
 void test_mha_validlens_nullptr() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *queries = allocTensor({2, 1, 2}, "queries");
     Tensor *keys = allocTensor({2, 5, 2}, "keys");
     Tensor *values = allocTensor({2, 5, 4}, "values");
@@ -3621,6 +3631,8 @@ void test_mha_validlens_nullptr() {
 
 void test_embedding() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *indices = allocTensor({1, 3}, "indices", INT32);
     Embedding emb(10, 5, true);
     auto res = emb.forward(indices);
@@ -3697,6 +3709,8 @@ void test_embedding() {
 
 void test_pe() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     PosEncoding pe(1000, 20, 0);
     Tensor *input = allocTensor({1, 2, 20}, "input");
     auto ni = graph::allocNode(input);
@@ -3727,6 +3741,8 @@ void test_pe() {
 
 void test_embedding_1() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *indices = allocTensor({1, 2}, "indices", INT32);
     Embedding emb(10, 5, true);
     auto res = emb.forward(indices);
@@ -3782,6 +3798,8 @@ void test_embedding_1() {
 
 void test_pe_1() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     PosEncoding pe(1000, 20, 0);
     Tensor *input = allocTensor({3, 2, 20}, "input");
     auto ni = graph::allocNode(input);
@@ -3816,7 +3834,8 @@ void test_pe_1() {
 
 void test_expand_mul() {
     construct_env();
-
+    zero_c_tensors();
+    zero_grad();
     Tensor *gamma = allocTensor({5}, "gamma");
     Tensor *input1 = allocTensor({2, 5}, "input1");
     Tensor *input2 = allocTensor({2, 5}, "input2");
@@ -3924,6 +3943,8 @@ void test_expand_mul() {
 void test_at_bp_ledge_add_eq() {
     // bug : https://github.com/freelw/recognizing_handwritten_digits/issues/35
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({2, 3}, "input");
     Tensor *w1 = allocTensor({3, 4}, "w1");
     Tensor *w2 = allocTensor({3, 4}, "w2");
@@ -4035,7 +4056,8 @@ void test_at_bp_ledge_add_eq() {
 void test_at_bp_redge_add_eq() {
     // bug : https://github.com/freelw/recognizing_handwritten_digits/issues/35
     construct_env();
-
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({3, 4}, "input");
     Tensor *w1 = allocTensor({2, 3}, "w1");
     Tensor *w2 = allocTensor({2, 3}, "w2");
@@ -4149,6 +4171,8 @@ void test_at_bp_redge_add_eq() {
 
 void test_softmax_1() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({1, 2, 3}, "input");
     auto ni = graph::allocNode(input);
     ni->require_grad();
@@ -4196,7 +4220,8 @@ void test_softmax_1() {
 
 void test_layernorm() {
     construct_env();
-
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({2, 6}, "input");
     Tensor *labels = allocTensor({2}, "labels", INT32);
     LayerNorm layer_norm(6, true);
@@ -4302,9 +4327,9 @@ void test_layernorm() {
 
 void test_avg() {
     construct_env();
-
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({2, 11}, "input");
-
     auto ni = graph::allocNode(input);
     ni->require_grad();
     ni->init_weight_for_dbg(100000.0f);
@@ -4343,6 +4368,8 @@ void test_avg() {
 
 void test_var() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({2, 11}, "input");
     auto ni = graph::allocNode(input);
     ni->require_grad();
@@ -4385,6 +4412,8 @@ void test_var() {
 
 void test_ce_avg_1d() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({2, 11}, "input");
     auto ni = graph::allocNode(input);
     ni->require_grad();
@@ -4447,6 +4476,8 @@ void test_ce_avg_1d() {
 
 void test_ce_mask() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({3, 3}, "input");
     auto ni = graph::allocNode(input);
     ni->require_grad();
@@ -4528,6 +4559,8 @@ void test_ce_mask() {
 
 void test_ce_mask_all_0() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({3, 3}, "input");
     auto ni = graph::allocNode(input);
     ni->require_grad();
@@ -4604,6 +4637,8 @@ void test_ce_mask_all_0() {
 
 void test_mulsv() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({2, 3}, "input");
     auto ni = graph::allocNode(input);
     ni->init_weight_fill(1.0f);
@@ -4929,6 +4964,8 @@ void custom_init_x(Tensor *x) {
 
 void test_encoder() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     int num_hiddens = 16;
     int num_blks = 2;
     float dropout = 0;
@@ -5093,6 +5130,8 @@ void custom_init_dec_valid_lens(Tensor *decode_valid_lens) {
 
 void test_decoder() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     int num_hiddens = 16;
     int num_blks = 2;
     float dropout = 0;
@@ -5199,6 +5238,8 @@ void init_mask_and_valid_lens(Tensor *mask, Tensor *valid_lens) {
 
 void test_encoder_decoder() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     std::cout << std::setprecision(8);
     // int num_hiddens = 16;
     // int num_blks = 2;
@@ -5220,8 +5261,6 @@ void test_encoder_decoder() {
     int num_heads = 4;
     int num_steps = NUM_STEPS;
     int max_posencoding_len = MAX_POSENCODING_LEN;
-    zero_c_tensors();
-    zero_grad();
     print_no_zero_tensor_names();
 
     Seq2SeqEncoderDecoder *seq2seq = new Seq2SeqEncoderDecoder(
@@ -5374,6 +5413,8 @@ void test_encoder_decoder() {
 
 void test_encoder_mask() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     int num_hiddens = 16;
     int num_blks = 2;
     float dropout = 0;
@@ -5468,10 +5509,9 @@ void test_encoder_mask() {
 }
 
 void test_clip() {
-
-
     construct_env();
-
+    zero_c_tensors();
+    zero_grad();
 
     Tensor *t = allocTensor({9}, "t");
     auto n = graph::allocNode(t);

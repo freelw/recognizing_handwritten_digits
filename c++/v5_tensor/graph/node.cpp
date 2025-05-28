@@ -378,8 +378,6 @@ namespace graph {
                     this->get_grad()->get_name() + "_split_" + std::to_string(i),
                     offset
                 );
-                std::cout << "this grad meta : " << this->get_grad()->get_meta_info() << std::endl;
-                std::cout << "new grad meta : " << new_grad->get_meta_info() << std::endl;
                 node = allocNode(new_tensor, new_grad);
                 if (opposite) { // 考虑split的左操作数是结果，梯度需要从整个结果传递给子结果
                     this->edges.push_back(EmptyEdge::create(node));
