@@ -3408,15 +3408,15 @@ void test_mha() {
     ::free(w_o_w_linear_buffer);
 
     disableOnceAction();
-    print_all_tensors();
-    std::cout << "-------------print all tensors done 1---------------" << std::endl;
+    // print_all_tensors();
+    // std::cout << "-------------print all tensors done 1---------------" << std::endl;
     gDoActions();
     print_all_tensors();
-    std::cout << "-------------print all tensors done 2---------------" << std::endl;
-    std::cout << "res grad 1: " << *res->get_grad() << std::endl;
+    // std::cout << "-------------print all tensors done 2---------------" << std::endl;
+    // std::cout << "res grad 1: " << *res->get_grad() << std::endl;
     gDoActions();
-    print_all_tensors();
-    std::cout << "-------------print all tensors done 3---------------" << std::endl;
+    // print_all_tensors();
+    // std::cout << "-------------print all tensors done 3---------------" << std::endl;
     std::cout << "res grad 2: " << *res->get_grad() << std::endl;
     
 
@@ -5184,9 +5184,8 @@ void test_encoder_decoder() {
     Adam adam(all_params, 0.001f);
     zero_grad();
     loss->backward();
-    // adam.clip_grad(1.0f);
-    // adam.step();
-    zero_grad();
+    adam.clip_grad(1.0f);
+    adam.step();
     printAllActions();
     allocMemAndInitTensors();
     gDoOnceActions();
@@ -5246,18 +5245,18 @@ void test_encoder_decoder() {
     //     std::cout << *all_params[i]->get_w() << std::endl;
     // }
 
-    int epochs = 2;
+    int epochs = 1000;
     for (int e = 0; e < epochs; e++) {
         gDoActions();
         std::cout << "e : " << e << " loss : " << *loss->get_tensor() << std::endl;
         validateAllTensorNames();
         validateAllTensors();
         // print all parameters value
-        for (int i = 0; i < all_params.size(); i++) {
-            std::cout << "param " << i << " name : " << all_params[i]->get_w()->get_meta_info() << std::endl;
-            // std::cout << "param " << i << " value : " << std::endl << *all_params[i]->get_w() << std::endl;
-            std::cout << "param " << i << " grad : " << std::endl << *all_params[i]->get_grad() << std::endl;
-        }
+        // for (int i = 0; i < all_params.size(); i++) {
+        //     std::cout << "param " << i << " name : " << all_params[i]->get_w()->get_meta_info() << std::endl;
+        //     // std::cout << "param " << i << " value : " << std::endl << *all_params[i]->get_w() << std::endl;
+        //     std::cout << "param " << i << " grad : " << std::endl << *all_params[i]->get_grad() << std::endl;
+        // }
     }
 
     
@@ -5434,8 +5433,8 @@ void test_cpu() {
     // test_adam();
     // test_clip();
     // test_attention_bp();
-    test_mha();
-    // test_encoder_decoder();
+    // test_mha();
+    test_encoder_decoder();
     return ;
     test_at();
     test_add();

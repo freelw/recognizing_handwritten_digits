@@ -191,3 +191,5 @@ Tensor[186](matmul_l_tmp) 相同
 Tensor[22](res_at_grad_reshape_reshape_permute)(2, 2, 1, 5) 不相同
 
  Tensor[155](bmm_res_div_res_reshape_sequence_mask_reshape_softmax_res_at_reshape_reshape_permute_reshape_deep_copy_grad_reshape_permute_reshape_deep_copy_reshape)(2, 10) 不相同
+
+ bmm_res_res_at_reshape_reshape_permute_reshape_deep_copy_res_at_reshape_reshape_permute_reshape_deep_copy_transpose_reshape_deep_copy_grad
