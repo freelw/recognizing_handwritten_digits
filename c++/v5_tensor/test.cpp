@@ -5117,6 +5117,7 @@ void test_encoder_decoder() {
     int num_heads = 4;
     int num_steps = NUM_STEPS;
     int max_posencoding_len = MAX_POSENCODING_LEN;
+    zero_c_tensors();
 
     Seq2SeqEncoderDecoder *seq2seq = new Seq2SeqEncoderDecoder(
         bos_id, eos_id,
@@ -5146,7 +5147,6 @@ void test_encoder_decoder() {
     all_params.insert(all_params.end(), dec_params.begin(), dec_params.end());
     
     Adam adam(all_params, 0.001f);
-    zero_c_tensors();
     zero_grad();
     loss->backward();
     adam.clip_grad(1.0f);

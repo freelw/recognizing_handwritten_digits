@@ -828,13 +828,13 @@ bool validateBoundaryFound() {
 }
 
 bool validteZeroCTensorsFound() {
-    bool zero_action_found = false;
+    int cnt = 0;
     for (Action *action : g_actions) {
         if (action->is_zero_c_tensors()) {
-            zero_action_found = true;
+            cnt ++;
         }
     }
-    return zero_action_found;
+    return cnt == 1 && g_actions[0]->is_zero_c_tensors(); // the first action should be ZeroCTensorsAction
 }
 
 bool validateAddEqActionsInBackward() {

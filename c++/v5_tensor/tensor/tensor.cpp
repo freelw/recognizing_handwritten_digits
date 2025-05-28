@@ -545,12 +545,13 @@ void allocMemAndInitTensors() {
     for (Tensor *tensor : g_tensors) {
         tensors_data_capacity += tensor->capacity();
     }
-    for (Tensor *tensor : g_grad_tensors) {
-        grad_tensors_data_capacity += tensor->capacity();
-    }
     for (Tensor *tensor : g_c_tensors) {
         c_tensors_data_capacity += tensor->capacity();
     }
+    for (Tensor *tensor : g_grad_tensors) {
+        grad_tensors_data_capacity += tensor->capacity();
+    }
+    
     tensors_data = g_backend_ops->alloc(tensors_data_capacity);
     c_tensors_data = g_backend_ops->alloc(c_tensors_data_capacity);
     grad_tensors_data = g_backend_ops->alloc(grad_tensors_data_capacity);
