@@ -132,6 +132,8 @@ bool compare_res_wi_wt_ans(
 
 void test_bmm() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({1, 2, 3}, "input");
     Tensor *w = allocTensor({1, 3, 4}, "w");
     Tensor *wt = allocTensor({1, 4, 3}, "wt");
@@ -161,6 +163,8 @@ void test_bmm() {
 
 void test_bmm_1() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     int m = 330;
     int n = 620;
     int p = 102;
@@ -192,6 +196,8 @@ void test_bmm_1() {
 
 void test_bmm_2() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({2, 2, 3}, "input");
     Tensor *w = allocTensor({2, 3, 4}, "w");
     Tensor *wt = allocTensor({2, 4, 3}, "wt");
