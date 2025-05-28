@@ -410,6 +410,7 @@ void CPUOps::calcAllGradNorm(const std::vector<Tensor*> &grads, Tensor *norm) {
     assert(norm->get_shape().size() == 1);
     assert(norm->get_shape()[0] == 1);
     float *norm_data = static_cast<float*>(norm->get_data());
+    // assert(!std::isinf(tmp));
     norm_data[0] = tmp;
 }
 
@@ -705,9 +706,6 @@ void CPUOps::softmax_bacward(Tensor *target_grad, const Tensor *softmax_res, Ten
 void CPUOps::div(Tensor *dst, Tensor *src, float value) {
     assert(dst->length() == src->length());
     auto length = dst->length();
-    if (length == 1) {
-        std::cout << "static_cast<float*>(src->get_data())[0]" << static_cast<float*>(src->get_data())[0] << " value " << value << std::endl;   
-    }
     for (int i = 0; i < length; ++i) {
         static_cast<float*>(dst->get_data())[i] = 
             static_cast<float*>(src->get_data())[i] / value;

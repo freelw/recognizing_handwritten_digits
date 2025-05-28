@@ -5118,6 +5118,7 @@ void test_encoder_decoder() {
     int num_steps = NUM_STEPS;
     int max_posencoding_len = MAX_POSENCODING_LEN;
     zero_c_tensors();
+    zero_grad();
     print_no_zero_tensor_names();
 
     Seq2SeqEncoderDecoder *seq2seq = new Seq2SeqEncoderDecoder(
@@ -5150,9 +5151,10 @@ void test_encoder_decoder() {
     Adam adam(all_params, 0.001f);
     zero_grad();
     loss->backward();
-    adam.clip_grad(1.0f);
-    adam.step();
-    // printAllActions();
+    // adam.clip_grad(1.0f);
+    // adam.step();
+    zero_grad();
+    printAllActions();
     allocMemAndInitTensors();
     gDoOnceActions();
     custom_init_all_encoder_weights(enc_params);
@@ -5206,25 +5208,44 @@ void test_encoder_decoder() {
     assert(dec_embedding->get_w()->get_name() == "embedding");
 
     // print all params
-    for (int i = 0; i < all_params.size(); i++) {
-        std::cout << "param " << i << " "<< all_params[i]->get_w()->get_name() << std::endl;
-        std::cout << *all_params[i]->get_w() << std::endl;
-    }
+    // for (int i = 0; i < all_params.size(); i++) {
+    //     std::cout << "param " << i << " "<< all_params[i]->get_w()->get_name() << std::endl;
+    //     std::cout << *all_params[i]->get_w() << std::endl;
+    // }
 
-    int epochs = 200;
+    int epochs = 2;
     for (int e = 0; e < epochs; e++) {
         gDoActions();
         std::cout << "e : " << e << " loss : " << *loss->get_tensor() << std::endl;
         validateAllTensorNames();
         validateAllTensors();
+        // print all parameters value
+        for (int i = 0; i < all_params.size(); i++) {
+            std::cout << "param " << i << " name : " << all_params[i]->get_w()->get_meta_info() << std::endl;
+            // std::cout << "param " << i << " value : " << std::endl << *all_params[i]->get_w() << std::endl;
+            std::cout << "param " << i << " grad : " << std::endl << *all_params[i]->get_grad() << std::endl;
+        }
     }
 
-    // print all parameters value
-    for (int i = 0; i < all_params.size(); i++) {
-        std::cout << "param " << i << " name : " << all_params[i]->get_w()->get_meta_info() << std::endl;
-        std::cout << "param " << i << " value : " << std::endl << *all_params[i]->get_w() << std::endl;
-        std::cout << "param " << i << " grad : " << std::endl << *all_params[i]->get_grad() << std::endl;
-    }
+    
+
+    
+    // g_backend_ops->memset(grad_tensors_data, 0, grad_tensors_data_capacity);
+    // g_backend_ops->memset(c_tensors_data, 0, c_tensors_data_capacity);
+
+    //print all tensors
+    // for (int i = 0; i < g_c_tensors.size(); i++) {
+    //     std::cout << "c_tensor " << i << " name : " << g_c_tensors[i]->get_meta_info() << std::endl;
+    //     std::cout << "c_tensor " << i << " value : " << std::endl << *g_c_tensors[i] << std::endl;
+    // }
+    // for (int i = 0; i < g_grad_tensors.size(); i++) {
+    //     std::cout << "grad_tensor " << i << " name : " << g_grad_tensors[i]->get_meta_info() << std::endl;
+    //     std::cout << "grad_tensor " << i << " value : " << std::endl << *g_grad_tensors[i] << std::endl;
+    // }
+    // for (int i = 0; i < g_tensors.size(); ++ i) {
+    //     std::cout << "tensor " << i << " name : " << g_tensors[i]->get_meta_info() << std::endl;
+    //     std::cout << "tensor " << i << " value : " << std::endl << *g_tensors[i] << std::endl;
+    // }
 
     // std::cout << "enc_valid_lens : " << std::endl << *enc_valid_lens << std::endl;
     // std::cout << "dec_valid_lens : " << std::endl << *dec_valid_lens << std::endl;
@@ -5233,17 +5254,17 @@ void test_encoder_decoder() {
     // std::cout << "labels : " << std::endl << *labels << std::endl;
     // std::cout << "ce_mask : " << std::endl << *ce_mask << std::endl;
     // std::cout << "res : " << std::endl << *res->get_tensor() << std::endl;
-    std::cout << "res grad : " << std::endl << *res->get_grad() << std::endl;
-    std::cout << "ce_res : " << std::endl << *ce_res->get_tensor() << std::endl;
-    std::cout << "ce_res grad : " << std::endl << *ce_res->get_grad() << std::endl;
-    std::cout << "mask_res : " << std::endl << *mask_res->get_tensor() << std::endl;
-    std::cout << "mask_res grad : " << std::endl << *mask_res->get_grad() << std::endl;
-    std::cout << "enc_embedding : " << std::endl << *enc_embedding->get_w() << std::endl;
-    std::cout << "enc_embedding grad : " << std::endl << *enc_embedding->get_grad() << std::endl;
-    std::cout << "dec_embedding : " << std::endl << *dec_embedding->get_w() << std::endl;
-    std::cout << "dec_embedding grad : " << std::endl << *dec_embedding->get_grad() << std::endl;
+    // std::cout << "res grad : " << std::endl << *res->get_grad() << std::endl;
+    // std::cout << "ce_res : " << std::endl << *ce_res->get_tensor() << std::endl;
+    // std::cout << "ce_res grad : " << std::endl << *ce_res->get_grad() << std::endl;
+    // std::cout << "mask_res : " << std::endl << *mask_res->get_tensor() << std::endl;
+    // std::cout << "mask_res grad : " << std::endl << *mask_res->get_grad() << std::endl;
+    // std::cout << "enc_embedding : " << std::endl << *enc_embedding->get_w() << std::endl;
+    // std::cout << "enc_embedding grad : " << std::endl << *enc_embedding->get_grad() << std::endl;
+    // std::cout << "dec_embedding : " << std::endl << *dec_embedding->get_w() << std::endl;
+    // std::cout << "dec_embedding grad : " << std::endl << *dec_embedding->get_grad() << std::endl;
 
-    std::cout << "res : " << std::endl << *res->get_tensor() << std::endl;
+    // std::cout << "res : " << std::endl << *res->get_tensor() << std::endl;
     
     delete seq2seq;
     destruct_env();

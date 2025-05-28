@@ -556,7 +556,7 @@ void ReshapeDeepCpAction::execute() {
 
 std::string ReshapeDeepCpAction::to_string() const {
     std::ostringstream oss;
-    oss << "ReshapeDeepCpAction: deep copy " << lhs->get_meta_info() << " to " << rhs->get_meta_info() << " with strides " << strides->get_meta_info();
+    oss << "ReshapeDeepCpAction: deep copy " << lhs->get_meta_info() << " from " << rhs->get_meta_info() << " with strides " << strides->get_meta_info();
     return oss.str();
 }
 

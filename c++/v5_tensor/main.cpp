@@ -54,6 +54,7 @@ void train(int epochs, float lr, int batch_size) {
     loader.load();
     std::cout << "data loaded." << std::endl;
 
+    zero_c_tensors();
     MLP m(INPUT_LAYER_SIZE, {30, 10}, -0.01f);
     Tensor *inputs = allocTensor({batch_size, 784}, "inputs");
     Tensor *labels = allocTensor({batch_size}, "labels", INT32);

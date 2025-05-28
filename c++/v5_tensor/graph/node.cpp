@@ -1,5 +1,6 @@
 #include "node.h"
 #include "actions.h"
+#include "backends/backend_ops.h"
 
 namespace graph {
 
@@ -241,6 +242,12 @@ namespace graph {
         Tensor *l_tensor = lhs->get_tensor();
         Tensor *r_tensor = rhs->get_tensor();
         Tensor *res_tensor = res_node->get_tensor();
+        // gCreateAction(
+        //     new DbgPrintAction(
+        //         res_tensor,
+        //         "atimpl res_tensor"
+        //     )
+        // );
         gCreateAction(
             new AtAction(
                 l_tensor,
@@ -805,6 +812,27 @@ namespace graph {
                 auto grad_shape = node->get_grad()->get_shape();
                 auto tensor_shape = node->get_tensor()->get_shape();
                 assert(grad_shape == tensor_shape);
+            }
+        }
+    }
+    void validateAllNodesGradZero() {
+        for (Node *node : nodes) {
+            if (node->is_require_grad()) {
+                char *buffer = static_cast<char*>(::malloc(node->get_grad()->size()));
+                g_backend_ops->cp_from_device(
+                    buffer,
+                    node->get_grad(),
+                    node->get_grad()->size()
+                );
+                for (int i = 0; i < node->get_grad()->size(); ++i) {
+                    if (buffer[i] != char(0)) {
+                        std::cerr << "tensor " << node->get_grad()->get_name() 
+                                  << " grad is not zero at index " << i 
+                                  << ", value: " << int(buffer[i]) << std::endl;
+                        assert(false);
+                    }
+                }
+                ::free(buffer);
             }
         }
     }

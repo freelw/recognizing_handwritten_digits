@@ -207,14 +207,6 @@ namespace graph {
                 assert(grad->get_shape().size() == 2);
                 std::vector<int> shape = {grad->get_shape()[1]};
                 Tensor *tmp = allocGradTensor(shape, "sum_tmp"); // 行向量
-                //res_at_dense_b_linear_expand_add_res_grad
-                // gCreateAction(
-                //     new DbgPrintAction(
-                //         grad,
-                //         "ExpandAddEdge inputgrad ",
-                //         "res_at_dense_b_linear_expand_add_res_grad"
-                //     )
-                // );
                 
                 gCreateAction(
                     new SumAction(
@@ -223,29 +215,12 @@ namespace graph {
                         0
                     )
                 );
-                // if (grad->get_name()=="res_at_dense_b_linear_expand_add_res_grad") {
-                //     gCreateAction(
-                //         new DbgPrintAction(
-                //             tmp,
-                //             "res_at_dense_b_linear_expand_add_res_grad sum tmp"
-                //         )
-                //     );
-                // }
                 gCreateAction(
                     new AddEqAction(
                         node->get_grad(),
                         tmp
                     )
                 );
-
-                // if (grad->get_name()=="res_at_dense_b_linear_expand_add_res_grad") {
-                //     gCreateAction(
-                //         new DbgPrintAction(
-                //             node->get_grad(),
-                //             "res_at_dense_b_linear_expand_add_res_grad node->get_grad()"
-                //         )
-                //     );
-                // }
             }
     };
 
@@ -704,6 +679,7 @@ namespace graph {
     Node *allocNode(Tensor *t);
     Node *allocNode(Tensor *t, Tensor *grad);
     void validateAllNodes();
+    void validateAllNodesGradZero();
     void freeAllNodes();
     void freeAllEdges();
 }

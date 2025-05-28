@@ -175,3 +175,7 @@ real    0m2.328s
 user    0m1.940s
 sys     0m0.358s
 ```
+
+## bug
+
+bmm_res_div_res_reshape_sequence_mask_reshape_softmax_res_at_reshape_reshape_permute_reshape_deep_copy_grad_reshape_permute_reshape_deep_copy

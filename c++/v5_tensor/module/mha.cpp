@@ -90,6 +90,18 @@ graph::Node *MHA::forward(
     );
 
     auto output_concat = transpose_output(output);
+    gCreateAction(
+        new DbgPrintAction(
+            output_concat->get_tensor(),
+            "MHA output_concat tensor"
+        )
+    );
+    gCreateAction(
+        new DbgPrintAction(
+            output_concat->get_grad(),
+            "MHA output_concat grad"
+        )
+    );
     return w_o->forward(output_concat);
 }
 

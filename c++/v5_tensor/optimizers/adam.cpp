@@ -14,6 +14,7 @@ void Adam::step() {
 void Adam::clip_grad(float grad_clip_val) {
     std::vector<Tensor *> grads;
     grads.reserve(parameters.size());
+    assert(parameters.size() == 64);
     for (auto param : parameters) {
         assert(param->is_require_grad());
         assert(param->get_grad() != nullptr);
@@ -26,6 +27,6 @@ void Adam::clip_grad(float grad_clip_val) {
     for (auto grad: grads) {
         gCreateAction(
             new ClipGradAction(grad, norm, grad_clip_val)
-        );    
+        );
     }
 }
