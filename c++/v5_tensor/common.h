@@ -22,11 +22,8 @@ bool is_use_gpu();
 #define NUM_STEPS 32
 #define MAX_POSENCODING_LEN 10000
 #define RESOURCE_NAME "../../resources/fra_preprocessed.txt"
-// #define RESOURCE_NAME "../../resources/fra_stiny.txt" 
 #define SRC_VOCAB_NAME "../fra_vocab_builder/vocab_en.txt"
 #define TGT_VOCAB_NAME "../fra_vocab_builder/vocab_fr.txt"
-// #define SRC_VOCAB_NAME "../fra_vocab_builder/vocab_en_tiny.txt"
-// #define TGT_VOCAB_NAME "../fra_vocab_builder/vocab_fr_tiny.txt"
 #define TEST_FILE "./test.txt"
 
 #endif

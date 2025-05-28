@@ -97,6 +97,7 @@ void init_dec_valid_lens(Tensor *dec_valid_lens) {
 }
 
 void load_tokens_from_file(
+    const std::string & corpus,
     std::vector<std::vector<uint>> &src_token_ids,
     std::vector<std::vector<uint>> &tgt_token_ids,
     int &enc_vocab_size,
@@ -106,7 +107,6 @@ void load_tokens_from_file(
     int &src_pad_id,
     int &tgt_pad_id
     ) {
-    std::string corpus = RESOURCE_NAME;
     std::string src_vocab_name = SRC_VOCAB_NAME;
     std::string tgt_vocab_name = TGT_VOCAB_NAME;
     std::string test_file = TEST_FILE;
@@ -128,9 +128,13 @@ int main(int argc, char *argv[]) {
     int gpu = 1;
     float lr = 0.001f;
     std::string checkpoint;
+    std::string corpus = RESOURCE_NAME;
 
-    while ((opt = getopt(argc, argv, "e:l:b:g:")) != -1) {
+    while ((opt = getopt(argc, argv, "f:c:e:l:b:g:")) != -1) {
         switch (opt) {
+            case 'f':
+                corpus = optarg;
+                break;
             case 'c':
                 checkpoint = optarg;
                 break;
@@ -153,6 +157,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    std::cout << "corpus : " << corpus << std::endl;
     std::cout << "epochs : " << epochs << std::endl;
     std::cout << "batch_size : " << batch_size << std::endl;
     std::cout << "gpu : " << gpu << std::endl;
@@ -169,6 +174,7 @@ int main(int argc, char *argv[]) {
     std::vector<std::vector<uint>> v_src_token_ids;
     std::vector<std::vector<uint>> v_tgt_token_ids;
     load_tokens_from_file(
+        corpus,
         v_src_token_ids, v_tgt_token_ids,
         enc_vocab_size, dec_vocab_size,
         bos_id,
