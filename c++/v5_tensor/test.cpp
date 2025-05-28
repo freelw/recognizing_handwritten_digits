@@ -228,6 +228,8 @@ void test_bmm_2() {
 
 void test_at() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({2, 3}, "input");
     Tensor *w = allocTensor({3, 4}, "w");
     Tensor *wt = allocTensor({4, 3}, "wt");
@@ -257,6 +259,8 @@ void test_at() {
 
 void test_at_1() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     int m = 330;
     int n = 620;
     int p = 102;
@@ -286,6 +290,8 @@ void test_at_1() {
 
 void test_add() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({3, 4}, "input");
     Tensor *w = allocTensor({3, 4}, "w");
     Tensor *wt = allocTensor({4, 3}, "wt");
@@ -330,6 +336,8 @@ void test_add() {
 
 void test_add_eq() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({3, 4}, "input");
     Tensor *input1 = allocTensor({3, 4}, "input1");
     Tensor *w = allocTensor({3, 4}, "w");
@@ -359,6 +367,8 @@ void test_add_eq() {
 
 void test_expand_add() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *bias = allocTensor({4}, "bias");
     Tensor *w = allocTensor({3, 4}, "w");
     Tensor *wt = allocTensor({4, 3}, "wt");
@@ -386,6 +396,8 @@ void test_expand_add() {
 
 void test_mul() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({3, 4}, "input");
     Tensor *w = allocTensor({3, 4}, "w");
     Tensor *wt = allocTensor({4, 3}, "wt");
@@ -414,6 +426,8 @@ void test_mul() {
 
 void test_mul_1() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({1, 3, 4}, "input");
     Tensor *w = allocTensor({1, 3, 4}, "w");
     Tensor *wt = allocTensor({1, 4, 3}, "wt");
@@ -453,6 +467,8 @@ void test_mul_1() {
 
 void test_sum() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *w = allocTensor({3, 4}, "w");
     Tensor *wt = allocTensor({4, 3}, "wt");
     Tensor *res_wi_tensor = allocTensor({4}, "res_wi");
@@ -492,6 +508,8 @@ void init_labels(Tensor *labels) {
 
 void test_cross_entropy() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *labels = allocTensor({3}, "input", INT32);
     Tensor *w = allocTensor({3, 4}, "w");
     Tensor *wt = allocTensor({4, 3}, "wt");
@@ -524,6 +542,8 @@ void test_cross_entropy() {
 
 void test_cross_entropy_backward() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *labels = allocTensor({3}, "input", INT32);
     Tensor *w = allocTensor({3, 4}, "w");
     Tensor *wt = allocTensor({4, 3}, "wt");
@@ -566,6 +586,8 @@ void test_cross_entropy_backward() {
 
 void test_bp() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({1, 2}, "input");
     Tensor *w = allocTensor({3, 2}, "w");
     Tensor *bias = allocTensor({3}, "bias");
@@ -860,6 +882,8 @@ Tensor *calc_norm(const std::vector<Parameter*> &params) {
 
 void test_adam() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({1, 2}, "input");
     Tensor *w = allocTensor({3, 2}, "w");
     Tensor *bias = allocTensor({3}, "bias");
@@ -1283,6 +1307,8 @@ float calc_std(Tensor *tensor) {
 
 void test_mlp() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     MLP mlp(
         784,
         {30, 10},
@@ -1351,6 +1377,8 @@ void test_mlp() {
 
 void test_print_tensor() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({2, 2, 4}, "input");
     auto node = graph::allocNode(input);
     node->init_weight_gauss(0.02, 0);
@@ -1451,6 +1479,8 @@ bool compare_res_ans_1d_int32(
 
 void test_reshape() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
 
     Tensor *l = allocTensor({3, 4}, "input");
     auto n = graph::allocNode(l);
@@ -1510,6 +1540,8 @@ void test_reshape() {
 
 void test_reshape_1() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
 
     Tensor *l = allocTensor({3, 4}, "input");
     auto n = graph::allocNode(l);
@@ -1569,6 +1601,8 @@ void test_reshape_with_cpu_base(
     float *l_t_shape_ans,
     float *l_r_ans
 ) {
+    zero_c_tensors();
+    zero_grad();
     Tensor *l = allocTensor({m, n}, "input");
     auto node = graph::allocNode(l);
     node->init_weight_for_dbg();
@@ -1709,6 +1743,8 @@ void test_reshape_with_cpu() {
 
 void test_reshape_bp() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({5, 4}, "input");
     Tensor *w = allocTensor({3, 2}, "w");
     Tensor *bias = allocTensor({3}, "bias");
@@ -1887,6 +1923,8 @@ void test_reshape_bp() {
 void test_reshape_bp_1() {
 
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({5, 4}, "input");
     Tensor *w = allocTensor({3, 2}, "w");
     Tensor *bias = allocTensor({3}, "bias");
@@ -2064,6 +2102,8 @@ void test_reshape_bp_1() {
 
 void test_contiguous() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({2, 2, 4}, "input");
     auto t_input = input->transpose();
     bool succ =
@@ -2081,6 +2121,8 @@ void test_contiguous() {
 
 void test_repeat_interleave() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({3}, "input", INT32);
     auto node = graph::allocNode(input);
     node->init_weight_for_dbg();
@@ -2105,6 +2147,8 @@ void test_repeat_interleave() {
 void test_repeat_interleave_1() {
 
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({2, 3}, "input", INT32);
     auto node = graph::allocNode(input);
     auto res = input->repeat_interleave(4);
@@ -2151,6 +2195,8 @@ void test_repeat_interleave_1() {
 
 void test_mask() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     int m = 3;
     int n = 4;
     int k = 5;
@@ -2189,6 +2235,8 @@ void test_mask() {
 
 void test_mask_1() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     int m = 3;
     int n = 4;
     int k = 13;
@@ -2227,6 +2275,8 @@ void test_mask_1() {
 
 void test_softmax() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({1, 3, 4}, "input");
     auto ni = graph::allocNode(input);
     ni->init_weight_for_dbg(10000.0f);
@@ -2255,6 +2305,8 @@ void test_softmax() {
 
 void test_masked_softmax() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({2, 2, 4}, "input");
     auto ni = graph::allocNode(input);
     ni->init_weight_for_dbg(10000.0f);
@@ -2286,6 +2338,8 @@ void test_masked_softmax() {
 
 void test_masked_softmax_1() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({2, 2, 4}, "input");
     auto ni = graph::allocNode(input);
     ni->init_weight_for_dbg(10000.0f);
@@ -2318,6 +2372,8 @@ void test_masked_softmax_1() {
 
 void test_masked_softmax_bp() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *labels = allocTensor({4}, "input", INT32);
     Tensor *input = allocTensor({2, 2, 4}, "input");
     auto ni = graph::allocNode(input);
@@ -2379,6 +2435,8 @@ void test_masked_softmax_bp() {
 void test_bmm_bp() {
 
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({2, 3, 4}, "input");
     auto ni = graph::allocNode(input);
     ni->require_grad();
@@ -2491,6 +2549,8 @@ void test_bmm_bp() {
 
 void test_bmm_bp_1() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({2, 3, 4}, "input");
     auto ni = graph::allocNode(input);
     ni->require_grad();
@@ -2583,6 +2643,8 @@ void test_bmm_bp_1() {
 
 void test_div_bp() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     Tensor *input = allocTensor({3, 4}, "input");
     auto ni = graph::allocNode(input);
     ni->require_grad();
@@ -2667,6 +2729,8 @@ void test_div_bp() {
 
 void test_attention_bp_part() {
     construct_env();
+    zero_c_tensors();
+    zero_grad();
     auto d = 2;
     Tensor *querys = allocTensor({2, 1, d}, "querys");
     Tensor *keys = allocTensor({2, 10, d}, "keys");
@@ -2797,6 +2861,7 @@ void test_attention_bp_part() {
 void test_attention_bp() {
     construct_env();
     zero_c_tensors();
+    zero_grad();
     DotProductAttention attention;
     Tensor *querys = allocTensor({2, 1, 2}, "querys");
     Tensor *keys = allocTensor({2, 10, 2}, "keys");
@@ -2818,7 +2883,6 @@ void test_attention_bp() {
     int32_t valid_lens_buffer[2] = {2, 6};
     auto softmax_res = attention.forward(nq, nk, nv, valid_lens)->softmax();
     auto ce_res = softmax_res->reshape({-1, 4})->CrossEntropy(labels)->avg_1d();
-    zero_grad();
     insert_boundary_action();
     ce_res->backward();
     // printAllActions();
@@ -5434,8 +5498,7 @@ void test_cpu() {
     // test_clip();
     // test_attention_bp();
     // test_mha();
-    test_encoder_decoder();
-    return ;
+    // test_encoder_decoder();
     test_at();
     test_add();
     test_add_eq();
