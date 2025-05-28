@@ -5145,7 +5145,7 @@ void test_encoder_decoder() {
     Adam adam(all_params, 0.001f);
     zero_grad();
     loss->backward();
-    // adam.clip_grad(1.0f);
+    adam.clip_grad(1.0f);
     adam.step();
     // printAllActions();
     allocMemAndInitTensors();

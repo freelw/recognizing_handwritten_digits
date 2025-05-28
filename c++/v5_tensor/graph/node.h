@@ -176,6 +176,11 @@ namespace graph {
                     "mul_tmp"
                 );
                 gCreateAction(
+                    new ClearAction(
+                        tmp
+                    )
+                );
+                gCreateAction(
                     new MulAction(
                         grad,
                         rhs->get_tensor(),
@@ -267,6 +272,11 @@ namespace graph {
                     "expand_mul_l_add_tmp"
                 );
                 gCreateAction(
+                    new ClearAction(
+                        tmp
+                    )
+                );
+                gCreateAction(
                     new ExpandMulAction(grad, rhs->get_tensor(), tmp)
                 );
                 gCreateAction(
@@ -296,6 +306,11 @@ namespace graph {
                 Tensor *tmp = allocTensor(
                     grad->get_shape(),
                     "expand_mul_r_tmp"
+                );
+                gCreateAction(
+                    new ClearAction(
+                        tmp
+                    )
                 );
                 gCreateAction(
                     new MulAction(
@@ -345,6 +360,11 @@ namespace graph {
                     "matmul_l_tmp"
                 );
                 gCreateAction(
+                    new ClearAction(
+                        tmp
+                    )
+                );
+                gCreateAction(
                     new AtAction(
                         grad,
                         r_transpose_view,
@@ -380,6 +400,11 @@ namespace graph {
                 Tensor *tmp = allocTensor(
                     node->get_grad()->get_shape(),
                     "matmul_r_tmp"
+                );
+                gCreateAction(
+                    new ClearAction(
+                        tmp
+                    )
                 );
                 gCreateAction(
                     new AtAction(
@@ -531,6 +556,11 @@ namespace graph {
                     "div_tmp"
                 );
                 gCreateAction(
+                    new ClearAction(
+                        tmp
+                    )
+                );
+                gCreateAction(
                     new DivAction(
                         grad,
                         tmp,
@@ -562,6 +592,11 @@ namespace graph {
                 Tensor *tmp = allocTensor(
                     node->get_grad()->get_shape(),
                     "dropout_tmp"
+                );
+                gCreateAction(
+                    new ClearAction(
+                        tmp
+                    )
                 );
                 gCreateAction(
                     new MulAction(
@@ -634,6 +669,11 @@ namespace graph {
                     node->get_grad()->get_shape(),
                     "avg_1d_tmp"
                 );
+                gCreateAction(
+                    new ClearAction(
+                        tmp
+                    )
+                );
                 
                 gCreateAction(
                     new FillWeightAction(
@@ -682,6 +722,11 @@ namespace graph {
                 Tensor *tmp = allocTensor(
                     node->get_grad()->get_shape(),
                     "mul_sv_tmp"
+                );
+                gCreateAction(
+                    new ClearAction(
+                        tmp
+                    )
                 );
                 gCreateAction(
                     new MulSVAction(

@@ -406,6 +406,14 @@ class MulSVAction : public Action {
         float value;
 };
 
+class ClearAction : public Action {
+    public:
+        ClearAction(Tensor *_lhs)
+            : Action(_lhs, nullptr, nullptr) {}
+        void execute() override;
+        std::string to_string() const override;
+};
+
 std::vector<Action *> getOnceActions();
 void gCreateAction(Action *action);
 void gDoActions();

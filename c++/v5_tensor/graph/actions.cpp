@@ -778,6 +778,17 @@ std::string MulSVAction::to_string() const {
     return oss.str();
 }
 
+void ClearAction::execute() {
+    assert(lhs != nullptr);
+    g_backend_ops->memset(lhs->get_data(), 0, lhs->size());
+}
+
+std::string ClearAction::to_string() const {
+    std::ostringstream oss;
+    oss << "ClearAction: clearing " << lhs->get_meta_info();
+    return oss.str();
+}
+
 std::vector<Action*> g_actions;
 
 std::vector<Action *> getOnceActions() {

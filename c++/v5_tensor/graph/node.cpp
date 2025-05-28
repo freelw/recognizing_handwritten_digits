@@ -632,6 +632,11 @@ namespace graph {
             "cross_entropy_tmp"
         );
         gCreateAction(
+            new ClearAction(
+                tmp
+            )
+        );
+        gCreateAction(
             new CrossEntropyBackwardAction(
                 node->get_tensor(),
                 labels,
@@ -686,6 +691,11 @@ namespace graph {
             node->get_grad()->get_shape(),
             "softmax_tmp"
         );
+        gCreateAction(
+            new ClearAction(
+                tmp
+            )
+        );
         
         gCreateAction(
             new SoftmaxBackwardAction(
@@ -709,6 +719,19 @@ namespace graph {
             node->get_grad()->get_shape(),
             "embedding_tmp"
         );
+
+        gCreateAction(
+            new ClearAction(
+                tmp
+            )
+        );
+
+        // gCreateAction(
+        //     new DbgPrintAction(
+        //         tmp,
+        //         "EmbeddingEdge embedding_tmp "
+        //     )
+        // );
 
         // gCreateAction(
         //     new DbgPrintAction(
@@ -737,6 +760,11 @@ namespace graph {
         Tensor *tmp = allocTensor(
             node->get_grad()->get_shape(),
             "norm_tmp"
+        );
+        gCreateAction(
+            new ClearAction(
+                tmp
+            )
         );
         // gCreateAction(
         //     new DbgPrintAction(
