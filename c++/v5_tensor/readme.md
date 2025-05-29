@@ -245,3 +245,27 @@ epoch 8 :  [384/384]loss : 4.19153
 epoch 9 :  [384/384]loss : 4.11973
 checkpoint saved : ./checkpoints/checkpoint_20250528_215401_9.bin
 ```
+
+
+# 修正dropout bp bug后重新测试单epoch耗时 step=32 batchsize=128
+```
+(base) cs@cs-desktop:~/project/recognizing_handwritten_digits/c++/v5_tensor$ time ./transformer -e 1
+corpus : ../../resources/fra_preprocessed.txt
+epochs : 1
+batch_size : 128
+gpu : 1
+learning rate : 0.001
+checkpoint : 
+enc_vocab_size : 7939
+dec_vocab_size : 13387
+bos_id : 3
+eos_id : 1
+src_pad_id : 0
+tgt_pad_id : 0
+epoch 0 :  [167040/167130]loss : 4.05721
+checkpoint saved : ./checkpoints/checkpoint_20250529_143558_0.bin
+
+real    12m56.637s
+user    12m55.901s
+sys     0m0.734s
+```
