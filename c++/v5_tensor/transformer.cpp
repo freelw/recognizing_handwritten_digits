@@ -261,7 +261,13 @@ int main(int argc, char *argv[]) {
 
     gDoOnceActions();
     for (auto &parameter : parameters) {
-        std::cout << "g meta : " << parameter->get_grad()->get_meta_info() << std::endl;
+        std::string meta = parameter->get_grad()->get_meta_info();
+        std::cout << "g meta : " << meta << std::endl;
+        std::string mtgt = "Tensor[31766](w_k_w_linear_grad)(256, 256)";
+        // std::string mtgt = "Tensor[31786](w_v_w_linear_grad)(256, 256)";
+        if (meta == mtgt) {
+            std::cout << "w : " << *parameter->get_w() << std::endl;
+        }
     }
     // for (auto &parameter : parameters) {
     //     std::cout << "w meta : " << parameter->get_w()->get_meta_info() << std::endl;

@@ -2209,14 +2209,30 @@ void test_mask() {
     int k = 5;
     Tensor *input = allocTensor({m, n, k}, "input");
     auto ni = graph::allocNode(input);
+    ni->require_grad();
     ni->init_weight_for_dbg();
     Tensor *mask = allocTensor({m}, "mask", INT32);
     auto nm = graph::allocNode(mask);
     nm->init_weight_for_dbg();
-    auto res = input->reshape({-1, k})->sequence_mask(mask->repeat_interleave(n), 0.1f);
+    auto res = ni->reshape({-1, k})->sequence_mask(mask->repeat_interleave(n), 0.1f);
     insert_boundary_action();
+    res->backward();
     allocMemAndInitTensors();
+    gDoForwardActions(true);
+    float *res_grad_buffer = static_cast<float*>(::malloc(res->get_grad()->size()));
+    for (int i = 0; i < res->get_grad()->length(); ++i) {
+        res_grad_buffer[i] = 0.1f;
+    }
+    g_backend_ops->cp_to_device(
+        res->get_grad(),
+        reinterpret_cast<char*>(res_grad_buffer),
+        res->get_grad()->size()
+    );
+    ::free(res_grad_buffer);
+    gDoBackwardActions();
+
     gDoActions();
+    std::cout << "ni grad : " << std::endl << *ni->get_grad() << std::endl;
     float ans[60] = {
         0.1, 0.1, 0.1, 0.1, 0.1,
         0.1, 0.1, 0.1, 0.1, 0.1,
@@ -2231,7 +2247,7 @@ void test_mask() {
         0.0005, 0.00051, 0.1, 0.1, 0.1,
         0.00055, 0.00056, 0.1, 0.1, 0.1
     };
-    bool succ = compare_res_ans(res, ans, "res");
+    bool succ = compare_res_ans(res->get_tensor(), ans, "res");
     if (succ) {
         std::cout << GREEN << "test_mask succ" << RESET << std::endl;
     } else {
@@ -2645,6 +2661,46 @@ void test_bmm_bp_1() {
     } else {
         std::cout << RED << "test_bmm_bp_1 failed" << RESET << std::endl;
     }
+    destruct_env();
+}
+
+void test_bmm_bp_2() {
+
+    construct_env();
+    zero_c_tensors();
+    zero_grad();
+    Tensor *input = allocTensor({2, 3, 4}, "input");
+    auto ni = graph::allocNode(input);
+    ni->require_grad();
+    ni->init_weight_for_dbg(10000.0f);
+    Tensor *w = allocTensor({2, 6, 4}, "w");
+    auto nw = graph::allocNode(w);
+    nw->require_grad();
+    nw->init_weight_for_dbg(10000.0f);
+
+    auto res = ni->bmm(nw->transpose(1, 2));
+    insert_boundary_action();
+    res->backward();
+    printAllActions();
+    allocMemAndInitTensors();
+    gDoForwardActions(true);
+    float *res_grad_buffer = static_cast<float *>(::malloc(res->get_grad()->size()));
+    for (int i = 0; i < res->get_grad()->length(); ++i) {
+        res_grad_buffer[i] = 1.0f;
+    }
+    g_backend_ops->cp_to_device(
+        res->get_grad(),
+        reinterpret_cast<char*>(res_grad_buffer),
+        res->get_grad()->size()
+    );
+    ::free(res_grad_buffer);
+    gDoBackwardActions();
+
+    std::cout << "res : " << std::endl << *res->get_tensor() << std::endl;
+    std::cout << "res grad : " << std::endl << *res->get_grad() << std::endl;
+    std::cout << "ni grad : " << std::endl << *ni->get_grad() << std::endl;
+    std::cout << "nw grad : " << std::endl << *nw->get_grad() << std::endl;
+
     destruct_env();
 }
 
@@ -5527,6 +5583,9 @@ void test_clip() {
 }
 
 void test_cpu() {
+    test_mask();
+    // test_bmm_bp_2();
+    return ;
     test_at();
     test_add();
     test_add_eq();
