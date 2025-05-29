@@ -2495,6 +2495,32 @@ void test_masked_softmax_bp() {
     destruct_env();
 }
 
+
+void test_masked_softmax_bp_1() {
+    construct_env();
+    zero_c_tensors();
+    zero_grad();
+    Tensor *input = allocTensor({3, 2, 4}, "input");
+    Tensor *w = allocTensor({3, 4, 6}, "w");
+    Tensor *w1 = allocTensor({3, 6, 8}, "w1");
+    auto ni = graph::allocNode(input);
+    auto nw = graph::allocNode(w);
+    auto nw1 = graph::allocNode(w1);
+    ni->require_grad();
+    nw->require_grad();
+    nw1->require_grad();
+    Tensor *valid_lens = allocTensor({3, 2}, "mask", INT32);
+    auto res_softmax = ni->masked_softmax(valid_lens);
+    auto bmm_res_1 = res_softmax->bmm(nw);
+    auto bmm_res_2 = bmm_res_1->bmm(nw1);
+    insert_boundary_action();
+    bmm_res_2->backward();
+    printAllActions();
+    allocMemAndInitTensors();    
+    gDoActions();
+    destruct_env();
+}
+
 void test_bmm_bp() {
 
     construct_env();
@@ -5619,7 +5645,7 @@ void test_clip() {
 }
 
 void test_cpu() {
-    test_decoder_1();
+    test_masked_softmax_bp_1();
     return ;
     test_at();
     test_add();
