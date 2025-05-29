@@ -376,6 +376,7 @@ namespace graph {
                     node->edges.push_back(EmptyEdge::create(this));
                 }
             } else {
+                assert(false);
                 node = allocNode(new_tensor);
             }
             offset += block;

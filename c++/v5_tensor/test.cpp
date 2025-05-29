@@ -5361,10 +5361,10 @@ void test_encoder_decoder() {
     int eos_id = 1;
     
 
-    int num_hiddens = 4;
+    int num_hiddens = 256;
     int num_blks = 2;
-    float dropout = 0.0f;
-    int ffn_num_hiddens = 5;
+    float dropout = 0.2f;
+    int ffn_num_hiddens = 64;
     int num_heads = 4;
     int num_steps = NUM_STEPS;
     int max_posencoding_len = MAX_POSENCODING_LEN;
@@ -5384,9 +5384,9 @@ void test_encoder_decoder() {
     Tensor *labels = allocTensor({9}, "labels", INT32);
     
     auto res = seq2seq->forward(src_token_ids, tgt_token_ids, enc_valid_lens, dec_valid_lens);
-    auto ce_res = res->reshape({-1, dec_vocab_size})->CrossEntropy(labels);
-    auto mask_res = ce_res->mask(ce_mask);
-    auto loss = mask_res->avg_1d(ce_mask);
+    // auto ce_res = res->reshape({-1, dec_vocab_size})->CrossEntropy(labels);
+    // auto mask_res = ce_res->mask(ce_mask);
+    // auto loss = mask_res->avg_1d(ce_mask);
     // auto mask_res = ce_res;
     // auto loss = mask_res->avg_1d();
     insert_boundary_action();
@@ -5398,122 +5398,71 @@ void test_encoder_decoder() {
     all_params.insert(all_params.end(), dec_params.begin(), dec_params.end());
     
     Adam adam(all_params, 0.001f);
-    loss->backward();
+    res->backward();
     adam.clip_grad(1.0f);
     adam.step();
     graph::validateAllNodesRefCnt();
-    printAllActions();
-    allocMemAndInitTensors();
-    gDoOnceActions();
-    custom_init_all_encoder_weights(enc_params);
-    custom_init_all_decoder_weights(dec_params);
+    // printAllActions();
+    // allocMemAndInitTensors();
+    // gDoOnceActions();
+    // custom_init_all_encoder_weights(enc_params);
+    // custom_init_all_decoder_weights(dec_params);
 
-    int32_t encoder_valid_lens_buffer[1] = {4};
-    g_backend_ops->cp_to_device(
-        enc_valid_lens,
-        reinterpret_cast<char*>(encoder_valid_lens_buffer),
-        enc_valid_lens->size()
-    );
+    // int32_t encoder_valid_lens_buffer[1] = {4};
+    // g_backend_ops->cp_to_device(
+    //     enc_valid_lens,
+    //     reinterpret_cast<char*>(encoder_valid_lens_buffer),
+    //     enc_valid_lens->size()
+    // );
 
-    int32_t decoder_valid_lens_buffer[9] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
-    g_backend_ops->cp_to_device(
-        dec_valid_lens,
-        reinterpret_cast<char*>(decoder_valid_lens_buffer),
-        dec_valid_lens->size()
-    );
+    // int32_t decoder_valid_lens_buffer[9] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
+    // g_backend_ops->cp_to_device(
+    //     dec_valid_lens,
+    //     reinterpret_cast<char*>(decoder_valid_lens_buffer),
+    //     dec_valid_lens->size()
+    // );
 
-    float ce_mask_buffer[9] = {1, 1, 1, 1, 0, 0, 0, 0, 0};
-    g_backend_ops->cp_to_device(
-        ce_mask,
-        reinterpret_cast<char*>(ce_mask_buffer),
-        ce_mask->size()
-    );
+    // float ce_mask_buffer[9] = {1, 1, 1, 1, 0, 0, 0, 0, 0};
+    // g_backend_ops->cp_to_device(
+    //     ce_mask,
+    //     reinterpret_cast<char*>(ce_mask_buffer),
+    //     ce_mask->size()
+    // );
 
-    int32_t labels_buffer[9] = {6, 7, 8, 1, 0, 0, 0, 0, 0};
-    g_backend_ops->cp_to_device(
-        labels,
-        reinterpret_cast<char*>(labels_buffer),
-        labels->size()
-    );
+    // int32_t labels_buffer[9] = {6, 7, 8, 1, 0, 0, 0, 0, 0};
+    // g_backend_ops->cp_to_device(
+    //     labels,
+    //     reinterpret_cast<char*>(labels_buffer),
+    //     labels->size()
+    // );
 
-    int32_t src_token_ids_buffer[9] = {4, 6, 5, 1, 0, 0, 0, 0, 0};
-    g_backend_ops->cp_to_device(
-        src_token_ids,
-        reinterpret_cast<char*>(src_token_ids_buffer),
-        src_token_ids->size()
-    );
+    // int32_t src_token_ids_buffer[9] = {4, 6, 5, 1, 0, 0, 0, 0, 0};
+    // g_backend_ops->cp_to_device(
+    //     src_token_ids,
+    //     reinterpret_cast<char*>(src_token_ids_buffer),
+    //     src_token_ids->size()
+    // );
 
-    int32_t tgt_token_ids_buffer[9] = {3, 6, 7, 8, 1, 0, 0, 0, 0};
-    g_backend_ops->cp_to_device(
-        tgt_token_ids,
-        reinterpret_cast<char*>(tgt_token_ids_buffer),
-        tgt_token_ids->size()
-    );
+    // int32_t tgt_token_ids_buffer[9] = {3, 6, 7, 8, 1, 0, 0, 0, 0};
+    // g_backend_ops->cp_to_device(
+    //     tgt_token_ids,
+    //     reinterpret_cast<char*>(tgt_token_ids_buffer),
+    //     tgt_token_ids->size()
+    // );
 
-    auto enc_embedding = enc_params[0];
-    assert(enc_embedding->get_w()->get_name() == "embedding");
-    auto dec_embedding = dec_params[0];
-    assert(dec_embedding->get_w()->get_name() == "embedding");
+    // auto enc_embedding = enc_params[0];
+    // assert(enc_embedding->get_w()->get_name() == "embedding");
+    // auto dec_embedding = dec_params[0];
+    // assert(dec_embedding->get_w()->get_name() == "embedding");
 
-    // print all params
-    // for (int i = 0; i < all_params.size(); i++) {
-    //     std::cout << "param " << i << " "<< all_params[i]->get_w()->get_name() << std::endl;
-    //     std::cout << *all_params[i]->get_w() << std::endl;
+    // int epochs = 1000;
+    // for (int e = 0; e < epochs; e++) {
+    //     gDoActions();
+    //     std::cout << "e : " << e << " loss : " << *loss->get_tensor() << std::endl;
+    //     validateAllTensorNames();
+    //     validateAllTensors();
     // }
 
-    int epochs = 1000;
-    for (int e = 0; e < epochs; e++) {
-        gDoActions();
-        std::cout << "e : " << e << " loss : " << *loss->get_tensor() << std::endl;
-        validateAllTensorNames();
-        validateAllTensors();
-        // print all parameters value
-        // for (int i = 0; i < all_params.size(); i++) {
-        //     std::cout << "param " << i << " name : " << all_params[i]->get_w()->get_meta_info() << std::endl;
-        //     // std::cout << "param " << i << " value : " << std::endl << *all_params[i]->get_w() << std::endl;
-        //     std::cout << "param " << i << " grad : " << std::endl << *all_params[i]->get_grad() << std::endl;
-        // }
-    }
-
-    
-
-    
-    // g_backend_ops->memset(grad_tensors_data, 0, grad_tensors_data_capacity);
-    // g_backend_ops->memset(c_tensors_data, 0, c_tensors_data_capacity);
-
-    //print all tensors
-    // for (int i = 0; i < g_c_tensors.size(); i++) {
-    //     std::cout << "c_tensor " << i << " name : " << g_c_tensors[i]->get_meta_info() << std::endl;
-    //     std::cout << "c_tensor " << i << " value : " << std::endl << *g_c_tensors[i] << std::endl;
-    // }
-    // for (int i = 0; i < g_grad_tensors.size(); i++) {
-    //     std::cout << "grad_tensor " << i << " name : " << g_grad_tensors[i]->get_meta_info() << std::endl;
-    //     std::cout << "grad_tensor " << i << " value : " << std::endl << *g_grad_tensors[i] << std::endl;
-    // }
-    // for (int i = 0; i < g_tensors.size(); ++ i) {
-    //     std::cout << "tensor " << i << " name : " << g_tensors[i]->get_meta_info() << std::endl;
-    //     std::cout << "tensor " << i << " value : " << std::endl << *g_tensors[i] << std::endl;
-    // }
-
-    // std::cout << "enc_valid_lens : " << std::endl << *enc_valid_lens << std::endl;
-    // std::cout << "dec_valid_lens : " << std::endl << *dec_valid_lens << std::endl;
-    // std::cout << "src_token_ids : " << std::endl << *src_token_ids << std::endl;
-    // std::cout << "tgt_token_ids : " << std::endl << *tgt_token_ids << std::endl;
-    // std::cout << "labels : " << std::endl << *labels << std::endl;
-    // std::cout << "ce_mask : " << std::endl << *ce_mask << std::endl;
-    // std::cout << "res : " << std::endl << *res->get_tensor() << std::endl;
-    // std::cout << "res grad : " << std::endl << *res->get_grad() << std::endl;
-    // std::cout << "ce_res : " << std::endl << *ce_res->get_tensor() << std::endl;
-    // std::cout << "ce_res grad : " << std::endl << *ce_res->get_grad() << std::endl;
-    // std::cout << "mask_res : " << std::endl << *mask_res->get_tensor() << std::endl;
-    // std::cout << "mask_res grad : " << std::endl << *mask_res->get_grad() << std::endl;
-    // std::cout << "enc_embedding : " << std::endl << *enc_embedding->get_w() << std::endl;
-    // std::cout << "enc_embedding grad : " << std::endl << *enc_embedding->get_grad() << std::endl;
-    // std::cout << "dec_embedding : " << std::endl << *dec_embedding->get_w() << std::endl;
-    // std::cout << "dec_embedding grad : " << std::endl << *dec_embedding->get_grad() << std::endl;
-
-    // std::cout << "res : " << std::endl << *res->get_tensor() << std::endl;
-    
     delete seq2seq;
     destruct_env();
 }
@@ -7506,7 +7455,7 @@ void test_embedding_with_cpu() {
 }
 
 void test_gpu() {
-    test_dropout_1();
+    test_encoder_decoder();
     return ;
     test_at();
     test_at_1();
