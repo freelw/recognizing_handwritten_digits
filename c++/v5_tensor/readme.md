@@ -246,7 +246,6 @@ epoch 9 :  [384/384]loss : 4.11973
 checkpoint saved : ./checkpoints/checkpoint_20250528_215401_9.bin
 ```
 
-
 # 修正dropout bp bug后重新测试单epoch耗时 step=32 batchsize=128
 ```
 (base) cs@cs-desktop:~/project/recognizing_handwritten_digits/c++/v5_tensor$ time ./transformer -e 1
