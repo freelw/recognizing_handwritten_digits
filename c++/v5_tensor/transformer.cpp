@@ -127,7 +127,6 @@ void load_tokens_from_file(
 
 int main(int argc, char *argv[]) {
 
-    signal(SIGINT, signal_callback_handler);
     shutdown = false;
 
     int opt;
@@ -258,6 +257,18 @@ int main(int argc, char *argv[]) {
     adam.step();
     // printAllActions();
     allocMemAndInitTensors();
+
+    gDoOnceActions();
+    // for (auto &parameter : parameters) {
+    //     std::cout << "w meta : " << parameter->get_w()->get_meta_info() << std::endl;
+    // }
+    // for (auto &parameter : parameters) {
+    //     std::cout << "w meta : " << parameter->get_w()->get_meta_info() << std::endl;
+    //     std::cout << "w : " << *parameter->get_w() << std::endl;
+    //     // std::cout << "g meta : " << parameter->get_grad()->get_meta_info() << std::endl;
+    //     // std::cout << "g : " << *parameter->get_grad() << std::endl;
+    // }
+    exit(0);
     if (!checkpoint.empty()) {
         std::cout << "loading from checkpoint : " << checkpoint << std::endl;
         disableInitWeightAction();
@@ -265,6 +276,7 @@ int main(int argc, char *argv[]) {
         std::cout << "loaded from checkpoint" << std::endl;
     }
     init_dec_valid_lens(dec_valid_lens);
+    signal(SIGINT, signal_callback_handler);
     int epoch = 0;
     for (; epoch < epochs; ++epoch) {
         if (shutdown) {
