@@ -245,16 +245,3 @@ epoch 8 :  [384/384]loss : 4.19153
 epoch 9 :  [384/384]loss : 4.11973
 checkpoint saved : ./checkpoints/checkpoint_20250528_215401_9.bin
 ```
-
-# bug
-
-```
-g meta : Tensor[31786](w_v_w_linear_grad)(256, 256)
-
-从这里开始往回的导数都是0
-```
-
-node meta : Tensor[34894](div_res_reshape_sequence_mask_reshape)(512, 9, 9)
-grad meta : Tensor[34895](div_res_grad_reshape_reshape)(512, 9, 9)
-node meta : Tensor[34896](div_res_reshape_sequence_mask_reshape_softmax_res)(512, 9, 9)
-grad meta : Tensor[34897](div_res_reshape_sequence_mask_reshape_softmax_res_grad)(512, 9, 9)
