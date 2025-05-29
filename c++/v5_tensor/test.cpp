@@ -5455,10 +5455,10 @@ void test_encoder_decoder() {
     auto dec_embedding = dec_params[0];
     assert(dec_embedding->get_w()->get_name() == "embedding");
 
-    int epochs = 1000;
+    int epochs = 5;
     for (int e = 0; e < epochs; e++) {
         gDoActions();
-        std::cout << "e : " << e << " loss : " << *loss->get_tensor() << std::endl;
+        // std::cout << "e : " << e << " loss : " << *loss->get_tensor() << std::endl;
         validateAllTensorNames();
         validateAllTensors();
     }
@@ -5596,8 +5596,6 @@ void test_clip() {
 }
 
 void test_cpu() {
-    test_masked_softmax_bp_1();
-    return ;
     test_at();
     test_add();
     test_add_eq();
@@ -5656,6 +5654,7 @@ void test_cpu() {
     test_encoder_mask();
     test_repeat_interleave_1();
     test_decoder();
+    test_masked_softmax_bp_1();
 }
 
 Tensor *test_add_with_cpu_base(int m, int n) {
@@ -7455,8 +7454,7 @@ void test_embedding_with_cpu() {
 }
 
 void test_gpu() {
-    test_encoder_decoder();
-    return ;
+    
     test_at();
     test_at_1();
     test_gpu_at_with_cpu();
@@ -7537,6 +7535,7 @@ void test_gpu() {
     test_encoder_mask();
     test_repeat_interleave_1();
     test_decoder();
+    test_encoder_decoder();
 }
 
 int main(int argc, char *argv[]) {
