@@ -720,7 +720,9 @@ namespace graph {
 
     std::vector<Edge *> edges;
     std::vector<Node *> nodes;
+    #ifndef NDEBUG
     std::vector<Node *> g_dbg_nodes;
+    #endif
 
     Node *allocNode(Tensor *t) {
         Node *node = new Node(t);
