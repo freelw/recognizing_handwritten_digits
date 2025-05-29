@@ -52,6 +52,7 @@ void check_parameters(const std::vector<Parameter*> &parameters, int num_blks) {
     parameters_size_should_be += 1; // target linear w
     parameters_size_should_be += 1; // target linear b
     assert(parameters.size() == parameters_size_should_be);
+    assert(parameters_size_should_be == 64);
     // print all parameters
     // std::cout << "transformer parameters size : " << parameters.size() << std::endl;
     // for (int i = 0; i < parameters.size(); i++) {
@@ -268,7 +269,7 @@ int main(int argc, char *argv[]) {
     //     // std::cout << "g meta : " << parameter->get_grad()->get_meta_info() << std::endl;
     //     // std::cout << "g : " << *parameter->get_grad() << std::endl;
     // }
-    exit(0);
+    // exit(0);
     if (!checkpoint.empty()) {
         std::cout << "loading from checkpoint : " << checkpoint << std::endl;
         disableInitWeightAction();

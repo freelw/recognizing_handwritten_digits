@@ -45,12 +45,9 @@ Linear::Linear(
         b->require_grad();
         if (!const_weight) {
             if (b_sigma >= 0) {
-                std::cout << "11111222" << std::endl;
                 b->init_weight_gauss(b_sigma, b_sigma);
 
             } else {
-                std::cout << "11111" << std::endl;
-                std::cout << b->get_tensor()->get_meta_info() << std::endl;
                 b->init_weight_gauss(0.01, 0.01); // this is very important, break the symmetry
             }
         }
