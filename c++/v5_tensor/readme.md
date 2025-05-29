@@ -246,6 +246,125 @@ epoch 9 :  [384/384]loss : 4.11973
 checkpoint saved : ./checkpoints/checkpoint_20250528_215401_9.bin
 ```
 
+# 修正 dropout bp bug后 tiny数据集上loss下降正常
+
+```
+(base) cs@cs-desktop:~/project/recognizing_handwritten_digits/c++/v5_tensor$ ./transformer -f ../../resources/fra_tiny.txt -e 100
+corpus : ../../resources/fra_tiny.txt
+epochs : 100
+batch_size : 128
+gpu : 1
+learning rate : 0.001
+checkpoint : 
+enc_vocab_size : 7939
+dec_vocab_size : 13387
+bos_id : 3
+eos_id : 1
+src_pad_id : 0
+tgt_pad_id : 0
+epoch 0 :  [384/384]loss : 9.22685
+epoch 1 :  [384/384]loss : 8.17875
+epoch 2 :  [384/384]loss : 7.31543
+epoch 3 :  [384/384]loss : 6.55572
+epoch 4 :  [384/384]loss : 5.94124
+epoch 5 :  [384/384]loss : 5.46998
+epoch 6 :  [384/384]loss : 5.1335
+epoch 7 :  [384/384]loss : 4.91032
+epoch 8 :  [384/384]loss : 4.74691
+epoch 9 :  [384/384]loss : 4.65693
+epoch 10 :  [384/384]loss : 4.54825
+epoch 11 :  [384/384]loss : 4.43991
+epoch 12 :  [384/384]loss : 4.28683
+epoch 13 :  [384/384]loss : 4.13971
+epoch 14 :  [384/384]loss : 4.01758
+epoch 15 :  [384/384]loss : 3.91402
+epoch 16 :  [384/384]loss : 3.76348
+epoch 17 :  [384/384]loss : 3.68659
+epoch 18 :  [384/384]loss : 3.49679
+epoch 19 :  [384/384]loss : 3.37338
+epoch 20 :  [384/384]loss : 3.29745
+epoch 21 :  [384/384]loss : 3.15076
+epoch 22 :  [384/384]loss : 3.02548
+epoch 23 :  [384/384]loss : 2.90251
+epoch 24 :  [384/384]loss : 2.77181
+epoch 25 :  [384/384]loss : 2.68067
+epoch 26 :  [384/384]loss : 2.5364
+epoch 27 :  [384/384]loss : 2.43822
+epoch 28 :  [384/384]loss : 2.31102
+epoch 29 :  [384/384]loss : 2.19813
+epoch 30 :  [384/384]loss : 2.08746
+epoch 31 :  [384/384]loss : 1.99021
+epoch 32 :  [384/384]loss : 1.88037
+epoch 33 :  [384/384]loss : 1.80944
+epoch 34 :  [384/384]loss : 1.68084
+epoch 35 :  [384/384]loss : 1.60938
+epoch 36 :  [384/384]loss : 1.51168
+epoch 37 :  [384/384]loss : 1.43711
+epoch 38 :  [384/384]loss : 1.35525
+epoch 39 :  [384/384]loss : 1.29163
+epoch 40 :  [384/384]loss : 1.21349
+epoch 41 :  [384/384]loss : 1.15099
+epoch 42 :  [384/384]loss : 1.07385
+epoch 43 :  [384/384]loss : 1.03574
+epoch 44 :  [384/384]loss : 0.976446
+epoch 45 :  [384/384]loss : 0.922481
+epoch 46 :  [384/384]loss : 0.871867
+epoch 47 :  [384/384]loss : 0.843808
+epoch 48 :  [384/384]loss : 0.787574
+epoch 49 :  [384/384]loss : 0.737342
+epoch 50 :  [384/384]loss : 0.692409
+epoch 51 :  [384/384]loss : 0.658162
+epoch 52 :  [384/384]loss : 0.625736
+epoch 53 :  [384/384]loss : 0.600884
+epoch 54 :  [384/384]loss : 0.570778
+epoch 55 :  [384/384]loss : 0.545031
+epoch 56 :  [384/384]loss : 0.517207
+epoch 57 :  [384/384]loss : 0.49355
+epoch 58 :  [384/384]loss : 0.472806
+epoch 59 :  [384/384]loss : 0.460372
+epoch 60 :  [384/384]loss : 0.427689
+epoch 61 :  [384/384]loss : 0.413875
+epoch 62 :  [384/384]loss : 0.396615
+epoch 63 :  [384/384]loss : 0.372431
+epoch 64 :  [384/384]loss : 0.368165
+epoch 65 :  [384/384]loss : 0.353622
+epoch 66 :  [384/384]loss : 0.342993
+epoch 67 :  [384/384]loss : 0.326296
+epoch 68 :  [384/384]loss : 0.321928
+epoch 69 :  [384/384]loss : 0.307301
+epoch 70 :  [384/384]loss : 0.310316
+epoch 71 :  [384/384]loss : 0.303165
+epoch 72 :  [384/384]loss : 0.286861
+epoch 73 :  [384/384]loss : 0.2856
+epoch 74 :  [384/384]loss : 0.277225
+epoch 75 :  [384/384]loss : 0.277469
+epoch 76 :  [384/384]loss : 0.265212
+epoch 77 :  [384/384]loss : 0.253928
+epoch 78 :  [384/384]loss : 0.265037
+epoch 79 :  [384/384]loss : 0.256729
+epoch 80 :  [384/384]loss : 0.252929
+epoch 81 :  [384/384]loss : 0.248567
+epoch 82 :  [384/384]loss : 0.247802
+epoch 83 :  [384/384]loss : 0.23653
+epoch 84 :  [384/384]loss : 0.234957
+epoch 85 :  [384/384]loss : 0.23887
+epoch 86 :  [384/384]loss : 0.238759
+epoch 87 :  [384/384]loss : 0.235842
+epoch 88 :  [384/384]loss : 0.235275
+epoch 89 :  [384/384]loss : 0.233121
+epoch 90 :  [384/384]loss : 0.223154
+epoch 91 :  [384/384]loss : 0.221809
+epoch 92 :  [384/384]loss : 0.225124
+epoch 93 :  [384/384]loss : 0.22043
+epoch 94 :  [384/384]loss : 0.215261
+epoch 95 :  [384/384]loss : 0.219092
+epoch 96 :  [384/384]loss : 0.216041
+epoch 97 :  [384/384]loss : 0.210444
+epoch 98 :  [384/384]loss : 0.221074
+epoch 99 :  [384/384]loss : 0.217064
+checkpoint saved : ./checkpoints/checkpoint_20250529_144051_99.bin
+```
+
 # 修正dropout bp bug后重新测试单epoch耗时 step=32 batchsize=128
 ```
 (base) cs@cs-desktop:~/project/recognizing_handwritten_digits/c++/v5_tensor$ time ./transformer -e 1
