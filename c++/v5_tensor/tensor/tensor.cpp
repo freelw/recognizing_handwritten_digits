@@ -293,7 +293,7 @@ Tensor *Tensor::sequence_mask(Tensor *mask, float value) {
 Tensor *Tensor::softmax() {
     Tensor *res = callocTensor(
         shape,
-        this->get_name() + "_softmax",
+        this->get_name() + "_softmax_res",
         this->get_dtype()
     );
     gCreateAction(

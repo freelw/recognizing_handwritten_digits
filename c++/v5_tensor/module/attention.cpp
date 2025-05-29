@@ -41,9 +41,13 @@ graph::Node *DotProductAttention::forward(
     assert(q_dim == 3);
     auto d = q_shape[q_dim-1];
 
-    attention_weights = query->bmm(key->transpose(1, 2))
-        ->div(std::sqrt(static_cast<float>(d)))
-        ->masked_softmax(valid_lens);
+    auto bmm_res = query->bmm(key->transpose(1, 2));
+    assert(bmm_res->is_require_grad());
+    // graph::g_dbg_nodes.push_back(bmm_res);
+    auto div_res = bmm_res->div(std::sqrt(static_cast<float>(d)));
+    // graph::g_dbg_nodes.push_back(div_res);
+    attention_weights = div_res->masked_softmax(valid_lens);
+    // graph::g_dbg_nodes.push_back(attention_weights);
 
     auto dropout_attention_weights = attention_weights;
     if (g_training) {

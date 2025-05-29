@@ -2446,6 +2446,7 @@ void test_masked_softmax_bp() {
     auto res_ce = res_softmax->reshape({-1, 4})->CrossEntropy(labels)->avg_1d();
     insert_boundary_action();
     res_ce->backward();
+    printAllActions();
     allocMemAndInitTensors();
     init_labels(labels);
     
@@ -5253,6 +5254,42 @@ void test_decoder() {
     destruct_env();
 }
 
+void test_decoder_1() {
+    construct_env();
+    zero_c_tensors();
+    zero_grad();
+    int num_hiddens = 16;
+    int num_blks = 2;
+    float dropout = 0;
+    int ffn_num_hiddens = 4;
+    int num_heads = 4;
+    int vocab_size = 4;
+    int max_posencoding_len = 1000;
+
+    auto decoder = new TransformerDecoder(
+        vocab_size, num_hiddens, ffn_num_hiddens,
+        num_heads, num_blks, max_posencoding_len, dropout, false
+    );
+
+    Tensor *x = allocTensor({2, 3}, "x", INT32);
+    Tensor *labels = allocTensor({6}, "labels", INT32);
+    Tensor *enc_outputs = allocTensor({2, 2, 3}, "enc_outputs");
+    auto n_enc_outputs = graph::allocNode(enc_outputs);
+    n_enc_outputs->init_weight_fill(1.0f);
+    Tensor *decode_valid_lens = allocTensor({2, 3}, "decode_valid_lens", INT32);
+    auto res = decoder->forward(x, n_enc_outputs, nullptr, decode_valid_lens);
+
+    insert_boundary_action();
+    auto ce_res = res->reshape({6, -1})->CrossEntropy(labels);
+    auto loss = ce_res->avg_1d();
+    loss->backward();
+    printAllActions();
+    allocMemAndInitTensors();
+    gDoOnceActions();
+    delete decoder;
+    destruct_env();
+}
+
 void init_mask_and_valid_lens(Tensor *mask, Tensor *valid_lens) {
     assert(mask->get_dim() == 1);
     assert(valid_lens->get_dim() == 1);
@@ -5582,6 +5619,8 @@ void test_clip() {
 }
 
 void test_cpu() {
+    test_decoder_1();
+    return ;
     test_at();
     test_add();
     test_add_eq();

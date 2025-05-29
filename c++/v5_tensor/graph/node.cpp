@@ -114,10 +114,13 @@ namespace graph {
             auto shape = this->get_tensor()->get_shape();
             Tensor *mask = valid_len->get_dim() == 1 ?  
                 valid_len->repeat_interleave(shape[1]) : valid_len->reshape({-1});
-            return this->reshape({-1, shape[2]})
-                ->sequence_mask(mask, -1e6f)
-                ->reshape(shape)
-                ->softmax();
+            auto reshape1_res = this->reshape({-1, shape[2]});
+            auto sequence_mask_res = reshape1_res->sequence_mask(mask, -1e6f);
+            auto reshape2_res = sequence_mask_res->reshape(shape);
+            graph::g_dbg_nodes.push_back(reshape2_res);
+            auto softmax_res = reshape2_res->softmax();
+            graph::g_dbg_nodes.push_back(softmax_res);
+            return softmax_res;
         }
     }
     Node *Node::add(Node *rhs) {
@@ -312,7 +315,7 @@ namespace graph {
         assert(l_split_2d_nodes.size() == r_split_2d_nodes.size());
         Tensor *res_tensor = callocTensor(
             {l_tensor->get_shape()[0], l_tensor->get_shape()[1], r_tensor->get_shape()[2]},
-            "bmm_res_" + l_tensor->get_name() + "_" + r_tensor->get_name()
+            l_tensor->get_name() + "_" + r_tensor->get_name() + "_bmm_res"
         );
         Node *res_node = allocNode(res_tensor);
         if (l_node->is_require_grad() || r_node->is_require_grad()) {
@@ -660,6 +663,12 @@ namespace graph {
                 tmp
             )
         );
+        gCreateAction(
+            new DbgPrintAction(
+                node->get_grad(),
+                "softmax_grad"
+            )
+        );
     }
 
     void EmbeddingEdge::backward(Tensor *grad) {
@@ -710,6 +719,7 @@ namespace graph {
 
     std::vector<Edge *> edges;
     std::vector<Node *> nodes;
+    std::vector<Node *> g_dbg_nodes;
 
     Node *allocNode(Tensor *t) {
         Node *node = new Node(t);
@@ -735,6 +745,16 @@ namespace graph {
             }
         }
     }
+
+    void validateAllNodesRefCnt() {
+        for (Node *node : nodes) {
+            if (node->get_ref() != 0) {
+                std::cerr << "Node " << node->get_tensor()->get_name() 
+                          << " has non-zero ref count: " << node->get_ref() << std::endl;
+            }
+        }
+    }
+    
     void validateAllNodesGradZero() {
         for (Node *node : nodes) {
             if (node->is_require_grad()) {

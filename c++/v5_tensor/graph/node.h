@@ -670,10 +670,13 @@ namespace graph {
             float value;
     };
 
+    extern std::vector<Node *> g_dbg_nodes;
+
     Node *allocNode(Tensor *t);
     Node *allocNode(Tensor *t, Tensor *grad);
     void validateAllNodes();
     void validateAllNodesGradZero();
+    void validateAllNodesRefCnt();
     void freeAllNodes();
     void freeAllEdges();
 }

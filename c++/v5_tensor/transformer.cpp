@@ -256,19 +256,20 @@ int main(int argc, char *argv[]) {
     loss->backward();
     adam.clip_grad(1.0f);
     adam.step();
-    // printAllActions();
+    graph::validateAllNodesRefCnt();
+    printAllActions();
     allocMemAndInitTensors();
 
     gDoOnceActions();
-    for (auto &parameter : parameters) {
-        std::string meta = parameter->get_grad()->get_meta_info();
-        std::cout << "g meta : " << meta << std::endl;
-        std::string mtgt = "Tensor[31766](w_k_w_linear_grad)(256, 256)";
-        // std::string mtgt = "Tensor[31786](w_v_w_linear_grad)(256, 256)";
-        if (meta == mtgt) {
-            std::cout << "w : " << *parameter->get_w() << std::endl;
-        }
-    }
+    // for (auto &parameter : parameters) {
+    //     std::string meta = parameter->get_grad()->get_meta_info();
+    //     std::cout << "g meta : " << meta << std::endl;
+    //     std::string mtgt = "Tensor[31766](w_k_w_linear_grad)(256, 256)";
+    //     // std::string mtgt = "Tensor[31786](w_v_w_linear_grad)(256, 256)";
+    //     if (meta == mtgt) {
+    //         std::cout << "w : " << *parameter->get_w() << std::endl;
+    //     }
+    // }
     // for (auto &parameter : parameters) {
     //     std::cout << "w meta : " << parameter->get_w()->get_meta_info() << std::endl;
     //     std::cout << "w : " << *parameter->get_w() << std::endl;
@@ -365,13 +366,17 @@ int main(int argc, char *argv[]) {
     std::string checkpoint_prefix = "checkpoint" + generateDateTimeSuffix();
     save_checkpoint(checkpoint_prefix, shutdown ? epoch : epoch - 1, parameters);
 
-    for (auto &parameter : parameters) {
-        // std::cout << "w meta : " << parameter->get_w()->get_meta_info() << std::endl;
-        // std::cout << "w : " << *parameter->get_w() << std::endl;
-        std::cout << "g meta : " << parameter->get_grad()->get_meta_info() << std::endl;
-        std::cout << "g : " << *parameter->get_grad() << std::endl;
+    for (auto node : graph::g_dbg_nodes) {
+        std::cout << "node meta : " << node->get_tensor()->get_meta_info() << std::endl;
+        std::cout << "grad meta : " << node->get_grad()->get_meta_info() << std::endl;
     }
-    
+    // std::cout << std::endl;
+    // for (auto node : graph::g_dbg_nodes) {
+    //     std::cout << "node meta : " << node->get_tensor()->get_meta_info() << std::endl;
+    //     std::cout << "grad meta : " << node->get_grad()->get_meta_info() << std::endl;
+    //     std::cout << "grad : " << *node->get_grad() << std::endl;
+    // }
+
     // free input buffers
     ::free(enc_valid_lens_buffer);
     ::free(src_token_ids_buffer);
