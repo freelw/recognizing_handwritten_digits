@@ -116,8 +116,6 @@ namespace graph {
                 valid_len->repeat_interleave(shape[1]) : valid_len->reshape({-1});
             auto reshape1_res = this->reshape({-1, shape[2]});
             auto reshape1_res_shape = reshape1_res->get_tensor()->get_shape();
-            std::cout << "reshape1_res shape: " << reshape1_res_shape[0] << std::endl;
-            std::cout << "mask shape: " << mask->get_shape()[0] << std::endl;
             auto sequence_mask_res = reshape1_res->sequence_mask(mask, -1e6f);
             auto reshape2_res = sequence_mask_res->reshape(shape);
             graph::g_dbg_nodes.push_back(reshape2_res);

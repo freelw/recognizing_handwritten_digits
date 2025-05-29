@@ -2515,6 +2515,8 @@ void test_masked_softmax_bp_1() {
     auto bmm_res_2 = bmm_res_1->bmm(nw1);
     insert_boundary_action();
     bmm_res_2->backward();
+    graph::validateAllNodesRefCnt();
+    std::cout << "-------------" << std::endl;
     printAllActions();
     allocMemAndInitTensors();    
     gDoActions();
