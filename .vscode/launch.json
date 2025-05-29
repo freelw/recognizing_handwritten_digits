@@ -401,7 +401,9 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "/home/cs/project/recognizing_handwritten_digits/c++/v5_tensor/transformer",
-            "args": [],
+            "args": [
+                "-e", "0", "-c", "./checkpoints/checkpoint_20250529_144051_99.bin"
+            ],
             "cwd": "/home/cs/project/recognizing_handwritten_digits/c++/v5_tensor/",
             "stopAtEntry": false,
             "environment": []

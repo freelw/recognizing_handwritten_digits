@@ -103,7 +103,7 @@ void init_dec_valid_lens(Tensor *dec_valid_lens) {
 }
 
 void load_tokens_from_file(
-    const std::string & corpus,
+    seq2seq::DataLoader &loader,
     std::vector<std::vector<uint>> &src_token_ids,
     std::vector<std::vector<uint>> &tgt_token_ids,
     int &enc_vocab_size,
@@ -113,10 +113,6 @@ void load_tokens_from_file(
     int &src_pad_id,
     int &tgt_pad_id
     ) {
-    std::string src_vocab_name = SRC_VOCAB_NAME;
-    std::string tgt_vocab_name = TGT_VOCAB_NAME;
-    std::string test_file = TEST_FILE;
-    seq2seq::DataLoader loader(corpus, src_vocab_name, tgt_vocab_name, test_file);
     loader.get_token_ids(src_token_ids, tgt_token_ids);
     enc_vocab_size = loader.src_vocab_size();
     dec_vocab_size = loader.tgt_vocab_size();
@@ -179,10 +175,15 @@ int main(int argc, char *argv[]) {
     int src_pad_id = 0;
     int tgt_pad_id = 0;
 
+    std::string src_vocab_name = SRC_VOCAB_NAME;
+    std::string tgt_vocab_name = TGT_VOCAB_NAME;
+    std::string test_file = TEST_FILE;
+    seq2seq::DataLoader loader(corpus, src_vocab_name, tgt_vocab_name, test_file);
+    
     std::vector<std::vector<uint>> v_src_token_ids;
     std::vector<std::vector<uint>> v_tgt_token_ids;
     load_tokens_from_file(
-        corpus,
+        loader,
         v_src_token_ids, v_tgt_token_ids,
         enc_vocab_size, dec_vocab_size,
         bos_id,
@@ -190,13 +191,20 @@ int main(int argc, char *argv[]) {
         src_pad_id,
         tgt_pad_id
     );
+    bool predicting = epochs == 0;
+    g_training = !predicting;
+    if (predicting) {
+        batch_size = 1; // set batch size to 1 for predicting
+    }
     std::cout << "enc_vocab_size : " << enc_vocab_size << std::endl;
     std::cout << "dec_vocab_size : " << dec_vocab_size << std::endl;
     std::cout << "bos_id : " << bos_id << std::endl;
     std::cout << "eos_id : " << eos_id << std::endl;
     std::cout << "src_pad_id : " << src_pad_id << std::endl;
     std::cout << "tgt_pad_id : " << tgt_pad_id << std::endl;
-
+    std::cout << "predicting : " << (predicting ? "true" : "false") << std::endl;
+    std::cout << "batch_size : " << batch_size << std::endl;
+    
     use_gpu(gpu==1);
     construct_env();
     zero_c_tensors();
@@ -218,7 +226,7 @@ int main(int argc, char *argv[]) {
     Tensor *src_token_ids = allocTensor({batch_size, num_steps}, INT32);
     Tensor *tgt_token_ids = allocTensor({batch_size, num_steps}, INT32);
     Tensor *enc_valid_lens = allocTensor({batch_size}, INT32);
-    Tensor *dec_valid_lens = allocTensor({batch_size, num_steps}, INT32);
+    Tensor *dec_valid_lens = predicting ? allocTensor({1}, INT32) : allocTensor({batch_size, num_steps}, INT32);
     Tensor *labels = allocTensor({batch_size * num_steps}, INT32);
     Tensor *ce_mask = allocTensor({batch_size * num_steps});
 
@@ -267,88 +275,198 @@ int main(int argc, char *argv[]) {
         loadfrom_checkpoint(checkpoint, parameters);
         std::cout << "loaded from checkpoint" << std::endl;
     }
-    init_dec_valid_lens(dec_valid_lens);
-    signal(SIGINT, signal_callback_handler);
-    int epoch = 0;
-    for (; epoch < epochs; ++epoch) {
-        if (shutdown) {
-            break;
-        }
-        float loss_sum = 0;
-        int cnt = 0;
-        std::string prefix = "epoch " + std::to_string(epoch) + " : ";
-        for (int i = 0; i < v_src_token_ids.size(); i += batch_size) {
-            if (shutdown) {
-                break;
-            }
-            cnt ++;
-
-            auto end = i + batch_size;
-            if (end > v_src_token_ids.size()) {
-                break;
-            }
-
-            for (int j = i; j < end; ++j) {
-                // std::cout << "j : " << j << " i : " << i << " end : " << end << std::endl;
-                enc_valid_lens_buffer[j - i] = v_src_token_ids[j].size();
-                auto src_j_trim_or_padding_res = trim_or_padding(
-                    v_src_token_ids[j], num_steps, src_pad_id
-                );
-                auto tgt_j_trim_or_padding_res = trim_or_padding(
-                    add_bos(v_tgt_token_ids[j], bos_id), num_steps, tgt_pad_id
-                );
-                auto tgt_j_labels_res = trim_or_padding(
-                    v_tgt_token_ids[j], num_steps, tgt_pad_id
-                );
-                for (int k = 0; k < num_steps; ++k) {
-                    src_token_ids_buffer[(j - i) * num_steps + k] = src_j_trim_or_padding_res[k];
-                    tgt_token_ids_buffer[(j - i) * num_steps + k] = tgt_j_trim_or_padding_res[k];
-                    labels_buffer[(j - i) * num_steps + k] = tgt_j_labels_res[k];
-                    ce_mask_buffer[(j - i) * num_steps + k] = (tgt_j_labels_res[k] != tgt_pad_id) ? 1.0f : 0.0f;
-                }
-            }
-
+    if (predicting) {
+        std::cout << "serving mode" << std::endl;
+        std::cout << "test file : " << test_file << std::endl;
+        // assert(!checkpoint.empty());
+        std::vector<std::string> src_sentences = loader.get_test_sentences();
+        for (auto & sentence : src_sentences) {
+            std::vector<uint> v_src_token_ids = loader.to_src_token_ids(sentence);
+            // std::cout << "source sentence length : " << v_src_token_ids.size() << std::endl;
+            int enc_valid_len = v_src_token_ids.size();
+            assert(enc_valid_lens->size() == sizeof(int32_t));
             g_backend_ops->cp_to_device(
                 enc_valid_lens,
-                reinterpret_cast<char*>(enc_valid_lens_buffer),
+                reinterpret_cast<char*>(&enc_valid_len),
                 enc_valid_lens->size()
             );
+            auto src_trim_or_padding_res = trim_or_padding(
+                v_src_token_ids, num_steps, src_pad_id
+            );
+            // for (auto &token_id : src_trim_or_padding_res) {
+            //     std::cout << loader.get_src_token(token_id) << " ";
+            // }
+            // std::cout << std::endl;
+            assert(src_token_ids->length() == num_steps);
+            assert(tgt_token_ids->length() == num_steps);
+            for (int i = 0; i < num_steps; ++ i) {
+                src_token_ids_buffer[i] = src_trim_or_padding_res[i];
+            }
             g_backend_ops->cp_to_device(
                 src_token_ids,
                 reinterpret_cast<char*>(src_token_ids_buffer),
                 src_token_ids->size()
             );
-            g_backend_ops->cp_to_device(
-                tgt_token_ids,
-                reinterpret_cast<char*>(tgt_token_ids_buffer),
-                tgt_token_ids->size()
-            );
-            g_backend_ops->cp_to_device(
-                labels,
-                reinterpret_cast<char*>(labels_buffer),
-                labels->size()
-            );
-            g_backend_ops->cp_to_device(
-                ce_mask,
-                reinterpret_cast<char*>(ce_mask_buffer),
-                ce_mask->size()
-            );
+            
+            std::vector<uint> predicted;
+            predicted.push_back(bos_id);
+            float *res_buffer = static_cast<float *>(::malloc(
+                res->get_tensor()->size()
+            ));
+            for (int i = 0; i < num_steps; ++ i) {
+                std::vector<uint> tgt_trim_or_padding_res = trim_or_padding(
+                    predicted, num_steps, tgt_pad_id
+                );
+                int dec_valid_len = predicted.size();
+                assert(dec_valid_lens->size() == sizeof(int32_t));
+                g_backend_ops->cp_to_device(
+                    dec_valid_lens,
+                    reinterpret_cast<char*>(&dec_valid_len),
+                    dec_valid_lens->size()
+                );
+                // for (auto &token_id : tgt_trim_or_padding_res) {
+                //     std::cout << loader.get_src_token(token_id) << " ";
+                // }
+                // std::cout << std::endl;
+                for (int j = 0; j < num_steps; ++ j) {
+                    tgt_token_ids_buffer[j] = tgt_trim_or_padding_res[j];
+                }
+                g_backend_ops->cp_to_device(
+                    tgt_token_ids,
+                    reinterpret_cast<char*>(tgt_token_ids_buffer),
+                    tgt_token_ids->size()
+                );
+                gDoForwardActions();
+                // std::cout << "res : " << std::endl << *res->get_tensor() << std::endl;
+                g_backend_ops->cp_from_device(
+                    reinterpret_cast<char*>(res_buffer),
+                    res->get_tensor(),
+                    res->get_tensor()->size()
+                );
+                assert(res->get_tensor()->length() == dec_vocab_size * num_steps);
+                float max_value = res_buffer[0];
+                auto cur_step = i+1;
 
-            gDoActions();
-            print_progress(prefix, end, v_src_token_ids.size());
-            float loss_v = 0;
-            g_backend_ops->cp_from_device(
-                reinterpret_cast<char*>(&loss_v),
-                loss->get_tensor(),
-                loss->get_tensor()->size()
-            );
-            loss_sum += loss_v;
+                int max_index = 0;
+                for (int j = 0; j < cur_step; ++j) {
+                    int offset = j * dec_vocab_size;
+                    max_index = 0;
+                    float max_value = res_buffer[offset];
+                    for (int k = 1; k < dec_vocab_size; ++k) {
+                        if (res_buffer[offset + k] > max_value) {
+                            max_value = res_buffer[offset + k];
+                            max_index = k;
+                        }
+                    }
+                    // std::cout << loader.get_tgt_token(max_index) << " ";
+                }
+                // std::cout << std::endl;
+                if (max_index == eos_id) {
+                    break; // stop predicting if eos_id is predicted
+                }
+                predicted.push_back(max_index);
+                
+                // int max_index = 0;
+                // for (int j = 1; j < dec_vocab_size; ++j) {
+                //     if (res_buffer[j] > max_value) {
+                //         max_value = res_buffer[j];
+                //         max_index = j;
+                //     }
+                // }
+                // // std::cout << "predicted token id : " << max_index << " " << loader.get_tgt_token(max_index) << std::endl;
+                
+                // predicted.push_back(max_index);
+            }
+            std::cout << sentence << " -> ";
+            for (int i = 1; i < predicted.size(); ++i) {
+                std::cout << loader.get_tgt_token(predicted[i]) << " ";
+            }
+            std::cout << std::endl;
+            ::free(res_buffer);
         }
-        std::cout << "loss : " << loss_sum / cnt << std::endl;
-    }
+    } else {
+        init_dec_valid_lens(dec_valid_lens);
+        signal(SIGINT, signal_callback_handler);
+        int epoch = 0;
+        for (; epoch < epochs; ++epoch) {
+            if (shutdown) {
+                break;
+            }
+            float loss_sum = 0;
+            int cnt = 0;
+            std::string prefix = "epoch " + std::to_string(epoch) + " : ";
+            for (int i = 0; i < v_src_token_ids.size(); i += batch_size) {
+                if (shutdown) {
+                    break;
+                }
+                cnt ++;
 
-    std::string checkpoint_prefix = "checkpoint" + generateDateTimeSuffix();
-    save_checkpoint(checkpoint_prefix, shutdown ? epoch : epoch - 1, parameters);
+                auto end = i + batch_size;
+                if (end > v_src_token_ids.size()) {
+                    break;
+                }
+
+                for (int j = i; j < end; ++j) {
+                    // std::cout << "j : " << j << " i : " << i << " end : " << end << std::endl;
+                    enc_valid_lens_buffer[j - i] = v_src_token_ids[j].size();
+                    auto src_j_trim_or_padding_res = trim_or_padding(
+                        v_src_token_ids[j], num_steps, src_pad_id
+                    );
+                    auto tgt_j_trim_or_padding_res = trim_or_padding(
+                        add_bos(v_tgt_token_ids[j], bos_id), num_steps, tgt_pad_id
+                    );
+                    auto tgt_j_labels_res = trim_or_padding(
+                        v_tgt_token_ids[j], num_steps, tgt_pad_id
+                    );
+                    for (int k = 0; k < num_steps; ++k) {
+                        src_token_ids_buffer[(j - i) * num_steps + k] = src_j_trim_or_padding_res[k];
+                        tgt_token_ids_buffer[(j - i) * num_steps + k] = tgt_j_trim_or_padding_res[k];
+                        labels_buffer[(j - i) * num_steps + k] = tgt_j_labels_res[k];
+                        ce_mask_buffer[(j - i) * num_steps + k] = (tgt_j_labels_res[k] != tgt_pad_id) ? 1.0f : 0.0f;
+                    }
+                }
+
+                g_backend_ops->cp_to_device(
+                    enc_valid_lens,
+                    reinterpret_cast<char*>(enc_valid_lens_buffer),
+                    enc_valid_lens->size()
+                );
+                g_backend_ops->cp_to_device(
+                    src_token_ids,
+                    reinterpret_cast<char*>(src_token_ids_buffer),
+                    src_token_ids->size()
+                );
+                g_backend_ops->cp_to_device(
+                    tgt_token_ids,
+                    reinterpret_cast<char*>(tgt_token_ids_buffer),
+                    tgt_token_ids->size()
+                );
+                g_backend_ops->cp_to_device(
+                    labels,
+                    reinterpret_cast<char*>(labels_buffer),
+                    labels->size()
+                );
+                g_backend_ops->cp_to_device(
+                    ce_mask,
+                    reinterpret_cast<char*>(ce_mask_buffer),
+                    ce_mask->size()
+                );
+
+                gDoActions();
+                print_progress(prefix, end, v_src_token_ids.size());
+                float loss_v = 0;
+                g_backend_ops->cp_from_device(
+                    reinterpret_cast<char*>(&loss_v),
+                    loss->get_tensor(),
+                    loss->get_tensor()->size()
+                );
+                loss_sum += loss_v;
+            }
+            std::cout << "loss : " << loss_sum / cnt << std::endl;
+        }
+        std::string checkpoint_prefix = "checkpoint" + generateDateTimeSuffix();
+        save_checkpoint(checkpoint_prefix, shutdown ? epoch : epoch - 1, parameters);
+    }
 
     // free input buffers
     ::free(enc_valid_lens_buffer);

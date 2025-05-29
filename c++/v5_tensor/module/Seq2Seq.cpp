@@ -36,7 +36,7 @@ graph::Node * Seq2SeqEncoderDecoder::forward(
     auto tgt_shape = tgt_token_ids->get_shape();
     auto dec_valid_lens_shape = dec_valid_lens->get_shape();
     assert(src_shape == tgt_shape);
-    assert(src_shape == dec_valid_lens_shape);
+    // assert(src_shape == dec_valid_lens_shape);
     assert(enc_valid_lens->get_dim() == 1);
     assert(src_shape[0] == enc_valid_lens->get_shape()[0]);
     
