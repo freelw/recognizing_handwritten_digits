@@ -256,7 +256,7 @@ int main(int argc, char *argv[]) {
     loss->backward();
     adam.clip_grad(1.0f);
     adam.step();
-    graph::validateAllNodesRefCnt();
+    graph::validateAllNodesRefCnt(0);
     printAllActions();
     allocMemAndInitTensors();
 

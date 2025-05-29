@@ -744,12 +744,12 @@ namespace graph {
         }
     }
 
-    void validateAllNodesRefCnt() {
+    void validateAllNodesRefCnt(int cnt) {
         bool succ = true;
         for (Node *node : nodes) {
-            if (node->get_ref() != 0) {
+            if (node->get_ref() != cnt) {
                 std::cerr << "Node " << node->get_tensor()->get_name() 
-                          << " has non-zero ref count: " << node->get_ref() << std::endl;
+                          << " has non-" << cnt << " ref count: " << node->get_ref() << std::endl;
                 succ = false;
             }
         }

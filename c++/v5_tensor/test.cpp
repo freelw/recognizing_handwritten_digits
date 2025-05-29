@@ -5363,7 +5363,7 @@ void test_encoder_decoder() {
 
     int num_hiddens = 256;
     int num_blks = 2;
-    float dropout = 0.2f;
+    float dropout = 0.1f;
     int ffn_num_hiddens = 64;
     int num_heads = 4;
     int num_steps = NUM_STEPS;
@@ -5398,6 +5398,7 @@ void test_encoder_decoder() {
     all_params.insert(all_params.end(), dec_params.begin(), dec_params.end());
     
     Adam adam(all_params, 0.001f);
+    graph::validateAllNodesRefCnt(1);
     res->backward();
     adam.clip_grad(1.0f);
     adam.step();
