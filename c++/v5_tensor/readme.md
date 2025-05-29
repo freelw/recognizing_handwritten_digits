@@ -387,3 +387,30 @@ real    12m56.637s
 user    12m55.901s
 sys     0m0.734s
 ```
+
+# prediction
+```
+(base) cs@cs-desktop:~/project/recognizing_handwritten_digits/c++/v5_tensor$ ./transformer -e 0 -c ./checkpoints/checkpoint_20250529_144051_99.bin
+corpus : ../../resources/fra_preprocessed.txt
+epochs : 0
+batch_size : 128
+gpu : 1
+learning rate : 0.001
+checkpoint : ./checkpoints/checkpoint_20250529_144051_99.bin
+enc_vocab_size : 7939
+dec_vocab_size : 13387
+bos_id : 3
+eos_id : 1
+src_pad_id : 0
+tgt_pad_id : 0
+predicting : true
+batch_size : 1
+loading from checkpoint : ./checkpoints/checkpoint_20250529_144051_99.bin
+loaded from checkpoint
+serving mode
+test file : ./test.txt
+go now . -> allez-y maintenant . 
+i know that it is highly unlikely that you'd ever want to go out -> je sais qu'il est hautement improbable que tu veuilles jamais sortir avec moi , mais j'ai tout de même besoin de demander au moins une fois . 
+good job -> bon boulot ! 
+how nice ! -> comme c'est du joli ! 
+```
