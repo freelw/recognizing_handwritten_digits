@@ -260,9 +260,9 @@ int main(int argc, char *argv[]) {
     allocMemAndInitTensors();
 
     gDoOnceActions();
-    // for (auto &parameter : parameters) {
-    //     std::cout << "w meta : " << parameter->get_w()->get_meta_info() << std::endl;
-    // }
+    for (auto &parameter : parameters) {
+        std::cout << "g meta : " << parameter->get_grad()->get_meta_info() << std::endl;
+    }
     // for (auto &parameter : parameters) {
     //     std::cout << "w meta : " << parameter->get_w()->get_meta_info() << std::endl;
     //     std::cout << "w : " << *parameter->get_w() << std::endl;
@@ -358,6 +358,13 @@ int main(int argc, char *argv[]) {
 
     std::string checkpoint_prefix = "checkpoint" + generateDateTimeSuffix();
     save_checkpoint(checkpoint_prefix, shutdown ? epoch : epoch - 1, parameters);
+
+    for (auto &parameter : parameters) {
+        // std::cout << "w meta : " << parameter->get_w()->get_meta_info() << std::endl;
+        // std::cout << "w : " << *parameter->get_w() << std::endl;
+        std::cout << "g meta : " << parameter->get_grad()->get_meta_info() << std::endl;
+        std::cout << "g : " << *parameter->get_grad() << std::endl;
+    }
     
     // free input buffers
     ::free(enc_valid_lens_buffer);
