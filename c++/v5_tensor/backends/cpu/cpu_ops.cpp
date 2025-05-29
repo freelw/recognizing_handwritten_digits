@@ -410,7 +410,6 @@ void CPUOps::calcAllGradNorm(const std::vector<Tensor*> &grads, Tensor *norm) {
     assert(norm->get_shape().size() == 1);
     assert(norm->get_shape()[0] == 1);
     float *norm_data = static_cast<float*>(norm->get_data());
-    // assert(!std::isinf(tmp));
     norm_data[0] = tmp;
 }
 
