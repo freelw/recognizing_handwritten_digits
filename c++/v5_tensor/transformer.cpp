@@ -358,9 +358,9 @@ int main(int argc, char *argv[]) {
                             max_index = k;
                         }
                     }
-                    std::cout << loader.get_tgt_token(max_index) << " ";
+                    // std::cout << loader.get_tgt_token(max_index) << " ";
                 }
-                std::cout << std::endl;
+                // std::cout << std::endl;
                 if (max_index == eos_id) {
                     break; // stop predicting if eos_id is predicted
                 }
