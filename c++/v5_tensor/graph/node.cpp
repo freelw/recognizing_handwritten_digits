@@ -5,9 +5,10 @@
 namespace graph {
 
     void Node::backward() {
-        if (backward_times > 0) {
-            return;
-        }
+        assert(backward_times == 0);
+        // if (backward_times > 0) {
+        //     return;
+        // }
         assert(ref_cnt == 0);
         backward_times ++;
         if (!is_require_grad()) {
@@ -662,12 +663,6 @@ namespace graph {
             new AddEqAction(
                 node->get_grad(),
                 tmp
-            )
-        );
-        gCreateAction(
-            new DbgPrintAction(
-                node->get_grad(),
-                "softmax_grad"
             )
         );
     }

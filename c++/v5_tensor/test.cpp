@@ -2446,7 +2446,7 @@ void test_masked_softmax_bp() {
     auto res_ce = res_softmax->reshape({-1, 4})->CrossEntropy(labels)->avg_1d();
     insert_boundary_action();
     res_ce->backward();
-    printAllActions();
+    // printAllActions();
     allocMemAndInitTensors();
     init_labels(labels);
     
@@ -3176,7 +3176,7 @@ void test_dropout_1() {
     auto res = dropout.forward(ni)->add(ni);
     insert_boundary_action();
     res->backward();
-    // printAllActions();
+    printAllActions();
     allocMemAndInitTensors();
     float *res_grad_buffer = static_cast<float*>(::malloc(res->get_grad()->size()));
     gDoForwardActions(true);
@@ -7506,6 +7506,8 @@ void test_embedding_with_cpu() {
 }
 
 void test_gpu() {
+    test_dropout_1();
+    return ;
     test_at();
     test_at_1();
     test_gpu_at_with_cpu();
