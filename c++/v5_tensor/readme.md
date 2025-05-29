@@ -245,5 +245,3 @@ epoch 8 :  [384/384]loss : 4.19153
 epoch 9 :  [384/384]loss : 4.11973
 checkpoint saved : ./checkpoints/checkpoint_20250528_215401_9.bin
 ```
-
-test push
