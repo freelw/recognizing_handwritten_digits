@@ -281,7 +281,7 @@ int main(int argc, char *argv[]) {
         std::vector<std::string> src_sentences = loader.get_test_sentences();
         for (auto & sentence : src_sentences) {
             std::vector<uint> v_src_token_ids = loader.to_src_token_ids(sentence);
-            std::cout << "source sentence length : " << v_src_token_ids.size() << std::endl;
+            // std::cout << "source sentence length : " << v_src_token_ids.size() << std::endl;
             int enc_valid_len = v_src_token_ids.size();
             assert(enc_valid_lens->size() == sizeof(int32_t));
             g_backend_ops->cp_to_device(
@@ -312,7 +312,7 @@ int main(int argc, char *argv[]) {
             float *res_buffer = static_cast<float *>(::malloc(
                 res->get_tensor()->size()
             ));
-            for (int i = 0; i < 1; ++ i) {
+            for (int i = 0; i < num_steps; ++ i) {
                 std::vector<uint> tgt_trim_or_padding_res = trim_or_padding(
                     predicted, num_steps, tgt_pad_id
                 );
@@ -350,8 +350,17 @@ int main(int argc, char *argv[]) {
                         max_index = j;
                     }
                 }
-                std::cout << "predicted token id : " << max_index << " " << loader.get_tgt_token(max_index) << std::endl;
+                // std::cout << "predicted token id : " << max_index << " " << loader.get_tgt_token(max_index) << std::endl;
+                if (max_index == eos_id) {
+                    break; // stop predicting if eos_id is predicted
+                }
+                predicted.push_back(max_index);
             }
+            std::cout << sentence << " -> ";
+            for (int i = 1; i < predicted.size(); ++i) {
+                std::cout << loader.get_tgt_token(predicted[i]) << " ";
+            }
+            std::cout << std::endl;
             ::free(res_buffer);
         }
     } else {
