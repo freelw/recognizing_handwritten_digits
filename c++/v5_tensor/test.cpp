@@ -5398,10 +5398,10 @@ void test_encoder_decoder() {
     all_params.insert(all_params.end(), dec_params.begin(), dec_params.end());
     
     Adam adam(all_params, 0.001f);
-    zero_grad();
     loss->backward();
     adam.clip_grad(1.0f);
     adam.step();
+    graph::validateAllNodesRefCnt();
     printAllActions();
     allocMemAndInitTensors();
     gDoOnceActions();
