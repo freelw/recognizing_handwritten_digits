@@ -2516,8 +2516,8 @@ void test_masked_softmax_bp_1() {
     insert_boundary_action();
     bmm_res_2->backward();
     graph::validateAllNodesRefCnt();
-    std::cout << "-------------" << std::endl;
-    printAllActions();
+    // std::cout << "-------------" << std::endl;
+    // printAllActions();
     allocMemAndInitTensors();    
     gDoActions();
     destruct_env();
@@ -3176,7 +3176,7 @@ void test_dropout_1() {
     auto res = dropout.forward(ni)->add(ni);
     insert_boundary_action();
     res->backward();
-    printAllActions();
+    // printAllActions();
     allocMemAndInitTensors();
     float *res_grad_buffer = static_cast<float*>(::malloc(res->get_grad()->size()));
     gDoForwardActions(true);
@@ -5402,7 +5402,7 @@ void test_encoder_decoder() {
     adam.clip_grad(1.0f);
     adam.step();
     graph::validateAllNodesRefCnt();
-    printAllActions();
+    // printAllActions();
     allocMemAndInitTensors();
     gDoOnceActions();
     custom_init_all_encoder_weights(enc_params);
@@ -5654,6 +5654,7 @@ void test_cpu() {
     test_encoder_mask();
     test_repeat_interleave_1();
     test_decoder();
+    test_encoder_decoder();
     test_masked_softmax_bp_1();
 }
 
@@ -7536,6 +7537,7 @@ void test_gpu() {
     test_repeat_interleave_1();
     test_decoder();
     test_encoder_decoder();
+    test_masked_softmax_bp_1();
 }
 
 int main(int argc, char *argv[]) {
