@@ -118,9 +118,9 @@ namespace graph {
             auto reshape1_res_shape = reshape1_res->get_tensor()->get_shape();
             auto sequence_mask_res = reshape1_res->sequence_mask(mask, -1e6f);
             auto reshape2_res = sequence_mask_res->reshape(shape);
-            graph::g_dbg_nodes.push_back(reshape2_res);
+            // graph::g_dbg_nodes.push_back(reshape2_res);
             auto softmax_res = reshape2_res->softmax();
-            graph::g_dbg_nodes.push_back(softmax_res);
+            // graph::g_dbg_nodes.push_back(softmax_res);
             return softmax_res;
         }
     }

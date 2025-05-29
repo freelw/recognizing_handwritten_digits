@@ -54,5 +54,5 @@ graph::Node *DotProductAttention::forward(
         dropout_attention_weights = dropout
             ->forward(dropout_attention_weights);
     }
-    return attention_weights->bmm(value);
+    return dropout_attention_weights->bmm(value);
 }

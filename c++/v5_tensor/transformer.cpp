@@ -257,7 +257,7 @@ int main(int argc, char *argv[]) {
     adam.clip_grad(1.0f);
     adam.step();
     graph::validateAllNodesRefCnt(0);
-    printAllActions();
+    // printAllActions();
     allocMemAndInitTensors();
 
     gDoOnceActions();
@@ -366,15 +366,25 @@ int main(int argc, char *argv[]) {
     std::string checkpoint_prefix = "checkpoint" + generateDateTimeSuffix();
     save_checkpoint(checkpoint_prefix, shutdown ? epoch : epoch - 1, parameters);
 
-    for (auto node : graph::g_dbg_nodes) {
-        std::cout << "node meta : " << node->get_tensor()->get_meta_info() << std::endl;
-        std::cout << "grad meta : " << node->get_grad()->get_meta_info() << std::endl;
-    }
+    // for (auto node : graph::g_dbg_nodes) {
+    //     std::cout << "node meta : " << node->get_tensor()->get_meta_info() << std::endl;
+    //     std::cout << "grad meta : " << node->get_grad()->get_meta_info() << std::endl;
+    // }
     // std::cout << std::endl;
     // for (auto node : graph::g_dbg_nodes) {
     //     std::cout << "node meta : " << node->get_tensor()->get_meta_info() << std::endl;
     //     std::cout << "grad meta : " << node->get_grad()->get_meta_info() << std::endl;
     //     std::cout << "grad : " << *node->get_grad() << std::endl;
+    // }
+    // for (auto &parameter : parameters) {
+    //     std::cout << "w meta : " << parameter->get_w()->get_meta_info() << std::endl;
+    //     std::cout << "g meta : " << parameter->get_grad()->get_meta_info() << std::endl;
+    // }
+
+    // for (auto &parameter : parameters) {
+    //     std::cout << "w meta : " << parameter->get_w()->get_meta_info() << std::endl;
+    //     std::cout << "g meta : " << parameter->get_grad()->get_meta_info() << std::endl;
+    //     std::cout << "g : " << *parameter->get_grad() << std::endl;
     // }
 
     // free input buffers
