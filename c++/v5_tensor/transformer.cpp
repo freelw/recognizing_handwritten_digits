@@ -192,6 +192,7 @@ int main(int argc, char *argv[]) {
         tgt_pad_id
     );
     bool predicting = epochs == 0;
+    g_training = !predicting;
     if (predicting) {
         batch_size = 1; // set batch size to 1 for predicting
     }
@@ -342,19 +343,39 @@ int main(int argc, char *argv[]) {
                     res->get_tensor(),
                     res->get_tensor()->size()
                 );
+                assert(res->get_tensor()->length() == dec_vocab_size * num_steps);
                 float max_value = res_buffer[0];
+                auto cur_step = i+1;
+
                 int max_index = 0;
-                for (int j = 1; j < dec_vocab_size; ++j) {
-                    if (res_buffer[j] > max_value) {
-                        max_value = res_buffer[j];
-                        max_index = j;
+                for (int j = 0; j < cur_step; ++j) {
+                    int offset = j * dec_vocab_size;
+                    max_index = 0;
+                    float max_value = res_buffer[offset];
+                    for (int k = 1; k < dec_vocab_size; ++k) {
+                        if (res_buffer[offset + k] > max_value) {
+                            max_value = res_buffer[offset + k];
+                            max_index = k;
+                        }
                     }
+                    std::cout << loader.get_tgt_token(max_index) << " ";
                 }
-                // std::cout << "predicted token id : " << max_index << " " << loader.get_tgt_token(max_index) << std::endl;
+                std::cout << std::endl;
                 if (max_index == eos_id) {
                     break; // stop predicting if eos_id is predicted
                 }
                 predicted.push_back(max_index);
+                
+                // int max_index = 0;
+                // for (int j = 1; j < dec_vocab_size; ++j) {
+                //     if (res_buffer[j] > max_value) {
+                //         max_value = res_buffer[j];
+                //         max_index = j;
+                //     }
+                // }
+                // // std::cout << "predicted token id : " << max_index << " " << loader.get_tgt_token(max_index) << std::endl;
+                
+                // predicted.push_back(max_index);
             }
             std::cout << sentence << " -> ";
             for (int i = 1; i < predicted.size(); ++i) {

@@ -3,6 +3,7 @@ extern bool g_training;
 
 graph::Node *Dropout::forward(graph::Node *x) {
     if (g_training && p > 0) {
+        std::cout << "dropout !!!!" << std::endl;
         auto x_tensor = x->get_tensor();
         auto shape = x_tensor->get_shape();
         graph::Node *res_node = nullptr;
