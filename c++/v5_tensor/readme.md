@@ -414,3 +414,51 @@ i know that it is highly unlikely that you'd ever want to go out -> je sais qu'i
 good job -> bon boulot ! 
 how nice ! -> comme c'est du joli ! 
 ```
+
+### mnist_cuda 加上 norm
+```
+epoch : 0 [50000/50000] loss : 0.67828
+evaluating :  [10000/10000] correct : 9298
+epoch : 1 [50000/50000] loss : 0.263307
+evaluating :  [10000/10000] correct : 9466
+epoch : 2 [50000/50000] loss : 0.195321
+evaluating :  [10000/10000] correct : 9531
+epoch : 3 [50000/50000] loss : 0.159109
+evaluating :  [10000/10000] correct : 9593
+epoch : 4 [50000/50000] loss : 0.135835
+evaluating :  [10000/10000] correct : 9628
+epoch : 5 [50000/50000] loss : 0.118771
+evaluating :  [10000/10000] correct : 9650
+epoch : 6 [50000/50000] loss : 0.105423
+evaluating :  [10000/10000] correct : 9654
+epoch : 7 [50000/50000] loss : 0.0952094
+evaluating :  [10000/10000] correct : 9657
+epoch : 8 [50000/50000] loss : 0.0868837
+evaluating :  [10000/10000] correct : 9651
+epoch : 9 [50000/50000] loss : 0.0799941
+evaluating :  [10000/10000] correct : 9651
+```
+
+### mnist_cuda 不加 norm
+```
+epoch : 0 [50000/50000] loss : 0.390219
+evaluating :  [10000/10000] correct : 9337
+epoch : 1 [50000/50000] loss : 0.223057
+evaluating :  [10000/10000] correct : 9432
+epoch : 2 [50000/50000] loss : 0.199496
+evaluating :  [10000/10000] correct : 9453
+epoch : 3 [50000/50000] loss : 0.178141
+evaluating :  [10000/10000] correct : 9445
+epoch : 4 [50000/50000] loss : 0.165149
+evaluating :  [10000/10000] correct : 9451
+epoch : 5 [50000/50000] loss : 0.156534
+evaluating :  [10000/10000] correct : 9476
+epoch : 6 [50000/50000] loss : 0.151771
+evaluating :  [10000/10000] correct : 9436
+epoch : 7 [50000/50000] loss : 0.145766
+evaluating :  [10000/10000] correct : 9442
+epoch : 8 [50000/50000] loss : 0.140849
+evaluating :  [10000/10000] correct : 9475
+epoch : 9 [50000/50000] loss : 0.137518
+evaluating :  [10000/10000] correct : 9464
+```
