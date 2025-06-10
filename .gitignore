@@ -31,3 +31,6 @@ c++/v5_tensor/p.log
 c++/curand/curand
 c++/v5_tensor/c.log
 c++/v5_tensor/c1.log
+c++/v5_tensor/data/fra-eng.zip
+c++/v5_tensor/data/fra-eng/_about.txt
+c++/v5_tensor/data/fra-eng/fra.txt
