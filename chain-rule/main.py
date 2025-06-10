@@ -2,7 +2,7 @@ x0 = 100
 x1 = 100
 x2 = 1.1
 x3 = 0.7
-x = 90
+x = 270
 
 def g1(x7):
     return x7*x7
@@ -23,9 +23,7 @@ def distance(x0, x1, x2, x3):
     x4 = g5(x0, x1)
     x6 = g4(x2, x3)
     x5 = g3(x4, x6)
-    # print ("x5:", x5)
     x7 = g2(x5)
-    # print("x7:", x7)
     x8 = g1(x7)
     return x0, x1, x2, x3, x4, x5, x6, x7, x8
 
@@ -59,8 +57,10 @@ def calc_x3_speed(x6_speed):
 print(distance(x0, x1, x2, x3)[-1])
 little_step = 0.000000001
 
-for i in range(100000):
+cnt = 0
 
+for i in range(100000):
+    cnt += 1
     
     x0, x1, x2, x3, x4, x5, x6, x7, x8 = distance(x0, x1, x2, x3)
 
@@ -74,27 +74,13 @@ for i in range(100000):
     x2_speed = calc_x2_speed(x6_speed)
     x3_speed = calc_x3_speed(x6_speed)
 
-    # print ("x8_speed : ", x8_speed)
-    # print ("x7_speed : ", x7_speed)
-    # print ("x5_speed : ", x5_speed)
-    # print ("x4_speed : ", x4_speed)
-    # print ("x6_speed : ", x6_speed)
-    # print ("x0_speed : ", x0_speed)
-    # print ("x1_speed : ", x1_speed)
-    # print ("x2_speed : ", x2_speed)
-    # print ("x3_speed : ", x3_speed)
-
     x0 += -x0_speed * little_step
     x1 += -x1_speed * little_step
     x2 += -x2_speed * little_step
     x3 += -x3_speed * little_step
 
-    # print ("x0 : ", x0)
-    # print ("x1 : ", x1)
-    # print("x2 : ", x2)
-    # print("x3 : ", x3)
-
-    print("x8 : ", x8)
+    if cnt % 1000 == 0:
+        print("x8 : ", x8)
 
 print(x0, x1, x2, x3)
 x0, x1, x2, x3, x4, x5, x6, x7, x8 = distance(x0, x1, x2, x3)
