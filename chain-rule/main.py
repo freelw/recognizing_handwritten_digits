@@ -29,5 +29,4 @@ def distance(x0, x1, x2, x3):
     x8 = g1(x7)
     return x8
 
-
 print(distance(x0, x1, x2, x3))
