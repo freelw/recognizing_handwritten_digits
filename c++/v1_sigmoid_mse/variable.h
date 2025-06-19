@@ -25,7 +25,7 @@ public:
     VariablePtr sqr();
     VariablePtr sigmoid();
     friend std::ostream& operator<<(std::ostream& output, const Variable& s);
-    virtual void backward() = 0;
+    virtual void backward();
     double getValue() { return value; }
     double getGradient() { return gradient; }
     virtual void incGradient(double _gradient) { gradient += _gradient; }
@@ -35,13 +35,12 @@ public:
     void incInputCount() { inputCount++; }
     void decInputCount() { inputCount--; }
     void zeroGrad();
-    void adamUpdate(double lr, double beta1, double beta2, double epsilon, int t);
+    void update(double lr);
 protected:
     double value;
     double gradient;
     VariablePtr parents[2];
     int inputCount;
-    double m, v;
 };
 
 class TmpVar : public Variable {
@@ -49,14 +48,6 @@ public:
     TmpVar();
     TmpVar(double _value);
     TmpVar(double _value, double _gradient);
-    void backward();
-};
-
-class Parameter : public Variable {
-public:
-    Parameter();
-    Parameter(double _value);
-    Parameter(double _value, double _gradient);
     void backward();
 };
 

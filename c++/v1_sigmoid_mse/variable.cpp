@@ -22,17 +22,17 @@ VariablePtr allocTmpVar(double value) {
     return ret;
 }
 
-Variable::Variable() : value(0), gradient(0), inputCount(0), m(0), v(0) {
+Variable::Variable() : value(0), gradient(0), inputCount(0) {
     parents[0] = nullptr;
     parents[1] = nullptr;
 }
 
-Variable::Variable(double _value) : value(_value), gradient(0), inputCount(0), m(0), v(0) {
+Variable::Variable(double _value) : value(_value), gradient(0), inputCount(0) {
     parents[0] = nullptr;
     parents[1] = nullptr;
 }
 
-Variable::Variable(double _value, double _gradient) : value(_value), gradient(_gradient), inputCount(0), m(0), v(0) {
+Variable::Variable(double _value, double _gradient) : value(_value), gradient(_gradient), inputCount(0) {
     parents[0] = nullptr;
     parents[1] = nullptr;
 }
@@ -94,19 +94,8 @@ void Variable::zeroGrad() {
     gradient = 0;
 }
 
-void Variable::adamUpdate(double lr, double beta1, double beta2, double epsilon, int t) {
-    /*
-    p.m = self.beta1 * p.m + (1 - self.beta1) * p.grad
-    p.v = self.beta2 * p.v + (1 - self.beta2) * (p.grad ** 2)
-    m_hat = p.m / (1 - self.beta1 ** self.t)
-    v_hat = p.v / (1 - self.beta2 ** self.t)
-    p.data -= self.lr * (m_hat / (v_hat ** 0.5 + 1e-8) + self.weight_decay * p.data)
-    */
-    m = beta1 * m + (1 - beta1) * gradient;
-    v = beta2 * v + (1 - beta2) * gradient * gradient;
-    double m_hat = m / (1 - std::pow(beta1, t));
-    double v_hat = v / (1 - std::pow(beta2, t));
-    value -= lr * (m_hat / (std::sqrt(v_hat) + epsilon));
+void Variable::update(double lr) {
+    value -= lr * gradient;
 }
 
 TmpVar::TmpVar() : Variable() {}
@@ -125,13 +114,7 @@ void TmpVar::backward() {
     }
 }
 
-Parameter::Parameter() : Variable() {}
-
-Parameter::Parameter(double _value) : Variable(_value) {}
-
-Parameter::Parameter(double _value, double _gradient) : Variable(_value, _gradient) {}
-
-void Parameter::backward() {
+void Variable::backward() {
     for (auto i = 0; i < 2; ++i) {
         auto parent = parents[i];
         if (parent) {

@@ -12,18 +12,9 @@ Neuron::Neuron(
     std::default_random_engine& generator_b) {
 
     for (uint i = 0; i < _inputSize; i++) {
-        if (rand) {
-            weight.push_back(new Parameter(d_w(generator_w)));
-        } else {
-            weight.push_back(new Parameter(0.1));
-        }
+        weight.push_back(new Variable(d_w(generator_w)));
     }
-
-    if (rand) {
-        bias = new Parameter(d_b(generator_b));
-    } else {
-        bias = new Parameter(0.1);
-    }
+    bias = new Variable(d_b(generator_b));
 }
 
 VariablePtr Neuron::forward(const std::vector<VariablePtr>& input) {
@@ -35,15 +26,8 @@ VariablePtr Neuron::forward(const std::vector<VariablePtr>& input) {
     return res;
 }
 
-void Neuron::update(double lr, int epoch) {
-    this->adamUpdate(lr, 0.9, 0.95, 1e-8, epoch);
-}
-
-void Neuron::adamUpdate(double lr, double beta1, double beta2, double epsilon, int epoch) {
-    for (uint i = 0; i < weight.size(); i++) {
-        weight[i]->adamUpdate(lr, beta1, beta2, epsilon, epoch);
-    }
-    bias->adamUpdate(lr, beta1, beta2, epsilon, epoch);
+void Neuron::update(double lr) {
+    this->update(lr);
 }
 
 void Neuron::zeroGrad() {
@@ -51,20 +35,6 @@ void Neuron::zeroGrad() {
         weight[i]->zeroGrad();
     }
     bias->zeroGrad();
-}
-
-std::ostream& operator<<(std::ostream& output, const Neuron& s) {
-    output << std::endl << "\t" << "weight : ";
-    for (uint i = 0; i < s.weight.size(); i++) {
-        output << s.weight[i]->getValue() << " ";
-    }
-    output << s.bias->getValue() << std::endl;
-    output << "\t" << "grad : ";
-    for (uint i = 0; i < s.weight.size(); i++) {
-        output << s.weight[i]->getGradient() << " ";
-    }
-    output << s.bias->getGradient();
-    return output;
 }
 
 Layer::Layer(uint _inputSize, uint _outputSize) : inputSize(_inputSize), outputSize(_outputSize) {
@@ -96,19 +66,10 @@ std::vector<VariablePtr> LinerLayer::forward(const std::vector<VariablePtr>& inp
     return res;
 }
 
-void LinerLayer::update(double lr, int epoch) {
+void LinerLayer::update(double lr) {
     for (uint i = 0; i < neurons.size(); i++) {
-        neurons[i]->update(lr, epoch);
+        neurons[i]->update(lr);
     }
-}
-
-std::ostream& operator<<(std::ostream& output, const LinerLayer& s) {
-    output << "LinerLayer begin" << std::endl;
-    for (uint i = 0; i < s.neurons.size(); i++) {
-        output << "neuron[" << i << "]: " << *(s.neurons[i]) << " " << std::endl;
-    }
-    output << "LinerLayer end" << std::endl;
-    return output;
 }
 
 void LinerLayer::zeroGrad() {
@@ -128,10 +89,6 @@ std::vector<VariablePtr> SigmoidLayer::forward(const std::vector<VariablePtr>& i
         res.push_back(input[i]->sigmoid());
     }
     return res;
-}
-
-void SigmoidLayer::update(double lr, int epoch) {
-    // No parameters to update in SigmoidLayer
 }
 
 Model::Model(uint _inputSize, std::vector<uint> _outputSizes, bool rand) {
@@ -154,9 +111,9 @@ std::vector<VariablePtr> Model::forward(const std::vector<VariablePtr>& input, b
     return res;
 }
 
-void Model::update(double lr, int epoch) {
+void Model::update(double lr) {
     for (uint i = 0; i < layers.size(); i++) {
-        layers[i]->update(lr, epoch);
+        layers[i]->update(lr);
     }
 }
 
@@ -164,15 +121,6 @@ void Model::zeroGrad() {
     for (uint i = 0; i < layers.size(); i++) {
         layers[i]->zeroGrad();
     }
-}
-
-std::ostream& operator<<(std::ostream& output, const Model& s) {
-    output << "Model begin" << std::endl;
-    for (uint i = 0; i < s.linerLayers.size(); i++) {
-        output << i << " : " << std::endl << *(s.linerLayers[i]);
-    }
-    output << "Model end" << std::endl;
-    return output;
 }
 
 VariablePtr MSELoss(const std::vector<VariablePtr>& input, uint t) {

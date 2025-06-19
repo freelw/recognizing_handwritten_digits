@@ -10,10 +10,6 @@
 
 #define INPUT_LAYER_SIZE 784
 
-void testgrad();
-void testcrossentropy();
-void testmodule();
-
 class TrainingData {
 public:
     std::vector<double> x;
@@ -42,7 +38,7 @@ double update_mini_batch(
     double ret = avg_loss->getValue();
     avg_loss->setGradient(1);
     avg_loss->bp();
-    m.update(eta, epoch + 1);
+    m.update(eta);
     destroyTmpVars();
     return ret;
 }
@@ -144,6 +140,5 @@ int main(int argc, char* argv[]) {
     int epochs = atoi(argv[1]);
     int batch_size = atoi(argv[2]);
     train(epochs, batch_size);
-
     return 0;
 }
