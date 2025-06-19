@@ -5,7 +5,7 @@
 #include <iostream>
 
 Neuron::Neuron(
-    uint _inputSize, bool rand,
+    uint _inputSize,
     std::normal_distribution<double>& d_w,
     std::normal_distribution<double>& d_b,
     std::default_random_engine& generator_w,
@@ -48,7 +48,7 @@ void Layer::zeroGrad() {
 
 }
 
-LinerLayer::LinerLayer(uint _inputSize, uint _outputSize, bool rand) : Layer(_inputSize, _outputSize) {
+LinerLayer::LinerLayer(uint _inputSize, uint _outputSize) : Layer(_inputSize, _outputSize) {
     double stddev = sqrt(2. / (_inputSize + _outputSize)) * sqrt(2);
     unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
     std::default_random_engine generator_w(seed);
@@ -56,7 +56,7 @@ LinerLayer::LinerLayer(uint _inputSize, uint _outputSize, bool rand) : Layer(_in
     std::normal_distribution<double> distribution_w(0.0, stddev);
     std::normal_distribution<double> distribution_b(0.0, 0.02);
     for (uint i = 0; i < _outputSize; i++) {
-        neurons.push_back(new Neuron(_inputSize, rand, distribution_w, distribution_b, generator_w, generator_b));
+        neurons.push_back(new Neuron(_inputSize, distribution_w, distribution_b, generator_w, generator_b));
     }
 }
 
@@ -94,19 +94,17 @@ std::vector<VariablePtr> SigmoidLayer::forward(const std::vector<VariablePtr>& i
     return res;
 }
 
-Model::Model(uint _inputSize, std::vector<uint> _outputSizes, bool rand) {
-    LinerLayer* linerLayer = new LinerLayer(_inputSize, _outputSizes[0], rand);
+Model::Model(uint _inputSize, std::vector<uint> _outputSizes) {
+    LinerLayer* linerLayer = new LinerLayer(_inputSize, _outputSizes[0]);
     layers.push_back(linerLayer);
-    linerLayers.push_back(linerLayer);
     for (uint i = 1; i < _outputSizes.size(); i++) {
         layers.push_back(new SigmoidLayer(_outputSizes[i - 1]));
-        linerLayer = new LinerLayer(_outputSizes[i - 1], _outputSizes[i], rand);
+        linerLayer = new LinerLayer(_outputSizes[i - 1], _outputSizes[i]);
         layers.push_back(linerLayer);
-        linerLayers.push_back(linerLayer);
     }
 }
 
-std::vector<VariablePtr> Model::forward(const std::vector<VariablePtr>& input, bool) {
+std::vector<VariablePtr> Model::forward(const std::vector<VariablePtr>& input) {
     std::vector<VariablePtr> res = input;
     for (uint i = 0; i < layers.size(); i++) {
         res = layers[i]->forward(res);

@@ -52,7 +52,7 @@ void evaluate(
         for (auto j = 0; j < INPUT_LAYER_SIZE; ++j) {
             input.emplace_back(allocTmpVar(v_test_data[i]->x[j]));
         }
-        std::vector<VariablePtr> res = m.forward(input, false);
+        std::vector<VariablePtr> res = m.forward(input);
         int max_index = 0;
         double max_value = res[0]->getValue();
         for (uint j = 1; j < res.size(); ++j) {

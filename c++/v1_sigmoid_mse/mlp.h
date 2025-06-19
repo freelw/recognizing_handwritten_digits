@@ -9,7 +9,7 @@
 
 class Neuron {
 public:
-    Neuron(uint _inputSize, bool rand,
+    Neuron(uint _inputSize,
         std::normal_distribution<double>& d_w,
         std::normal_distribution<double>& d_b,
         std::default_random_engine& generator_w,
@@ -36,7 +36,7 @@ protected:
 
 class LinerLayer : public Layer {
 public:
-    LinerLayer(uint _inputSize, uint _outputSize, bool rand);
+    LinerLayer(uint _inputSize, uint _outputSize);
     std::vector<VariablePtr> forward(const std::vector<VariablePtr>& input);
     virtual void update(double lr);
     virtual void zeroGrad();
@@ -54,13 +54,12 @@ VariablePtr MSELoss(const std::vector<VariablePtr>& input, uint t);
 
 class Model {
 public:
-    Model(uint _inputSize, std::vector<uint> _outputSizes, bool rand = true);
-    virtual std::vector<VariablePtr> forward(const std::vector<VariablePtr>& input, bool train = true);
+    Model(uint _inputSize, std::vector<uint> _outputSizes);
+    virtual std::vector<VariablePtr> forward(const std::vector<VariablePtr>& input);
     virtual void update(double lr);
     virtual void zeroGrad();
 private:
     std::vector<Layer*> layers;
-    std::vector<LinerLayer*> linerLayers;
 };
 
 #endif
