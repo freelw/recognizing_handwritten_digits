@@ -12,9 +12,13 @@
 
 class TrainingData {
 public:
-    std::vector<float> x;
+    std::vector<double> x;
     int y;
 };
+
+void print_progress(const std::string& prefix, uint i, uint tot) {
+    std::cout << "\r" << prefix << " [" << i << "/" << tot << "]" << std::flush;
+}
 
 double update_mini_batch(
     int epoch,
@@ -94,6 +98,7 @@ void SGD(
         double loss_sum = 0;
         for (uint i = 0; i < mini_batches.size(); ++i) {
             loss_sum += update_mini_batch(e, *m, mini_batches[i], eta);
+            print_progress("Processing mini-batch", i, mini_batches.size());
         }
         std::cout << "epoch : [" << e + 1 << "/" << epochs << "] loss : " << loss_sum / mini_batches.size() << std::endl;
         evaluate(*m, v_test_data);
@@ -108,7 +113,7 @@ void loadData(
     for (auto i = 0; i < TRAIN_IMAGES_NUM; ++i) {
         TrainingData* p = new TrainingData();
         for (auto j = 0; j < INPUT_LAYER_SIZE; ++j) {
-            p->x.emplace_back(loader.getTrainImages()[i][j]);
+            p->x.emplace_back(loader.getTrainImages()[i][j] * 1. / 256);
             p->y = loader.getTrainLabels()[i];
         }
         v_training_data.emplace_back(p);
@@ -117,7 +122,7 @@ void loadData(
         int index = i + TRAIN_IMAGES_NUM;
         TrainingData* p = new TrainingData();
         for (auto j = 0; j < INPUT_LAYER_SIZE; ++j) {
-            p->x.emplace_back(loader.getTrainImages()[index][j]);
+            p->x.emplace_back(loader.getTrainImages()[index][j] * 1. / 256);
             p->y = loader.getTrainLabels()[index];
         }
         v_test_data.emplace_back(p);

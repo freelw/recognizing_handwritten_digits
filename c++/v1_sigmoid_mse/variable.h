@@ -22,6 +22,7 @@ public:
     VariablePtr operator-(VariablePtr p);
     VariablePtr operator*(VariablePtr p);
     VariablePtr operator/(VariablePtr p);
+    VariablePtr exp();
     VariablePtr sqr();
     VariablePtr sigmoid();
     friend std::ostream& operator<<(std::ostream& output, const Variable& s);
@@ -74,6 +75,13 @@ public:
     DivRes(VariablePtr _x, VariablePtr _y);
     void backward();
 };
+
+class ExpRes : public Variable {
+public:
+    ExpRes(VariablePtr _x);
+    void backward();
+};
+
 
 class SqrRes : public Variable {
 public:
