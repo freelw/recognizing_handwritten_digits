@@ -27,7 +27,10 @@ VariablePtr Neuron::forward(const std::vector<VariablePtr>& input) {
 }
 
 void Neuron::update(double lr) {
-    this->update(lr);
+    for (uint i = 0; i < weight.size(); i++) {
+        weight[i]->update(lr);
+    }
+    bias->update(lr);
 }
 
 void Neuron::zeroGrad() {
