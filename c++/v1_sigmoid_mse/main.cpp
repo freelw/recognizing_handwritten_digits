@@ -12,7 +12,7 @@
 
 class TrainingData {
 public:
-    std::vector<double> x;
+    std::vector<float> x;
     int y;
 };
 
@@ -108,7 +108,7 @@ void loadData(
     for (auto i = 0; i < TRAIN_IMAGES_NUM; ++i) {
         TrainingData* p = new TrainingData();
         for (auto j = 0; j < INPUT_LAYER_SIZE; ++j) {
-            p->x.emplace_back(loader.getTrainImages()[i][j] * 1. / 256);
+            p->x.emplace_back(loader.getTrainImages()[i][j]);
             p->y = loader.getTrainLabels()[i];
         }
         v_training_data.emplace_back(p);
@@ -117,7 +117,7 @@ void loadData(
         int index = i + TRAIN_IMAGES_NUM;
         TrainingData* p = new TrainingData();
         for (auto j = 0; j < INPUT_LAYER_SIZE; ++j) {
-            p->x.emplace_back(loader.getTrainImages()[index][j] * 1. / 256);
+            p->x.emplace_back(loader.getTrainImages()[index][j]);
             p->y = loader.getTrainLabels()[index];
         }
         v_test_data.emplace_back(p);
