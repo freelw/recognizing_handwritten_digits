@@ -96,7 +96,7 @@ std::vector<VariablePtr> SigmoidLayer::forward(const std::vector<VariablePtr>& i
     assert(input.size() == inputSize);
     std::vector<VariablePtr> res;
     for (uint i = 0; i < input.size(); i++) {
-        // res.push_back(input[i]->sigmoid());
+        // auto ret = input[i]->sigmoid();
         auto ret = naive_sigmoid(input[i]);
         res.push_back(ret);
     }

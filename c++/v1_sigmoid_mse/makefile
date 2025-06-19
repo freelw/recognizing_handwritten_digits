@@ -8,7 +8,7 @@ SRCDIR:= ../utils/dataloader
 SRCS := $(wildcard *.cpp) $(wildcard $(addsuffix /*.cpp, $(SRCDIR)))
 OBJECTS := $(patsubst %.c,%.o,$(SRCS))
 $(TARGET) : $(OBJECTS)
-	g++ $(CFLAGS) $^ -o $@ $(LDFLAGS)
+	g++ $(CFLAGS) $^ -o $@ $(LDFLAGS) -O3
 %.o : %.c
 	g++ -c $(CFLAGS) $< -o $@
 clean:
