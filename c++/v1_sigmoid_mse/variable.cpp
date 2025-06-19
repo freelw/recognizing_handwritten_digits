@@ -61,6 +61,12 @@ VariablePtr Variable::operator/(VariablePtr p) {
     return ret;
 }
 
+VariablePtr Variable::exp() {
+    auto ret = new ExpRes(this);
+    registerTmpVar(ret);
+    return ret;
+}
+
 VariablePtr Variable::sqr() {
     auto ret = new SqrRes(this);
     registerTmpVar(ret);
@@ -191,6 +197,19 @@ void DivRes::backward() {
     y->incGradient(-gradient * x->getValue() / (y->getValue() * y->getValue()));
     x->decInputCount();
     y->decInputCount();
+}
+
+ExpRes::ExpRes(VariablePtr _x) {
+    parents[0] = _x;
+    this->value = std::exp(_x->getValue());
+    _x->incInputCount();
+}
+
+void ExpRes::backward() {
+    assert(parents[0] != nullptr && parents[1] == nullptr);
+    auto x = parents[0];
+    x->incGradient(gradient * value);
+    x->decInputCount();
 }
 
 SqrRes::SqrRes(VariablePtr _x) {
