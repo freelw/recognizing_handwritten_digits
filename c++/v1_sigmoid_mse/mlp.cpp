@@ -89,7 +89,7 @@ VariablePtr naive_sigmoid(const VariablePtr& x) {
     auto tmp1 = allocTmpVar(1.0);
     auto tmp2 = allocTmpVar(1.0);
     auto tmp3 = *allocTmpVar(0) - x;
-    return *tmp1 / (*tmp2 + tmp3->exp());
+    return *tmp1 / (*tmp2 + (tmp3->exp()));
 }
 
 std::vector<VariablePtr> SigmoidLayer::forward(const std::vector<VariablePtr>& input) {
@@ -97,7 +97,8 @@ std::vector<VariablePtr> SigmoidLayer::forward(const std::vector<VariablePtr>& i
     std::vector<VariablePtr> res;
     for (uint i = 0; i < input.size(); i++) {
         // res.push_back(input[i]->sigmoid());
-        res.push_back(naive_sigmoid(input[i]));
+        auto ret = naive_sigmoid(input[i]);
+        res.push_back(ret);
     }
     return res;
 }
